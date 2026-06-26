@@ -1,0 +1,8202 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Factory, Search, RefreshCw, FileText, Download, Scale, ArrowRight,
+  Plus, Trash2, ShieldAlert, CheckCircle2, ShoppingCart, Calendar, 
+  User, Check, Printer, Info, Lock, Eye, Trash, PlusCircle, Truck,
+  Save, History, QrCode, ChevronLeft, ChevronRight, Grid, Users, Package,
+  Table, X
+} from 'lucide-react';
+import { 
+  BatchProductionSheetAPI, 
+  DispatchRegisterAPI, 
+  InwardRegisterAPI, 
+  DailyProductionAPI, 
+  FinishGoodAPI, 
+  MaterialRequisitionAPI, 
+  RejectedMaterialAPI, 
+  CustomerAPI,
+  LabFormulationsAPI,
+  MasterFormulationAPI,
+  ProductMasterAPI,
+  LiveProductionAPI,
+  RMStockAPI
+} from '../services/api';
+import * as XLSX from 'xlsx';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
+// ============================================================================
+// HELPERS FOR PDF EXPORT & REMARKS PARSING
+// ============================================================================
+const parseIrRemarks = (remarksStr: string): { okVal: string; rejVal: string } => {
+  let okVal = '';
+  let rejVal = '';
+  if (!remarksStr) return { okVal, rejVal };
+  const okMatch = remarksStr.match(/Ok:\s*([^|]+)/);
+  if (okMatch) okVal = okMatch[1].trim();
+  const rejMatch = remarksStr.match(/Rej:\s*([^|]+)/);
+  if (rejMatch) rejVal = rejMatch[1].trim();
+  if (!okMatch && !rejMatch) okVal = remarksStr;
+  return { okVal, rejVal };
+};
+
+const parseProductString = (fullText: string): { main: string; sub: string } => {
+  if (!fullText) return { main: '', sub: '' };
+  const parts = fullText.split(" - ");
+  if (parts.length >= 2) {
+    return { main: parts[0].trim(), sub: parts.slice(1).join(" - ").trim() };
+  }
+  return { main: '', sub: fullText.trim() };
+};
+
+const exportIrToPdf = (productName: string, entries: any[]) => {
+  const doc = new jsPDF('l', 'mm', 'a4');
+  const todayStr = new Date().toLocaleDateString('en-GB');
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.setTextColor(15, 23, 42);
+  doc.text("INWARD REGISTER REPORT", 148, 15, { align: "center" });
+
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Product: ${productName.toUpperCase()}`, 15, 22);
+  doc.text(`Department: Production Department`, 15, 27);
+  doc.text(`Date: ${todayStr}`, 282, 22, { align: "right" });
+
+  const headers = [
+    "Sr.", "Letter No.", "Letter Date", "Transporter", 
+    "Supplier Code", "Invoice No.", "Material", "Lot/Batch", 
+    "Qty", "Unit", "Mfg Date", "Exp Date", "Ok", "Rejected", "Given By"
+  ];
+
+  const body = entries.map((e, idx) => {
+    const { okVal, rejVal } = parseIrRemarks(e.remarks || '');
+    return [
+      idx + 1,
+      e.inward_letter_no || '',
+      e.inward_letter_date || '',
+      e.transporter_name || '',
+      e.supplier_code || '',
+      e.invoice_no || '',
+      e.material || '',
+      e.lot_batch_no || '',
+      e.quantity || '',
+      e.unit || '',
+      e.mfg_date || '',
+      e.expiry_date || '',
+      e.ok || okVal || '',
+      e.rejected || rejVal || '',
+      e.report_given_by || ''
+    ];
+  });
+
+  autoTable(doc, {
+    head: [headers],
+    body: body,
+    startY: 32,
+    theme: 'grid',
+    styles: { fontSize: 7, cellPadding: 1.5, halign: 'center', valign: 'middle' },
+    headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
+    columnStyles: {
+      0: { cellWidth: 8 },
+      1: { cellWidth: 18 },
+      2: { cellWidth: 16 },
+      3: { cellWidth: 30 },
+      4: { cellWidth: 16 },
+      5: { cellWidth: 18 },
+      6: { cellWidth: 35 },
+      7: { cellWidth: 18 },
+      8: { cellWidth: 12 },
+      9: { cellWidth: 10 },
+      10: { cellWidth: 16 },
+      11: { cellWidth: 16 },
+      12: { cellWidth: 25 },
+      13: { cellWidth: 25 },
+      14: { cellWidth: 20 }
+    }
+  });
+
+  doc.save(`Inward_Register_${productName || 'Report'}_${todayStr.replace(/\//g, '-')}.pdf`);
+};
+
+const exportDrToPdf = (customerName: string, dispatchDate: string, rows: any[]) => {
+  const doc = new jsPDF('l', 'mm', 'a4');
+  const todayStr = new Date().toLocaleDateString('en-GB');
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.setTextColor(15, 23, 42);
+  doc.text("DISPATCH REGISTER REPORT", 148, 15, { align: "center" });
+
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Customer Name: ${customerName}`, 15, 22);
+  doc.text(`Dispatch Date: ${dispatchDate}`, 15, 27);
+  doc.text(`Date Printed: ${todayStr}`, 282, 22, { align: "right" });
+
+  const headers = [
+    "Sr.", "Date", "Customer Name", "Product Name", 
+    "Batch No.", "Packaging Details", "Total Qty"
+  ];
+
+  const body = rows
+    .filter(r => r.batch_no || r.product_name_field)
+    .map((r, idx) => {
+      const parts = r.packaging_details.map((p: any) => `${p.packets}x${p.size}${p.unit}`);
+      return [
+        idx + 1,
+        dispatchDate,
+        customerName,
+        r.product_name_field || '',
+        r.batch_no || '',
+        parts.join(', '),
+        r.total_qty || '0'
+      ];
+    });
+
+  autoTable(doc, {
+    head: [headers],
+    body: body,
+    startY: 32,
+    theme: 'grid',
+    styles: { fontSize: 8, cellPadding: 2, halign: 'center', valign: 'middle' },
+    headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
+    columnStyles: {
+      0: { cellWidth: 10 },
+      1: { cellWidth: 20 },
+      2: { cellWidth: 50 },
+      3: { cellWidth: 65 },
+      4: { cellWidth: 30 },
+      5: { cellWidth: 65 },
+      6: { cellWidth: 40 }
+    }
+  });
+
+  doc.save(`Dispatch_Report_${customerName.replace(/\s+/g, '_')}_${dispatchDate}.pdf`);
+};
+
+const exportMrqToPdf = (productName: string, entries: any[]) => {
+  const doc = new jsPDF('l', 'mm', 'a4');
+  const todayStr = new Date().toLocaleDateString('en-GB');
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.setTextColor(15, 23, 42);
+  doc.text("MATERIAL REQUISITION REPORT", 148, 15, { align: "center" });
+
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Product: ${productName.toUpperCase()}`, 15, 22);
+  doc.text(`Department: Production Department`, 15, 27);
+  doc.text(`Date Printed: ${todayStr}`, 282, 22, { align: "right" });
+
+  const headers = [
+    "Sr.", "Department", "Date", "Product / Material", "Qty", 
+    "Expected Date", "Remarks", "Purpose of Indent", "Indented By", "Verified By", "Approved By"
+  ];
+
+  const body = entries.map((e, idx) => [
+    idx + 1,
+    e.department || '',
+    e.date || '',
+    e.product_or_material || '',
+    e.quantity || '',
+    e.expected_date || '',
+    e.remarks || '',
+    e.purpose || '',
+    e.indented_by || '',
+    e.verified_by || '',
+    e.approved_by || ''
+  ]);
+
+  autoTable(doc, {
+    head: [headers],
+    body: body,
+    startY: 32,
+    theme: 'grid',
+    styles: { fontSize: 7.5, cellPadding: 1.5, halign: 'center', valign: 'middle' },
+    headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
+    columnStyles: {
+      0: { cellWidth: 8 },
+      1: { cellWidth: 25 },
+      2: { cellWidth: 18 },
+      3: { cellWidth: 40 },
+      4: { cellWidth: 14 },
+      5: { cellWidth: 20 },
+      6: { cellWidth: 35 },
+      7: { cellWidth: 35 },
+      8: { cellWidth: 25 },
+      9: { cellWidth: 25 },
+      10: { cellWidth: 25 }
+    }
+  });
+
+  doc.save(`Material_Requisition_${productName || 'Report'}_${todayStr.replace(/\//g, '-')}.pdf`);
+};
+
+const exportRjmToPdf = (productName: string, entries: any[]) => {
+  const doc = new jsPDF('l', 'mm', 'a4');
+  const todayStr = new Date().toLocaleDateString('en-GB');
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.setTextColor(15, 23, 42);
+  doc.text("REJECTED MATERIAL RECORD", 148, 15, { align: "center" });
+
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Product: ${productName.toUpperCase()}`, 15, 22);
+  doc.text(`Department: Production Department`, 15, 27);
+  doc.text(`Date Printed: ${todayStr}`, 282, 22, { align: "right" });
+
+  const headers = ["Sr.", "Customer Name", "Product Name", "Return Date", "Replacement Date", "Kgs", "Remarks"];
+
+  const body = entries.map((e, idx) => [
+    idx + 1,
+    e.customer_name || '',
+    e.product_name || '',
+    e.return_date || '',
+    e.replacement_date || '',
+    e.kgs || '',
+    e.remarks || ''
+  ]);
+
+  autoTable(doc, {
+    head: [headers],
+    body: body,
+    startY: 32,
+    theme: 'grid',
+    styles: { fontSize: 8.5, cellPadding: 2, halign: 'center', valign: 'middle' },
+    headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
+    columnStyles: {
+      0: { cellWidth: 10 },
+      1: { cellWidth: 50 },
+      2: { cellWidth: 60 },
+      3: { cellWidth: 30 },
+      4: { cellWidth: 30 },
+      5: { cellWidth: 25 },
+      6: { cellWidth: 65 }
+    }
+  });
+
+  doc.save(`Rejected_Material_${productName || 'Report'}_${todayStr.replace(/\//g, '-')}.pdf`);
+};
+
+const getStatusBadgeStyle = (statusVal: string): React.CSSProperties => {
+  if (statusVal === 'ok') {
+    return {
+      backgroundColor: '#d1fae5',
+      color: '#065f46',
+      border: '1px solid #10b981',
+      fontWeight: 'bold'
+    };
+  }
+  if (statusVal === 'not_ok') {
+    return {
+      backgroundColor: '#fee2e2',
+      color: '#991b1b',
+      border: '1px solid #ef4444',
+      fontWeight: 'bold'
+    };
+  }
+  return {
+    backgroundColor: '#fef3c7',
+    color: '#92400e',
+    border: '1px solid #f59e0b',
+    fontWeight: 'bold'
+  };
+};
+
+const getStatusText = (statusVal: string): string => {
+  if (statusVal === 'ok') return '✓ OK';
+  if (statusVal === 'not_ok') return '✗ NOT OK';
+  return '⏳ PENDING';
+};
+
+// Sticky table header styles for double-row headers
+const headerRow1Style: React.CSSProperties = {
+  position: 'sticky',
+  top: '0px',
+  zIndex: 12,
+  backgroundColor: '#0f172a',
+  color: '#ffffff',
+  border: '1px solid #475569',
+  textAlign: 'center',
+  verticalAlign: 'middle',
+  fontWeight: 'bold',
+  fontSize: '13px',
+  padding: '10px'
+};
+
+const headerRow2Style: React.CSSProperties = {
+  position: 'sticky',
+  top: '38px',
+  zIndex: 12,
+  backgroundColor: '#0f172a',
+  color: '#ffffff',
+  border: '1px solid #475569',
+  textAlign: 'center',
+  verticalAlign: 'middle',
+  fontWeight: 'bold',
+  fontSize: '13px',
+  padding: '10px'
+};
+
+// ============================================================================
+// FINISHED GOODS CATEGORY & SORTING CONFIGURATION (fg.py matching)
+// ============================================================================
+const CATEGORY_ORDER = [
+  "ISOTRAP", "ISO LACQ", "AQUATRAP", "THERMOTEK", "THERMOSET", 
+  "META COAT", "ECO COAT", "LICO COAT", "UV", "THINNERS", "ACRO", "P.U", "OTHERS"
+];
+
+const PRODUCT_TO_CATEGORY_MAP: Record<string, string> = {
+  "clear gloss": "ISOTRAP", "clear matt": "ISOTRAP", "white gloss": "ISOTRAP",
+  "white matt": "ISOTRAP", "white gloss nx": "ISOTRAP", "black gloss": "ISOTRAP",
+  "black matt": "ISOTRAP", "hardner c": "ISOTRAP", "adhesion agent": "ISOTRAP",
+  "dyes": "ISOTRAP", "dye 20 kg packing": "ISOTRAP", "spl-2 black paste": "ISOTRAP",
+  "09/65 black paste": "ISOTRAP", "862 white paste": "ISOTRAP", "09/70 white paste": "ISOTRAP",
+  "08 white paste" : "ISOTRAP", "brc paste": "ISOTRAP", "paste/powder/additive" : "ISOTRAP",
+  "super fine silver": "ISOTRAP", "rtu dark blue f.matt": "ISOTRAP", "matt paste": "ISOTRAP",
+  "sparkle silver lacquer": "ISOTRAP", "rtu dark blue matt" : "ISOTRAP", "09/85 black paste": "ISOTRAP",
+  "dye flourocent yellow": "ISOTRAP", "cry sss clear gloss": "ISOTRAP", "04/211 red paste": "ISOTRAP",
+  "sb 406 green paste": "ISOTRAP", "08 glitter rainbow 417 pink": "ISOTRAP", "silver paste 12" : "ISOTRAP",
+  "hydro di n": "AQUATRAP", "t.pig": "AQUATRAP", "t.pig xtr": "AQUATRAP",
+  "opig paste": "AQUATRAP", "opig flourocent pink paste": "AQUATRAP", "silkan w 350 gla" : "AQUATRAP",
+  "h.q. medium a/d" : "UV", "pp premier b": "UV", "pp premier lc": "UV", 
+  "diluent fast": "THINNERS", "diluent slow": "THINNERS", "diluent medium": "THINNERS",
+};
+
+const CUSTOM_PRODUCT_ORDER = [
+  "Clear Gloss", "Clear Matt", "White Gloss", "White Matt", "White Gloss NX", "Black Gloss", "Black Matt", "Isofix UV Pro Black Gloss", "Isofiix UV Pro Black Matt", "Eco Coat Gloss / Isonil 401 Clear Gloss", "lico coat clear gloss", "thermotek 400 clear gloss", "thermotek 401 clear matt", "thermotek 402 white gloss", "thermotek 404 black gloss", "thermotek 405 black matt", "meta coat 101 clear matt", "meta coat 100 clear gloss", "meta coat 103 white matt", "meta coat 102 white gloss", "meta coat 104 black gloss", "meta coat 105 black matt", "aquatrap XL3", "Aquatrap Xl 4 Base", "Aquatrap Xl 4 Top", "AQUATRAP XL3 UV PRO", "AQUATEK", "Aquatrap Xl 7","Aquanic G-50 Hs", "AQUANIC-MATTE-9", "HYDRO DI N", "T.PIG", "T.PIG XTR", "DYE FLOUROCENT", "ECO COAT 101 WHITE GLOSS", "DYES", "DYE 20 KG PACKING", "UVAC BASE FLLP", "UVAC BASE ABS JP 100/700", "UVAC BASE", "UVAC BASE GLA 375", "UVAC BASE NEW", "UVAC BASE LC", "UVAC TOP LS 40", "UVAC TOP", "UVAC TOP LC", "UVAC TOP GLA", "UVAC TOP RC-10", "UVAC TOP ECO", "UV CLEAR COAT SP-10", "UV HARD COAT XL 2", "UV CLEAR COAT 3333", "UV PRIME", "UV PRIME PP LC", "UV PRIME 1060 PP", "UV PRIME 1200 PP", "UV MATT PASTE 55", "UV MATT PASTE IN2200", "UV MATT PASTE 1071", "UV MATE 200", "FLOUROCENT YELLOW PASTE", "UV WHITE PASTE HD-70", "UV WHITE 70 HV", "UV HIGH DEPOSITE INK", "UV DYE PACKING", "UV DYE XTR SOLUTION", "MATT PASTE", "RTU DARK BLUE MATT", "ISOTRAP RTU BROWN MATT", "Isotrap Rtu Legent Brown (2)", "THERMOTEK RTU BLUE F.MATT", "ISOTRAP RTU GOLDEN YELLOW GLOSS", "ISOTRAP RTU AL DAWALI BLUE", "ISOTRAP RTU 170 RED", "ISOTRAP RTU TEAM RED", "ISOTRAP RTU L.YELLOW GLOSS", "DILUENT SLOW", "DILUENT FAST", "DILUENT MEDIUM", "HARDNER C", "ADHESION AGENT", "ISOTRAP SUPER FINE SILVER", "H.Q.SILVER 56 GLA", "SILKAN W 350 GLA", "PASTE/POWDER/ADDITIVE", "OPIG PASTE", "BRC PASTE", "TMK BLACK PASTE", "TMK WHITE PASTE", "09/70 WHITE PASTE", "862 WHITE PASTE", "08 WHITE PASTE", "UV WHITE PASTE", "SPL-2 BLACK PASTE", "09/65 BLACK PASTE", "Opig Ultra Black 20", "ACRO WHITE GLOSS", "ACRO GLOSS", "ACRO WHITE GLOSS HS", "ACRO BLACK GLOSS HS", "ACRO OPO GOLD WHITE(PEARL)"
+];
+
+const CUSTOM_SORT_MAP = new Map<string, { index: number; displayName: string }>(
+  CUSTOM_PRODUCT_ORDER.map((name, i) => [name.trim().toLowerCase(), { index: i, displayName: name }])
+);
+
+const getCategoryForProduct = (productName: string): string => {
+  const pLower = productName.trim().toLowerCase();
+  if (PRODUCT_TO_CATEGORY_MAP[pLower]) return PRODUCT_TO_CATEGORY_MAP[pLower];
+  if (pLower.startsWith("isotr") || pLower.includes("isotrap")) return "ISOTRAP";
+  if (pLower.includes("additive")) return "ISOTRAP";
+  if (pLower.startsWith("dye ")) return "ISOTRAP";
+  if (pLower.includes("pearl")) return "ISOTRAP";
+  if (pLower.startsWith("isolacq") || pLower.includes("isolaq")) return "ISO LACQ";
+  if (pLower.startsWith("thinner") || pLower.endsWith("thinner")) return "THINNERS";
+  if (pLower.includes("opig")) return "AQUATRAP";
+  if (pLower.startsWith("aqua") || pLower.includes("aquatrap")) return "AQUATRAP";
+  if (pLower.startsWith("thermotek") || pLower.includes("tmk")) return "THERMOTEK";
+  if (pLower.startsWith("thermoset")) return "THERMOSET";
+  if (pLower.startsWith("meta")) return "META COAT";
+  if (pLower.startsWith("eco")) return "ECO COAT";
+  if (pLower.startsWith("lico") || pLower.includes(" lico")) return "LICO COAT";
+  if (pLower.startsWith("uv") || pLower.includes(" uv ")) return "UV";
+  if (pLower.startsWith("acro")) return "ACRO";
+  if (pLower.startsWith("p.u") || pLower.includes(" p.u") || pLower.includes(" pu ") || pLower.startsWith("pu ")) return "P.U";
+  return "OTHERS";
+};
+
+const getSortKeys = (mainProdFromDb: string): [number, string, string] => {
+  const cleanName = mainProdFromDb.trim().toLowerCase().replace(/\s+/g, ' ');
+  if (cleanName === "dyes") {
+    return [35.0, "", mainProdFromDb];
+  }
+  if (cleanName.startsWith("dye")) {
+    return [35.1, cleanName, mainProdFromDb];
+  }
+  if (cleanName.includes("uv dye")) {
+    return [64, cleanName, mainProdFromDb];
+  }
+  const match = CUSTOM_SORT_MAP.get(cleanName);
+  if (match) {
+    return [match.index, "", match.displayName];
+  }
+  return [99999, cleanName, mainProdFromDb];
+};
+
+const getBatchNumber = (batchVal: string): number => {
+  if (!batchVal) return 0;
+  const match = batchVal.match(/\d+/);
+  return match ? parseInt(match[0], 10) : 0;
+};
+
+interface ProductionMainProps {
+  activeSubView: string;
+  onShowToast: (msg: string, type: 'success' | 'error' | 'warning' | 'info') => void;
+}
+
+export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, onShowToast }) => {
+  const productName = sessionStorage.getItem('product_name') || '';
+  const username = sessionStorage.getItem('username') || '';
+
+  const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'entry' | 'history'>('entry');
+  const [activeCell, setActiveCell] = useState<{ row: number; col: string; subview: string } | null>(null);
+
+  // Debounce timers map
+  const debounceTimers = useRef<Record<string, number>>({});
+
+  // ==========================================================================
+  // LIVE PRODUCTION STATES & VARIABLES
+  // ==========================================================================
+  const [liveProdRows, setLiveProdRows] = useState<any[]>(() => {
+    return Array.from({ length: 20 }, (_, i) => ({
+      customer_name: '',
+      product_name: '',
+      batch_no: '',
+      balance_qty: 0,
+      qty_unit: 'kgs',
+      charged_by: '',
+      packaging_entries: [] as any[],
+      total_qty: 0,
+      production_status: 'waiting',
+      qc_status: 'waiting',
+      filteration_status: 'waiting',
+      fg_status: 'waiting',
+      is_hidden: false,
+      row_index: i,
+      is_changed: false
+    }));
+  });
+
+  const [masterProductList, setMasterProductList] = useState<any[]>([]);
+  const [lpAutosaveStatus, setLpAutosaveStatus] = useState('Autosave active');
+  const [lpAutosaveColor, setLpAutosaveColor] = useState('#10b981'); // default green
+  const [lpMonitorRefreshTime, setLpMonitorRefreshTime] = useState('');
+
+  // Modal / Dialog States for Product Autocomplete & Ambiguity
+  const [showAddProductDlg, setShowAddProductDlg] = useState(false);
+  const [showAmbiguityDlg, setShowAmbiguityDlg] = useState(false);
+  const [enteredProductVal, setEnteredProductVal] = useState('');
+  const [activeProductRowIdx, setActiveProductRowIdx] = useState(-1);
+  const [ambiguousOptions, setAmbiguousOptions] = useState<string[]>([]);
+  const [addProductDlgChoice, setAddProductDlgChoice] = useState<'sub' | 'main'>('sub');
+  const [selectedMainProduct, setSelectedMainProduct] = useState('');
+  const [newSubProductVal, setNewSubProductVal] = useState('');
+  const [addProductError, setAddProductError] = useState('');
+
+  // Packaging Modal
+  const [showLpPkgModal, setShowLpPkgModal] = useState(false);
+  const [lpPkgActiveIdx, setLpPkgActiveIdx] = useState(-1);
+  const [newLpPkg, setNewLpPkg] = useState({ size: '', packets: '', unit: 'kgs' });
+
+  // Status Update Modal
+  const [showLpStatusModal, setShowLpStatusModal] = useState(false);
+  const [lpStatusActiveRowIdx, setLpStatusActiveRowIdx] = useState(-1);
+  const [lpStatusActiveStage, setLpStatusActiveStage] = useState<'production' | 'qc' | 'filteration' | 'fg'>('production');
+
+  // Destination Choice Modal
+  const [showLpDestModal, setShowLpDestModal] = useState(false);
+  const [lpDestActiveRowIdx, setLpDestActiveRowIdx] = useState(-1);
+  const [lpDestLoading, setLpDestLoading] = useState(false);
+
+  // Totals calculations for Live Production
+  const lpTotalKgs = liveProdRows
+    .filter(r => !r.is_hidden && r.qty_unit === 'kgs')
+    .reduce((sum, r) => sum + (parseFloat(r.balance_qty) || 0), 0);
+  const lpTotalLtrs = liveProdRows
+    .filter(r => !r.is_hidden && r.qty_unit === 'ltr')
+    .reduce((sum, r) => sum + (parseFloat(r.balance_qty) || 0), 0);
+  const lpGrandTotal = lpTotalKgs + lpTotalLtrs;
+
+  const loadMasterProducts = async () => {
+    const [success, data] = await ProductMasterAPI.getProductsList();
+    if (success && data && typeof data !== 'string') {
+      setMasterProductList((data as any).products || []);
+    }
+  };
+
+  const loadLiveProductionData = async () => {
+    setLoading(true);
+    const [success, data] = await LiveProductionAPI.loadState(productName);
+    setLoading(false);
+    if (success && data && typeof data !== 'string') {
+      const rows = (data as any).rows || [];
+      const count = Math.max(20, rows.length);
+      const populated = Array.from({ length: count }, (_, i) => {
+        const r = rows[i];
+        if (r) {
+          return {
+            customer_name: r.customer_name || '',
+            product_name: r.product_name || '',
+            batch_no: r.batch_no || '',
+            balance_qty: parseFloat(r.balance_qty) || 0,
+            qty_unit: r.qty_unit || 'kgs',
+            charged_by: r.charged_by || '',
+            packaging_entries: r.packaging_entries || [],
+            total_qty: parseFloat(r.total_qty) || 0,
+            production_status: r.production_status || 'waiting',
+            qc_status: r.qc_status || 'waiting',
+            filteration_status: r.filteration_status || 'waiting',
+            fg_status: r.fg_status || 'waiting',
+            is_hidden: r.is_hidden || false,
+            row_index: i,
+            is_changed: false
+          };
+        } else {
+          return {
+            customer_name: '',
+            product_name: '',
+            batch_no: '',
+            balance_qty: 0,
+            qty_unit: 'kgs',
+            charged_by: '',
+            packaging_entries: [] as any[],
+            total_qty: 0,
+            production_status: 'waiting',
+            qc_status: 'waiting',
+            filteration_status: 'waiting',
+            fg_status: 'waiting',
+            is_hidden: false,
+            row_index: i,
+            is_changed: false
+          };
+        }
+      });
+      setLiveProdRows(populated);
+      setLpMonitorRefreshTime(new Date().toLocaleTimeString('en-US', { hour12: false }));
+    } else {
+      setLiveProdRows(Array.from({ length: 20 }, (_, i) => ({
+        customer_name: '',
+        product_name: '',
+        batch_no: '',
+        balance_qty: 0,
+        qty_unit: 'kgs',
+        charged_by: '',
+        packaging_entries: [] as any[],
+        total_qty: 0,
+        production_status: 'waiting',
+        qc_status: 'waiting',
+        filteration_status: 'waiting',
+        fg_status: 'waiting',
+        is_hidden: false,
+        row_index: i,
+        is_changed: false
+      })));
+    }
+  };
+
+  useEffect(() => {
+    if (activeSubView === 'live_production' || activeSubView === 'live_prod_view') {
+      loadMasterProducts();
+      loadLiveProductionData();
+    }
+  }, [activeSubView]);
+
+  const saveLiveProductionState = async (showToastMsg = false, rowsToSave = liveProdRows) => {
+    setLpAutosaveStatus('Saving...');
+    setLpAutosaveColor('#eab308');
+    const [success, response] = await LiveProductionAPI.saveState(productName, rowsToSave);
+    if (success) {
+      setLpAutosaveStatus('Data saved');
+      setLpAutosaveColor('#10b981');
+      if (showToastMsg) {
+        onShowToast('Live Production state saved successfully.', 'success');
+      }
+      setLiveProdRows(prev => prev.map(r => {
+        const matched = rowsToSave.find(rs => rs.row_index === r.row_index);
+        if (matched) {
+          return { ...r, is_changed: false };
+        }
+        return r;
+      }));
+    } else {
+      setLpAutosaveStatus('Save failed');
+      setLpAutosaveColor('#ef4444');
+      if (showToastMsg) {
+        onShowToast(`Failed to save: ${response}`, 'error');
+      }
+    }
+  };
+
+  // Autosave check loop
+  useEffect(() => {
+    if (activeSubView !== 'live_production') return;
+    const interval = setInterval(() => {
+      const hasChanges = liveProdRows.some(r => r.is_changed);
+      if (hasChanges) {
+        saveLiveProductionState(false);
+      }
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [liveProdRows, activeSubView]);
+
+  const normalizeName = (name: string): string => {
+    if (!name) return '';
+    return name.toLowerCase().trim().replace(/-/g, '').replace(/\s+/g, '');
+  };
+
+  const handleProductBlur = (rowIdx: number, value: string) => {
+    value = value.trim().toUpperCase();
+    const row = liveProdRows[rowIdx];
+    if (row.product_name === value) return;
+
+    setLiveProdRows(prev => {
+      const updated = [...prev];
+      updated[rowIdx] = { ...updated[rowIdx], product_name: value, is_changed: true };
+      return updated;
+    });
+
+    if (!value) return;
+    if (value.includes(" - ")) return;
+
+    const allNames: Record<string, string> = {};
+    const mainNames: Record<string, string> = {};
+    const subMap: Record<string, string[]> = {};
+
+    masterProductList.forEach(item => {
+      const m = item.product;
+      const s = item.sub_product;
+      if (m) {
+        const nm = normalizeName(m);
+        allNames[nm] = m;
+        mainNames[m.toLowerCase()] = m;
+        if (s) {
+          const ns = normalizeName(s);
+          allNames[ns] = s;
+          const sLower = s.toLowerCase();
+          if (!subMap[sLower]) subMap[sLower] = [];
+          if (!subMap[sLower].includes(m)) subMap[sLower].push(m);
+        }
+      }
+    });
+
+    const norm = normalizeName(value);
+    const official = allNames[norm];
+
+    if (!official) {
+      setEnteredProductVal(value);
+      setActiveProductRowIdx(rowIdx);
+      setAddProductDlgChoice('sub');
+      setSelectedMainProduct('');
+      setNewSubProductVal('');
+      setAddProductError('');
+      setShowAddProductDlg(true);
+      return;
+    }
+
+    let finalVal = official;
+    const lower = official.toLowerCase();
+    const isMain = lower in mainNames;
+    const mainsForSub = subMap[lower];
+    const isSub = !!mainsForSub;
+
+    if (isMain && !isSub) {
+      finalVal = official;
+    } else if (!isMain && isSub && mainsForSub.length === 1) {
+      finalVal = `${mainsForSub[0]} - ${official}`;
+    } else if (isSub && mainsForSub.length > 1) {
+      setEnteredProductVal(official);
+      setActiveProductRowIdx(rowIdx);
+      setAmbiguousOptions(mainsForSub);
+      setShowAmbiguityDlg(true);
+      return;
+    }
+
+    let updatedRows: any[] = [];
+    setLiveProdRows(prev => {
+      const updated = [...prev];
+      updated[rowIdx] = { ...updated[rowIdx], product_name: finalVal.toUpperCase(), is_changed: true };
+      updatedRows = updated;
+      return updated;
+    });
+
+    // Save immediately!
+    setTimeout(() => {
+      if (updatedRows.length > 0) {
+        saveLiveProductionState(false, updatedRows);
+      }
+    }, 50);
+  };
+
+  const confirmAddProduct = async () => {
+    let mainP = '';
+    let subP = '';
+    let subList: string[] = [];
+
+    if (addProductDlgChoice === 'sub') {
+      if (!selectedMainProduct) {
+        setAddProductError('Please select a main product!');
+        return;
+      }
+      mainP = selectedMainProduct;
+      subP = enteredProductVal;
+      subList = [subP];
+    } else {
+      mainP = enteredProductVal;
+      subP = newSubProductVal.trim();
+      if (subP) {
+        subList = [subP];
+      }
+    }
+
+    setLoading(true);
+    const [success, msg] = await ProductMasterAPI.addProduct(mainP, subList);
+    setLoading(false);
+
+    if (success) {
+      await loadMasterProducts();
+      const finalVal = (addProductDlgChoice === 'sub' || subP) ? `${mainP} - ${subP}` : mainP;
+      
+      setLiveProdRows(prev => {
+        const updated = [...prev];
+        updated[activeProductRowIdx] = { 
+          ...updated[activeProductRowIdx], 
+          product_name: finalVal.toUpperCase(), 
+          is_changed: true 
+        };
+        return updated;
+      });
+      setShowAddProductDlg(false);
+      onShowToast('Product added to master list successfully.', 'success');
+    } else {
+      setAddProductError(String(msg));
+    }
+  };
+
+  const resolveAmbiguity = (selectedMain: string) => {
+    const finalVal = `${selectedMain} - ${enteredProductVal}`;
+    setLiveProdRows(prev => {
+      const updated = [...prev];
+      updated[activeProductRowIdx] = { 
+        ...updated[activeProductRowIdx], 
+        product_name: finalVal.toUpperCase(), 
+        is_changed: true 
+      };
+      return updated;
+    });
+    setShowAmbiguityDlg(false);
+  };
+
+  const handleLpFieldChange = (rowIdx: number, field: string, val: string) => {
+    setLiveProdRows(prev => {
+      const updated = [...prev];
+      const r = { ...updated[rowIdx] };
+      if (field === 'balance_qty') {
+        r.balance_qty = parseFloat(val) || 0;
+      } else if (field === 'qty_unit') {
+        r.qty_unit = val.toLowerCase();
+      } else {
+        r[field] = val.toUpperCase();
+      }
+      r.is_changed = true;
+      updated[rowIdx] = r;
+      return updated;
+    });
+  };
+
+  const handleLpStatusClick = (rowIdx: number, stage: 'production' | 'qc' | 'filteration' | 'fg') => {
+    const row = liveProdRows[rowIdx];
+    let allowed = false;
+
+    if (stage === 'production') {
+      allowed = !!(row.customer_name && row.product_name && row.batch_no && row.balance_qty > 0);
+    } else if (stage === 'qc') {
+      allowed = !!(row.customer_name && row.product_name && row.batch_no && row.balance_qty > 0 && row.production_status === 'ok');
+    } else if (stage === 'filteration') {
+      allowed = !!(row.customer_name && row.product_name && row.batch_no && row.balance_qty > 0 && row.production_status === 'ok' && row.qc_status === 'ok');
+    } else if (stage === 'fg') {
+      allowed = !!(row.customer_name && row.product_name && row.batch_no && row.balance_qty > 0 && row.production_status === 'ok' && row.qc_status === 'ok' && row.filteration_status === 'ok');
+    }
+
+    if (!allowed) {
+      onShowToast('Access Restricted: Please complete previous workflow steps first.', 'warning');
+      return;
+    }
+
+    setLpStatusActiveRowIdx(rowIdx);
+    setLpStatusActiveStage(stage);
+    setShowLpStatusModal(true);
+  };
+
+  const updateLpStatus = (statusVal: 'ok' | 'not_ok') => {
+    const idx = lpStatusActiveRowIdx;
+    const stage = lpStatusActiveStage;
+    if (idx === -1) return;
+
+    let updatedRows: any[] = [];
+    setLiveProdRows(prev => {
+      const updated = [...prev];
+      const row = { ...updated[idx] };
+      const statusField = `${stage}_status`;
+      row[statusField] = statusVal;
+
+      if (stage === 'production' && statusVal !== 'ok') {
+        row.qc_status = 'waiting';
+        row.filteration_status = 'waiting';
+        row.fg_status = 'waiting';
+      } else if (stage === 'qc' && statusVal !== 'ok') {
+        row.filteration_status = 'waiting';
+        row.fg_status = 'waiting';
+      } else if (stage === 'filteration' && statusVal !== 'ok') {
+        row.fg_status = 'waiting';
+      }
+
+      row.is_changed = true;
+      updated[idx] = row;
+      updatedRows = updated;
+      return updated;
+    });
+
+    setShowLpStatusModal(false);
+
+    // Save immediately!
+    setTimeout(() => {
+      if (updatedRows.length > 0) {
+        saveLiveProductionState(false, updatedRows);
+      }
+    }, 50);
+
+    if (stage === 'fg' && statusVal === 'ok') {
+      setLpDestActiveRowIdx(idx);
+      setShowLpDestModal(true);
+    }
+  };
+
+  const runConsolidation = async (destinationType: 'rm' | 'fg') => {
+    const rowIdx = lpDestActiveRowIdx;
+    if (rowIdx === -1) return;
+    const row = liveProdRows[rowIdx];
+
+    setLpDestLoading(true);
+    const finalQty = row.total_qty > 0 ? row.total_qty : row.balance_qty;
+    const todayStr = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
+
+    let targetSuccess = false;
+    let targetMsg = '';
+
+    if (destinationType === 'rm') {
+      const [success, res] = await RMStockAPI.consolidateFromLive(
+        productName,
+        row.product_name,
+        row.batch_no,
+        row.customer_name,
+        row.balance_qty,
+        row.total_qty
+      );
+      targetSuccess = success;
+      targetMsg = String(res);
+    } else {
+      const [success, res] = await FinishGoodAPI.consolidateFromLive(
+        productName,
+        row.product_name,
+        row.batch_no,
+        row.customer_name,
+        row.balance_qty,
+        row.total_qty
+      );
+      targetSuccess = success;
+      targetMsg = String(res);
+    }
+
+    const dpPayload = {
+      product_name_db: productName,
+      date: todayStr,
+      customer_name: row.customer_name,
+      product_name_field: row.product_name,
+      batch_no: row.batch_no,
+      qty: finalQty,
+      qty_unit: row.qty_unit,
+      charged_by: row.charged_by
+    };
+    const [dpSuccess, dpMsg] = await DailyProductionAPI.consolidateFromLive(dpPayload);
+
+    setLpDestLoading(false);
+
+    if (targetSuccess && dpSuccess) {
+      setLiveProdRows(prev => {
+        const updated = [...prev];
+        updated[rowIdx] = { ...updated[rowIdx], is_hidden: true, is_changed: true };
+        return updated;
+      });
+      setShowLpDestModal(false);
+      onShowToast(`Batch consolidated successfully to ${destinationType === 'rm' ? 'RM Stock' : 'Finish Good'} and Daily Production!`, 'success');
+      setTimeout(() => saveLiveProductionState(false), 200);
+    } else if (targetSuccess && !dpSuccess) {
+      setLiveProdRows(prev => {
+        const updated = [...prev];
+        updated[rowIdx] = { ...updated[rowIdx], is_hidden: true, is_changed: true };
+        return updated;
+      });
+      setShowLpDestModal(false);
+      onShowToast(`WARNING: Moved to ${destinationType === 'rm' ? 'RM Stock' : 'Finish Good'}, but DP consolidation failed: ${dpMsg}`, 'warning');
+      setTimeout(() => saveLiveProductionState(false), 200);
+    } else {
+      onShowToast(`Failed to consolidate: ${targetMsg}`, 'error');
+    }
+  };
+
+  const handleOpenLpPkg = (rowIdx: number) => {
+    const row = liveProdRows[rowIdx];
+    if (!row.customer_name || !row.product_name || !row.batch_no || !(row.balance_qty > 0)) {
+      onShowToast('Please complete Customer, Product Name, Batch, and Qty first.', 'warning');
+      return;
+    }
+    setLpPkgActiveIdx(rowIdx);
+    setNewLpPkg({ size: '', packets: '', unit: 'kgs' });
+    setShowLpPkgModal(true);
+  };
+
+  const addLpPkg = () => {
+    const rowIdx = lpPkgActiveIdx;
+    if (rowIdx === -1) return;
+
+    const sizeVal = parseFloat(newLpPkg.size);
+    const packVal = parseInt(newLpPkg.packets);
+    if (isNaN(sizeVal) || isNaN(packVal) || sizeVal <= 0 || packVal <= 0) {
+      onShowToast('Please enter a valid size and packets count.', 'warning');
+      return;
+    }
+
+    const row = liveProdRows[rowIdx];
+    const currentTotal = row.packaging_entries.reduce((sum: number, p: any) => sum + (parseFloat(p.size) * (parseInt(p.packets) || 0)), 0);
+    const addedQty = sizeVal * packVal;
+
+    if (currentTotal + addedQty > row.balance_qty) {
+      onShowToast(`Limit Exceeded! Available balance is ${(row.balance_qty - currentTotal).toFixed(2)} ${row.qty_unit}.`, 'error');
+      return;
+    }
+
+    let updatedRows: any[] = [];
+    setLiveProdRows(prev => {
+      const updated = [...prev];
+      const targetRow = { ...updated[rowIdx] };
+      targetRow.packaging_entries = [...targetRow.packaging_entries, { size: String(sizeVal), packets: packVal, unit: newLpPkg.unit }];
+      targetRow.total_qty = currentTotal + addedQty;
+      targetRow.is_changed = true;
+      updated[rowIdx] = targetRow;
+      updatedRows = updated;
+      return updated;
+    });
+
+    setNewLpPkg({ size: '', packets: '', unit: 'kgs' });
+
+    // Save immediately!
+    setTimeout(() => {
+      if (updatedRows.length > 0) {
+        saveLiveProductionState(false, updatedRows);
+      }
+    }, 50);
+  };
+
+  const removeLpPkg = (pkgIdx: number) => {
+    const rowIdx = lpPkgActiveIdx;
+    if (rowIdx === -1) return;
+
+    let updatedRows: any[] = [];
+    setLiveProdRows(prev => {
+      const updated = [...prev];
+      const targetRow = { ...updated[rowIdx] };
+      const updatedEntries = targetRow.packaging_entries.filter((_: any, idx: number) => idx !== pkgIdx);
+      targetRow.packaging_entries = updatedEntries;
+      targetRow.total_qty = updatedEntries.reduce((sum: number, p: any) => sum + (parseFloat(p.size) * (parseInt(p.packets) || 0)), 0);
+      targetRow.is_changed = true;
+      updated[rowIdx] = targetRow;
+      updatedRows = updated;
+      return updated;
+    });
+
+    // Save immediately!
+    setTimeout(() => {
+      if (updatedRows.length > 0) {
+        saveLiveProductionState(false, updatedRows);
+      }
+    }, 50);
+  };
+
+  const addLpRow = () => {
+    setLiveProdRows(prev => {
+      const nextIdx = prev.length;
+      return [...prev, {
+        customer_name: '',
+        product_name: '',
+        batch_no: '',
+        balance_qty: 0,
+        qty_unit: 'kgs',
+        charged_by: '',
+        packaging_entries: [] as any[],
+        total_qty: 0,
+        production_status: 'waiting',
+        qc_status: 'waiting',
+        filteration_status: 'waiting',
+        fg_status: 'waiting',
+        is_hidden: false,
+        row_index: nextIdx,
+        is_changed: true
+      }];
+    });
+  };
+
+  const deleteLpRow = () => {
+    if (liveProdRows.length > 1) {
+      setLiveProdRows(prev => prev.slice(0, -1));
+      setTimeout(() => saveLiveProductionState(false), 200);
+    }
+  };
+
+  const clearLpAll = () => {
+    if (window.confirm("WARNING: This will clear all current entries from the screen. Are you sure you want to proceed?")) {
+      setLiveProdRows(Array.from({ length: 20 }, (_, i) => ({
+        customer_name: '',
+        product_name: '',
+        batch_no: '',
+        balance_qty: 0,
+        qty_unit: 'kgs',
+        charged_by: '',
+        packaging_entries: [] as any[],
+        total_qty: 0,
+        production_status: 'waiting',
+        qc_status: 'waiting',
+        filteration_status: 'waiting',
+        fg_status: 'waiting',
+        is_hidden: false,
+        row_index: i,
+        is_changed: false
+      })));
+      onShowToast('All live production data cleared from view.', 'info');
+    }
+  };
+
+  const exportLiveProdToExcel = () => {
+    const activeRows = liveProdRows.filter(r => r.product_name && !r.is_hidden);
+    if (activeRows.length === 0) {
+      onShowToast('No active data to export.', 'warning');
+      return;
+    }
+
+    const headers = ["Customer Name", "Product Name", "Batch No.", "Qty", "Unit", "Charged By", "Packaging Details", "Status"];
+    const body = activeRows.map(row => {
+      const pkgStr = row.packaging_entries.map((p: any) => `${p.packets} x ${p.size} ${p.unit}`).join('\n');
+      const statusStr = `Prod: ${row.production_status.toUpperCase()}\nQC: ${row.qc_status.toUpperCase()}\nFilt: ${row.filteration_status.toUpperCase()}\nFG: ${row.fg_status.toUpperCase()}`;
+      return [
+        row.customer_name,
+        row.product_name,
+        row.batch_no,
+        row.balance_qty,
+        row.qty_unit.toUpperCase(),
+        row.charged_by,
+        pkgStr,
+        statusStr
+      ];
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...body]);
+    ws['!cols'] = [
+      { wch: 22 },
+      { wch: 38 },
+      { wch: 18 },
+      { wch: 12 },
+      { wch: 8 },
+      { wch: 18 },
+      { wch: 30 },
+      { wch: 25 }
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, "Live Production");
+    const timestamp = new Date().toISOString().slice(0,19).replace(/[-T:]/g,"_");
+    XLSX.writeFile(wb, `Live_Production_${timestamp}.xlsx`);
+    onShowToast('Live Production report exported to Excel.', 'success');
+  };
+
+  const exportLiveProdToPdf = () => {
+    const activeRows = liveProdRows.filter(r => r.product_name && !r.is_hidden);
+    if (activeRows.length === 0) {
+      onShowToast('No active data to export.', 'warning');
+      return;
+    }
+
+    const doc = new jsPDF('l', 'mm', 'a4');
+    const todayStr = new Date().toLocaleDateString('en-GB');
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(15, 23, 42);
+    doc.text("LIVE PRODUCTION REPORT", 148, 15, { align: "center" });
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Department: Production Department`, 15, 22);
+    doc.text(`Date Printed: ${todayStr}`, 282, 22, { align: "right" });
+
+    const headers = [["Sr.", "Customer", "Product Name", "Batch No.", "Qty", "Unit", "Charged By", "Packaging Details", "Status"]];
+    const body = activeRows.map((row, idx) => {
+      const pkgStr = row.packaging_entries.map((p: any) => `${p.packets}x${p.size}${p.unit}`).join(', ');
+      const statusStr = `Prod: ${row.production_status.toUpperCase()} | QC: ${row.qc_status.toUpperCase()} | Filt: ${row.filteration_status.toUpperCase()} | FG: ${row.fg_status.toUpperCase()}`;
+      return [
+        idx + 1,
+        row.customer_name,
+        row.product_name,
+        row.batch_no,
+        row.balance_qty,
+        row.qty_unit.toUpperCase(),
+        row.charged_by,
+        pkgStr,
+        statusStr
+      ];
+    });
+
+    autoTable(doc, {
+      head: headers,
+      body: body,
+      startY: 28,
+      theme: 'grid',
+      styles: { fontSize: 8.5, cellPadding: 2, halign: 'center', valign: 'middle' },
+      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
+      columnStyles: {
+        0: { cellWidth: 10 },
+        1: { cellWidth: 35 },
+        2: { cellWidth: 50 },
+        3: { cellWidth: 25 },
+        4: { cellWidth: 15 },
+        5: { cellWidth: 12 },
+        6: { cellWidth: 25 },
+        7: { cellWidth: 50 },
+        8: { cellWidth: 40 }
+      }
+    });
+
+    const timestamp = new Date().toISOString().slice(0,19).replace(/[-T:]/g,"_");
+    doc.save(`Live_Production_${timestamp}.pdf`);
+    onShowToast('Live Production report exported to PDF.', 'success');
+  };
+
+
+  useEffect(() => {
+    // Reset tabs on view change
+    setActiveTab('entry');
+    // Clear debounce timers
+    return () => {
+      Object.values(debounceTimers.current).forEach(clearTimeout);
+    };
+  }, [activeSubView]);
+
+  // Preload batch from sessionStorage if routed from Production Formulations
+  useEffect(() => {
+    if (activeSubView === 'formulation_sheet') {
+      const preloadedBatch = sessionStorage.getItem('bpbs_preloaded_batch');
+      if (preloadedBatch) {
+        sessionStorage.removeItem('bpbs_preloaded_batch');
+        setBpbsHeader(prev => ({ ...prev, batch_no: preloadedBatch }));
+        handleBPBSLoad(preloadedBatch);
+      }
+    }
+  }, [activeSubView]);
+
+  // General keyboard cell focus helper
+  const handleGridKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    rowIndex: number,
+    colIndex: number,
+    colKeys: string[],
+    maxRows: number,
+    prefix: string
+  ) => {
+    let targetRow = rowIndex;
+    let targetCol = colIndex;
+
+    if (e.key === 'ArrowUp') {
+      targetRow = Math.max(0, rowIndex - 1);
+    } else if (e.key === 'ArrowDown' || e.key === 'Enter') {
+      targetRow = Math.min(maxRows - 1, rowIndex + 1);
+      e.preventDefault();
+    } else if (e.key === 'ArrowLeft') {
+      targetCol = Math.max(0, colIndex - 1);
+    } else if (e.key === 'ArrowRight') {
+      targetCol = Math.min(colKeys.length - 1, colIndex + 1);
+    } else {
+      return;
+    }
+
+    if (prefix === 'fg' && colKeys[targetCol] === 'particulars') {
+      setEditingParticularsIdx(targetRow);
+      setTimeout(() => {
+        const id = `fg-input-${targetRow}-particulars`;
+        const element = document.getElementById(id);
+        if (element) {
+          (element as HTMLInputElement).focus();
+          (element as HTMLInputElement).select();
+        }
+      }, 50);
+      return;
+    }
+
+    if (prefix === 'rms' && colKeys[targetCol] === 'particulars') {
+      setEditingRmsParticularsIdx(targetRow);
+      setTimeout(() => {
+        const id = `rms-input-${targetRow}-particulars`;
+        const element = document.getElementById(id);
+        if (element) {
+          (element as HTMLInputElement).focus();
+          (element as HTMLInputElement).select();
+        }
+      }, 50);
+      return;
+    }
+
+    const id = `${prefix}-input-${targetRow}-${colKeys[targetCol]}`;
+    const element = document.getElementById(id);
+    if (element) {
+      (element as HTMLInputElement).focus();
+      (element as HTMLInputElement).select();
+    }
+  };
+
+  // ==========================================================================
+  // 1. PERFECT BATCH SHEET (BPBS - bpbs.py)
+  // ==========================================================================
+  const [bpbsHeader, setBpbsHeader] = useState({
+    batch_size: '1000',
+    date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-'),
+    batch_no: '',
+    product: '',
+    customer: '',
+    ref_no: '',
+    batch_started_at: '',
+    batch_completed_on: ''
+  });
+
+  const [bpbsRecipe, setBpbsRecipe] = useState<any[]>(() => {
+    return Array.from({ length: 30 }, (_, i) => ({
+      sr_no: String(i + 1),
+      item: '',
+      qty1: '',
+      qty2: '',
+      mrno: '',
+      inputtime: '',
+      chargedby: ''
+    }));
+  });
+
+  const [bpbsQc, setBpbsQc] = useState({
+    material: '',
+    qa_status: '',
+    filtered_by: '',
+    weighted_by: '',
+    sample_given: '',
+    machine_no: '',
+    checked_by: '',
+    status: '',
+    filter_no: '',
+    packing_material: '',
+    density: '',
+    viscosity: '',
+    tested_by: '',
+    solid: '',
+    qty_packed: '',
+    tank_cleaning_check: '',
+    formulation: '',
+    tare_weight: '',
+    gross_weight: '',
+    net_weight: '',
+    packed_by: '',
+    signature_approval: '',
+    signature_check: ''
+  });
+
+  // Calculate BPBS recipe items total weight dynamically
+  const bpbsTotalQty = bpbsRecipe.reduce((sum, item) => {
+    const q1 = parseFloat(item.qty1) || 0;
+    const q2 = parseFloat(item.qty2) || 0;
+    return sum + q1 + q2;
+  }, 0);
+
+  // Auto time focus handler
+  const handleTimeFieldFocus = (idx: number, field: 'inputtime') => {
+    if (!bpbsRecipe[idx][field]) {
+      const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+      updateBPBSRow(idx, field, timeStr);
+    }
+  };
+
+  const updateBPBSHeader = (field: string, val: string) => {
+    setBpbsHeader(prev => {
+      const updated = { ...prev, [field]: val };
+      debouncedBPBSSave(updated, bpbsRecipe, bpbsQc);
+      return updated;
+    });
+  };
+
+  const updateBPBSRow = (idx: number, field: string, val: string) => {
+    setBpbsRecipe(prev => {
+      const updated = [...prev];
+      updated[idx] = { ...updated[idx], [field]: val };
+      debouncedBPBSSave(bpbsHeader, updated, bpbsQc);
+      return updated;
+    });
+  };
+
+  const updateBPBSQc = (field: string, val: string) => {
+    setBpbsQc(prev => {
+      const updated = { ...prev, [field]: val };
+      debouncedBPBSSave(bpbsHeader, bpbsRecipe, updated);
+      return updated;
+    });
+  };
+
+  const debouncedBPBSSave = (header: any, recipe: any[], qc: any) => {
+    if (!header.batch_no) return;
+    const key = `bpbs_save_${header.batch_no}`;
+    if (debounceTimers.current[key]) clearTimeout(debounceTimers.current[key]);
+
+    debounceTimers.current[key] = window.setTimeout(async () => {
+      const payload = {
+        ...header,
+        ...qc,
+        raw_materials: recipe.filter(r => r.item || r.qty1)
+      };
+      await BatchProductionSheetAPI.saveSheet(productName, payload);
+    }, 1500);
+  };
+
+  const handleBPBSLoad = async (batchNoOverride?: string) => {
+    const targetBatchNo = batchNoOverride || bpbsHeader.batch_no;
+    if (!targetBatchNo) {
+      onShowToast('Please enter a Batch No. to load.', 'warning');
+      return;
+    }
+
+    setLoading(true);
+    // 1. Try Loading Saved Batch Sheet
+    const [savedSuccess, savedData] = await BatchProductionSheetAPI.getSheet(productName, targetBatchNo);
+    
+    if (savedSuccess && savedData && typeof savedData !== 'string') {
+      const s: any = savedData;
+      setBpbsHeader({
+        batch_size: String(s.batch_size || '1000'),
+        date: s.date || bpbsHeader.date,
+        batch_no: s.batch_no || targetBatchNo,
+        product: s.product || '',
+        customer: s.customer || '',
+        ref_no: s.ref_no || '',
+        batch_started_at: s.batch_started || '',
+        batch_completed_on: s.batch_completed || ''
+      });
+
+      setBpbsQc({
+        material: s.qa_material || '',
+        qa_status: s.qa_status || '',
+        filtered_by: s.filtered_by || '',
+        weighted_by: s.weighted_by || '',
+        sample_given: s.sample_given || '',
+        machine_no: s.machine_no || '',
+        checked_by: s.checked_by || '',
+        status: s.qa_final_status || '',
+        filter_no: s.filter_no || '',
+        packing_material: s.packing_material || '',
+        density: s.density || '',
+        viscosity: s.viscosity || '',
+        tested_by: s.tested_by || '',
+        solid: s.solid || '',
+        qty_packed: s.qty_packed || '',
+        tank_cleaning_check: s.tank_cleaning || '',
+        formulation: s.formulation || '',
+        tare_weight: s.tare_weight || '',
+        gross_weight: s.gross_weight || '',
+        net_weight: s.net_weight || '',
+        packed_by: s.packed_by || '',
+        signature_approval: s.signature_approval || '',
+        signature_check: s.signature_check || ''
+      });
+
+      const raw = s.raw_materials || [];
+      const populatedRecipe = Array.from({ length: 30 }, (_, i) => {
+        const item = raw[i] || {};
+        return {
+          sr_no: String(i + 1),
+          item: item.item || item.raw_material || item.material || '',
+          qty1: item.qty1 || item.qty || '',
+          qty2: item.qty2 || '',
+          mrno: item.mrno || item.mr_no || item.mr || '',
+          inputtime: item.inputtime || '',
+          chargedby: item.chargedby || ''
+        };
+      });
+      setBpbsRecipe(populatedRecipe);
+      setLoading(false);
+      onShowToast(`Saved sheet for Batch ${targetBatchNo} loaded successfully.`, 'success');
+      return;
+    }
+
+    // 2. Fallback to Lab Master Formulation (Hub Source)
+    const [lmfSuccess, lmfData] = await LabFormulationsAPI.getLmfBatchDetail(productName, targetBatchNo);
+    setLoading(false);
+
+    if (lmfSuccess && lmfData && typeof lmfData !== 'string') {
+      const l: any = lmfData;
+      const inventory = l.inventory || [];
+      const form = l.form || {};
+      
+      const totalGrams = parseFloat(l.grams) || 100.0;
+      const totalBaseQty = inventory.reduce((sum: number, item: any) => sum + (parseFloat(item.qty) || 0), 0);
+      const targetMultiplier = parseFloat(bpbsHeader.batch_size) || 1000;
+
+      setBpbsHeader(prev => ({
+        ...prev,
+        batch_no: targetBatchNo,
+        product: form['PRODUCT NAME'] || '',
+        customer: form['CUSTOMER NAME'] || '',
+        ref_no: String(form['REF NO'] || '')
+      }));
+
+      const calculatedRecipe = Array.from({ length: 30 }, (_, i) => {
+        const item = inventory[i] || {};
+        let calculatedWeight = '';
+        if (item.qty && totalBaseQty > 0) {
+          calculatedWeight = ((parseFloat(item.qty) / totalBaseQty) * targetMultiplier).toFixed(2);
+        }
+        return {
+          sr_no: String(i + 1),
+          item: item.raw_material || item.material || item.item || '',
+          qty1: calculatedWeight,
+          qty2: '',
+          mrno: item.mr_no || item.mr || item.mrno || '',
+          inputtime: '',
+          chargedby: ''
+        };
+      });
+
+      setBpbsRecipe(calculatedRecipe);
+      onShowToast(`Lab Master Formulation synced for Batch ${targetBatchNo}.`, 'success');
+    } else {
+      onShowToast('Could not load batch from saved sheets or Lab Master records.', 'error');
+    }
+  };
+
+  const handleBPBSSubmitAndExport = async () => {
+    if (!bpbsHeader.batch_no) {
+      onShowToast('Batch No. is required to save and export.', 'warning');
+      return;
+    }
+
+    setLoading(true);
+    const payload = {
+      ...bpbsHeader,
+      ...bpbsQc,
+      raw_materials: bpbsRecipe.filter(r => r.item || r.qty1)
+    };
+    
+    const [success, response] = await BatchProductionSheetAPI.saveSheet(productName, payload);
+    setLoading(false);
+
+    if (success) {
+      onShowToast('Batch sheet saved to DB successfully! Generating Excel...', 'success');
+      
+      // Build Excel Sheet
+      const wb = XLSX.utils.book_new();
+      
+      const headerData = [
+        ['COLORTEK PERFECT BATCH SHEET', ''],
+        [],
+        ['Batch Size (kg)', bpbsHeader.batch_size, 'Date', bpbsHeader.date, 'Batch No', bpbsHeader.batch_no],
+        ['Product', bpbsHeader.product, 'Customer', bpbsHeader.customer, 'Ref. No.', bpbsHeader.ref_no],
+        ['Batch Started', bpbsHeader.batch_started_at, 'Batch Ended', bpbsHeader.batch_completed_on, '', ''],
+        [],
+        ['Sr. No.', 'Item Description', 'Qty. Used I (kg)', 'Qty. Used II (kg)', 'M.R. No.', 'Input Time', 'Charged By']
+      ];
+
+      bpbsRecipe.forEach((r, idx) => {
+        if (r.item || r.qty1) {
+          headerData.push([
+            String(idx + 1), r.item, r.qty1, r.qty2, r.mrno, r.inputtime, r.chargedby
+          ]);
+        }
+      });
+
+      headerData.push(
+        [],
+        ['QUALITY CONTROL & TESTING'],
+        ['QA Material', bpbsQc.material, 'QA Status', bpbsQc.qa_status, 'Filtered By', bpbsQc.filtered_by],
+        ['Weighted By', bpbsQc.weighted_by, 'Sample Given', bpbsQc.sample_given, 'Machine No', bpbsQc.machine_no],
+        ['Checked By', bpbsQc.checked_by, 'Final Status', bpbsQc.status, 'Filter No', bpbsQc.filter_no],
+        [],
+        ['TESTING & SPECIFICATIONS'],
+        ['Packing Material', bpbsQc.packing_material, 'Density', bpbsQc.density, 'Viscosity', bpbsQc.viscosity],
+        ['Tested By', bpbsQc.tested_by, 'Solid Content', `${bpbsQc.solid}%`, '', ''],
+        [],
+        ['PRODUCTION DETAILS'],
+        ['Qty Packed', bpbsQc.qty_packed, 'Tank Cleaning', bpbsQc.tank_cleaning_check, 'Formulation', bpbsQc.formulation],
+        ['Tare Weight', bpbsQc.tare_weight, 'Gross Weight', bpbsQc.gross_weight, 'Net Weight', bpbsQc.net_weight],
+        ['Packed By', bpbsQc.packed_by, '', '', '', ''],
+        [],
+        ['Formula Approval', bpbsQc.signature_approval, 'Formula Checked By', bpbsQc.signature_check]
+      );
+
+      const ws = XLSX.utils.aoa_to_sheet(headerData);
+      XLSX.utils.book_append_sheet(wb, ws, 'Batch Sheet');
+      XLSX.writeFile(wb, `Batch_Sheet_${bpbsHeader.batch_no}.xlsx`);
+    } else {
+      onShowToast(`Save failed: ${response}`, 'error');
+    }
+  };
+
+  const handleBPBSClear = () => {
+    setBpbsHeader({
+      batch_size: '1000',
+      date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-'),
+      batch_no: '',
+      product: '',
+      customer: '',
+      ref_no: '',
+      batch_started_at: '',
+      batch_completed_on: ''
+    });
+
+    setBpbsRecipe(Array.from({ length: 30 }, (_, i) => ({
+      sr_no: String(i + 1),
+      item: '',
+      qty1: '',
+      qty2: '',
+      mrno: '',
+      inputtime: '',
+      chargedby: ''
+    })));
+
+    setBpbsQc({
+      material: '',
+      qa_status: '',
+      filtered_by: '',
+      weighted_by: '',
+      sample_given: '',
+      machine_no: '',
+      checked_by: '',
+      status: '',
+      filter_no: '',
+      packing_material: '',
+      density: '',
+      viscosity: '',
+      tested_by: '',
+      solid: '',
+      qty_packed: '',
+      tank_cleaning_check: '',
+      formulation: '',
+      tare_weight: '',
+      gross_weight: '',
+      net_weight: '',
+      packed_by: '',
+      signature_approval: '',
+      signature_check: ''
+    });
+
+    onShowToast('Batch sheet inputs wiped successfully.', 'info');
+  };
+
+  // ==========================================================================
+  // 2. DISPATCH REGISTER (dispatch_register.py) & HISTORY
+  // ==========================================================================
+  const [drHeader, setDrHeader] = useState({
+    dispatch_date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'),
+    customer_name: ''
+  });
+
+  const [drRows, setDrRows] = useState<any[]>(() => {
+    return Array.from({ length: 20 }, (_, i) => ({
+      id: null,
+      product_name_field: '',
+      batch_no: '',
+      packaging_details: [] as any[],
+      total_qty: 0,
+      selected_fg_id: null,
+      available_batches: [] as any[],
+      batch_balances: {} as Record<string, number>
+    }));
+  });
+
+  // Autocomplete state
+  const [productSearch, setProductSearch] = useState({ activeIndex: -1, query: '', list: [] as string[] });
+  const [batchSearch, setBatchSearch] = useState({ activeIndex: -1, query: '', list: [] as any[] });
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [showBatchModal, setShowBatchModal] = useState(false);
+
+  // Manage Packaging Modal
+  const [showPkgModal, setShowPkgModal] = useState(false);
+  const [pkgActiveIdx, setPkgActiveIdx] = useState(-1);
+  const [newPkg, setNewPkg] = useState({ size: '', packets: '', unit: 'kgs' });
+
+  const drGrandTotal = drRows.reduce((sum, row) => sum + (row.total_qty || 0), 0);
+
+  const loadDrProducts = async () => {
+    const [success, data] = await DispatchRegisterAPI.getFgProductsList(productName);
+    if (success && data && typeof data !== 'string') {
+      setProductSearch(prev => ({ ...prev, list: data.products || [] }));
+    }
+  };
+
+  useEffect(() => {
+    if (activeSubView === 'dispatch_register') {
+      loadDrProducts();
+    }
+  }, [activeSubView]);
+
+  const handleDrProductClick = (rowIdx: number) => {
+    setProductSearch(prev => ({ ...prev, query: '', activeIndex: rowIdx }));
+    setShowProductModal(true);
+  };
+
+  const selectDrProduct = async (prod: string) => {
+    const rowIdx = productSearch.activeIndex;
+    if (rowIdx === -1) return;
+
+    setDrRows(prev => {
+      const updated = [...prev];
+      updated[rowIdx] = {
+        ...updated[rowIdx],
+        product_name_field: prod,
+        batch_no: '',
+        packaging_details: [],
+        total_qty: 0,
+        available_batches: [],
+        batch_balances: {}
+      };
+      return updated;
+    });
+
+    setShowProductModal(false);
+
+    // Fetch batches for this product
+    const [success, data] = await DispatchRegisterAPI.getFgBatchesByProduct(productName, prod);
+    if (success && data && typeof data !== 'string') {
+      const batches = data.batches || [];
+      const balances: Record<string, number> = {};
+      batches.forEach((b: any) => {
+        balances[String(b.batch_no).trim()] = parseFloat(b.balance) || 0;
+      });
+
+      setDrRows(prev => {
+        const updated = [...prev];
+        updated[rowIdx] = {
+          ...updated[rowIdx],
+          available_batches: batches,
+          batch_balances: balances
+        };
+        return updated;
+      });
+    }
+  };
+
+  const handleDrBatchClick = (rowIdx: number) => {
+    const row = drRows[rowIdx];
+    if (!row.product_name_field) {
+      onShowToast('Please select a Product first.', 'warning');
+      return;
+    }
+    setBatchSearch(prev => ({ ...prev, query: '', activeIndex: rowIdx, list: row.available_batches || [] }));
+    setShowBatchModal(true);
+  };
+
+  const selectDrBatch = (batchNo: string, fgId: any) => {
+    const rowIdx = batchSearch.activeIndex;
+    if (rowIdx === -1) return;
+
+    setDrRows(prev => {
+      const updated = [...prev];
+      updated[rowIdx] = {
+        ...updated[rowIdx],
+        batch_no: batchNo,
+        selected_fg_id: fgId
+      };
+      debouncedDrSave(rowIdx, updated[rowIdx]);
+      return updated;
+    });
+    setShowBatchModal(false);
+  };
+
+  const handleDrPkgClick = (rowIdx: number) => {
+    const row = drRows[rowIdx];
+    if (!row.product_name_field || !row.batch_no) {
+      onShowToast('Please select a Product and Batch first.', 'warning');
+      return;
+    }
+    setPkgActiveIdx(rowIdx);
+    setNewPkg({ size: '', packets: '', unit: 'kgs' });
+    setShowPkgModal(true);
+  };
+
+  const addDrPkg = () => {
+    const rowIdx = pkgActiveIdx;
+    if (rowIdx === -1) return;
+
+    const sizeVal = parseFloat(newPkg.size);
+    const packVal = parseInt(newPkg.packets);
+    if (isNaN(sizeVal) || isNaN(packVal) || sizeVal <= 0 || packVal <= 0) {
+      onShowToast('Please enter valid size and packets.', 'warning');
+      return;
+    }
+
+    const row = drRows[rowIdx];
+    const maxBalance = row.batch_balances[row.batch_no] || 0;
+    const currentTotal = row.packaging_details.reduce((sum: number, p: any) => sum + (parseFloat(p.size) * (parseInt(p.packets) || 0)), 0);
+    const addedQty = sizeVal * packVal;
+
+    if (currentTotal + addedQty > maxBalance) {
+      onShowToast(`⛔ Limit Exceeded! Available balance is ${maxBalance} kg.`, 'error');
+      return;
+    }
+
+    const updatedPkg = [...row.packaging_details, { size: String(sizeVal), packets: packVal, unit: newPkg.unit }];
+    const newTotal = currentTotal + addedQty;
+
+    setDrRows(prev => {
+      const updated = [...prev];
+      updated[rowIdx] = {
+        ...updated[rowIdx],
+        packaging_details: updatedPkg,
+        total_qty: newTotal
+      };
+      debouncedDrSave(rowIdx, updated[rowIdx]);
+      return updated;
+    });
+
+    setNewPkg({ size: '', packets: '', unit: 'kgs' });
+  };
+
+  const removeDrPkg = (pkgIdx: number) => {
+    const rowIdx = pkgActiveIdx;
+    if (rowIdx === -1) return;
+
+    const row = drRows[rowIdx];
+    const updatedPkg = row.packaging_details.filter((_: any, idx: number) => idx !== pkgIdx);
+    const newTotal = updatedPkg.reduce((sum: number, p: any) => sum + (parseFloat(p.size) * (parseInt(p.packets) || 0)), 0);
+
+    setDrRows(prev => {
+      const updated = [...prev];
+      updated[rowIdx] = {
+        ...updated[rowIdx],
+        packaging_details: updatedPkg,
+        total_qty: newTotal
+      };
+      debouncedDrSave(rowIdx, updated[rowIdx]);
+      return updated;
+    });
+  };
+
+  const debouncedDrSave = (rowIdx: number, row: any) => {
+    const key = `dr_save_${rowIdx}`;
+    if (debounceTimers.current[key]) clearTimeout(debounceTimers.current[key]);
+
+    debounceTimers.current[key] = window.setTimeout(async () => {
+      if (!drHeader.customer_name || !row.batch_no) return;
+      const payload = {
+        id: row.id,
+        customer_name: drHeader.customer_name.trim(),
+        dispatch_date: drHeader.dispatch_date,
+        batch_no: row.batch_no,
+        product_name_field: row.product_name_field,
+        packaging_details: row.packaging_details,
+        total_qty: row.total_qty,
+        selected_fg_id: row.selected_fg_id
+      };
+
+      const [success, res] = await DispatchRegisterAPI.saveEntry(productName, payload);
+      if (success && res && typeof res !== 'string') {
+        const responseData: any = res;
+        if (responseData.new_entry && responseData.new_entry.id) {
+          setDrRows(prev => {
+            const updated = [...prev];
+            updated[rowIdx] = { ...updated[rowIdx], id: responseData.new_entry.id };
+            return updated;
+          });
+        }
+      }
+    }, 1500);
+  };
+
+  const handleDrLoad = async () => {
+    setLoading(true);
+    const [success, data] = await DispatchRegisterAPI.getEntries(productName);
+    setLoading(false);
+
+    if (success && data && typeof data !== 'string') {
+      const res: any = data;
+      const entries = res.entries || [];
+      if (entries.length > 0) {
+        setDrHeader(prev => ({ ...prev, customer_name: entries[0].customer_name || '' }));
+      }
+
+      const populatedRows = Array.from({ length: 20 }, (_, i) => {
+        const entry = entries[i] || {};
+        return {
+          id: entry.id || null,
+          product_name_field: entry.product_name_field || '',
+          batch_no: entry.batch_no || '',
+          packaging_details: entry.packaging_details || [],
+          total_qty: entry.total_qty || 0,
+          selected_fg_id: entry.selected_fg_id || null,
+          available_batches: [],
+          batch_balances: {}
+        };
+      });
+
+      setDrRows(populatedRows);
+      onShowToast('Dispatch Register data loaded successfully.', 'success');
+    } else {
+      onShowToast('No active dispatch records found.', 'info');
+    }
+  };
+
+  const handleDrSubmitAndExport = async () => {
+    if (!drHeader.customer_name) {
+      onShowToast('Customer Name is required.', 'warning');
+      return;
+    }
+
+    setLoading(true);
+    let allSavesSuccessful = true;
+
+    for (let i = 0; i < drRows.length; i++) {
+      const row = drRows[i];
+      if (row.batch_no && row.total_qty > 0) {
+        const payload = {
+          id: row.id,
+          customer_name: drHeader.customer_name.trim(),
+          dispatch_date: drHeader.dispatch_date,
+          batch_no: row.batch_no,
+          product_name_field: row.product_name_field,
+          packaging_details: row.packaging_details,
+          total_qty: row.total_qty,
+          selected_fg_id: row.selected_fg_id
+        };
+
+        const [success] = await DispatchRegisterAPI.saveEntry(productName, payload);
+        if (!success) allSavesSuccessful = false;
+      }
+    }
+
+    setLoading(false);
+
+    if (allSavesSuccessful) {
+      onShowToast('Dispatch entries saved successfully! Generating PDF...', 'success');
+      exportDrToPdf(drHeader.customer_name, drHeader.dispatch_date, drRows);
+    } else {
+      onShowToast('One or more dispatch entries failed to save.', 'error');
+    }
+  };
+
+  const handleDrClear = () => {
+    setDrHeader({
+      dispatch_date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-'),
+      customer_name: ''
+    });
+    setDrRows(Array.from({ length: 20 }, (_, i) => ({
+      id: null,
+      product_name_field: '',
+      batch_no: '',
+      packaging_details: [] as any[],
+      total_qty: 0,
+      selected_fg_id: null,
+      available_batches: [] as any[],
+      batch_balances: {} as Record<string, number>
+    })));
+    onShowToast('Dispatch form cleared.', 'info');
+  };
+
+  // Dispatch History Section
+  const [drHistoryFilters, setDrHistoryFilters] = useState({
+    start_date: '',
+    end_date: '',
+    customer: '',
+    batch: ''
+  });
+  const [drHistoryLogs, setDrHistoryLogs] = useState<any[]>([]);
+
+  const handleDrHistorySearch = async () => {
+    setLoading(true);
+    const [success, data] = await DispatchRegisterAPI.getEntries(
+      productName,
+      drHistoryFilters.start_date,
+      drHistoryFilters.end_date,
+      drHistoryFilters.customer,
+      drHistoryFilters.batch
+    );
+    setLoading(false);
+
+    if (success && data && typeof data !== 'string') {
+      setDrHistoryLogs((data as any).entries || []);
+      onShowToast('History loaded successfully.', 'success');
+    } else {
+      onShowToast('No history records found for filters.', 'info');
+    }
+  };
+
+  // ==========================================================================
+  // 3. INWARD REGISTER (ir.py) & SEARCH
+  // ==========================================================================
+  const [irRows, setIrRows] = useState<any[]>(() => {
+    return Array.from({ length: 50 }, (_, i) => ({
+      general_no: String(i + 1),
+      inward_letter_no: '',
+      inward_letter_date: '',
+      transporter_name: '',
+      supplier_code: '',
+      invoice_no: '',
+      material: '',
+      lot_batch_no: '',
+      quantity: '',
+      unit: '',
+      mfg_date: '',
+      expiry_date: '',
+      ok: '',
+      rejected: '',
+      report_given_by: ''
+    }));
+  });
+
+  const [irSearchQuery, setIrSearchQuery] = useState('');
+  const [irSearchResults, setIrSearchResults] = useState<any[]>([]);
+
+  const updateIrRow = (idx: number, field: string, val: string) => {
+    setIrRows(prev => {
+      const updated = [...prev];
+      updated[idx] = { ...updated[idx], [field]: val };
+      return updated;
+    });
+  };
+
+  const handleIrSave = async () => {
+    const entriesToSave = irRows.filter(r => r.transporter_name || r.material).map(r => {
+      let combinedRemarks = '';
+      if (r.ok) combinedRemarks += `Ok: ${r.ok}`;
+      if (r.rejected) {
+        if (combinedRemarks) combinedRemarks += ' | ';
+        combinedRemarks += `Rej: ${r.rejected}`;
+      }
+      return {
+        general_no: r.general_no,
+        inward_letter_no: r.inward_letter_no,
+        inward_letter_date: r.inward_letter_date,
+        transporter_name: r.transporter_name,
+        supplier_code: r.supplier_code,
+        invoice_no: r.invoice_no,
+        material: r.material,
+        lot_batch_no: r.lot_batch_no,
+        quantity: r.quantity,
+        unit: r.unit,
+        mfg_date: r.mfg_date,
+        expiry_date: r.expiry_date,
+        remarks: combinedRemarks,
+        report_given_by: r.report_given_by
+      };
+    });
+
+    if (entriesToSave.length === 0) {
+      onShowToast('No data populated to save.', 'warning');
+      return;
+    }
+
+    setLoading(true);
+    const [success, response] = await InwardRegisterAPI.saveEntries(productName, entriesToSave);
+    setLoading(false);
+
+    if (success) {
+      onShowToast('Inward Register saved successfully! Generating PDF...', 'success');
+      exportIrToPdf(productName, entriesToSave);
+      handleIrClear();
+    } else {
+      onShowToast(`Failed to save inward entries: ${response}`, 'error');
+    }
+  };
+
+  const handleIrClear = () => {
+    setIrRows(Array.from({ length: 50 }, (_, i) => ({
+      general_no: String(i + 1),
+      inward_letter_no: '',
+      inward_letter_date: '',
+      transporter_name: '',
+      supplier_code: '',
+      invoice_no: '',
+      material: '',
+      lot_batch_no: '',
+      quantity: '',
+      unit: '',
+      mfg_date: '',
+      expiry_date: '',
+      ok: '',
+      rejected: '',
+      report_given_by: ''
+    })));
+    onShowToast('Inward grid cleared.', 'info');
+  };
+
+  const handleIrPrint = () => {
+    const entriesToSave = irRows.filter(r => r.transporter_name || r.material).map(r => {
+      let combinedRemarks = '';
+      if (r.ok) combinedRemarks += `Ok: ${r.ok}`;
+      if (r.rejected) {
+        if (combinedRemarks) combinedRemarks += ' | ';
+        combinedRemarks += `Rej: ${r.rejected}`;
+      }
+      return {
+        general_no: r.general_no,
+        inward_letter_no: r.inward_letter_no,
+        inward_letter_date: r.inward_letter_date,
+        transporter_name: r.transporter_name,
+        supplier_code: r.supplier_code,
+        invoice_no: r.invoice_no,
+        material: r.material,
+        lot_batch_no: r.lot_batch_no,
+        quantity: r.quantity,
+        unit: r.unit,
+        mfg_date: r.mfg_date,
+        expiry_date: r.expiry_date,
+        remarks: combinedRemarks,
+        report_given_by: r.report_given_by
+      };
+    });
+
+    if (entriesToSave.length === 0) {
+      onShowToast('No data populated to print.', 'warning');
+      return;
+    }
+
+    exportIrToPdf(productName, entriesToSave);
+  };
+
+  const handleIrSearch = async () => {
+    if (!irSearchQuery) {
+      onShowToast('Please enter a search query.', 'warning');
+      return;
+    }
+    setLoading(true);
+    const [success, data] = await InwardRegisterAPI.searchEntries(productName, irSearchQuery);
+    setLoading(false);
+
+    if (success && data && typeof data !== 'string') {
+      setIrSearchResults(Array.isArray(data) ? data : []);
+      onShowToast('Search complete.', 'success');
+    } else {
+      onShowToast('No inward matching records found.', 'info');
+    }
+  };
+
+  // ==========================================================================
+  // 4. DAILY PRODUCTION (dp.py) & HISTORY
+  // ==========================================================================
+  const [dpDate, setDpDate] = useState(new Date().toISOString().split('T')[0]);
+  const [dpRows, setDpRows] = useState<any[]>(() => {
+    return Array.from({ length: 20 }, (_, i) => ({
+      id: null,
+      customer_name: '',
+      product_name_field: '',
+      batch_no: '',
+      qty: '',
+      qty_unit: 'kgs',
+      charged_by: ''
+    }));
+  });
+
+  const [dpHistoryFilters, setDpHistoryFilters] = useState(() => {
+    const today = new Date();
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    const startStr = firstDay.toLocaleDateString('en-GB').replace(/\//g, '-');
+    const todayStr = today.toLocaleDateString('en-GB').replace(/\//g, '-');
+    return {
+      start_date: startStr,
+      end_date: todayStr,
+      customer: '',
+      batch: '',
+      product: ''
+    };
+  });
+  const [dpHistoryLogs, setDpHistoryLogs] = useState<any[]>([]);
+  const [dpHistoryPage, setDpHistoryPage] = useState(1);
+  const [dpHistoryTotalPages, setDpHistoryTotalPages] = useState(1);
+
+  // Dynamic DP Math Footers
+  const dpTotalKgs = dpRows.reduce((sum, r) => r.qty_unit === 'kgs' ? sum + (parseFloat(r.qty) || 0) : sum, 0);
+  const dpTotalLtr = dpRows.reduce((sum, r) => r.qty_unit === 'ltr' ? sum + (parseFloat(r.qty) || 0) : sum, 0);
+
+  const loadDpDayEntries = async () => {
+    setLoading(true);
+    // Convert YYYY-MM-DD to DD-MM-YYYY
+    const parts = dpDate.split('-');
+    const dateFormatted = `${parts[2]}-${parts[1]}-${parts[0]}`;
+    
+    const [success, data] = await DailyProductionAPI.getAllEntriesByDate(productName, dateFormatted);
+    setLoading(false);
+
+    if (success && data && typeof data !== 'string') {
+      const entries = Array.isArray(data) ? data : [];
+      const populated = Array.from({ length: 20 }, (_, i) => {
+        const item = entries[i] || {};
+        return {
+          id: item.id || null,
+          customer_name: item.customer_name || '',
+          product_name_field: item.product_name_field || '',
+          batch_no: item.batch_no || '',
+          qty: item.qty ? String(item.qty) : '',
+          qty_unit: item.qty_unit || 'kgs',
+          charged_by: item.charged_by || ''
+        };
+      });
+      setDpRows(populated);
+    } else {
+      setDpRows(Array.from({ length: 20 }, (_, i) => ({
+        id: null,
+        customer_name: '',
+        product_name_field: '',
+        batch_no: '',
+        qty: '',
+        qty_unit: 'kgs',
+        charged_by: ''
+      })));
+    }
+  };
+
+  useEffect(() => {
+    if (activeSubView === 'daily_production') {
+      loadDpDayEntries();
+    }
+  }, [dpDate, activeSubView]);
+
+  const updateDpRow = (idx: number, field: string, val: string) => {
+    setDpRows(prev => {
+      const updated = [...prev];
+      updated[idx] = { ...updated[idx], [field]: val };
+      return updated;
+    });
+  };
+
+  const handleDpSaveAndExport = async () => {
+    const entriesToSave = dpRows.filter(r => r.batch_no && r.qty).map(r => {
+      const parts = dpDate.split('-');
+      const dateFormatted = `${parts[2]}-${parts[1]}-${parts[0]}`;
+      return {
+        id: r.id,
+        date: dateFormatted,
+        customer_name: r.customer_name,
+        product_name_field: r.product_name_field,
+        batch_no: r.batch_no.toUpperCase(),
+        qty: parseFloat(r.qty) || 0,
+        qty_unit: r.qty_unit,
+        charged_by: r.charged_by.toUpperCase()
+      };
+    });
+
+    if (entriesToSave.length === 0) {
+      onShowToast('No active production data to save.', 'warning');
+      return;
+    }
+
+    setLoading(true);
+    const [success, response] = await DailyProductionAPI.saveEntries(productName, entriesToSave);
+    setLoading(false);
+
+    if (success) {
+      onShowToast('Daily Production saved to DB! Generating Excel report...', 'success');
+      
+      const wb = XLSX.utils.book_new();
+      const headers = ["Date", "Customer Name", "Product Name", "Batch No.", "Quantity", "Unit", "Charged By"];
+      
+      const body = entriesToSave.map(e => {
+        const prod = e.product_name_field.includes(" - ") 
+          ? e.product_name_field.split(" - ")[1] 
+          : e.product_name_field;
+        return [
+          e.date,
+          e.customer_name,
+          prod,
+          e.batch_no,
+          e.qty,
+          e.qty_unit,
+          e.charged_by
+        ];
+      });
+
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...body]);
+      
+      // Set column widths
+      const columnWidths = [
+        { wch: 15 },
+        { wch: 30 },
+        { wch: 35 },
+        { wch: 20 },
+        { wch: 12 },
+        { wch: 8 },
+        { wch: 20 }
+      ];
+      ws['!cols'] = columnWidths;
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Daily Production');
+      const timestamp = new Date().toISOString().slice(0,19).replace(/[-T:]/g,"_");
+      XLSX.writeFile(wb, `Daily_Production_${timestamp}.xlsx`);
+      
+      loadDpDayEntries();
+    } else {
+      onShowToast(`Failed to save Daily Production: ${response}`, 'error');
+    }
+  };
+
+  const handleDpHistorySearch = async (pageIdx = 1) => {
+    setLoading(true);
+    setDpHistoryPage(pageIdx);
+    
+    const [success, data] = await DailyProductionAPI.getFilteredEntries(
+      productName,
+      dpHistoryFilters.start_date || undefined,
+      dpHistoryFilters.end_date || undefined,
+      dpHistoryFilters.customer || undefined,
+      dpHistoryFilters.batch || undefined,
+      dpHistoryFilters.product || undefined,
+      pageIdx,
+      20
+    );
+    setLoading(false);
+
+    if (success && data && typeof data !== 'string') {
+      const res: any = data;
+      setDpHistoryLogs(res.items || []);
+      setDpHistoryTotalPages(res.total_pages || 1);
+      onShowToast(`Loaded ${res.total_items || 0} historical DP items.`, 'success');
+    } else {
+      setDpHistoryLogs([]);
+      setDpHistoryTotalPages(1);
+      onShowToast('No historical DP records found matching filters.', 'info');
+    }
+  };
+
+  const exportDpHistoryToExcel = () => {
+    if (dpHistoryLogs.length === 0) {
+      onShowToast('No history data to export.', 'warning');
+      return;
+    }
+
+    const dateDesc = `${dpHistoryFilters.start_date || 'Start'} to ${dpHistoryFilters.end_date || 'Now'}`;
+    const wb = XLSX.utils.book_new();
+    const headers = ["Date", "Customer Name", "Product Name", "Batch No.", "Quantity", "Unit", "Charged By"];
+    
+    const body = dpHistoryLogs.map(log => {
+      const prod = log.product_name_field.includes(" - ") 
+        ? log.product_name_field.split(" - ")[1] 
+        : log.product_name_field;
+      return [
+        log.date,
+        log.customer_name,
+        prod,
+        log.batch_no,
+        log.qty,
+        log.qty_unit,
+        log.charged_by
+      ];
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...body]);
+    
+    const columnWidths = [
+      { wch: 15 },
+      { wch: 30 },
+      { wch: 35 },
+      { wch: 20 },
+      { wch: 12 },
+      { wch: 8 },
+      { wch: 20 }
+    ];
+    ws['!cols'] = columnWidths;
+
+    XLSX.utils.book_append_sheet(wb, ws, 'DP History');
+    const timestamp = new Date().toISOString().slice(0,19).replace(/[-T:]/g,"_");
+    XLSX.writeFile(wb, `DP_History_${timestamp}.xlsx`);
+    onShowToast('Daily Production History exported to Excel.', 'success');
+  };
+
+  const exportDpHistoryToPdf = () => {
+    if (dpHistoryLogs.length === 0) {
+      onShowToast('No history data to export.', 'warning');
+      return;
+    }
+
+    const dateDesc = `${dpHistoryFilters.start_date || 'Start'} to ${dpHistoryFilters.end_date || 'Now'}`;
+    const doc = new jsPDF('l', 'mm', 'a4');
+    
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Daily Production History (${productName.toUpperCase()})`, 14, 15);
+    
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Date Range: ${dateDesc}`, 14, 21);
+
+    const headers = [["Date", "Customer Name", "Product Name", "Batch No.", "Quantity", "Unit", "Charged By"]];
+    const body = dpHistoryLogs.map(log => [
+      log.date,
+      log.customer_name,
+      log.product_name_field.includes(" - ") ? log.product_name_field.split(" - ")[1] : log.product_name_field,
+      log.batch_no,
+      log.qty,
+      log.qty_unit,
+      log.charged_by
+    ]);
+
+    autoTable(doc, {
+      startY: 25,
+      head: headers,
+      body: body,
+      theme: 'grid',
+      headStyles: { fillColor: [15, 23, 42], textColor: [248, 250, 252], fontStyle: 'bold' },
+      styles: { fontSize: 9, cellPadding: 3, valign: 'middle' },
+      columnStyles: {
+        0: { cellWidth: 30 },
+        1: { cellWidth: 50 },
+        2: { cellWidth: 65 },
+        3: { cellWidth: 35 },
+        4: { cellWidth: 25, halign: 'right' },
+        5: { cellWidth: 20, halign: 'center' },
+        6: { cellWidth: 35 }
+      }
+    });
+
+    const timestamp = new Date().toISOString().slice(0,19).replace(/[-T:]/g,"_");
+    doc.save(`DP_History_${timestamp}.pdf`);
+    onShowToast('Daily Production History exported to PDF.', 'success');
+  };
+
+  // ==========================================================================
+  // 5. FINISHED GOODS STORAGE MATRIX (fg.py)
+  // ==========================================================================
+  const [fgPage, setFgPage] = useState(1);
+  const [fgTotalPages, setFgTotalPages] = useState(1);
+  const [fgPageInput, setFgPageInput] = useState('1');
+  const [fgSearchFilter, setFgSearchFilter] = useState('');
+  const [fgList, setFgList] = useState<any[]>([]);
+
+  useEffect(() => {
+    setFgPageInput(String(fgPage));
+  }, [fgPage]);
+
+  // Sub-allotment and clear confirm modal states
+  const [showAllotmentDetailModal, setShowAllotmentDetailModal] = useState(false);
+  const [showManageSubAllotmentsModal, setShowManageSubAllotmentsModal] = useState(false);
+  const [showFgClearConfirm, setShowFgClearConfirm] = useState(false);
+  const [activeAllotmentRow, setActiveAllotmentRow] = useState<any>(null);
+  const [allotmentList, setAllotmentList] = useState<{ customer: string; qty: string }[]>([]);
+  const [newSubCustomer, setNewSubCustomer] = useState('');
+  const [newSubQty, setNewSubQty] = useState('');
+  const [editingParticularsIdx, setEditingParticularsIdx] = useState<number | null>(null);
+
+  // ==========================================================================
+  // 5.5. RAW MATERIAL STOCK (rm_stock.py)
+  // ==========================================================================
+  const [rmsPage, setRmsPage] = useState(1);
+  const [rmsTotalPages, setRmsTotalPages] = useState(1);
+  const [rmsPageInput, setRmsPageInput] = useState('1');
+  const [rmsSearchFilter, setRmsSearchFilter] = useState('');
+  const [rmsList, setRmsList] = useState<any[]>([]);
+  const [showRmsClearConfirm, setShowRmsClearConfirm] = useState(false);
+  const [editingRmsParticularsIdx, setEditingRmsParticularsIdx] = useState<number | null>(null);
+
+  useEffect(() => {
+    setRmsPageInput(String(rmsPage));
+  }, [rmsPage]);
+
+  const fetchFgStorage = async (showLoading: any = true) => {
+    const shouldShowLoading = showLoading !== false;
+    if (shouldShowLoading) setLoading(true);
+    const [success, data] = await FinishGoodAPI.getPaginatedEntries(
+      productName,
+      '',
+      fgSearchFilter,
+      fgPage,
+      20
+    );
+    if (shouldShowLoading) setLoading(false);
+
+    if (success && data && typeof data !== 'string') {
+      const res: any = data;
+      const items: any[] = res.items || [];
+      const mappedItems = items.map(item => ({
+        ...item,
+        particulars: item.product || item.particulars || ''
+      }));
+      const paddedItems = [...mappedItems];
+      while (paddedItems.length < 20) {
+        paddedItems.push({
+          particulars: '',
+          batch_no: '',
+          date: '',
+          qty_in_kgs_ltr: '',
+          production: '',
+          total: '',
+          dispatch: '',
+          balance: '',
+          allotment: '',
+          location: '',
+          remarks: ''
+        });
+      }
+      setFgList(paddedItems);
+      setFgTotalPages(res.total_pages || res.pages || 1);
+    } else {
+      const emptyItems = Array.from({ length: 20 }, () => ({
+        particulars: '',
+        batch_no: '',
+        date: '',
+        qty_in_kgs_ltr: '',
+        production: '',
+        total: '',
+        dispatch: '',
+        balance: '',
+        allotment: '',
+        location: '',
+        remarks: ''
+      }));
+      setFgList(emptyItems);
+      setFgTotalPages(1);
+    }
+  };
+
+  useEffect(() => {
+    if (activeSubView === 'warehouse_dept') {
+      fetchFgStorage();
+    }
+  }, [fgPage, fgSearchFilter, activeSubView]);
+
+  useEffect(() => {
+    if (activeSubView === 'rm_stock') {
+      fetchRmsStorage();
+    }
+  }, [rmsPage, rmsSearchFilter, activeSubView]);
+
+  const updateFgCell = (idx: number, field: string, val: string) => {
+    setFgList(prev => {
+      const updated = [...prev];
+      while (updated.length <= idx) {
+        updated.push({
+          particulars: '',
+          batch_no: '',
+          date: '',
+          qty_in_kgs_ltr: '',
+          production: '',
+          total: 0,
+          dispatch: '',
+          balance: 0,
+          allotment: '',
+          location: '',
+          remarks: ''
+        });
+      }
+
+      const row = { ...updated[idx], [field]: val };
+      if (['particulars', 'batch_no', 'allotment', 'location', 'remarks'].includes(field)) {
+        row[field] = val.toUpperCase();
+      }
+      
+      const qty = parseFloat(row.qty_in_kgs_ltr) || 0;
+      const prod = parseFloat(row.production) || 0;
+      const total = qty + prod;
+      const disp = parseFloat(row.dispatch) || 0;
+      const bal = total - disp;
+
+      row.total = total;
+      row.balance = bal;
+      updated[idx] = row;
+
+      const rowKey = row.id ? String(row.id) : `new_row_${idx}`;
+      const timerKey = `fg_save_${rowKey}`;
+      if (debounceTimers.current[timerKey]) clearTimeout(debounceTimers.current[timerKey]);
+      debounceTimers.current[timerKey] = window.setTimeout(async () => {
+        if (!row.particulars && row.id) {
+          const [delSuccess] = await FinishGoodAPI.saveEntries(productName, [], [row.id]);
+          if (delSuccess) {
+            setFgList(current => {
+              const currUpdated = [...current];
+              if (currUpdated[idx]) {
+                currUpdated[idx] = { ...currUpdated[idx], id: undefined };
+              }
+              return currUpdated;
+            });
+          }
+        } else if (row.particulars) {
+          const payloadRow = {
+            id: row.id || null,
+            product: row.particulars,
+            batch_no: row.batch_no || '',
+            date: row.date || '',
+            qty_in_kgs_ltr: String(row.qty_in_kgs_ltr || '0'),
+            production: String(row.production || '0'),
+            total: String(row.total || '0'),
+            dispatch: String(row.dispatch || '0'),
+            balance: String(row.balance || '0'),
+            allotment: row.allotment || '',
+            location: row.location || '',
+            remarks: row.remarks || ''
+          };
+
+          const [saveSuccess, response] = await FinishGoodAPI.saveSingleEntry(productName, payloadRow);
+          if (saveSuccess && response && typeof response !== 'string') {
+            const res: any = response;
+            if (res.new_id) {
+              setFgList(current => {
+                const currUpdated = [...current];
+                if (currUpdated[idx]) {
+                  currUpdated[idx] = { ...currUpdated[idx], id: res.new_id };
+                }
+                return currUpdated;
+              });
+            }
+          }
+        }
+      }, 1200);
+
+      return updated;
+    });
+  };
+
+  const handleOpenAllotment = async (row: any) => {
+    setActiveAllotmentRow(row);
+    // Open allotment detail modal first (corresponds to Screenshot 2)
+    setShowAllotmentDetailModal(true);
+    // Also proactively fetch sub allotments in background
+    setLoading(true);
+    const [success, data] = await CustomerAPI.getSubAllotment(productName, row.particulars, row.batch_no);
+    setLoading(false);
+
+    if (success && data && typeof data !== 'string') {
+      const allotments: Record<string, number> = (data as any).allotments || {};
+      const parsed = Object.entries(allotments).map(([customer, qty]) => ({
+        customer,
+        qty: String(qty)
+      }));
+      setAllotmentList(parsed);
+    } else {
+      setAllotmentList([]);
+    }
+  };
+
+  const handleOpenManageSubAllotments = () => {
+    setShowAllotmentDetailModal(false);
+    setShowManageSubAllotmentsModal(true);
+    setNewSubCustomer('');
+    setNewSubQty('');
+  };
+
+  const addAllotmentItem = () => {
+    setAllotmentList(prev => [...prev, { customer: '', qty: '' }]);
+  };
+
+  const removeAllotmentItem = (idx: number) => {
+    setAllotmentList(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const updateAllotmentItem = (idx: number, field: 'customer' | 'qty', val: string) => {
+    setAllotmentList(prev => {
+      const updated = [...prev];
+      updated[idx] = { ...updated[idx], [field]: val };
+      return updated;
+    });
+  };
+
+  const handleAddSubAllotmentEntry = () => {
+    const custName = newSubCustomer.trim().toUpperCase();
+    const qtyVal = parseFloat(newSubQty) || 0;
+    if (!custName) {
+      onShowToast('Please enter a sub-customer name.', 'warning');
+      return;
+    }
+    if (qtyVal <= 0) {
+      onShowToast('Quantity must be greater than 0.', 'warning');
+      return;
+    }
+
+    setAllotmentList(prev => {
+      const updated = [...prev];
+      const existingIdx = updated.findIndex(item => item.customer.toUpperCase() === custName);
+      if (existingIdx !== -1) {
+        const existingQty = parseFloat(updated[existingIdx].qty) || 0;
+        updated[existingIdx].qty = String(existingQty + qtyVal);
+        onShowToast(`Added ${qtyVal} to existing sub-customer '${custName}'.`, 'info');
+      } else {
+        updated.push({ customer: custName, qty: String(qtyVal) });
+      }
+      return updated;
+    });
+
+    setNewSubCustomer('');
+    setNewSubQty('');
+  };
+
+  const saveSubAllotments = async () => {
+    if (!activeAllotmentRow) return;
+
+    const allotmentsPayload: Record<string, number> = {};
+    let totalAllotted = 0;
+
+    for (const item of allotmentList) {
+      const q = parseFloat(item.qty) || 0;
+      if (item.customer && q > 0) {
+        allotmentsPayload[item.customer.toUpperCase()] = q;
+        totalAllotted += q;
+      }
+    }
+
+    if (totalAllotted > activeAllotmentRow.balance) {
+      onShowToast(`⛔ Stop! Allocated total (${totalAllotted} kg) exceeds batch balance (${activeAllotmentRow.balance} kg).`, 'error');
+      return;
+    }
+
+    setLoading(true);
+    const [success, res] = await CustomerAPI.saveSubAllotment(
+      productName,
+      activeAllotmentRow.particulars,
+      activeAllotmentRow.batch_no,
+      allotmentsPayload
+    );
+    setLoading(false);
+
+    if (success) {
+      onShowToast('Sub-allotments saved successfully!', 'success');
+      setShowManageSubAllotmentsModal(false);
+      if (activeSubView === 'warehouse_dept') {
+        fetchFgStorage();
+      } else if (activeSubView === 'rm_stock') {
+        fetchRmsStorage();
+      }
+    } else {
+      onShowToast(`Failed to save allotments: ${res}`, 'error');
+    }
+  };
+
+  const handleFgRecalculate = async () => {
+    setLoading(true);
+    const [success, res] = await FinishGoodAPI.recalculateGoods(productName, '');
+    setLoading(false);
+    if (success) {
+      onShowToast('Finished Goods balance ledger re-calculated successfully.', 'success');
+      fetchFgStorage();
+    } else {
+      onShowToast(`Recalculate failed: ${res}`, 'error');
+    }
+  };
+
+  const handleFgClear = () => {
+    const idsToDelete = fgList.filter(row => row.id).map(row => row.id);
+    if (idsToDelete.length === 0) {
+      onShowToast('No saved records currently on screen to clear.', 'info');
+      return;
+    }
+    setShowFgClearConfirm(true);
+  };
+
+  const confirmFgClear = async () => {
+    setShowFgClearConfirm(false);
+    const idsToDelete = fgList.filter(row => row.id).map(row => row.id);
+    setLoading(true);
+    const [success, res] = await FinishGoodAPI.saveEntries(productName, [], idsToDelete);
+    setLoading(false);
+    if (success) {
+      onShowToast('All entries currently on screen cleared and deleted.', 'success');
+      fetchFgStorage();
+    } else {
+      onShowToast(`Failed to clear entries: ${res}`, 'error');
+    }
+  };
+
+  const handleFgDeleteRow = async (id: number) => {
+    if (!window.confirm("Are you sure you want to delete this entry? This cannot be undone.")) return;
+    setLoading(true);
+    const [success, res] = await FinishGoodAPI.saveEntries(productName, [], [id]);
+    setLoading(false);
+    if (success) {
+      onShowToast('Entry deleted successfully.', 'success');
+      fetchFgStorage();
+    } else {
+      onShowToast(`Failed to delete entry: ${res}`, 'error');
+    }
+  };
+
+  const handleFgSaveAndExport = async () => {
+    setLoading(true);
+    const entriesToSave = fgList
+      .filter(row => row.particulars && row.particulars.trim())
+      .map(row => ({
+        id: row.id || null,
+        product: row.particulars.toUpperCase(),
+        batch_no: row.batch_no || '',
+        date: row.date || '',
+        qty_in_kgs_ltr: String(row.qty_in_kgs_ltr || '0'),
+        production: String(row.production || '0'),
+        total: String(row.total || '0'),
+        dispatch: String(row.dispatch || '0'),
+        balance: String(row.balance || '0'),
+        allotment: row.allotment || '',
+        location: row.location || '',
+        remarks: row.remarks || ''
+      }));
+
+    const deleteIds = fgList
+      .filter(row => !row.particulars && row.id)
+      .map(row => row.id);
+
+    const [saveSuccess, response] = await FinishGoodAPI.saveEntries(productName, entriesToSave, deleteIds);
+
+    if (saveSuccess) {
+      onShowToast('Finished Goods records saved successfully. Generating Excel report...', 'success');
+      Object.keys(debounceTimers.current).forEach(key => {
+        if (key.startsWith('fg_save_')) {
+          clearTimeout(debounceTimers.current[key]);
+          delete debounceTimers.current[key];
+        }
+      });
+      await fetchFgStorage(false);
+      await exportFgToExcel(false);
+      setLoading(false);
+    } else {
+      setLoading(false);
+      onShowToast(`Failed to save records: ${response}`, 'error');
+    }
+  };
+
+  const exportFgToExcel = async (showLoading: any = true) => {
+    const shouldShowLoading = showLoading !== false;
+    if (shouldShowLoading) setLoading(true);
+    const [success, data] = await FinishGoodAPI.getAllEntries(
+      productName,
+      fgSearchFilter
+    );
+    if (shouldShowLoading) setLoading(false);
+    if (!success || !data || typeof data === 'string') {
+      onShowToast('Failed to fetch data for export.', 'error');
+      return;
+    }
+    const allEntries: any[] = Array.isArray(data) ? data : [];
+    if (allEntries.length === 0) {
+      onShowToast('No data to export.', 'warning');
+      return;
+    }
+
+    const processedData = allEntries.map(entry => {
+      const productFull = entry.product || '';
+      const parts = productFull.split(" - ");
+      const mainProd = parts[0] || '';
+      const category = getCategoryForProduct(mainProd);
+      const [sortProdIdx, _, displayName] = getSortKeys(mainProd);
+      
+      let catIndex = CATEGORY_ORDER.indexOf(category);
+      if (catIndex === -1) catIndex = 999;
+
+      return {
+        ...entry,
+        category,
+        main_product: displayName || mainProd,
+        _sort_cat: catIndex,
+        _sort_prod: sortProdIdx,
+        _sort_alpha: mainProd.toLowerCase(),
+        _sort_allotment: String(entry.allotment || '').trim().toLowerCase()
+      };
+    });
+
+    processedData.sort((a, b) => {
+      if (a._sort_cat !== b._sort_cat) return a._sort_cat - b._sort_cat;
+      if (a._sort_prod !== b._sort_prod) return a._sort_prod - b._sort_prod;
+      if (a._sort_alpha !== b._sort_alpha) return a._sort_alpha.localeCompare(b._sort_alpha);
+      if (a._sort_allotment !== b._sort_allotment) return a._sort_allotment.localeCompare(b._sort_allotment);
+      
+      const aBatch = getBatchNumber(a.batch_no);
+      const bBatch = getBatchNumber(b.batch_no);
+      return aBatch - bBatch;
+    });
+
+    const dateStr = new Date().toLocaleDateString('en-GB').replace(/\//g, '.');
+    const rows: any[][] = [];
+    
+    const row1 = Array(11).fill('');
+    row1[10] = "CT/PRD/SR-01";
+    rows.push(row1);
+
+    const row2 = Array(11).fill('');
+    row2[10] = `DATE: ${dateStr}`;
+    rows.push(row2);
+
+    rows.push(Array(11).fill(''));
+
+    const row4 = Array(11).fill('');
+    row4[0] = "WAREHOUSE DEPT.";
+    rows.push(row4);
+
+    const headers = [
+      "PARTICULARS", "BATCH NO.", "DATE", "QTY IN KG/LTR", "PRODUCTION", 
+      "TOTAL", "DISPATCH", "BALANCE", "ALLOTMENT", "LOCATION", "REMARKS"
+    ];
+    rows.push(headers);
+
+    let currentCategory: string | null = null;
+    let currentMainProduct: string | null = null;
+    let sumQty = 0, sumProd = 0, sumTotal = 0, sumDispatch = 0, sumBalance = 0;
+
+    const merges: any[] = [];
+    merges.push({ s: { r: 3, c: 0 }, e: { r: 3, c: 10 } });
+
+    processedData.forEach(entry => {
+      const category = entry.category || 'OTHERS';
+      const mainProduct = String(entry.main_product || '').toUpperCase();
+
+      if (category !== currentCategory) {
+        if (currentCategory !== null) {
+          rows.push(Array(11).fill(''));
+        }
+        const catRowIdx = rows.length;
+        const catRow = Array(11).fill('');
+        catRow[0] = category;
+        rows.push(catRow);
+        merges.push({ s: { r: catRowIdx, c: 0 }, e: { r: catRowIdx, c: 10 } });
+        
+        currentCategory = category;
+        currentMainProduct = null;
+      }
+
+      if (mainProduct !== currentMainProduct) {
+        const prodRowIdx = rows.length;
+        const prodRow = Array(11).fill('');
+        prodRow[0] = mainProduct;
+        rows.push(prodRow);
+        merges.push({ s: { r: prodRowIdx, c: 0 }, e: { r: prodRowIdx, c: 10 } });
+        
+        currentMainProduct = mainProduct;
+      }
+
+      const particularsRaw = String(entry.product || '');
+      const particularsDisplay = particularsRaw.includes(" - ") 
+        ? particularsRaw.split(" - ")[1].trim().toUpperCase() 
+        : particularsRaw.toUpperCase();
+
+      const batchNo = String(entry.batch_no || '').toUpperCase();
+      const dateVal = String(entry.date || '').toUpperCase();
+      
+      const qtyVal = parseFloat(entry.qty_in_kgs_ltr) || 0;
+      const prodVal = parseFloat(entry.production) || 0;
+      const totalVal = parseFloat(entry.total) || 0;
+      const dispatchVal = parseFloat(entry.dispatch) || 0;
+      const balanceVal = parseFloat(entry.balance) || 0;
+
+      sumQty += qtyVal;
+      sumProd += prodVal;
+      sumTotal += totalVal;
+      sumDispatch += dispatchVal;
+      sumBalance += balanceVal;
+
+      rows.push([
+        particularsDisplay,
+        batchNo,
+        dateVal,
+        qtyVal,
+        prodVal,
+        totalVal,
+        dispatchVal,
+        balanceVal,
+        String(entry.allotment || '').toUpperCase(),
+        String(entry.location || '').toUpperCase(),
+        String(entry.remarks || '').toUpperCase()
+      ]);
+    });
+
+    rows.push(Array(11).fill(''));
+
+    const totalRowIdx = rows.length;
+    const totalRow = Array(11).fill('');
+    totalRow[0] = "GRAND TOTAL";
+    totalRow[3] = sumQty;
+    totalRow[4] = sumProd;
+    totalRow[5] = sumTotal;
+    totalRow[6] = sumDispatch;
+    totalRow[7] = sumBalance;
+    rows.push(totalRow);
+    merges.push({ s: { r: totalRowIdx, c: 0 }, e: { r: totalRowIdx, c: 2 } });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!merges'] = merges;
+
+    const columnWidths = [
+      { wch: 25 },
+      { wch: 15 },
+      { wch: 11 },
+      { wch: 13 },
+      { wch: 11 },
+      { wch: 11 },
+      { wch: 11 },
+      { wch: 11 },
+      { wch: 18 },
+      { wch: 12 },
+      { wch: 25 }
+    ];
+    ws['!cols'] = columnWidths;
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Finish Good Report');
+    const timestamp = new Date().toISOString().slice(0,19).replace(/[-T:]/g,"_");
+    XLSX.writeFile(wb, `Finish_Good_Report_${timestamp}.xlsx`);
+    onShowToast('Finished Goods Report exported successfully.', 'success');
+  };
+
+  // ==========================================================================
+  // 5.6. RAW MATERIAL STOCK STORAGE HELPERS (rm_stock.py)
+  // ==========================================================================
+  const fetchRmsStorage = async (showLoading: any = true) => {
+    const shouldShowLoading = showLoading !== false;
+    if (shouldShowLoading) setLoading(true);
+    const [success, data] = await RMStockAPI.getPaginatedEntries(
+      productName,
+      '',
+      rmsSearchFilter,
+      rmsPage,
+      20
+    );
+    if (shouldShowLoading) setLoading(false);
+
+    if (success && data && typeof data !== 'string') {
+      const res: any = data;
+      const items: any[] = res.items || [];
+      const mappedItems = items.map(item => ({
+        ...item,
+        particulars: item.product || item.particulars || ''
+      }));
+      const paddedItems = [...mappedItems];
+      while (paddedItems.length < 20) {
+        paddedItems.push({
+          particulars: '',
+          batch_no: '',
+          date: '',
+          qty_in_kgs_ltr: '',
+          production: '',
+          total: '',
+          dispatch: '',
+          balance: '',
+          allotment: '',
+          location: '',
+          remarks: ''
+        });
+      }
+      setRmsList(paddedItems);
+      setRmsTotalPages(res.total_pages || res.pages || 1);
+    } else {
+      const emptyItems = Array.from({ length: 20 }, () => ({
+        particulars: '',
+        batch_no: '',
+        date: '',
+        qty_in_kgs_ltr: '',
+        production: '',
+        total: '',
+        dispatch: '',
+        balance: '',
+        allotment: '',
+        location: '',
+        remarks: ''
+      }));
+      setRmsList(emptyItems);
+      setRmsTotalPages(1);
+    }
+  };
+
+  const updateRmsCell = (idx: number, field: string, val: string) => {
+    setRmsList(prev => {
+      const updated = [...prev];
+      while (updated.length <= idx) {
+        updated.push({
+          particulars: '',
+          batch_no: '',
+          date: '',
+          qty_in_kgs_ltr: '',
+          production: '',
+          total: 0,
+          dispatch: '',
+          balance: 0,
+          allotment: '',
+          location: '',
+          remarks: ''
+        });
+      }
+
+      const row = { ...updated[idx], [field]: val };
+      if (['particulars', 'batch_no', 'allotment', 'location', 'remarks'].includes(field)) {
+        row[field] = val.toUpperCase();
+      }
+      
+      const qty = parseFloat(row.qty_in_kgs_ltr) || 0;
+      const prod = parseFloat(row.production) || 0;
+      const total = qty + prod;
+      const disp = parseFloat(row.dispatch) || 0;
+      const bal = total - disp;
+
+      row.total = total;
+      row.balance = bal;
+      updated[idx] = row;
+
+      const rowKey = row.id ? String(row.id) : `rms_row_${idx}`;
+      const timerKey = `rms_save_${rowKey}`;
+      if (debounceTimers.current[timerKey]) clearTimeout(debounceTimers.current[timerKey]);
+      debounceTimers.current[timerKey] = window.setTimeout(async () => {
+        if (!row.particulars && row.id) {
+          const [delSuccess] = await RMStockAPI.saveEntries(productName, [], [row.id]);
+          if (delSuccess) {
+            setRmsList(current => {
+              const currUpdated = [...current];
+              if (currUpdated[idx]) {
+                currUpdated[idx] = { ...currUpdated[idx], id: undefined };
+              }
+              return currUpdated;
+            });
+          }
+        } else if (row.particulars) {
+          const payloadRow = {
+            id: row.id || null,
+            product: row.particulars,
+            batch_no: row.batch_no || '',
+            date: row.date || '',
+            qty_in_kgs_ltr: String(row.qty_in_kgs_ltr || '0'),
+            production: String(row.production || '0'),
+            total: String(row.total || '0'),
+            dispatch: String(row.dispatch || '0'),
+            balance: String(row.balance || '0'),
+            allotment: row.allotment || '',
+            location: row.location || '',
+            remarks: row.remarks || ''
+          };
+
+          const [saveSuccess, response] = await RMStockAPI.saveSingleEntry(productName, payloadRow);
+          if (saveSuccess && response && typeof response !== 'string') {
+            const res: any = response;
+            if (res.new_id) {
+              setRmsList(current => {
+                const currUpdated = [...current];
+                if (currUpdated[idx]) {
+                  currUpdated[idx] = { ...currUpdated[idx], id: res.new_id };
+                }
+                return currUpdated;
+              });
+            }
+          }
+        }
+      }, 1200);
+
+      return updated;
+    });
+  };
+
+  const handleRmsRecalculate = async () => {
+    setLoading(true);
+    const [success, res] = await RMStockAPI.recalculateStock(productName, '');
+    setLoading(false);
+    if (success) {
+      onShowToast('Raw Material Stock consolidated balance ledger re-calculated successfully.', 'success');
+      fetchRmsStorage();
+    } else {
+      onShowToast(`Recalculate failed: ${res}`, 'error');
+    }
+  };
+
+  const handleRmsClear = () => {
+    const idsToDelete = rmsList.filter(row => row.id).map(row => row.id);
+    if (idsToDelete.length === 0) {
+      onShowToast('No saved records currently on screen to clear.', 'info');
+      return;
+    }
+    setShowRmsClearConfirm(true);
+  };
+
+  const confirmRmsClear = async () => {
+    setShowRmsClearConfirm(false);
+    const idsToDelete = rmsList.filter(row => row.id).map(row => row.id);
+    setLoading(true);
+    const [success, res] = await RMStockAPI.saveEntries(productName, [], idsToDelete);
+    setLoading(false);
+    if (success) {
+      onShowToast('All entries currently on screen cleared and deleted.', 'success');
+      fetchRmsStorage();
+    } else {
+      onShowToast(`Failed to clear entries: ${res}`, 'error');
+    }
+  };
+
+  const handleRmsDeleteRow = async (id: number) => {
+    if (!window.confirm("Are you sure you want to delete this entry? This cannot be undone.")) return;
+    setLoading(true);
+    const [success, res] = await RMStockAPI.saveEntries(productName, [], [id]);
+    setLoading(false);
+    if (success) {
+      onShowToast('Entry deleted successfully.', 'success');
+      fetchRmsStorage();
+    } else {
+      onShowToast(`Failed to delete entry: ${res}`, 'error');
+    }
+  };
+
+  const handleRmsSaveAndExport = async () => {
+    setLoading(true);
+    const entriesToSave = rmsList
+      .filter(row => row.particulars && row.particulars.trim())
+      .map(row => ({
+        id: row.id || null,
+        product: row.particulars.toUpperCase(),
+        batch_no: row.batch_no || '',
+        date: row.date || '',
+        qty_in_kgs_ltr: String(row.qty_in_kgs_ltr || '0'),
+        production: String(row.production || '0'),
+        total: String(row.total || '0'),
+        dispatch: String(row.dispatch || '0'),
+        balance: String(row.balance || '0'),
+        allotment: row.allotment || '',
+        location: row.location || '',
+        remarks: row.remarks || ''
+      }));
+
+    const deleteIds = rmsList
+      .filter(row => !row.particulars && row.id)
+      .map(row => row.id);
+
+    const [saveSuccess, response] = await RMStockAPI.saveEntries(productName, entriesToSave, deleteIds);
+
+    if (saveSuccess) {
+      onShowToast('Raw Material Stock records saved successfully. Generating Excel report...', 'success');
+      Object.keys(debounceTimers.current).forEach(key => {
+        if (key.startsWith('rms_save_')) {
+          clearTimeout(debounceTimers.current[key]);
+          delete debounceTimers.current[key];
+        }
+      });
+      await fetchRmsStorage(false);
+      await exportRmsToExcel(false);
+      setLoading(false);
+    } else {
+      setLoading(false);
+      onShowToast(`Failed to save records: ${response}`, 'error');
+    }
+  };
+
+  const exportRmsToExcel = async (showLoading: any = true) => {
+    const shouldShowLoading = showLoading !== false;
+    if (shouldShowLoading) setLoading(true);
+    const [success, data] = await RMStockAPI.getAllEntries(productName);
+    if (shouldShowLoading) setLoading(false);
+    if (!success || !data || typeof data === 'string') {
+      onShowToast('Failed to fetch data for export.', 'error');
+      return;
+    }
+    const allEntries: any[] = Array.isArray(data) ? data : [];
+    if (allEntries.length === 0) {
+      onShowToast('No data to export.', 'warning');
+      return;
+    }
+
+    const processedData = allEntries.map(entry => {
+      const productFull = entry.product || '';
+      const parts = productFull.split(" - ");
+      const mainProd = parts[0] || '';
+      const [sortProdIdx, _, displayName] = getSortKeys(mainProd);
+
+      return {
+        ...entry,
+        main_product: displayName || mainProd,
+        _sort_prod: sortProdIdx,
+        _sort_alpha: mainProd.toLowerCase(),
+        _sort_particulars: productFull.trim().toLowerCase(),
+        _sort_batch: String(entry.batch_no || '').trim().toLowerCase()
+      };
+    });
+
+    processedData.sort((a, b) => {
+      if (a._sort_prod !== b._sort_prod) return a._sort_prod - b._sort_prod;
+      if (a._sort_alpha !== b._sort_alpha) return a._sort_alpha.localeCompare(b._sort_alpha);
+      if (a._sort_particulars !== b._sort_particulars) return a._sort_particulars.localeCompare(b._sort_particulars);
+      return a._sort_batch.localeCompare(b._sort_batch);
+    });
+
+    const dateStr = new Date().toLocaleDateString('en-GB').replace(/\//g, '.');
+    const rows: any[][] = [];
+    
+    const row1 = Array(11).fill('');
+    row1[10] = "CT/PRD/SR-01";
+    rows.push(row1);
+
+    const row2 = Array(11).fill('');
+    row2[10] = `DATE: ${dateStr}`;
+    rows.push(row2);
+
+    rows.push(Array(11).fill(''));
+
+    const row4 = Array(11).fill('');
+    row4[0] = "WAREHOUSE DEPT.";
+    rows.push(row4);
+
+    const headers = [
+      "PARTICULARS", "BATCH NO.", "DATE", "QTY IN KG/LTR", "PRODUCTION", 
+      "TOTAL", "DISPATCH", "BALANCE", "ALLOTMENT", "LOCATION", "REMARKS"
+    ];
+    rows.push(headers);
+
+    let currentMainProduct: string | null = null;
+    let sumQty = 0, sumProd = 0, sumTotal = 0, sumDispatch = 0, sumBalance = 0;
+
+    const merges: any[] = [];
+    merges.push({ s: { r: 3, c: 0 }, e: { r: 3, c: 10 } });
+
+    processedData.forEach(entry => {
+      const mainProduct = String(entry.main_product || '').toUpperCase();
+
+      if (mainProduct !== currentMainProduct) {
+        const prodRowIdx = rows.length;
+        const prodRow = Array(11).fill('');
+        prodRow[0] = mainProduct;
+        rows.push(prodRow);
+        merges.push({ s: { r: prodRowIdx, c: 0 }, e: { r: prodRowIdx, c: 10 } });
+        
+        currentMainProduct = mainProduct;
+      }
+
+      const particularsRaw = String(entry.product || '');
+      const particularsDisplay = particularsRaw.includes(" - ") 
+        ? particularsRaw.split(" - ")[1].trim().toUpperCase() 
+        : particularsRaw.toUpperCase();
+
+      const batchNo = String(entry.batch_no || '').toUpperCase();
+      const dateVal = String(entry.date || '').toUpperCase();
+      
+      const qtyVal = parseFloat(entry.qty_in_kgs_ltr) || 0;
+      const prodVal = parseFloat(entry.production) || 0;
+      const totalVal = parseFloat(entry.total) || 0;
+      const dispatchVal = parseFloat(entry.dispatch) || 0;
+      const balanceVal = parseFloat(entry.balance) || 0;
+
+      sumQty += qtyVal;
+      sumProd += prodVal;
+      sumTotal += totalVal;
+      sumDispatch += dispatchVal;
+      sumBalance += balanceVal;
+
+      rows.push([
+        particularsDisplay,
+        batchNo,
+        dateVal,
+        qtyVal,
+        prodVal,
+        totalVal,
+        dispatchVal,
+        balanceVal,
+        String(entry.allotment || '').toUpperCase(),
+        String(entry.location || '').toUpperCase(),
+        String(entry.remarks || '').toUpperCase()
+      ]);
+    });
+
+    rows.push(Array(11).fill(''));
+
+    const totalRowIdx = rows.length;
+    const totalRow = Array(11).fill('');
+    totalRow[0] = "GRAND TOTAL";
+    totalRow[3] = sumQty;
+    totalRow[4] = sumProd;
+    totalRow[5] = sumTotal;
+    totalRow[6] = sumDispatch;
+    totalRow[7] = sumBalance;
+    rows.push(totalRow);
+    merges.push({ s: { r: totalRowIdx, c: 0 }, e: { r: totalRowIdx, c: 2 } });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!merges'] = merges;
+
+    const columnWidths = [
+      { wch: 25 },
+      { wch: 15 },
+      { wch: 11 },
+      { wch: 13 },
+      { wch: 11 },
+      { wch: 11 },
+      { wch: 11 },
+      { wch: 11 },
+      { wch: 18 },
+      { wch: 12 },
+      { wch: 25 }
+    ];
+    ws['!cols'] = columnWidths;
+
+    XLSX.utils.book_append_sheet(wb, ws, 'RM Stock Report');
+    const timestamp = new Date().toISOString().slice(0,19).replace(/[-T:]/g,"_");
+    XLSX.writeFile(wb, `RM_Stock_Report_${timestamp}.xlsx`);
+    onShowToast('RM Stock Report exported successfully.', 'success');
+  };
+
+  // ==========================================================================
+  // 6. MATERIAL REQUISITION (mrq.py)
+  // ==========================================================================
+  const [mrqRows, setMrqRows] = useState<any[]>(() => {
+    const cached = localStorage.getItem('mrq_autosave_data');
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return Array.from({ length: 30 }, (_, i) => {
+            const entry = parsed[i] || {};
+            return {
+              sr_no: String(i + 1),
+              department: entry.department || '',
+              date: entry.date || '',
+              product_or_material: entry.product_or_material || '',
+              quantity: entry.quantity || '',
+              expected_date: entry.expected_date || '',
+              remarks: entry.remarks || '',
+              purpose: entry.purpose || '',
+              indented_by: entry.indented_by || '',
+              verified_by: entry.verified_by || '',
+              approved_by: entry.approved_by || ''
+            };
+          });
+        }
+      } catch (e) {
+        console.error("Failed to parse mrq_autosave_data", e);
+      }
+    }
+    return Array.from({ length: 30 }, (_, i) => ({
+      sr_no: String(i + 1),
+      department: '',
+      date: '',
+      product_or_material: '',
+      quantity: '',
+      expected_date: '',
+      remarks: '',
+      purpose: '',
+      indented_by: '',
+      verified_by: '',
+      approved_by: ''
+    }));
+  });
+
+  const mrqTotalQty = mrqRows.reduce((sum, r) => sum + (parseFloat(r.quantity) || 0), 0);
+
+  // Extract list of unique sorted main products for Add Product dialog dropdown
+  const sortedMainProducts = Array.from(new Set(masterProductList.map(item => item.product).filter(Boolean))).sort();
+
+  const updateMrqRow = (idx: number, field: string, val: string) => {
+    setMrqRows(prev => {
+      const updated = [...prev];
+      updated[idx] = { ...updated[idx], [field]: val };
+      const meaningfulEntries = updated.filter(r => 
+        r.department?.trim() || 
+        r.date?.trim() || 
+        r.product_or_material?.trim() || 
+        r.quantity?.trim() || 
+        r.expected_date?.trim() || 
+        r.remarks?.trim() || 
+        r.purpose?.trim() || 
+        r.indented_by?.trim() || 
+        r.verified_by?.trim() || 
+        r.approved_by?.trim()
+      );
+      if (meaningfulEntries.length > 0) {
+        localStorage.setItem('mrq_autosave_data', JSON.stringify(meaningfulEntries));
+      } else {
+        localStorage.removeItem('mrq_autosave_data');
+      }
+      return updated;
+    });
+  };
+
+  const handleMrqSave = async () => {
+    const entriesToSave = mrqRows.filter(r => r.department?.trim() || r.product_or_material?.trim()).map(r => ({
+      sr_no: r.sr_no,
+      department: r.department || '',
+      date: r.date || '',
+      product_or_material: r.product_or_material || '',
+      quantity: r.quantity || '',
+      expected_date: r.expected_date || '',
+      remarks: r.remarks || '',
+      purpose: r.purpose || '',
+      indented_by: r.indented_by || '',
+      verified_by: r.verified_by || '',
+      approved_by: r.approved_by || ''
+    }));
+
+    if (entriesToSave.length === 0) {
+      onShowToast('Please fill in material requisition rows first.', 'warning');
+      return;
+    }
+
+    setLoading(true);
+    const [success, response] = await MaterialRequisitionAPI.saveEntries(productName, entriesToSave);
+    setLoading(false);
+
+    if (success) {
+      onShowToast('Material Requisition saved! Exporting Excel...', 'success');
+      
+      // Excel Export
+      const wb = XLSX.utils.book_new();
+      const headers = [
+        "Sr. No.", "Department", "Date", "Product / Material", "Quantity",
+        "Expected Date", "Remarks", "Purpose of Indent / Required For", "Indented By", "Verified By", "Approved By"
+      ];
+      const body = entriesToSave.map((e, idx) => [
+        idx + 1, e.department, e.date, e.product_or_material, e.quantity,
+        e.expected_date, e.remarks, e.purpose, e.indented_by, e.verified_by, e.approved_by
+      ]);
+
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...body]);
+      ws['!cols'] = [
+        { wch: 8 }, { wch: 25 }, { wch: 15 }, { wch: 35 }, { wch: 12 }, 
+        { wch: 18 }, { wch: 30 }, { wch: 35 }, { wch: 20 }, { wch: 20 }, { wch: 20 }
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Requisitions');
+      XLSX.writeFile(wb, 'Material_Requisition_Report.xlsx');
+      
+      localStorage.removeItem('mrq_autosave_data');
+      handleMrqClear();
+    } else {
+      onShowToast(`Failed to save requisition entries: ${response}`, 'error');
+    }
+  };
+
+  const handleMrqPrint = () => {
+    const entriesToPrint = mrqRows.filter(r => r.department?.trim() || r.product_or_material?.trim());
+    if (entriesToPrint.length === 0) {
+      onShowToast('No data populated to print.', 'warning');
+      return;
+    }
+    exportMrqToPdf(productName, entriesToPrint);
+  };
+
+  const handleMrqClear = () => {
+    setMrqRows(Array.from({ length: 30 }, (_, i) => ({
+      sr_no: String(i + 1),
+      department: '',
+      date: '',
+      product_or_material: '',
+      quantity: '',
+      expected_date: '',
+      remarks: '',
+      purpose: '',
+      indented_by: '',
+      verified_by: '',
+      approved_by: ''
+    })));
+    localStorage.removeItem('mrq_autosave_data');
+    onShowToast('Requisition form cleared.', 'info');
+  };
+
+  // ==========================================================================
+  // 7. REJECTED MATERIAL RECORD (rjm.py)
+  // ==========================================================================
+  const [rjmRows, setRjmRows] = useState<any[]>(() => {
+    const cached = localStorage.getItem('rjm_autosave_data');
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return Array.from({ length: 20 }, (_, i) => {
+            const entry = parsed[i] || {};
+            return {
+              sr_no: String(i + 1),
+              customer_name: entry.customer_name || '',
+              product_name: entry.product_name || '',
+              return_date: entry.return_date || '',
+              replacement_date: entry.replacement_date || '',
+              kgs: entry.kgs || '',
+              remarks: entry.remarks || ''
+            };
+          });
+        }
+      } catch (e) {
+        console.error("Failed to parse rjm_autosave_data", e);
+      }
+    }
+    return Array.from({ length: 20 }, (_, i) => ({
+      sr_no: String(i + 1),
+      customer_name: '',
+      product_name: '',
+      return_date: '',
+      replacement_date: '',
+      kgs: '',
+      remarks: ''
+    }));
+  });
+
+  const rjmTotalKgs = rjmRows.reduce((sum, r) => sum + (parseFloat(r.kgs) || 0), 0);
+
+  const updateRjmRow = (idx: number, field: string, val: string) => {
+    setRjmRows(prev => {
+      const updated = [...prev];
+      updated[idx] = { ...updated[idx], [field]: val };
+      const meaningfulEntries = updated.filter(r =>
+        r.customer_name?.trim() ||
+        r.product_name?.trim() ||
+        r.return_date?.trim() ||
+        r.replacement_date?.trim() ||
+        r.kgs?.trim() ||
+        r.remarks?.trim()
+      );
+      if (meaningfulEntries.length > 0) {
+        localStorage.setItem('rjm_autosave_data', JSON.stringify(meaningfulEntries));
+      } else {
+        localStorage.removeItem('rjm_autosave_data');
+      }
+      return updated;
+    });
+  };
+
+  const handleRjmSave = async () => {
+    const entriesToSave = rjmRows.filter(r => r.customer_name?.trim() || r.product_name?.trim()).map(r => ({
+      customer_name: r.customer_name || '',
+      product_name: r.product_name || '',
+      return_date: r.return_date || '',
+      replacement_date: r.replacement_date || '',
+      kgs: r.kgs || '',
+      remarks: r.remarks || ''
+    }));
+
+    if (entriesToSave.length === 0) {
+      onShowToast('Please fill in rejected material record rows first.', 'warning');
+      return;
+    }
+
+    setLoading(true);
+    const [success, response] = await RejectedMaterialAPI.saveEntries(productName, entriesToSave);
+    setLoading(false);
+
+    if (success) {
+      onShowToast('Rejected Material record saved! Exporting Excel...', 'success');
+      
+      // Excel Export
+      const wb = XLSX.utils.book_new();
+      const headers = ["Sr. No", "Customer Name", "Product Name", "Return Material Date", "Replacement Date", "Kgs", "Remarks"];
+      const body = entriesToSave.map((e, idx) => [
+        idx + 1, e.customer_name, e.product_name, e.return_date, e.replacement_date, e.kgs, e.remarks
+      ]);
+
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...body]);
+      ws['!cols'] = [
+        { wch: 8 }, { wch: 35 }, { wch: 40 }, { wch: 20 }, { wch: 20 }, { wch: 15 }, { wch: 50 }
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Rejected Materials');
+      XLSX.writeFile(wb, 'Rejected_Material_Report.xlsx');
+      
+      localStorage.removeItem('rjm_autosave_data');
+      handleRjmClear();
+    } else {
+      onShowToast(`Failed to save rejected material record: ${response}`, 'error');
+    }
+  };
+
+  const handleRjmPrint = () => {
+    const entriesToPrint = rjmRows.filter(r => r.customer_name?.trim() || r.product_name?.trim());
+    if (entriesToPrint.length === 0) {
+      onShowToast('No data populated to print.', 'warning');
+      return;
+    }
+    exportRjmToPdf(productName, entriesToPrint);
+  };
+
+  const handleRjmClear = () => {
+    setRjmRows(Array.from({ length: 20 }, (_, i) => ({
+      sr_no: String(i + 1),
+      customer_name: '',
+      product_name: '',
+      return_date: '',
+      replacement_date: '',
+      kgs: '',
+      remarks: ''
+    })));
+    localStorage.removeItem('rjm_autosave_data');
+    onShowToast('Rejected Material form cleared.', 'info');
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', height: 'calc(100vh - 120px)', overflowY: 'auto', paddingRight: '8px' }}>
+      
+      {/* Loading Loader Overlay */}
+      {loading && (
+        <div className="modal-overlay" style={{ zIndex: 9999 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', color: 'white' }}>
+            <RefreshCw size={40} className="spin-loader" />
+            <span style={{ fontWeight: 600 }}>Syncing Workspace with Render Cloud...</span>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================================
+          FORMULATION ADJUSTMENT SHEET CALCULATOR (BPBS)
+          ====================================================================== */}
+      {/* ======================================================================
+          FORMULATION ADJUSTMENT SHEET CALCULATOR (BPBS)
+          ====================================================================== */}
+      {activeSubView === 'formulation_sheet' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0px', backgroundColor: '#ffffff', border: 'none', borderRadius: '12px', padding: '20px', color: '#000000' }}>
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#000000', margin: 0 }}>Batch Production Sheet</h3>
+          </div>
+
+          {/* Header Rows */}
+          <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #000000', marginBottom: '24px' }}>
+            <tbody>
+              <tr>
+                <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '150px', fontSize: '14px', color: '#000000' }}>Batch Size:</td>
+                <td style={{ border: '1px solid #000000', padding: '6px', width: '200px' }}>
+                  <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsHeader.batch_size} onChange={e => updateBPBSHeader('batch_size', e.target.value)} />
+                </td>
+                <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '150px', fontSize: '14px', color: '#000000' }}>Date:</td>
+                <td style={{ border: '1px solid #000000', padding: '6px', width: '200px' }}>
+                  <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box', backgroundColor: '#f1f5f9' }} value={bpbsHeader.date} disabled />
+                </td>
+                <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '120px', fontSize: '14px', color: '#000000' }}>Batch No.:</td>
+                <td style={{ border: '1px solid #000000', padding: '6px' }}>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <input type="text" style={{ flexGrow: 1, height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsHeader.batch_no} onChange={e => updateBPBSHeader('batch_no', e.target.value)} />
+                    <button onClick={() => handleBPBSLoad()} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', cursor: 'pointer', border: '1px solid #a3a3a3', borderRadius: '4px', backgroundColor: '#ffffff', color: '#000000' }} title="Load Batch"><RefreshCw size={14} /></button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', fontSize: '14px', color: '#000000' }}>Product:</td>
+                <td style={{ border: '1px solid #000000', padding: '6px' }}>
+                  <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsHeader.product} onChange={e => updateBPBSHeader('product', e.target.value)} />
+                </td>
+                <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', fontSize: '14px', color: '#000000' }}>Customer:</td>
+                <td style={{ border: '1px solid #000000', padding: '6px' }}>
+                  <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsHeader.customer} onChange={e => updateBPBSHeader('customer', e.target.value)} />
+                </td>
+                <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', fontSize: '14px', color: '#000000' }}>Ref. No.:</td>
+                <td style={{ border: '1px solid #000000', padding: '6px' }}>
+                  <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsHeader.ref_no} onChange={e => updateBPBSHeader('ref_no', e.target.value)} />
+                </td>
+              </tr>
+              <tr>
+                <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', fontSize: '14px', color: '#000000' }}>Batch Started:</td>
+                <td style={{ border: '1px solid #000000', padding: '6px' }}>
+                  <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsHeader.batch_started_at} onChange={e => updateBPBSHeader('batch_started_at', e.target.value)} />
+                </td>
+                <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', fontSize: '14px', color: '#000000' }}>Batch Ended:</td>
+                <td style={{ border: '1px solid #000000', padding: '6px' }}>
+                  <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsHeader.batch_completed_on} onChange={e => updateBPBSHeader('batch_completed_on', e.target.value)} />
+                </td>
+                <td style={{ border: '1px solid #000000', padding: '10px 14px', backgroundColor: '#ffffff' }}></td>
+                <td style={{ border: '1px solid #000000', padding: '10px 14px', backgroundColor: '#ffffff' }}></td>
+              </tr>
+            </tbody>
+          </table>
+
+          {/* Recipe Grid */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
+            <h4 style={{ fontWeight: 'bold', fontSize: '16px', color: '#000000', margin: '8px 0' }}>RAW MATERIALS</h4>
+            <table style={{ width: '100%', borderCollapse: 'collapse', border: '2px solid #000000' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#ffffff' }}>
+                  <th style={{ border: '1px solid #000000', padding: '10px', textAlign: 'center', width: '80px', fontWeight: 'bold', fontSize: '14px', color: '#000000' }}>Sr. No.</th>
+                  <th style={{ border: '1px solid #000000', padding: '10px', textAlign: 'left', fontWeight: 'bold', fontSize: '14px', color: '#000000', width: '280px' }}>Item Description</th>
+                  <th style={{ border: '1px solid #000000', padding: '10px', textAlign: 'center', fontWeight: 'bold', fontSize: '14px', color: '#000000', width: '120px' }}>Qty. Used I</th>
+                  <th style={{ border: '1px solid #000000', padding: '10px', textAlign: 'center', fontWeight: 'bold', fontSize: '14px', color: '#000000', width: '120px' }}>Qty. Used II</th>
+                  <th style={{ border: '1px solid #000000', padding: '10px', textAlign: 'center', fontWeight: 'bold', fontSize: '14px', color: '#000000', width: '120px' }}>M.R. No.</th>
+                  <th style={{ border: '1px solid #000000', padding: '10px', textAlign: 'center', fontWeight: 'bold', fontSize: '14px', color: '#000000', width: '120px' }}>Input Time</th>
+                  <th style={{ border: '1px solid #000000', padding: '10px', textAlign: 'center', fontWeight: 'bold', fontSize: '14px', color: '#000000', width: '140px' }}>Charged By</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bpbsRecipe.map((r, idx) => {
+                  const rows = [];
+                  rows.push(
+                    <tr key={`row-${idx}`} style={{ height: '45px' }}>
+                      <td style={{ border: '1px solid #000000', textAlign: 'center', fontWeight: 500, backgroundColor: '#ffffff', color: '#000000', fontSize: '14px' }}>{idx + 1}</td>
+                      <td style={{ border: '1px solid #000000', padding: '6px' }}>
+                        <input 
+                          id={`bpbs-input-${idx}-item`}
+                          type="text" 
+                          style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }}
+                          value={r.item} 
+                          onChange={e => updateBPBSRow(idx, 'item', e.target.value)}
+                          onKeyDown={e => handleGridKeyDown(e, idx, 0, ['item', 'qty1', 'qty2', 'mrno', 'inputtime', 'chargedby'], 30, 'bpbs')}
+                        />
+                      </td>
+                      <td style={{ border: '1px solid #000000', padding: '6px' }}>
+                        <input 
+                          id={`bpbs-input-${idx}-qty1`}
+                          type="text" 
+                          style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', textAlign: 'center', boxSizing: 'border-box' }}
+                          value={r.qty1} 
+                          onChange={e => updateBPBSRow(idx, 'qty1', e.target.value)}
+                          onKeyDown={e => handleGridKeyDown(e, idx, 1, ['item', 'qty1', 'qty2', 'mrno', 'inputtime', 'chargedby'], 30, 'bpbs')}
+                        />
+                      </td>
+                      <td style={{ border: '1px solid #000000', padding: '6px' }}>
+                        <input 
+                          id={`bpbs-input-${idx}-qty2`}
+                          type="text" 
+                          style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', textAlign: 'center', boxSizing: 'border-box' }}
+                          value={r.qty2} 
+                          onChange={e => updateBPBSRow(idx, 'qty2', e.target.value)}
+                          onKeyDown={e => handleGridKeyDown(e, idx, 2, ['item', 'qty1', 'qty2', 'mrno', 'inputtime', 'chargedby'], 30, 'bpbs')}
+                        />
+                      </td>
+                      <td style={{ border: '1px solid #000000', padding: '6px' }}>
+                        <input 
+                          id={`bpbs-input-${idx}-mrno`}
+                          type="text" 
+                          style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', textAlign: 'center', boxSizing: 'border-box' }}
+                          value={r.mrno} 
+                          onChange={e => updateBPBSRow(idx, 'mrno', e.target.value)}
+                          onKeyDown={e => handleGridKeyDown(e, idx, 3, ['item', 'qty1', 'qty2', 'mrno', 'inputtime', 'chargedby'], 30, 'bpbs')}
+                        />
+                      </td>
+                      <td style={{ border: '1px solid #000000', padding: '6px' }}>
+                        <input 
+                          id={`bpbs-input-${idx}-inputtime`}
+                          type="text" 
+                          style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', textAlign: 'center', boxSizing: 'border-box' }}
+                          value={r.inputtime} 
+                          onFocus={() => handleTimeFieldFocus(idx, 'inputtime')}
+                          onChange={e => updateBPBSRow(idx, 'inputtime', e.target.value)}
+                          onKeyDown={e => handleGridKeyDown(e, idx, 4, ['item', 'qty1', 'qty2', 'mrno', 'inputtime', 'chargedby'], 30, 'bpbs')}
+                        />
+                      </td>
+                      <td style={{ border: '1px solid #000000', padding: '6px' }}>
+                        <input 
+                          id={`bpbs-input-${idx}-chargedby`}
+                          type="text" 
+                          style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', textTransform: 'uppercase', boxSizing: 'border-box' }}
+                          value={r.chargedby} 
+                          onChange={e => updateBPBSRow(idx, 'chargedby', e.target.value.toUpperCase())}
+                          onKeyDown={e => handleGridKeyDown(e, idx, 5, ['item', 'qty1', 'qty2', 'mrno', 'inputtime', 'chargedby'], 30, 'bpbs')}
+                        />
+                      </td>
+                    </tr>
+                  );
+                  
+                  if ((idx + 1) % 5 === 0 && (idx + 1) < 30) {
+                    rows.push(
+                      <tr key={`spacer-${idx}`} style={{ height: '45px' }}>
+                        <td style={{ border: '1px solid #000000', backgroundColor: '#ffffff' }}></td>
+                        <td style={{ border: '1px solid #000000', backgroundColor: '#ffffff' }}></td>
+                        <td style={{ border: '1px solid #000000', backgroundColor: '#ffffff' }}></td>
+                        <td style={{ border: '1px solid #000000', backgroundColor: '#ffffff' }}></td>
+                        <td style={{ border: '1px solid #000000', backgroundColor: '#ffffff' }}></td>
+                        <td style={{ border: '1px solid #000000', backgroundColor: '#ffffff' }}></td>
+                        <td style={{ border: '1px solid #000000', backgroundColor: '#ffffff' }}></td>
+                      </tr>
+                    );
+                  }
+                  return rows;
+                })}
+                <tr style={{ height: '45px', fontWeight: 'bold', backgroundColor: '#ffffff' }}>
+                  <td colSpan={2} style={{ border: '1px solid #000000', textAlign: 'right', paddingRight: '20px', fontSize: '14px', color: '#000000' }}>Total Recipe Sum:</td>
+                  <td style={{ border: '1px solid #000000', textAlign: 'center', color: '#000000', fontSize: '14px' }}>{bpbsTotalQty.toFixed(2)} kg</td>
+                  <td colSpan={4} style={{ border: '1px solid #000000' }}></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* QA & Specifications Details Grid */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
+            <h4 style={{ fontWeight: 'bold', fontSize: '16px', color: '#000000', margin: '8px 0' }}>QUALITY CONTROL & TESTING</h4>
+            <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #000000' }}>
+              <tbody>
+                <tr>
+                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '150px', fontSize: '14px', color: '#000000' }}>Material:</td>
+                  <td style={{ border: '1px solid #000000', padding: '6px', width: '200px' }}>
+                    <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.material} onChange={e => updateBPBSQc('material', e.target.value)} />
+                  </td>
+                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '150px', fontSize: '14px', color: '#000000' }}>Q.A. Status:</td>
+                  <td style={{ border: '1px solid #000000', padding: '6px', width: '180px' }}>
+                    <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.qa_status} onChange={e => updateBPBSQc('qa_status', e.target.value)} />
+                  </td>
+                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '120px', fontSize: '14px', color: '#000000' }}>Filtered By:</td>
+                  <td style={{ border: '1px solid #000000', padding: '6px', width: '160px' }}>
+                    <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.filtered_by} onChange={e => updateBPBSQc('filtered_by', e.target.value)} />
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', fontSize: '14px', color: '#000000' }}>Weighted By:</td>
+                  <td style={{ border: '1px solid #000000', padding: '6px' }}>
+                    <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.weighted_by} onChange={e => updateBPBSQc('weighted_by', e.target.value)} />
+                  </td>
+                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', fontSize: '14px', color: '#000000' }}>Sample Given:</td>
+                  <td style={{ border: '1px solid #000000', padding: '6px' }}>
+                    <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.sample_given} onChange={e => updateBPBSQc('sample_given', e.target.value)} />
+                  </td>
+                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', fontSize: '14px', color: '#000000' }}>Machine No.:</td>
+                  <td style={{ border: '1px solid #000000', padding: '6px' }}>
+                    <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.machine_no} onChange={e => updateBPBSQc('machine_no', e.target.value)} />
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', fontSize: '14px', color: '#000000' }}>Checked By:</td>
+                  <td style={{ border: '1px solid #000000', padding: '6px' }}>
+                    <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.checked_by} onChange={e => updateBPBSQc('checked_by', e.target.value)} />
+                  </td>
+                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', fontSize: '14px', color: '#000000' }}>Final Status:</td>
+                  <td style={{ border: '1px solid #000000', padding: '6px' }}>
+                    <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.status} onChange={e => updateBPBSQc('status', e.target.value)} />
+                  </td>
+                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', fontSize: '14px', color: '#000000' }}>Filter No.:</td>
+                  <td style={{ border: '1px solid #000000', padding: '6px' }}>
+                    <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.filter_no} onChange={e => updateBPBSQc('filter_no', e.target.value)} />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
+            <h4 style={{ fontWeight: 'bold', fontSize: '16px', color: '#000000', margin: '8px 0' }}>TESTING & SPECIFICATIONS</h4>
+            <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #000000' }}>
+              <tbody>
+                <tr>
+                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '150px', fontSize: '14px', color: '#000000' }}>Packing Material:</td>
+                  <td style={{ border: '1px solid #000000', padding: '6px', width: '200px' }}>
+                    <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.packing_material} onChange={e => updateBPBSQc('packing_material', e.target.value)} />
+                  </td>
+                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '150px', fontSize: '14px', color: '#000000' }}>Density:</td>
+                  <td style={{ border: '1px solid #000000', padding: '6px', width: '180px' }}>
+                    <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.density} onChange={e => updateBPBSQc('density', e.target.value)} />
+                  </td>
+                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '120px', fontSize: '14px', color: '#000000' }}>Viscosity:</td>
+                  <td style={{ border: '1px solid #000000', padding: '6px', width: '160px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <input type="text" style={{ width: '80px', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.viscosity} onChange={e => updateBPBSQc('viscosity', e.target.value)} />
+                      <span style={{ fontSize: '12px', color: '#000000', fontWeight: 'bold', whiteSpace: 'nowrap' }}>Sec./CPS</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', fontSize: '14px', color: '#000000' }}>Tested By:</td>
+                  <td style={{ border: '1px solid #000000', padding: '6px' }}>
+                    <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.tested_by} onChange={e => updateBPBSQc('tested_by', e.target.value)} />
+                  </td>
+                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', fontSize: '14px', color: '#000000' }}>Solid Content:</td>
+                  <td style={{ border: '1px solid #000000', padding: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <input type="text" style={{ width: '100px', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.solid} onChange={e => updateBPBSQc('solid', e.target.value)} />
+                      <span style={{ fontSize: '14px', color: '#000000', fontWeight: 'bold' }}>%</span>
+                    </div>
+                  </td>
+                  <td style={{ border: '1px solid #000000', padding: '10px 14px', backgroundColor: '#ffffff' }}></td>
+                  <td style={{ border: '1px solid #000000', padding: '10px 14px', backgroundColor: '#ffffff' }}></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
+            <h4 style={{ fontWeight: 'bold', fontSize: '16px', color: '#000000', margin: '8px 0' }}>PRODUCTION DETAILS</h4>
+            <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #000000' }}>
+              <tbody>
+                <tr>
+                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '150px', fontSize: '14px', color: '#000000' }}>Qty. Packed:</td>
+                  <td style={{ border: '1px solid #000000', padding: '6px', width: '200px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <input type="text" style={{ width: '90px', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.qty_packed} onChange={e => updateBPBSQc('qty_packed', e.target.value)} />
+                      <span style={{ fontSize: '12px', color: '#000000', fontWeight: 'bold', whiteSpace: 'nowrap' }}>kg/ltr</span>
+                    </div>
+                  </td>
+                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '150px', fontSize: '14px', color: '#000000' }}>Tank Cleaning:</td>
+                  <td style={{ border: '1px solid #000000', padding: '6px', width: '180px' }}>
+                    <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.tank_cleaning_check} onChange={e => updateBPBSQc('tank_cleaning_check', e.target.value)} />
+                  </td>
+                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '120px', fontSize: '14px', color: '#000000' }}>Formulation:</td>
+                  <td style={{ border: '1px solid #000000', padding: '6px', width: '160px' }}>
+                    <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.formulation} onChange={e => updateBPBSQc('formulation', e.target.value)} />
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', fontSize: '14px', color: '#000000' }}>Tare Weight:</td>
+                  <td style={{ border: '1px solid #000000', padding: '6px' }}>
+                    <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.tare_weight} onChange={e => updateBPBSQc('tare_weight', e.target.value)} />
+                  </td>
+                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', fontSize: '14px', color: '#000000' }}>Gross Weight:</td>
+                  <td style={{ border: '1px solid #000000', padding: '6px' }}>
+                    <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.gross_weight} onChange={e => updateBPBSQc('gross_weight', e.target.value)} />
+                  </td>
+                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', fontSize: '14px', color: '#000000' }}>Net Weight:</td>
+                  <td style={{ border: '1px solid #000000', padding: '6px' }}>
+                    <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.net_weight} onChange={e => updateBPBSQc('net_weight', e.target.value)} />
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', fontSize: '14px', color: '#000000' }}>Packed By:</td>
+                  <td colSpan={5} style={{ border: '1px solid #000000', padding: '6px' }}>
+                    <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.packed_by} onChange={e => updateBPBSQc('packed_by', e.target.value)} />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
+            <h4 style={{ fontWeight: 'bold', fontSize: '16px', color: '#000000', margin: '8px 0' }}>APPROVALS</h4>
+            <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #000000' }}>
+              <tbody>
+                <tr>
+                  <td style={{ border: '1px solid #000000', padding: '14px', fontWeight: 'bold', width: '150px', fontSize: '14px', color: '#000000' }}>Formula Approval:</td>
+                  <td colSpan={5} style={{ border: '1px solid #000000', padding: '6px' }}>
+                    <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.signature_approval} onChange={e => updateBPBSQc('signature_approval', e.target.value)} />
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ border: '1px solid #000000', padding: '14px', fontWeight: 'bold', width: '150px', fontSize: '14px', color: '#000000' }}>Formula Check:</td>
+                  <td colSpan={5} style={{ border: '1px solid #000000', padding: '6px' }}>
+                    <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.signature_check} onChange={e => updateBPBSQc('signature_check', e.target.value)} />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Action Buttons Centered */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginTop: '30px' }}>
+            <button onClick={handleBPBSClear} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', height: '42px', padding: '0 32px', fontSize: '14px', fontWeight: 600, borderRadius: '6px', border: 'none', backgroundColor: '#dc3545', color: '#ffffff', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+              🧹 Clear All
+            </button>
+            <button onClick={handleBPBSSubmitAndExport} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', height: '42px', padding: '0 32px', fontSize: '14px', fontWeight: 600, borderRadius: '6px', border: 'none', backgroundColor: '#28a745', color: '#ffffff', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+              💾 Save & Export
+            </button>
+            <button onClick={() => handleBPBSSubmitAndExport()} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', height: '42px', padding: '0 32px', fontSize: '14px', fontWeight: 600, borderRadius: '6px', border: 'none', backgroundColor: '#007bff', color: '#ffffff', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+              🖨 Print Sheet
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================================
+          DISPATCH REGISTER (dispatch_register.py)
+          ====================================================================== */}
+      {activeSubView === 'dispatch_register' && (
+        <div className="glass-card animated-fade" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          
+          {/* Navigation Tab Header */}
+          <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', gap: '16px' }}>
+            <button className={`theme-switch-btn ${activeTab === 'entry' ? 'btn-primary' : ''}`} style={{ padding: '8px 16px', borderRadius: 'var(--radius-sm)' }} onClick={() => setActiveTab('entry')}>
+              Data Entry
+            </button>
+            <button className={`theme-switch-btn ${activeTab === 'history' ? 'btn-primary' : ''}`} style={{ padding: '8px 16px', borderRadius: 'var(--radius-sm)' }} onClick={() => setActiveTab('history')}>
+              Search History Log
+            </button>
+          </div>
+
+          {activeTab === 'entry' ? (
+            <>
+              {/* Dispatch Register Toolbar Parity */}
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between', 
+                gap: '16px', 
+                backgroundColor: '#ffffff', 
+                padding: '12px 16px', 
+                borderBottom: '1px solid #cbd5e1', 
+                minHeight: '80px',
+                boxSizing: 'border-box',
+                flexWrap: 'wrap',
+                borderRadius: '6px',
+                marginBottom: '16px'
+              }}>
+
+                {/* Dispatch Date Outline Field */}
+                <div style={{ position: 'relative', width: '140px', height: '38px' }}>
+                  <span style={{
+                    position: 'absolute',
+                    top: '-8px',
+                    left: '10px',
+                    background: '#ffffff',
+                    padding: '0 4px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    color: '#475569',
+                    zIndex: 1,
+                    pointerEvents: 'none'
+                  }}>
+                    Dispatch Date
+                  </span>
+                  <input 
+                    type="text" 
+                    className="field-input" 
+                    value={drHeader.dispatch_date} 
+                    onChange={e => setDrHeader(p => ({ ...p, dispatch_date: e.target.value }))} 
+                    style={{ 
+                      textAlign: 'center', 
+                      height: '100%', 
+                      width: '100%', 
+                      border: '1.5px solid #cbd5e1', 
+                      borderRadius: '6px', 
+                      padding: '0 10px', 
+                      fontSize: '14px',
+                      boxSizing: 'border-box'
+                    }} 
+                  />
+                </div>
+
+                {/* Customer Name Outline Field */}
+                <div style={{ position: 'relative', flexGrow: 1, minWidth: '180px', maxWidth: '350px', height: '38px' }}>
+                  <span style={{
+                    position: 'absolute',
+                    top: '-8px',
+                    left: '10px',
+                    background: '#ffffff',
+                    padding: '0 4px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    color: '#475569',
+                    zIndex: 1,
+                    pointerEvents: 'none'
+                  }}>
+                    Customer Name
+                  </span>
+                  <input 
+                    type="text" 
+                    className="field-input" 
+                    value={drHeader.customer_name} 
+                    onChange={e => setDrHeader(p => ({ ...p, customer_name: e.target.value }))} 
+                    placeholder="Customer Name"
+                    style={{ 
+                      height: '100%', 
+                      width: '100%', 
+                      border: '1.5px solid #cbd5e1', 
+                      borderRadius: '6px', 
+                      padding: '0 12px', 
+                      fontSize: '14px',
+                      boxSizing: 'border-box'
+                    }} 
+                  />
+                </div>
+
+                {/* Divider & Grand Total */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '1px', height: '24px', backgroundColor: '#cbd5e1' }}></div>
+                  <span style={{ fontWeight: 'bold', fontSize: '15px', color: '#334155', whiteSpace: 'nowrap' }}>
+                    Grand Total: {drGrandTotal.toFixed(2)}
+                  </span>
+                </div>
+
+                {/* Buttons Container */}
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  {/* Load Button */}
+                  <button onClick={handleDrLoad} style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    height: '38px',
+                    padding: '0 16px',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    borderRadius: '4px',
+                    border: 'none',
+                    backgroundColor: '#2563eb', // ft.Colors.BLUE_600
+                    color: '#ffffff',
+                    cursor: 'pointer',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                  }}>
+                    <History size={16} /> Load
+                  </button>
+
+                  {/* Save Button */}
+                  <button onClick={handleDrSubmitAndExport} style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    height: '38px',
+                    padding: '0 16px',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    borderRadius: '4px',
+                    border: 'none',
+                    backgroundColor: '#10b981', // C_SUCCESS (#10b981)
+                    color: '#ffffff',
+                    cursor: 'pointer',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                  }}>
+                    <Save size={16} /> Save
+                  </button>
+
+                  {/* Print Button */}
+                  <button onClick={handleDrSubmitAndExport} style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    height: '38px',
+                    padding: '0 16px',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    borderRadius: '4px',
+                    border: 'none',
+                    backgroundColor: '#3b82f6', // C_ACCENT (#3b82f6)
+                    color: '#ffffff',
+                    cursor: 'pointer',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                  }}>
+                    <Printer size={16} /> Print
+                  </button>
+
+                  {/* Clear Button */}
+                  <button onClick={handleDrClear} style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    height: '38px',
+                    padding: '0 16px',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    borderRadius: '4px',
+                    border: 'none',
+                    backgroundColor: '#c2410c', // ft.Colors.ORANGE_700
+                    color: '#ffffff',
+                    cursor: 'pointer',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                  }}>
+                    <Trash2 size={16} /> Clear
+                  </button>
+                </div>
+              </div>
+
+              {/* Data Table */}
+              <div className="table-scroll-container" style={{ maxHeight: '480px', overflowX: 'auto' }}>
+                <table style={{ borderCollapse: 'collapse', border: '1px solid #cbd5e1', width: '100%', minWidth: '1610px' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#0f172a', color: '#ffffff', height: '50px' }}>
+                      <th style={{ width: '60px', textAlign: 'center', borderRight: '1px solid #334155', borderBottom: '1px solid #cbd5e1', padding: '8px', fontSize: '13px', fontWeight: 'bold' }}>Sr.</th>
+                      <th style={{ width: '450px', textAlign: 'left', borderRight: '1px solid #334155', borderBottom: '1px solid #cbd5e1', padding: '8px 14px', fontSize: '13px', fontWeight: 'bold' }}>Product Name</th>
+                      <th style={{ width: '400px', textAlign: 'left', borderRight: '1px solid #334155', borderBottom: '1px solid #cbd5e1', padding: '8px 14px', fontSize: '13px', fontWeight: 'bold' }}>Batch No.</th>
+                      <th style={{ width: '500px', textAlign: 'center', borderRight: '1px solid #334155', borderBottom: '1px solid #cbd5e1', padding: '8px', fontSize: '13px', fontWeight: 'bold' }}>Packaging Details</th>
+                      <th style={{ width: '200px', textAlign: 'right', borderBottom: '1px solid #cbd5e1', padding: '8px 16px', fontSize: '13px', fontWeight: 'bold' }}>Total Qty</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {drRows.map((r, idx) => (
+                      <tr key={idx} style={{ height: '48px' }}>
+                        {/* Sr. Cell */}
+                        <td style={{ 
+                          width: '60px', 
+                          textAlign: 'center', 
+                          backgroundColor: '#f8fafc',
+                          fontWeight: 500, 
+                          borderRight: '1px solid #cbd5e1', 
+                          borderBottom: '1px solid #cbd5e1', 
+                          fontSize: '13px',
+                          color: '#334155'
+                        }}>{idx + 1}</td>
+                        
+                        {/* Product Cell */}
+                        <td 
+                          onClick={() => handleDrProductClick(idx)} 
+                          style={{ 
+                            width: '450px', 
+                            cursor: 'pointer', 
+                            backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc',
+                            borderRight: '1px solid #cbd5e1', 
+                            borderBottom: '1px solid #cbd5e1',
+                            padding: 0
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', height: '100%' }}>
+                            <Search size={16} color={r.product_name_field ? '#475569' : '#94a3b8'} style={{ flexShrink: 0 }} />
+                            <span style={{ 
+                              color: r.product_name_field ? '#000000' : '#94a3b8', 
+                              fontWeight: r.product_name_field ? 'bold' : 'normal',
+                              fontSize: '14px',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis'
+                            }}>
+                              {r.product_name_field ? r.product_name_field.split('-').pop()?.trim() : 'Select Product...'}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Batch Cell */}
+                        <td 
+                          onClick={() => handleDrBatchClick(idx)} 
+                          style={{ 
+                            width: '400px', 
+                            cursor: 'pointer', 
+                            backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc',
+                            borderRight: '1px solid #cbd5e1', 
+                            borderBottom: '1px solid #cbd5e1',
+                            padding: 0
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', height: '100%' }}>
+                            <QrCode size={16} color={r.batch_no ? '#475569' : '#94a3b8'} style={{ flexShrink: 0 }} />
+                            <span style={{ 
+                              color: r.batch_no ? '#000000' : (r.product_name_field ? '#94a3b8' : '#cbd5e1'), 
+                              fontWeight: r.batch_no ? 'bold' : 'normal',
+                              fontSize: '14px',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis'
+                            }}>
+                              {r.batch_no ? r.batch_no : (r.product_name_field ? 'Select Batch...' : 'Select Product First...')}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Packaging Details Cell */}
+                        <td 
+                          onClick={() => handleDrPkgClick(idx)} 
+                          style={{ 
+                            width: '500px', 
+                            cursor: 'pointer', 
+                            backgroundColor: '#e0f2fe', // ft.Colors.BLUE_50
+                            borderRight: '1px solid #cbd5e1', 
+                            borderBottom: '1px solid #cbd5e1',
+                            padding: 0,
+                            textAlign: 'center'
+                          }}
+                        >
+                          <div style={{ 
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            minHeight: '48px', 
+                            padding: '4px 10px',
+                            boxSizing: 'border-box'
+                          }}>
+                            {r.packaging_details.length > 0 ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center' }}>
+                                {r.packaging_details.map((p: any, i: number) => {
+                                  const qty = parseFloat(p.size) * (parseInt(p.packets) || 0);
+                                  return (
+                                    <span key={i} style={{ color: '#000000', fontSize: '13px', fontWeight: 500 }}>
+                                      {p.packets}x{p.size}{p.unit} = {qty.toFixed(1)}{p.unit}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <span style={{ color: '#1d4ed8', fontSize: '13px', fontWeight: 500 }}>
+                                Click to add...
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Total Qty Cell */}
+                        <td style={{ 
+                          width: '200px', 
+                          textAlign: 'right', 
+                          backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc',
+                          borderBottom: '1px solid #cbd5e1', 
+                          fontWeight: 'bold', 
+                          paddingRight: '16px',
+                          fontSize: '14px',
+                          color: '#000000'
+                        }}>
+                          {r.total_qty.toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          ) : (
+            // History Log Tab
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', backgroundColor: 'var(--bg-app)', padding: '16px', borderRadius: 'var(--radius-md)' }}>
+                <div className="form-input-container">
+                  <span className="form-label">From Date</span>
+                  <input type="text" className="field-input" placeholder="DD-MM-YYYY" value={drHistoryFilters.start_date} onChange={e => setDrHistoryFilters(p => ({ ...p, start_date: e.target.value }))} />
+                </div>
+                <div className="form-input-container">
+                  <span className="form-label">To Date</span>
+                  <input type="text" className="field-input" placeholder="DD-MM-YYYY" value={drHistoryFilters.end_date} onChange={e => setDrHistoryFilters(p => ({ ...p, end_date: e.target.value }))} />
+                </div>
+                <div className="form-input-container">
+                  <span className="form-label">Customer Filter</span>
+                  <input type="text" className="field-input" placeholder="Customer name" value={drHistoryFilters.customer} onChange={e => setDrHistoryFilters(p => ({ ...p, customer: e.target.value }))} />
+                </div>
+                <div className="form-input-container">
+                  <span className="form-label">Batch Filter</span>
+                  <input type="text" className="field-input" placeholder="Batch No." value={drHistoryFilters.batch} onChange={e => setDrHistoryFilters(p => ({ ...p, batch: e.target.value }))} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                  <button onClick={handleDrHistorySearch} className="btn-primary" style={{ height: '38px', width: '100%' }}>
+                    <Search size={16} /> Search History
+                  </button>
+                </div>
+              </div>
+
+              <div className="table-scroll-container" style={{ maxHeight: '400px' }}>
+                <table className="table-locked-header">
+                  <thead>
+                    <tr>
+                      <th>Dispatch Date</th>
+                      <th>Customer Name</th>
+                      <th>Product</th>
+                      <th style={{ textAlign: 'center' }}>Batch No.</th>
+                      <th>Packaging Details</th>
+                      <th style={{ textAlign: 'right' }}>Total Qty</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {drHistoryLogs.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-light)', padding: '20px' }}>No records found. Adjust your date filters.</td>
+                      </tr>
+                    ) : (
+                      drHistoryLogs.map((log, idx) => {
+                        const pkgs = log.packaging_details || [];
+                        return (
+                          <tr key={idx}>
+                            <td>{log.dispatch_date}</td>
+                            <td style={{ fontWeight: 600 }}>{log.customer_name}</td>
+                            <td>{log.product_name_field}</td>
+                            <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{log.batch_no}</td>
+                            <td>
+                              {pkgs.map((p: any, i: number) => (
+                                <span key={i} style={{ display: 'inline-block', backgroundColor: 'var(--bg-app)', padding: '2px 6px', margin: '2px', borderRadius: '4px', fontSize: '0.8rem' }}>
+                                  {p.packets}x{p.size}{p.unit}
+                                </span>
+                              ))}
+                            </td>
+                            <td style={{ textAlign: 'right', fontWeight: 'bold' }}>{log.total_qty}</td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ======================================================================
+          INWARD REGISTER (ir.py)
+          ====================================================================== */}
+      {activeSubView === 'inward_register' && (
+        <div className="glass-card animated-fade" style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '0px', overflow: 'hidden' }}>
+          
+          {/* Tab Navigation */}
+          <div style={{ 
+            display: 'flex', 
+            borderBottom: '1px solid #e2e8f0', 
+            backgroundColor: '#ffffff',
+            padding: '0 20px',
+            gap: '30px'
+          }}>
+            <button 
+              onClick={() => setActiveTab('entry')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '16px 0',
+                border: 'none',
+                borderBottom: activeTab === 'entry' ? '3px solid #2563eb' : '3px solid transparent',
+                backgroundColor: 'transparent',
+                color: activeTab === 'entry' ? '#1e3a8a' : '#64748b',
+                fontWeight: activeTab === 'entry' ? 'bold' : 'normal',
+                cursor: 'pointer',
+                fontSize: '14px',
+                transition: 'all 0.2s'
+              }}
+            >
+              <FileText size={18} color={activeTab === 'entry' ? '#2563eb' : '#64748b'} />
+              Data Entry
+            </button>
+            <button 
+              onClick={() => setActiveTab('history')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '16px 0',
+                border: 'none',
+                borderBottom: activeTab === 'history' ? '3px solid #2563eb' : '3px solid transparent',
+                backgroundColor: 'transparent',
+                color: activeTab === 'history' ? '#1e3a8a' : '#64748b',
+                fontWeight: activeTab === 'history' ? 'bold' : 'normal',
+                cursor: 'pointer',
+                fontSize: '14px',
+                transition: 'all 0.2s'
+              }}
+            >
+              <History size={18} color={activeTab === 'history' ? '#2563eb' : '#64748b'} />
+              Search History
+            </button>
+          </div>
+
+          <div style={{ padding: '0 20px 20px 20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {activeTab === 'entry' ? (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1e3a8a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ backgroundColor: '#eff6ff', padding: '6px', borderRadius: '6px', width: '38px', height: '38px' }}>
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                      <line x1="3" y1="12" x2="21" y2="12" />
+                      <line x1="8" y1="8" x2="16" y2="8" />
+                      <line x1="8" y1="16" x2="16" y2="16" />
+                    </svg>
+                    <div>
+                      <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e3a8a', margin: 0 }}>Inward Register</h3>
+                      <p style={{ fontSize: '0.8rem', color: '#64748b', margin: 0 }}>Production Department</p>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button 
+                      onClick={handleIrSave} 
+                      style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '6px', 
+                        backgroundColor: '#10b981', 
+                        color: 'white', 
+                        padding: '8px 16px', 
+                        borderRadius: '4px', 
+                        border: 'none', 
+                        fontWeight: 'bold', 
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                      }}
+                    >
+                      <Save size={16} /> Save
+                    </button>
+                    <button 
+                      onClick={handleIrPrint} 
+                      style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '6px', 
+                        backgroundColor: '#3b82f6', 
+                        color: 'white', 
+                        padding: '8px 16px', 
+                        borderRadius: '4px', 
+                        border: 'none', 
+                        fontWeight: 'bold', 
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                      }}
+                    >
+                      <Printer size={16} /> Print
+                    </button>
+                    <button 
+                      onClick={handleIrClear} 
+                      style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '6px', 
+                        backgroundColor: '#ea580c', 
+                        color: 'white', 
+                        padding: '8px 16px', 
+                        borderRadius: '4px', 
+                        border: 'none', 
+                        fontWeight: 'bold', 
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                      }}
+                    >
+                      <RefreshCw size={16} /> Clear
+                    </button>
+                  </div>
+                </div>
+
+                {/* Grid 50 Rows Double Row Header */}
+                <div className="table-scroll-container" style={{ maxHeight: '520px', border: '1px solid #cbd5e1', borderRadius: '4px' }}>
+                  <table className="table-locked-header" style={{ minWidth: '2280px', width: '2280px', borderCollapse: 'collapse' }}>
+                    <colgroup>
+                      <col style={{ width: '70px', minWidth: '70px' }} />
+                      <col style={{ width: '140px', minWidth: '140px' }} />
+                      <col style={{ width: '140px', minWidth: '140px' }} />
+                      <col style={{ width: '250px', minWidth: '250px' }} />
+                      <col style={{ width: '130px', minWidth: '130px' }} />
+                      <col style={{ width: '160px', minWidth: '160px' }} />
+                      <col style={{ width: '350px', minWidth: '350px' }} />
+                      <col style={{ width: '160px', minWidth: '160px' }} />
+                      <col style={{ width: '100px', minWidth: '100px' }} />
+                      <col style={{ width: '100px', minWidth: '100px' }} />
+                      <col style={{ width: '140px', minWidth: '140px' }} />
+                      <col style={{ width: '140px', minWidth: '140px' }} />
+                      <col style={{ width: '100px', minWidth: '100px' }} />
+                      <col style={{ width: '100px', minWidth: '100px' }} />
+                      <col style={{ width: '200px', minWidth: '200px' }} />
+                    </colgroup>
+                    <thead>
+                      {/* Top merged header */}
+                      <tr>
+                        <th rowSpan={2} style={headerRow1Style}>General No</th>
+                        <th colSpan={2} style={headerRow1Style}>Inward Letter</th>
+                        <th rowSpan={2} style={headerRow1Style}>Transporter's Name</th>
+                        <th colSpan={2} style={headerRow1Style}>Supplier's Details</th>
+                        <th colSpan={6} style={headerRow1Style}>Material Details</th>
+                        <th colSpan={2} style={headerRow1Style}>Remarks</th>
+                        <th rowSpan={2} style={headerRow1Style}>Report Given By</th>
+                      </tr>
+                      {/* Sub Row header */}
+                      <tr>
+                        <th style={headerRow2Style}>Number</th>
+                        <th style={headerRow2Style}>Date</th>
+                        <th style={headerRow2Style}>Code</th>
+                        <th style={headerRow2Style}>Inv. No</th>
+                        <th style={headerRow2Style}>Material</th>
+                        <th style={headerRow2Style}>Lot/Batch</th>
+                        <th style={headerRow2Style}>Qty</th>
+                        <th style={headerRow2Style}>Unit</th>
+                        <th style={headerRow2Style}>Mfg Date</th>
+                        <th style={headerRow2Style}>Exp Date</th>
+                        <th style={headerRow2Style}>Ok</th>
+                        <th style={headerRow2Style}>Rejected</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {irRows.map((r, idx) => (
+                        <tr key={idx} style={{ height: '42px', backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
+                          <td style={{ textAlign: 'center', backgroundColor: '#f1f5f9', fontWeight: 500, border: '1px solid #94a3b8', color: '#334155' }}>{idx + 1}</td>
+                          <td style={{ border: '1px solid #94a3b8', padding: '0px' }}>
+                            <input id={`ir-input-${idx}-inward_letter_no`} type="text" className="cell-input" style={{ textAlign: 'center' }} value={r.inward_letter_no} onChange={e => updateIrRow(idx, 'inward_letter_no', e.target.value)} onKeyDown={e => handleGridKeyDown(e, idx, 0, ['inward_letter_no', 'inward_letter_date', 'transporter_name', 'supplier_code', 'invoice_no', 'material', 'lot_batch_no', 'quantity', 'unit', 'mfg_date', 'expiry_date', 'ok', 'rejected', 'report_given_by'], 50, 'ir')} placeholder="..." />
+                          </td>
+                          <td style={{ border: '1px solid #94a3b8', padding: '0px' }}>
+                            <input id={`ir-input-${idx}-inward_letter_date`} type="text" className="cell-input" style={{ textAlign: 'center' }} value={r.inward_letter_date} onChange={e => updateIrRow(idx, 'inward_letter_date', e.target.value)} onKeyDown={e => handleGridKeyDown(e, idx, 1, ['inward_letter_no', 'inward_letter_date', 'transporter_name', 'supplier_code', 'invoice_no', 'material', 'lot_batch_no', 'quantity', 'unit', 'mfg_date', 'expiry_date', 'ok', 'rejected', 'report_given_by'], 50, 'ir')} placeholder="DD-MM-YYYY" />
+                          </td>
+                          <td style={{ border: '1px solid #94a3b8', padding: '0px' }}>
+                            <input id={`ir-input-${idx}-transporter_name`} type="text" className="cell-input" style={{ textAlign: 'left' }} value={r.transporter_name} onChange={e => updateIrRow(idx, 'transporter_name', e.target.value)} onKeyDown={e => handleGridKeyDown(e, idx, 2, ['inward_letter_no', 'inward_letter_date', 'transporter_name', 'supplier_code', 'invoice_no', 'material', 'lot_batch_no', 'quantity', 'unit', 'mfg_date', 'expiry_date', 'ok', 'rejected', 'report_given_by'], 50, 'ir')} placeholder="Transporter" />
+                          </td>
+                          <td style={{ border: '1px solid #94a3b8', padding: '0px' }}>
+                            <input id={`ir-input-${idx}-supplier_code`} type="text" className="cell-input" style={{ textAlign: 'center' }} value={r.supplier_code} onChange={e => updateIrRow(idx, 'supplier_code', e.target.value)} onKeyDown={e => handleGridKeyDown(e, idx, 3, ['inward_letter_no', 'inward_letter_date', 'transporter_name', 'supplier_code', 'invoice_no', 'material', 'lot_batch_no', 'quantity', 'unit', 'mfg_date', 'expiry_date', 'ok', 'rejected', 'report_given_by'], 50, 'ir')} placeholder="Code" />
+                          </td>
+                          <td style={{ border: '1px solid #94a3b8', padding: '0px' }}>
+                            <input id={`ir-input-${idx}-invoice_no`} type="text" className="cell-input" style={{ textAlign: 'center' }} value={r.invoice_no} onChange={e => updateIrRow(idx, 'invoice_no', e.target.value)} onKeyDown={e => handleGridKeyDown(e, idx, 4, ['inward_letter_no', 'inward_letter_date', 'transporter_name', 'supplier_code', 'invoice_no', 'material', 'lot_batch_no', 'quantity', 'unit', 'mfg_date', 'expiry_date', 'ok', 'rejected', 'report_given_by'], 50, 'ir')} placeholder="Invoice" />
+                          </td>
+                          <td style={{ border: '1px solid #94a3b8', padding: '0px' }}>
+                            <input id={`ir-input-${idx}-material`} type="text" className="cell-input" style={{ textAlign: 'left' }} value={r.material} onChange={e => updateIrRow(idx, 'material', e.target.value)} onKeyDown={e => handleGridKeyDown(e, idx, 5, ['inward_letter_no', 'inward_letter_date', 'transporter_name', 'supplier_code', 'invoice_no', 'material', 'lot_batch_no', 'quantity', 'unit', 'mfg_date', 'expiry_date', 'ok', 'rejected', 'report_given_by'], 50, 'ir')} placeholder="Material Name" />
+                          </td>
+                          <td style={{ border: '1px solid #94a3b8', padding: '0px' }}>
+                            <input id={`ir-input-${idx}-lot_batch_no`} type="text" className="cell-input" style={{ textAlign: 'center' }} value={r.lot_batch_no} onChange={e => updateIrRow(idx, 'lot_batch_no', e.target.value)} onKeyDown={e => handleGridKeyDown(e, idx, 6, ['inward_letter_no', 'inward_letter_date', 'transporter_name', 'supplier_code', 'invoice_no', 'material', 'lot_batch_no', 'quantity', 'unit', 'mfg_date', 'expiry_date', 'ok', 'rejected', 'report_given_by'], 50, 'ir')} placeholder="Batch No" />
+                          </td>
+                          <td style={{ border: '1px solid #94a3b8', padding: '0px' }}>
+                            <input id={`ir-input-${idx}-quantity`} type="text" className="cell-input" style={{ textAlign: 'center' }} value={r.quantity} onChange={e => updateIrRow(idx, 'quantity', e.target.value)} onKeyDown={e => handleGridKeyDown(e, idx, 7, ['inward_letter_no', 'inward_letter_date', 'transporter_name', 'supplier_code', 'invoice_no', 'material', 'lot_batch_no', 'quantity', 'unit', 'mfg_date', 'expiry_date', 'ok', 'rejected', 'report_given_by'], 50, 'ir')} placeholder="0.00" />
+                          </td>
+                          <td style={{ border: '1px solid #94a3b8', padding: '0px' }}>
+                            <input id={`ir-input-${idx}-unit`} type="text" className="cell-input" style={{ textAlign: 'center' }} value={r.unit} onChange={e => updateIrRow(idx, 'unit', e.target.value)} onKeyDown={e => handleGridKeyDown(e, idx, 8, ['inward_letter_no', 'inward_letter_date', 'transporter_name', 'supplier_code', 'invoice_no', 'material', 'lot_batch_no', 'quantity', 'unit', 'mfg_date', 'expiry_date', 'ok', 'rejected', 'report_given_by'], 50, 'ir')} placeholder="kgs" />
+                          </td>
+                          <td style={{ border: '1px solid #94a3b8', padding: '0px' }}>
+                            <input id={`ir-input-${idx}-mfg_date`} type="text" className="cell-input" style={{ textAlign: 'center' }} value={r.mfg_date} onChange={e => updateIrRow(idx, 'mfg_date', e.target.value)} onKeyDown={e => handleGridKeyDown(e, idx, 9, ['inward_letter_no', 'inward_letter_date', 'transporter_name', 'supplier_code', 'invoice_no', 'material', 'lot_batch_no', 'quantity', 'unit', 'mfg_date', 'expiry_date', 'ok', 'rejected', 'report_given_by'], 50, 'ir')} placeholder="DD-MM" />
+                          </td>
+                          <td style={{ border: '1px solid #94a3b8', padding: '0px' }}>
+                            <input id={`ir-input-${idx}-expiry_date`} type="text" className="cell-input" style={{ textAlign: 'center' }} value={r.expiry_date} onChange={e => updateIrRow(idx, 'expiry_date', e.target.value)} onKeyDown={e => handleGridKeyDown(e, idx, 10, ['inward_letter_no', 'inward_letter_date', 'transporter_name', 'supplier_code', 'invoice_no', 'material', 'lot_batch_no', 'quantity', 'unit', 'mfg_date', 'expiry_date', 'ok', 'rejected', 'report_given_by'], 50, 'ir')} placeholder="DD-MM" />
+                          </td>
+                          <td style={{ border: '1px solid #94a3b8', padding: '0px' }}>
+                            <input id={`ir-input-${idx}-ok`} type="text" className="cell-input" style={{ textAlign: 'left' }} value={r.ok} onChange={e => updateIrRow(idx, 'ok', e.target.value)} onKeyDown={e => handleGridKeyDown(e, idx, 11, ['inward_letter_no', 'inward_letter_date', 'transporter_name', 'supplier_code', 'invoice_no', 'material', 'lot_batch_no', 'quantity', 'unit', 'mfg_date', 'expiry_date', 'ok', 'rejected', 'report_given_by'], 50, 'ir')} placeholder="Ok remarks" />
+                          </td>
+                          <td style={{ border: '1px solid #94a3b8', padding: '0px' }}>
+                            <input id={`ir-input-${idx}-rejected`} type="text" className="cell-input" style={{ textAlign: 'left' }} value={r.rejected} onChange={e => updateIrRow(idx, 'rejected', e.target.value)} onKeyDown={e => handleGridKeyDown(e, idx, 12, ['inward_letter_no', 'inward_letter_date', 'transporter_name', 'supplier_code', 'invoice_no', 'material', 'lot_batch_no', 'quantity', 'unit', 'mfg_date', 'expiry_date', 'ok', 'rejected', 'report_given_by'], 50, 'ir')} placeholder="Rejected remarks" />
+                          </td>
+                          <td style={{ border: '1px solid #94a3b8', padding: '0px' }}>
+                            <input id={`ir-input-${idx}-report_given_by`} type="text" className="cell-input" style={{ textTransform: 'uppercase', textAlign: 'center' }} value={r.report_given_by} onChange={e => updateIrRow(idx, 'report_given_by', e.target.value.toUpperCase())} onKeyDown={e => handleGridKeyDown(e, idx, 13, ['inward_letter_no', 'inward_letter_date', 'transporter_name', 'supplier_code', 'invoice_no', 'material', 'lot_batch_no', 'quantity', 'unit', 'mfg_date', 'expiry_date', 'ok', 'rejected', 'report_given_by'], 50, 'ir')} placeholder="USER" />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            ) : (
+              // Search Tab
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div style={{ display: 'flex', gap: '12px', backgroundColor: '#f1f5f9', padding: '16px', borderRadius: '4px', border: '1px solid #94a3b8' }}>
+                  <div className="form-input-container" style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span className="form-label" style={{ fontWeight: 'bold', fontSize: '13px', color: '#475569' }}>Search Inward Letter Number</span>
+                    <input type="text" className="field-input" placeholder="Enter inward letter number..." value={irSearchQuery} onChange={e => setIrSearchQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleIrSearch()} style={{ padding: '8px 12px', fontSize: '14px', borderRadius: '4px', border: '1px solid #cbd5e1', backgroundColor: '#ffffff' }} />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                    <button onClick={handleIrSearch} className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '6px', height: '38px', padding: '0 24px', backgroundColor: '#3b82f6', color: '#ffffff', fontWeight: 'bold', borderRadius: '4px', border: 'none', cursor: 'pointer' }}>
+                      <Search size={16} /> Search History
+                    </button>
+                  </div>
+                </div>
+
+                <div className="table-scroll-container" style={{ maxHeight: '420px', border: '1px solid #94a3b8', borderRadius: '4px' }}>
+                  <table className="table-locked-header" style={{ minWidth: '2280px', width: '2280px', borderCollapse: 'collapse' }}>
+                    <colgroup>
+                      <col style={{ width: '70px', minWidth: '70px' }} />
+                      <col style={{ width: '140px', minWidth: '140px' }} />
+                      <col style={{ width: '140px', minWidth: '140px' }} />
+                      <col style={{ width: '250px', minWidth: '250px' }} />
+                      <col style={{ width: '130px', minWidth: '130px' }} />
+                      <col style={{ width: '160px', minWidth: '160px' }} />
+                      <col style={{ width: '350px', minWidth: '350px' }} />
+                      <col style={{ width: '160px', minWidth: '160px' }} />
+                      <col style={{ width: '100px', minWidth: '100px' }} />
+                      <col style={{ width: '100px', minWidth: '100px' }} />
+                      <col style={{ width: '140px', minWidth: '140px' }} />
+                      <col style={{ width: '140px', minWidth: '140px' }} />
+                      <col style={{ width: '100px', minWidth: '100px' }} />
+                      <col style={{ width: '100px', minWidth: '100px' }} />
+                      <col style={{ width: '200px', minWidth: '200px' }} />
+                    </colgroup>
+                    <thead>
+                      <tr>
+                        <th rowSpan={2} style={headerRow1Style}>General No</th>
+                        <th colSpan={2} style={headerRow1Style}>Inward Letter</th>
+                        <th rowSpan={2} style={headerRow1Style}>Transporter's Name</th>
+                        <th colSpan={2} style={headerRow1Style}>Supplier's Details</th>
+                        <th colSpan={6} style={headerRow1Style}>Material Details</th>
+                        <th colSpan={2} style={headerRow1Style}>Remarks</th>
+                        <th rowSpan={2} style={headerRow1Style}>Report Given By</th>
+                      </tr>
+                      <tr>
+                        <th style={headerRow2Style}>Number</th>
+                        <th style={headerRow2Style}>Date</th>
+                        <th style={headerRow2Style}>Code</th>
+                        <th style={headerRow2Style}>Inv. No</th>
+                        <th style={headerRow2Style}>Material</th>
+                        <th style={headerRow2Style}>Lot/Batch</th>
+                        <th style={headerRow2Style}>Qty</th>
+                        <th style={headerRow2Style}>Unit</th>
+                        <th style={headerRow2Style}>Mfg Date</th>
+                        <th style={headerRow2Style}>Exp Date</th>
+                        <th style={headerRow2Style}>Ok</th>
+                        <th style={headerRow2Style}>Rejected</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {irSearchResults.length === 0 ? (
+                        <tr>
+                          <td colSpan={15} style={{ textAlign: 'center', padding: '30px', color: '#64748b', fontSize: '14px', backgroundColor: '#ffffff', border: '1px solid #94a3b8' }}>
+                            No matching inward registry shipments found.
+                          </td>
+                        </tr>
+                      ) : (
+                        irSearchResults.map((log, idx) => {
+                          const { okVal, rejVal } = parseIrRemarks(log.remarks || '');
+                          return (
+                            <tr key={idx} style={{ height: '40px', backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
+                              <td style={{ textAlign: 'center', backgroundColor: '#f1f5f9', fontWeight: 500, border: '1px solid #94a3b8', color: '#334155', padding: '8px' }}>{idx + 1}</td>
+                              <td style={{ border: '1px solid #94a3b8', padding: '8px', textAlign: 'center', fontWeight: 'bold' }}>{log.inward_letter_no}</td>
+                              <td style={{ border: '1px solid #94a3b8', padding: '8px', textAlign: 'center' }}>{log.inward_letter_date}</td>
+                              <td style={{ border: '1px solid #94a3b8', padding: '8px', textAlign: 'left' }}>{log.transporter_name}</td>
+                              <td style={{ border: '1px solid #94a3b8', padding: '8px', textAlign: 'center' }}>{log.supplier_code}</td>
+                              <td style={{ border: '1px solid #94a3b8', padding: '8px', textAlign: 'center' }}>{log.invoice_no}</td>
+                              <td style={{ border: '1px solid #94a3b8', padding: '8px', textAlign: 'left' }}>{log.material}</td>
+                              <td style={{ border: '1px solid #94a3b8', padding: '8px', textAlign: 'center' }}>{log.lot_batch_no}</td>
+                              <td style={{ border: '1px solid #94a3b8', padding: '8px', textAlign: 'center' }}>{log.quantity}</td>
+                              <td style={{ border: '1px solid #94a3b8', padding: '8px', textAlign: 'center' }}>{log.unit}</td>
+                              <td style={{ border: '1px solid #94a3b8', padding: '8px', textAlign: 'center' }}>{log.mfg_date}</td>
+                              <td style={{ border: '1px solid #94a3b8', padding: '8px', textAlign: 'center' }}>{log.expiry_date}</td>
+                              <td style={{ border: '1px solid #94a3b8', padding: '8px', textAlign: 'left' }}>{log.ok || okVal}</td>
+                              <td style={{ border: '1px solid #94a3b8', padding: '8px', textAlign: 'left' }}>{log.rejected || rejVal}</td>
+                              <td style={{ border: '1px solid #94a3b8', padding: '8px', textAlign: 'center' }}>{log.report_given_by}</td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================================
+          DAILY PRODUCTION (dp.py)
+          ====================================================================== */}
+      {activeSubView === 'daily_production' && (
+        <div className="glass-card animated-fade" style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '24px', backgroundColor: '#ffffff', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}>
+          
+          {/* Tab Selector */}
+          <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0', gap: '16px', paddingBottom: '12px' }}>
+            <button 
+              className={`theme-switch-btn ${activeTab === 'entry' ? 'btn-primary' : ''}`} 
+              style={{ 
+                padding: '8px 16px', 
+                borderRadius: '8px', 
+                fontWeight: 600, 
+                backgroundColor: activeTab === 'entry' ? '#0f172a' : 'transparent', 
+                color: activeTab === 'entry' ? '#ffffff' : '#64748b',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }} 
+              onClick={() => setActiveTab('entry')}
+            >
+              Daily Entry Grid
+            </button>
+            <button 
+              className={`theme-switch-btn ${activeTab === 'history' ? 'btn-primary' : ''}`} 
+              style={{ 
+                padding: '8px 16px', 
+                borderRadius: '8px', 
+                fontWeight: 600, 
+                backgroundColor: activeTab === 'history' ? '#0f172a' : 'transparent', 
+                color: activeTab === 'history' ? '#ffffff' : '#64748b',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }} 
+              onClick={() => setActiveTab('history')}
+            >
+              Daily History Logs
+            </button>
+          </div>
+
+          {activeTab === 'entry' ? (
+            <>
+              {/* Toolbar Header (Flet style) */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', paddingBottom: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ backgroundColor: '#eff6ff', padding: '8px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Factory size={24} color="#3b82f6" />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>Daily Production</h3>
+                    <p style={{ fontSize: '0.75rem', color: '#64748b', margin: 0 }}>Production Department</p>
+                  </div>
+                </div>
+
+                {/* Center Block Date & Totals */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', margin: '0 auto' }}>
+                  {/* Date Input */}
+                  <div style={{ display: 'flex', flexDirection: 'column', width: '130px' }}>
+                    <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '2px' }}>Date</span>
+                    <input 
+                      type="date" 
+                      style={{ 
+                        padding: '6px 10px', 
+                        fontSize: '0.85rem', 
+                        fontWeight: 'bold', 
+                        color: '#0f172a', 
+                        border: '1px solid #cbd5e1', 
+                        borderRadius: '6px', 
+                        textAlign: 'center',
+                        outline: 'none'
+                      }} 
+                      value={dpDate} 
+                      onChange={e => setDpDate(e.target.value)} 
+                    />
+                  </div>
+
+                  <div style={{ height: '30px', width: '1px', backgroundColor: '#e2e8f0' }} />
+
+                  {/* Math Totals */}
+                  <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#16a34a' }}>Kgs: {dpTotalKgs.toFixed(2)}</span>
+                    <div style={{ height: '20px', width: '1px', backgroundColor: '#e2e8f0' }} />
+                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#2563eb' }}>Ltr: {dpTotalLtr.toFixed(2)}</span>
+                    <div style={{ height: '20px', width: '1px', backgroundColor: '#e2e8f0' }} />
+                    <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1e293b' }}>Total: {(dpTotalKgs + dpTotalLtr).toFixed(2)}</span>
+                  </div>
+                </div>
+
+                {/* Right Buttons */}
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button 
+                    onClick={loadDpDayEntries} 
+                    style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '6px', 
+                      backgroundColor: '#0f172a', 
+                      color: '#ffffff', 
+                      border: 'none', 
+                      padding: '8px 16px', 
+                      borderRadius: '6px', 
+                      fontWeight: 600, 
+                      fontSize: '0.85rem', 
+                      cursor: 'pointer' 
+                    }}
+                  >
+                    <RefreshCw size={14} /> Refresh
+                  </button>
+                  <button 
+                    onClick={handleDpSaveAndExport} 
+                    style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '6px', 
+                      backgroundColor: '#10b981', 
+                      color: '#ffffff', 
+                      border: 'none', 
+                      padding: '8px 16px', 
+                      borderRadius: '6px', 
+                      fontWeight: 600, 
+                      fontSize: '0.85rem', 
+                      cursor: 'pointer' 
+                    }}
+                  >
+                    <Download size={14} /> Export
+                  </button>
+                  <button 
+                    onClick={handleDpSaveAndExport} 
+                    style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '6px', 
+                      backgroundColor: '#3b82f6', 
+                      color: '#ffffff', 
+                      border: 'none', 
+                      padding: '8px 16px', 
+                      borderRadius: '6px', 
+                      fontWeight: 600, 
+                      fontSize: '0.85rem', 
+                      cursor: 'pointer' 
+                    }}
+                  >
+                    <Printer size={14} /> Print
+                  </button>
+                </div>
+              </div>
+
+              {/* Grid 20 Rows */}
+              <div className="table-scroll-container" style={{ maxHeight: '500px', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1580px' }}>
+                  <thead>
+                    <tr style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+                      <th style={{ width: '60px', textAlign: 'center', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Sr</th>
+                      <th style={{ width: '350px', textAlign: 'left', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Customer Name</th>
+                      <th style={{ width: '450px', textAlign: 'left', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Product Name</th>
+                      <th style={{ width: '250px', textAlign: 'center', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Batch No.</th>
+                      <th style={{ width: '150px', textAlign: 'center', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Quantity</th>
+                      <th style={{ width: '120px', textAlign: 'center', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Unit</th>
+                      <th style={{ width: '300px', textAlign: 'center', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Charged By</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dpRows.map((r, idx) => {
+                      const isEven = idx % 2 === 0;
+                      const rowBg = isEven ? '#ffffff' : '#f8fafc';
+                      
+                      const prodFull = r.product_name_field || '';
+                      const displayProd = prodFull.includes(" - ") ? prodFull.split(" - ")[1] : prodFull;
+
+                      return (
+                        <tr key={idx} style={{ height: '44px', backgroundColor: rowBg }}>
+                          <td style={{ textAlign: 'center', fontWeight: 600, border: '1px solid #cbd5e1', color: '#475569' }}>{idx + 1}</td>
+                          <td style={{ border: '1px solid #cbd5e1', padding: 0 }}>
+                            <input 
+                              id={`dp-input-${idx}-customer_name`} 
+                              type="text" 
+                              className="cell-input" 
+                              style={{ 
+                                width: '100%', 
+                                border: 'none', 
+                                padding: '10px 8px', 
+                                backgroundColor: 'transparent',
+                                outline: 'none'
+                              }}
+                              value={r.customer_name} 
+                              readOnly 
+                              placeholder="Customer" 
+                            />
+                          </td>
+                          <td style={{ border: '1px solid #cbd5e1', padding: 0 }}>
+                            <input 
+                              id={`dp-input-${idx}-product_name_field`} 
+                              type="text" 
+                              className="cell-input" 
+                              style={{ 
+                                width: '100%', 
+                                border: 'none', 
+                                padding: '10px 8px', 
+                                backgroundColor: 'transparent',
+                                outline: 'none'
+                              }}
+                              value={displayProd} 
+                              readOnly 
+                              placeholder="Product description" 
+                            />
+                          </td>
+                          <td style={{ border: '1px solid #cbd5e1', padding: 0 }}>
+                            <input 
+                              id={`dp-input-${idx}-batch_no`} 
+                              type="text" 
+                              className="cell-input" 
+                              style={{ 
+                                width: '100%', 
+                                border: 'none', 
+                                padding: '10px 8px', 
+                                backgroundColor: 'transparent',
+                                textAlign: 'center',
+                                fontWeight: 'bold',
+                                textTransform: 'uppercase',
+                                outline: 'none'
+                              }}
+                              value={r.batch_no} 
+                              onChange={e => updateDpRow(idx, 'batch_no', e.target.value)} 
+                              onKeyDown={e => handleGridKeyDown(e, idx, 2, ['customer_name', 'product_name_field', 'batch_no', 'qty', 'qty_unit', 'charged_by'], 20, 'dp')} 
+                              placeholder="BATCH NO" 
+                            />
+                          </td>
+                          <td style={{ border: '1px solid #cbd5e1', padding: 0 }}>
+                            <input 
+                              id={`dp-input-${idx}-qty`} 
+                              type="text" 
+                              className="cell-input" 
+                              style={{ 
+                                width: '100%', 
+                                border: 'none', 
+                                padding: '10px 8px', 
+                                backgroundColor: 'transparent',
+                                textAlign: 'center',
+                                outline: 'none'
+                              }}
+                              value={r.qty} 
+                              onChange={e => updateDpRow(idx, 'qty', e.target.value)} 
+                              onKeyDown={e => handleGridKeyDown(e, idx, 3, ['customer_name', 'product_name_field', 'batch_no', 'qty', 'qty_unit', 'charged_by'], 20, 'dp')} 
+                              placeholder="0.00" 
+                            />
+                          </td>
+                          <td style={{ textAlign: 'center', border: '1px solid #cbd5e1', padding: '4px' }}>
+                            <span 
+                              style={{
+                                display: 'inline-block',
+                                padding: '4px 12px',
+                                borderRadius: '12px',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                textTransform: 'uppercase',
+                                backgroundColor: r.qty_unit === 'kgs' ? '#e8f5e9' : '#e3f2fd',
+                                color: r.qty_unit === 'kgs' ? '#2e7d32' : '#1565c0',
+                                border: `1px solid ${r.qty_unit === 'kgs' ? '#a5d6a7' : '#90caf9'}`
+                              }}
+                            >
+                              {r.qty_unit}
+                            </span>
+                          </td>
+                          <td style={{ border: '1px solid #cbd5e1', padding: 0 }}>
+                            <input 
+                              id={`dp-input-${idx}-charged_by`} 
+                              type="text" 
+                              className="cell-input" 
+                              style={{ 
+                                width: '100%', 
+                                border: 'none', 
+                                padding: '10px 8px', 
+                                backgroundColor: 'transparent',
+                                textAlign: 'center',
+                                textTransform: 'uppercase',
+                                outline: 'none'
+                              }}
+                              value={r.charged_by} 
+                              onChange={e => updateDpRow(idx, 'charged_by', e.target.value.toUpperCase())} 
+                              onKeyDown={e => handleGridKeyDown(e, idx, 5, ['customer_name', 'product_name_field', 'batch_no', 'qty', 'qty_unit', 'charged_by'], 20, 'dp')} 
+                              placeholder="USER" 
+                            />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          ) : (
+            // Daily Production History Tab
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              
+              {/* History Header Toolbar */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ backgroundColor: '#f1f5f9', padding: '8px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <History size={24} color="#64748b" />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>Daily Production History</h3>
+                    <p style={{ fontSize: '0.75rem', color: '#64748b', margin: 0 }}>History Logs & Audit Trails</p>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button 
+                    onClick={exportDpHistoryToPdf} 
+                    style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '6px', 
+                      backgroundColor: '#dc2626', 
+                      color: '#ffffff', 
+                      border: 'none', 
+                      padding: '8px 16px', 
+                      borderRadius: '6px', 
+                      fontWeight: 600, 
+                      fontSize: '0.85rem', 
+                      cursor: 'pointer' 
+                    }}
+                  >
+                    <FileText size={14} /> PDF
+                  </button>
+                  <button 
+                    onClick={exportDpHistoryToExcel} 
+                    style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '6px', 
+                      backgroundColor: '#15803d', 
+                      color: '#ffffff', 
+                      border: 'none', 
+                      padding: '8px 16px', 
+                      borderRadius: '6px', 
+                      fontWeight: 600, 
+                      fontSize: '0.85rem', 
+                      cursor: 'pointer' 
+                    }}
+                  >
+                    <Table size={14} /> Excel
+                  </button>
+                </div>
+              </div>
+
+              {/* Advanced Filter Inputs Container */}
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', 
+                gap: '12px', 
+                backgroundColor: '#f8fafc', 
+                padding: '16px', 
+                borderRadius: '8px',
+                border: '1px solid #e2e8f0',
+                alignItems: 'flex-end'
+              }}>
+                <div className="form-input-container" style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: '4px' }}>From Date</span>
+                  <input 
+                    type="text" 
+                    className="field-input" 
+                    placeholder="DD-MM-YYYY" 
+                    style={{ padding: '8px 10px', fontSize: '0.85rem', border: '1px solid #cbd5e1', borderRadius: '6px', backgroundColor: '#ffffff' }}
+                    value={dpHistoryFilters.start_date} 
+                    onChange={e => setDpHistoryFilters(p => ({ ...p, start_date: e.target.value }))} 
+                  />
+                </div>
+                <div className="form-input-container" style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: '4px' }}>To Date</span>
+                  <input 
+                    type="text" 
+                    className="field-input" 
+                    placeholder="DD-MM-YYYY" 
+                    style={{ padding: '8px 10px', fontSize: '0.85rem', border: '1px solid #cbd5e1', borderRadius: '6px', backgroundColor: '#ffffff' }}
+                    value={dpHistoryFilters.end_date} 
+                    onChange={e => setDpHistoryFilters(p => ({ ...p, end_date: e.target.value }))} 
+                  />
+                </div>
+                <div className="form-input-container" style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: '4px' }}>Customer Name</span>
+                  <input 
+                    type="text" 
+                    className="field-input" 
+                    placeholder="Customer filter" 
+                    style={{ padding: '8px 10px', fontSize: '0.85rem', border: '1px solid #cbd5e1', borderRadius: '6px', backgroundColor: '#ffffff' }}
+                    value={dpHistoryFilters.customer} 
+                    onChange={e => setDpHistoryFilters(p => ({ ...p, customer: e.target.value }))} 
+                  />
+                </div>
+                <div className="form-input-container" style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: '4px' }}>Batch No.</span>
+                  <input 
+                    type="text" 
+                    className="field-input" 
+                    placeholder="Batch filter" 
+                    style={{ padding: '8px 10px', fontSize: '0.85rem', border: '1px solid #cbd5e1', borderRadius: '6px', backgroundColor: '#ffffff' }}
+                    value={dpHistoryFilters.batch} 
+                    onChange={e => setDpHistoryFilters(p => ({ ...p, batch: e.target.value }))} 
+                  />
+                </div>
+                <div className="form-input-container" style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: '4px' }}>Product Name</span>
+                  <input 
+                    type="text" 
+                    className="field-input" 
+                    placeholder="Product filter" 
+                    style={{ padding: '8px 10px', fontSize: '0.85rem', border: '1px solid #cbd5e1', borderRadius: '6px', backgroundColor: '#ffffff' }}
+                    value={dpHistoryFilters.product} 
+                    onChange={e => setDpHistoryFilters(p => ({ ...p, product: e.target.value }))} 
+                  />
+                </div>
+
+                {/* Actions inside filter block */}
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button 
+                    onClick={() => handleDpHistorySearch(1)} 
+                    style={{ 
+                      flex: 1,
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center',
+                      gap: '4px', 
+                      backgroundColor: '#3b82f6', 
+                      color: '#ffffff', 
+                      border: 'none', 
+                      padding: '8px 12px', 
+                      borderRadius: '6px', 
+                      fontWeight: 600, 
+                      fontSize: '0.8rem', 
+                      cursor: 'pointer',
+                      height: '36px'
+                    }}
+                    title="Search"
+                  >
+                    <Search size={14} /> Search
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setDpHistoryFilters({
+                        start_date: '',
+                        end_date: '',
+                        customer: '',
+                        batch: '',
+                        product: ''
+                      });
+                      setTimeout(() => handleDpHistorySearch(1), 50);
+                    }} 
+                    style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center',
+                      backgroundColor: '#ef4444', 
+                      color: '#ffffff', 
+                      border: 'none', 
+                      padding: '8px 12px', 
+                      borderRadius: '6px', 
+                      fontWeight: 600, 
+                      fontSize: '0.8rem', 
+                      cursor: 'pointer',
+                      height: '36px'
+                    }}
+                    title="Clear Filters"
+                  >
+                    <X size={14} /> Clear
+                  </button>
+                </div>
+
+                {/* Pagination center box */}
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '8px', 
+                  backgroundColor: '#ffffff', 
+                  border: '1px solid #cbd5e1', 
+                  borderRadius: '6px', 
+                  padding: '4px 8px',
+                  height: '36px',
+                  justifyContent: 'center'
+                }}>
+                  <button 
+                    disabled={dpHistoryPage <= 1} 
+                    onClick={() => handleDpHistorySearch(dpHistoryPage - 1)}
+                    style={{ border: 'none', background: 'none', cursor: dpHistoryPage <= 1 ? 'default' : 'pointer', color: dpHistoryPage <= 1 ? '#cbd5e1' : '#0f172a', display: 'flex', alignItems: 'center' }}
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#334155' }}>
+                    Page {dpHistoryPage} of {dpHistoryTotalPages}
+                  </span>
+                  <button 
+                    disabled={dpHistoryPage >= dpHistoryTotalPages} 
+                    onClick={() => handleDpHistorySearch(dpHistoryPage + 1)}
+                    style={{ border: 'none', background: 'none', cursor: dpHistoryPage >= dpHistoryTotalPages ? 'default' : 'pointer', color: dpHistoryPage >= dpHistoryTotalPages ? '#cbd5e1' : '#0f172a', display: 'flex', alignItems: 'center' }}
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              </div>
+
+              {/* History Table Container */}
+              <div className="table-scroll-container" style={{ maxHeight: '450px', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1140px' }}>
+                  <thead>
+                    <tr style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+                      <th style={{ width: '110px', textAlign: 'center', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Production Date</th>
+                      <th style={{ width: '250px', textAlign: 'left', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Customer Name</th>
+                      <th style={{ width: '300px', textAlign: 'left', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Product Name</th>
+                      <th style={{ width: '150px', textAlign: 'center', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Batch No.</th>
+                      <th style={{ width: '100px', textAlign: 'right', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Quantity</th>
+                      <th style={{ width: '80px', textAlign: 'center', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Unit</th>
+                      <th style={{ width: '150px', textAlign: 'left', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Charged By</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dpHistoryLogs.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} style={{ textAlign: 'center', padding: '24px', color: '#64748b', fontSize: '0.85rem', fontWeight: 500, backgroundColor: '#ffffff' }}>
+                          No historical production batches logged for selected filters.
+                        </td>
+                      </tr>
+                    ) : (
+                      dpHistoryLogs.map((log, idx) => {
+                        const isEven = idx % 2 === 0;
+                        const rowBg = isEven ? '#ffffff' : '#f8fafc';
+                        
+                        const prodFull = log.product_name_field || '';
+                        const displayProd = prodFull.includes(" - ") ? prodFull.split(" - ")[1] : prodFull;
+
+                        return (
+                          <tr key={idx} style={{ height: '40px', backgroundColor: rowBg }}>
+                            <td style={{ textAlign: 'center', border: '1px solid #cbd5e1', padding: '8px', fontSize: '0.85rem', color: '#475569' }}>{log.date}</td>
+                            <td style={{ border: '1px solid #cbd5e1', padding: '8px', fontSize: '0.85rem', fontWeight: 600, color: '#0f172a' }}>{log.customer_name}</td>
+                            <td style={{ border: '1px solid #cbd5e1', padding: '8px', fontSize: '0.85rem', color: '#334155' }}>{displayProd}</td>
+                            <td style={{ textAlign: 'center', fontWeight: 'bold', border: '1px solid #cbd5e1', padding: '8px', fontSize: '0.85rem', color: '#0f172a' }}>{log.batch_no}</td>
+                            <td style={{ textAlign: 'right', fontWeight: 'bold', border: '1px solid #cbd5e1', padding: '8px', fontSize: '0.85rem', color: '#16a34a' }}>{log.qty}</td>
+                            <td style={{ textAlign: 'center', border: '1px solid #cbd5e1', padding: '4px' }}>
+                              <span 
+                                style={{
+                                  display: 'inline-block',
+                                  padding: '2px 8px',
+                                  borderRadius: '10px',
+                                  fontSize: '0.7rem',
+                                  fontWeight: 700,
+                                  textTransform: 'uppercase',
+                                  backgroundColor: log.qty_unit === 'kgs' ? '#e8f5e9' : '#e3f2fd',
+                                  color: log.qty_unit === 'kgs' ? '#2e7d32' : '#1565c0',
+                                }}
+                              >
+                                {log.qty_unit}
+                              </span>
+                            </td>
+                            <td style={{ border: '1px solid #cbd5e1', padding: '8px', fontSize: '0.85rem', color: '#475569' }}>{log.charged_by}</td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ======================================================================
+          WAREHOUSE FINISHED GOODS STORAGE MATRIX (fg.py)
+          ====================================================================== */}
+      {activeSubView === 'warehouse_dept' && (
+        <div className="glass-card animated-fade" style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '24px', backgroundColor: '#ffffff', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}>
+          
+          {/* Header Row */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '16px' }}>
+            {/* Logo and Titles */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ backgroundColor: '#eff6ff', padding: '8px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Grid size={24} color="#0ea5e9" />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>Finish Good Report</h3>
+                <p style={{ fontSize: '0.8rem', color: '#64748b', margin: 0, fontWeight: 500 }}>Production & Inventory</p>
+              </div>
+            </div>
+
+            {/* Pagination Controls */}
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '8px', 
+              backgroundColor: '#f1f5f9', 
+              padding: '4px 12px', 
+              borderRadius: '8px', 
+              border: '1px solid #cbd5e1' 
+            }}>
+              <button 
+                disabled={fgPage === 1} 
+                onClick={() => setFgPage(p => Math.max(1, p - 1))}
+                style={{ 
+                  background: 'none', 
+                  border: 'none', 
+                  cursor: fgPage === 1 ? 'default' : 'pointer', 
+                  opacity: fgPage === 1 ? 0.4 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '4px'
+                }}
+              >
+                <ChevronLeft size={18} color="#475569" />
+              </button>
+              
+              <input 
+                type="text" 
+                value={fgPageInput} 
+                onChange={e => setFgPageInput(e.target.value)}
+                onBlur={() => {
+                  const pNum = parseInt(fgPageInput) || 1;
+                  if (pNum >= 1 && pNum <= fgTotalPages) {
+                    setFgPage(pNum);
+                  } else {
+                    setFgPageInput(String(fgPage));
+                  }
+                }}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    const pNum = parseInt(fgPageInput) || 1;
+                    if (pNum >= 1 && pNum <= fgTotalPages) {
+                      setFgPage(pNum);
+                    } else {
+                      setFgPageInput(String(fgPage));
+                    }
+                    e.currentTarget.blur();
+                  }
+                }}
+                style={{
+                  width: '36px',
+                  height: '26px',
+                  textAlign: 'center',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '4px',
+                  fontWeight: 'bold',
+                  fontSize: '13px',
+                  color: '#1e293b',
+                  backgroundColor: '#ffffff'
+                }}
+              />
+              
+              <span style={{ fontSize: '13px', color: '#475569', fontWeight: 600, paddingRight: '4px' }}>
+                Page {fgPage} / {fgTotalPages}
+              </span>
+
+              <button 
+                disabled={fgPage === fgTotalPages} 
+                onClick={() => setFgPage(p => Math.min(fgTotalPages, p + 1))}
+                style={{ 
+                  background: 'none', 
+                  border: 'none', 
+                  cursor: fgPage === fgTotalPages ? 'default' : 'pointer', 
+                  opacity: fgPage === fgTotalPages ? 0.4 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '4px'
+                }}
+              >
+                <ChevronRight size={18} color="#475569" />
+              </button>
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button 
+                onClick={handleFgSaveAndExport} 
+                className="btn-primary" 
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '6px', 
+                  backgroundColor: '#10b981', 
+                  color: '#ffffff', 
+                  padding: '8px 16px', 
+                  borderRadius: '6px', 
+                  border: 'none', 
+                  fontWeight: 'bold', 
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                }}
+              >
+                <Save size={16} /> Save
+              </button>
+              <button 
+                onClick={exportFgToExcel} 
+                className="btn-primary" 
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '6px', 
+                  backgroundColor: '#3b82f6', 
+                  color: '#ffffff', 
+                  padding: '8px 16px', 
+                  borderRadius: '6px', 
+                  border: 'none', 
+                  fontWeight: 'bold', 
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                }}
+              >
+                <Printer size={16} /> Print
+              </button>
+              <button 
+                onClick={handleFgRecalculate} 
+                className="btn-primary" 
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '6px', 
+                  backgroundColor: '#f59e0b', 
+                  color: '#ffffff', 
+                  padding: '8px 16px', 
+                  borderRadius: '6px', 
+                  border: 'none', 
+                  fontWeight: 'bold', 
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                }}
+              >
+                <Package size={16} /> Stock
+              </button>
+              <button 
+                onClick={handleFgClear} 
+                className="btn-primary" 
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '6px', 
+                  backgroundColor: '#ef4444', 
+                  color: '#ffffff', 
+                  padding: '8px 16px', 
+                  borderRadius: '6px', 
+                  border: 'none', 
+                  fontWeight: 'bold', 
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                }}
+              >
+                <RefreshCw size={16} /> Clear
+              </button>
+            </div>
+          </div>
+
+          {/* Search Filter & Autosave Row */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', backgroundColor: '#ffffff', padding: '0 4px' }}>
+            <div style={{ position: 'relative', width: '300px' }}>
+              <input 
+                type="text" 
+                className="field-input" 
+                placeholder="Search Batch or Particulars" 
+                value={fgSearchFilter} 
+                onChange={e => { setFgSearchFilter(e.target.value); setFgPage(1); }} 
+                style={{
+                  paddingLeft: '36px',
+                  textTransform: 'uppercase',
+                  height: '38px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  width: '100%'
+                }}
+              />
+              <Search size={16} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '11px' }} />
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '13px', fontWeight: 500 }}>
+              <Info size={16} color="#64748b" />
+              <span>Changes autosave automatically</span>
+            </div>
+          </div>
+
+          {/* Ledger Table Grid */}
+          <div className="table-scroll-container" style={{ maxHeight: '600px', border: '1px solid #cbd5e1', borderRadius: '8px', overflowX: 'auto' }}>
+            <table className="table-locked-header" style={{ minWidth: '1900px', borderCollapse: 'collapse', width: '100%' }}>
+              <thead>
+                <tr style={{ height: '40px', backgroundColor: '#0f172a' }}>
+                  <th style={{ width: '350px', minWidth: '350px', textAlign: 'left', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>PARTICULARS</th>
+                  <th style={{ width: '150px', minWidth: '150px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>BATCH NO.</th>
+                  <th style={{ width: '130px', minWidth: '130px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>DATE</th>
+                  <th style={{ width: '150px', minWidth: '150px', textAlign: 'right', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>QTY IN KGS/LTR</th>
+                  <th style={{ width: '130px', minWidth: '130px', textAlign: 'right', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>PRODUCTION</th>
+                  <th style={{ width: '130px', minWidth: '130px', textAlign: 'right', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>TOTAL</th>
+                  <th style={{ width: '130px', minWidth: '130px', textAlign: 'right', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>DISPATCH</th>
+                  <th style={{ width: '130px', minWidth: '130px', textAlign: 'right', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>BALANCE</th>
+                  <th style={{ width: '220px', minWidth: '220px', textAlign: 'left', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>ALLOTMENT</th>
+                  <th style={{ width: '150px', minWidth: '150px', textAlign: 'left', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>LOCATION</th>
+                  <th style={{ textAlign: 'left', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>REMARKS</th>
+                  <th style={{ width: '80px', minWidth: '80px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>ACTION</th>
+                </tr>
+              </thead>
+              <tbody>
+                {fgList.map((item, idx) => {
+                  const isQcApproved = item.approved_by_qc; // Lock particulars if QC approved
+                  const isEditingPart = editingParticularsIdx === idx;
+                  const { main, sub } = parseProductString(item.particulars || '');
+
+                  const formattedTotal = (parseFloat(item.total) || 0).toFixed(4);
+                  const formattedBalance = (parseFloat(item.balance) || 0).toFixed(4);
+
+                  const fgColKeys = ['particulars', 'batch_no', 'date', 'qty_in_kgs_ltr', 'production', 'dispatch', 'allotment', 'location', 'remarks'];
+
+                  const getFgCellStyle = (colName: string) => {
+                    const isFocused = activeCell?.row === idx && activeCell?.col === colName && activeCell?.subview === 'fg';
+                    return {
+                      border: isFocused ? '2px solid #3b82f6' : '1px solid #cbd5e1',
+                      backgroundColor: isFocused ? '#e0f2fe' : 'transparent',
+                      padding: '0px',
+                      height: '46px',
+                      boxSizing: 'border-box' as const
+                    };
+                  };
+
+                  return (
+                    <tr key={idx} style={{ height: '46px', backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
+                      
+                      {/* Particulars cell with edit-vs-display mode */}
+                      <td 
+                        style={{ 
+                          fontWeight: 600, 
+                          position: 'relative', 
+                          padding: isEditingPart ? '0' : '4px 12px',
+                          cursor: isQcApproved ? 'not-allowed' : 'pointer',
+                          width: '350px',
+                          minWidth: '350px',
+                          border: activeCell?.row === idx && activeCell?.col === 'particulars' && activeCell?.subview === 'fg' ? '2px solid #3b82f6' : '1px solid #cbd5e1',
+                          backgroundColor: activeCell?.row === idx && activeCell?.col === 'particulars' && activeCell?.subview === 'fg' ? '#e0f2fe' : 'transparent',
+                          verticalAlign: 'middle'
+                        }}
+                        onClick={() => {
+                          if (!isQcApproved && !isEditingPart) {
+                            setEditingParticularsIdx(idx);
+                          }
+                        }}
+                      >
+                        {isEditingPart ? (
+                          <input 
+                            id={`fg-input-${idx}-particulars`}
+                            type="text" 
+                            className="cell-input" 
+                            style={{ 
+                              fontWeight: 600, 
+                              width: '100%', 
+                              height: '100%', 
+                              border: 'none', 
+                              outline: 'none', 
+                              backgroundColor: '#eff6ff', 
+                              padding: '8px 12px',
+                              textTransform: 'uppercase',
+                              boxSizing: 'border-box'
+                            }}
+                            value={item.particulars || ''} 
+                            onChange={e => updateFgCell(idx, 'particulars', e.target.value)} 
+                            onFocus={() => setActiveCell({ row: idx, col: 'particulars', subview: 'fg' })}
+                            onBlur={() => {
+                              setActiveCell(null);
+                              setEditingParticularsIdx(null);
+                            }}
+                            onKeyDown={e => handleGridKeyDown(e, idx, 0, fgColKeys, fgList.length, 'fg')}
+                            autoFocus
+                          />
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', justifyContent: 'center', height: '100%' }}>
+                            {isQcApproved && <Lock size={12} color="var(--color-success)" style={{ position: 'absolute', right: '8px', top: '16px' }} />}
+                            {main ? (
+                              <span style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', display: 'block', lineHeight: '1.2' }}>{main}</span>
+                            ) : null}
+                            <span style={{ fontSize: '13px', color: '#0f172a', fontWeight: 'bold', textTransform: 'uppercase', display: 'block', lineHeight: '1.2' }}>{sub || 'PRODUCT DETAILS'}</span>
+                          </div>
+                        )}
+                      </td>
+
+                      <td style={getFgCellStyle('batch_no')}>
+                        <input 
+                          id={`fg-input-${idx}-batch_no`}
+                          type="text" 
+                          className="cell-input" 
+                          style={{ textAlign: 'center', fontWeight: 'bold', textTransform: 'uppercase', border: 'none', outline: 'none', width: '100%', height: '100%', background: 'transparent' }} 
+                          value={item.batch_no || ''} 
+                          onChange={e => updateFgCell(idx, 'batch_no', e.target.value)} 
+                          onFocus={() => setActiveCell({ row: idx, col: 'batch_no', subview: 'fg' })}
+                          onBlur={() => setActiveCell(null)}
+                          onKeyDown={e => handleGridKeyDown(e, idx, 1, fgColKeys, fgList.length, 'fg')}
+                          placeholder="BATCH" 
+                        />
+                      </td>
+
+                      <td style={getFgCellStyle('date')}>
+                        <input 
+                          id={`fg-input-${idx}-date`}
+                          type="text" 
+                          className="cell-input" 
+                          style={{ textAlign: 'center', border: 'none', outline: 'none', width: '100%', height: '100%', background: 'transparent' }} 
+                          value={item.date || ''} 
+                          onChange={e => updateFgCell(idx, 'date', e.target.value)} 
+                          onFocus={() => setActiveCell({ row: idx, col: 'date', subview: 'fg' })}
+                          onBlur={() => setActiveCell(null)}
+                          onKeyDown={e => handleGridKeyDown(e, idx, 2, fgColKeys, fgList.length, 'fg')}
+                          placeholder="DD-MM-YYYY" 
+                        />
+                      </td>
+
+                      <td style={getFgCellStyle('qty_in_kgs_ltr')}>
+                        <input 
+                          id={`fg-input-${idx}-qty_in_kgs_ltr`}
+                          type="text" 
+                          className="cell-input" 
+                          style={{ textAlign: 'right', border: 'none', outline: 'none', width: '100%', height: '100%', background: 'transparent' }} 
+                          value={item.qty_in_kgs_ltr || ''} 
+                          onChange={e => updateFgCell(idx, 'qty_in_kgs_ltr', e.target.value)} 
+                          onFocus={() => setActiveCell({ row: idx, col: 'qty_in_kgs_ltr', subview: 'fg' })}
+                          onBlur={() => setActiveCell(null)}
+                          onKeyDown={e => handleGridKeyDown(e, idx, 3, fgColKeys, fgList.length, 'fg')}
+                          placeholder="0" 
+                        />
+                      </td>
+
+                      <td style={getFgCellStyle('production')}>
+                        <input 
+                          id={`fg-input-${idx}-production`}
+                          type="text" 
+                          className="cell-input" 
+                          style={{ textAlign: 'right', border: 'none', outline: 'none', width: '100%', height: '100%', background: 'transparent' }} 
+                          value={item.production || ''} 
+                          onChange={e => updateFgCell(idx, 'production', e.target.value)} 
+                          onFocus={() => setActiveCell({ row: idx, col: 'production', subview: 'fg' })}
+                          onBlur={() => setActiveCell(null)}
+                          onKeyDown={e => handleGridKeyDown(e, idx, 4, fgColKeys, fgList.length, 'fg')}
+                          placeholder="0" 
+                        />
+                      </td>
+
+                      <td style={{ textAlign: 'right', fontWeight: 600, color: '#475569', border: '1px solid #cbd5e1', padding: '8px 12px' }}>
+                        {formattedTotal}
+                      </td>
+
+                      <td style={getFgCellStyle('dispatch')}>
+                        <input 
+                          id={`fg-input-${idx}-dispatch`}
+                          type="text" 
+                          className="cell-input" 
+                          style={{ textAlign: 'right', border: 'none', outline: 'none', width: '100%', height: '100%', background: 'transparent' }} 
+                          value={item.dispatch || ''} 
+                          onChange={e => updateFgCell(idx, 'dispatch', e.target.value)} 
+                          onFocus={() => setActiveCell({ row: idx, col: 'dispatch', subview: 'fg' })}
+                          onBlur={() => setActiveCell(null)}
+                          onKeyDown={e => handleGridKeyDown(e, idx, 5, fgColKeys, fgList.length, 'fg')}
+                          placeholder="0" 
+                        />
+                      </td>
+
+                      <td style={{ textAlign: 'right', fontWeight: 'bold', color: parseFloat(item.balance) > 0 ? '#10b981' : '#ef4444', border: '1px solid #cbd5e1', padding: '8px 12px' }}>
+                        {formattedBalance}
+                      </td>
+
+                      {/* Allotment cell: text input + View button */}
+                      <td style={getFgCellStyle('allotment')}>
+                        <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: '100%', boxSizing: 'border-box' }}>
+                          <input 
+                            id={`fg-input-${idx}-allotment`}
+                            type="text" 
+                            className="cell-input" 
+                            style={{ 
+                              flexGrow: 1, 
+                              border: 'none', 
+                              outline: 'none', 
+                              padding: '8px 12px',
+                              textTransform: 'uppercase',
+                              background: 'transparent',
+                              height: '100%'
+                            }} 
+                            value={item.allotment || ''} 
+                            onChange={e => updateFgCell(idx, 'allotment', e.target.value)} 
+                            onFocus={() => setActiveCell({ row: idx, col: 'allotment', subview: 'fg' })}
+                            onBlur={() => setActiveCell(null)}
+                            onKeyDown={e => handleGridKeyDown(e, idx, 6, fgColKeys, fgList.length, 'fg')}
+                            placeholder="ALLOTMENT" 
+                          />
+                          <button 
+                            onClick={() => handleOpenAllotment(item)} 
+                            style={{ 
+                              padding: '4px 10px', 
+                              fontSize: '0.8rem', 
+                              marginRight: '8px',
+                              height: '30px',
+                              backgroundColor: '#cbd5e1', 
+                              color: '#1e293b',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontWeight: 'bold',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
+                          >
+                            View
+                          </button>
+                        </div>
+                      </td>
+
+                      <td style={getFgCellStyle('location')}>
+                        <input 
+                          id={`fg-input-${idx}-location`}
+                          type="text" 
+                          className="cell-input" 
+                          style={{ textTransform: 'uppercase', border: 'none', outline: 'none', width: '100%', height: '100%', background: 'transparent' }} 
+                          value={item.location || ''} 
+                          onChange={e => updateFgCell(idx, 'location', e.target.value)} 
+                          onFocus={() => setActiveCell({ row: idx, col: 'location', subview: 'fg' })}
+                          onBlur={() => setActiveCell(null)}
+                          onKeyDown={e => handleGridKeyDown(e, idx, 7, fgColKeys, fgList.length, 'fg')}
+                          placeholder="LOCATION" 
+                        />
+                      </td>
+
+                      <td style={getFgCellStyle('remarks')}>
+                        <input 
+                          id={`fg-input-${idx}-remarks`}
+                          type="text" 
+                          className="cell-input" 
+                          style={{ textTransform: 'uppercase', border: 'none', outline: 'none', width: '100%', height: '100%', background: 'transparent' }} 
+                          value={item.remarks || ''} 
+                          onChange={e => updateFgCell(idx, 'remarks', e.target.value)} 
+                          onFocus={() => setActiveCell({ row: idx, col: 'remarks', subview: 'fg' })}
+                          onBlur={() => setActiveCell(null)}
+                          onKeyDown={e => handleGridKeyDown(e, idx, 8, fgColKeys, fgList.length, 'fg')}
+                          placeholder="REMARKS" 
+                        />
+                      </td>
+
+                      {/* Action Cell */}
+                      <td style={{ textAlign: 'center', border: '1px solid #cbd5e1', padding: '4px' }}>
+                        {item.id ? (
+                          <button 
+                            onClick={() => handleFgDeleteRow(item.id)} 
+                            style={{ 
+                              padding: '4px 8px', 
+                              borderRadius: '4px', 
+                              height: '28px', 
+                              width: '28px', 
+                              display: 'inline-flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'center',
+                              border: 'none',
+                              backgroundColor: '#ef4444',
+                              color: '#ffffff',
+                              cursor: 'pointer'
+                            }}
+                            title="Delete Row"
+                          >
+                            <Trash size={14} />
+                          </button>
+                        ) : null}
+                      </td>
+
+                    </tr>
+                  );
+                })}
+              </tbody>
+              
+              {/* Grand Total Row */}
+              <tfoot>
+                <tr style={{ height: '40px', backgroundColor: '#334155', color: '#ffffff', fontWeight: 'bold' }}>
+                  <td style={{ padding: '8px 12px', border: '1px solid #cbd5e1' }}>GRAND TOTAL</td>
+                  <td style={{ border: '1px solid #cbd5e1' }}></td>
+                  <td style={{ border: '1px solid #cbd5e1' }}></td>
+                  <td style={{ textAlign: 'right', padding: '8px 12px', border: '1px solid #cbd5e1' }}>{fgList.reduce((sum, r) => sum + (parseFloat(r.qty_in_kgs_ltr) || 0), 0).toFixed(4)}</td>
+                  <td style={{ textAlign: 'right', padding: '8px 12px', border: '1px solid #cbd5e1' }}>{fgList.reduce((sum, r) => sum + (parseFloat(r.production) || 0), 0).toFixed(4)}</td>
+                  <td style={{ textAlign: 'right', padding: '8px 12px', border: '1px solid #cbd5e1' }}>{fgList.reduce((sum, r) => sum + (parseFloat(r.total) || 0), 0).toFixed(4)}</td>
+                  <td style={{ textAlign: 'right', padding: '8px 12px', border: '1px solid #cbd5e1' }}>{fgList.reduce((sum, r) => sum + (parseFloat(r.dispatch) || 0), 0).toFixed(4)}</td>
+                  <td style={{ textAlign: 'right', padding: '8px 12px', border: '1px solid #cbd5e1' }}>{fgList.reduce((sum, r) => sum + (parseFloat(r.balance) || 0), 0).toFixed(4)}</td>
+                  <td style={{ border: '1px solid #cbd5e1' }}></td>
+                  <td style={{ border: '1px solid #cbd5e1' }}></td>
+                  <td style={{ border: '1px solid #cbd5e1' }}></td>
+                  <td style={{ border: '1px solid #cbd5e1' }}></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+        </div>
+      )}
+
+      {/* ======================================================================
+          RAW MATERIAL STOCK REPORT (rm_stock.py)
+          ====================================================================== */}
+      {activeSubView === 'rm_stock' && (
+        <div className="glass-card animated-fade" style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '24px', backgroundColor: '#ffffff', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}>
+          
+          {/* Header Row */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '16px' }}>
+            {/* Logo and Titles */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ backgroundColor: '#eff6ff', padding: '8px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Table size={24} color="#0ea5e9" />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>RM Stock Report</h3>
+                <p style={{ fontSize: '0.8rem', color: '#64748b', margin: 0, fontWeight: 500 }}>Raw Material Inventory</p>
+              </div>
+            </div>
+
+            {/* Pagination Controls */}
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '8px', 
+              backgroundColor: '#f1f5f9', 
+              padding: '4px 12px', 
+              borderRadius: '8px', 
+              border: '1px solid #cbd5e1' 
+            }}>
+              <button 
+                disabled={rmsPage === 1} 
+                onClick={() => setRmsPage(p => Math.max(1, p - 1))}
+                style={{ 
+                  background: 'none', 
+                  border: 'none', 
+                  cursor: rmsPage === 1 ? 'default' : 'pointer', 
+                  opacity: rmsPage === 1 ? 0.4 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '4px'
+                }}
+              >
+                <ChevronLeft size={18} color="#475569" />
+              </button>
+              
+              <input 
+                type="text" 
+                value={rmsPageInput} 
+                onChange={e => setRmsPageInput(e.target.value)}
+                onBlur={() => {
+                  const pNum = parseInt(rmsPageInput) || 1;
+                  if (pNum >= 1 && pNum <= rmsTotalPages) {
+                    setRmsPage(pNum);
+                  } else {
+                    setRmsPageInput(String(rmsPage));
+                  }
+                }}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    const pNum = parseInt(rmsPageInput) || 1;
+                    if (pNum >= 1 && pNum <= rmsTotalPages) {
+                      setRmsPage(pNum);
+                    } else {
+                      setRmsPageInput(String(rmsPage));
+                    }
+                    e.currentTarget.blur();
+                  }
+                }}
+                style={{
+                  width: '36px',
+                  height: '26px',
+                  textAlign: 'center',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '4px',
+                  fontWeight: 'bold',
+                  fontSize: '13px',
+                  color: '#1e293b',
+                  backgroundColor: '#ffffff'
+                }}
+              />
+              
+              <span style={{ fontSize: '13px', color: '#475569', fontWeight: 600, paddingRight: '4px' }}>
+                Page {rmsPage} / {rmsTotalPages}
+              </span>
+
+              <button 
+                disabled={rmsPage === rmsTotalPages} 
+                onClick={() => setRmsPage(p => Math.min(rmsTotalPages, p + 1))}
+                style={{ 
+                  background: 'none', 
+                  border: 'none', 
+                  cursor: rmsPage === rmsTotalPages ? 'default' : 'pointer', 
+                  opacity: rmsPage === rmsTotalPages ? 0.4 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '4px'
+                }}
+              >
+                <ChevronRight size={18} color="#475569" />
+              </button>
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button 
+                onClick={handleRmsSaveAndExport} 
+                className="btn-primary" 
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '6px', 
+                  backgroundColor: '#10b981', 
+                  color: '#ffffff', 
+                  padding: '8px 16px', 
+                  borderRadius: '6px', 
+                  border: 'none', 
+                  fontWeight: 'bold', 
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                }}
+              >
+                <Save size={16} /> Save
+              </button>
+              <button 
+                onClick={exportRmsToExcel} 
+                className="btn-primary" 
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '6px', 
+                  backgroundColor: '#3b82f6', 
+                  color: '#ffffff', 
+                  padding: '8px 16px', 
+                  borderRadius: '6px', 
+                  border: 'none', 
+                  fontWeight: 'bold', 
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                }}
+              >
+                <Printer size={16} /> Print
+              </button>
+              <button 
+                onClick={handleRmsRecalculate} 
+                className="btn-primary" 
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '6px', 
+                  backgroundColor: '#f59e0b', 
+                  color: '#ffffff', 
+                  padding: '8px 16px', 
+                  borderRadius: '6px', 
+                  border: 'none', 
+                  fontWeight: 'bold', 
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                }}
+              >
+                <Package size={16} /> Stock
+              </button>
+              <button 
+                onClick={handleRmsClear} 
+                className="btn-primary" 
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '6px', 
+                  backgroundColor: '#ef4444', 
+                  color: '#ffffff', 
+                  padding: '8px 16px', 
+                  borderRadius: '6px', 
+                  border: 'none', 
+                  fontWeight: 'bold', 
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                }}
+              >
+                <RefreshCw size={16} /> Clear
+              </button>
+            </div>
+          </div>
+
+          {/* Search Filter & Autosave Row */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', backgroundColor: '#ffffff', padding: '0 4px' }}>
+            <div style={{ position: 'relative', width: '300px' }}>
+              <input 
+                type="text" 
+                className="field-input" 
+                placeholder="Search Batch or Particulars" 
+                value={rmsSearchFilter} 
+                onChange={e => { setRmsSearchFilter(e.target.value); setRmsPage(1); }} 
+                style={{
+                  paddingLeft: '36px',
+                  textTransform: 'uppercase',
+                  height: '38px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  width: '100%'
+                }}
+              />
+              <Search size={16} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '11px' }} />
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '13px', fontWeight: 500 }}>
+              <Info size={16} color="#64748b" />
+              <span>Changes autosave automatically</span>
+            </div>
+          </div>
+
+          {/* Ledger Table Grid */}
+          <div className="table-scroll-container" style={{ maxHeight: '600px', border: '1px solid #cbd5e1', borderRadius: '8px', overflowX: 'auto' }}>
+            <table className="table-locked-header" style={{ minWidth: '1900px', borderCollapse: 'collapse', width: '100%' }}>
+              <thead>
+                <tr style={{ height: '40px', backgroundColor: '#0f172a' }}>
+                  <th style={{ width: '350px', minWidth: '350px', textAlign: 'left', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>PARTICULARS</th>
+                  <th style={{ width: '150px', minWidth: '150px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>BATCH NO.</th>
+                  <th style={{ width: '130px', minWidth: '130px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>DATE</th>
+                  <th style={{ width: '150px', minWidth: '150px', textAlign: 'right', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>QTY IN KGS/LTR</th>
+                  <th style={{ width: '130px', minWidth: '130px', textAlign: 'right', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>PRODUCTION</th>
+                  <th style={{ width: '130px', minWidth: '130px', textAlign: 'right', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>TOTAL</th>
+                  <th style={{ width: '130px', minWidth: '130px', textAlign: 'right', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>DISPATCH</th>
+                  <th style={{ width: '130px', minWidth: '130px', textAlign: 'right', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>BALANCE</th>
+                  <th style={{ width: '220px', minWidth: '220px', textAlign: 'left', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>ALLOTMENT</th>
+                  <th style={{ width: '150px', minWidth: '150px', textAlign: 'left', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>LOCATION</th>
+                  <th style={{ textAlign: 'left', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>REMARKS</th>
+                  <th style={{ width: '80px', minWidth: '80px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>ACTION</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rmsList.map((item, idx) => {
+                  const isEditingPart = editingRmsParticularsIdx === idx;
+                  const { main, sub } = parseProductString(item.particulars || '');
+
+                  const formattedTotal = (parseFloat(item.total) || 0).toFixed(4);
+                  const formattedBalance = (parseFloat(item.balance) || 0).toFixed(4);
+
+                  const rmsColKeys = ['particulars', 'batch_no', 'date', 'qty_in_kgs_ltr', 'production', 'dispatch', 'allotment', 'location', 'remarks'];
+
+                  const getRmsCellStyle = (colName: string) => {
+                    const isFocused = activeCell?.row === idx && activeCell?.col === colName && activeCell?.subview === 'rms';
+                    return {
+                      border: isFocused ? '2px solid #3b82f6' : '1px solid #cbd5e1',
+                      backgroundColor: isFocused ? '#e0f2fe' : 'transparent',
+                      padding: '0px',
+                      height: '46px',
+                      boxSizing: 'border-box' as const
+                    };
+                  };
+
+                  return (
+                    <tr key={idx} style={{ height: '46px', backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
+                      
+                      {/* Particulars cell with edit-vs-display mode */}
+                      <td 
+                        style={{ 
+                          fontWeight: 600, 
+                          position: 'relative', 
+                          padding: isEditingPart ? '0' : '4px 12px',
+                          cursor: 'pointer',
+                          width: '350px',
+                          minWidth: '350px',
+                          border: activeCell?.row === idx && activeCell?.col === 'particulars' && activeCell?.subview === 'rms' ? '2px solid #3b82f6' : '1px solid #cbd5e1',
+                          backgroundColor: activeCell?.row === idx && activeCell?.col === 'particulars' && activeCell?.subview === 'rms' ? '#e0f2fe' : 'transparent',
+                          verticalAlign: 'middle'
+                        }}
+                        onClick={() => {
+                          if (!isEditingPart) {
+                            setEditingRmsParticularsIdx(idx);
+                          }
+                        }}
+                      >
+                        {isEditingPart ? (
+                          <input 
+                            id={`rms-input-${idx}-particulars`}
+                            type="text" 
+                            className="cell-input" 
+                            style={{ 
+                              fontWeight: 600, 
+                              width: '100%', 
+                              height: '100%', 
+                              border: 'none', 
+                              outline: 'none', 
+                              backgroundColor: '#eff6ff', 
+                              padding: '8px 12px',
+                              textTransform: 'uppercase',
+                              boxSizing: 'border-box'
+                            }}
+                            value={item.particulars || ''} 
+                            onChange={e => updateRmsCell(idx, 'particulars', e.target.value)} 
+                            onFocus={() => setActiveCell({ row: idx, col: 'particulars', subview: 'rms' })}
+                            onBlur={() => {
+                              setActiveCell(null);
+                              setEditingRmsParticularsIdx(null);
+                            }}
+                            onKeyDown={e => handleGridKeyDown(e, idx, 0, rmsColKeys, rmsList.length, 'rms')}
+                            autoFocus
+                          />
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', justifyContent: 'center', height: '100%' }}>
+                            {main ? (
+                              <span style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', display: 'block', lineHeight: '1.2' }}>{main}</span>
+                            ) : null}
+                            <span style={{ fontSize: '13px', color: '#0f172a', fontWeight: 'bold', textTransform: 'uppercase', display: 'block', lineHeight: '1.2' }}>{sub || 'PRODUCT DETAILS'}</span>
+                          </div>
+                        )}
+                      </td>
+
+                      <td style={getRmsCellStyle('batch_no')}>
+                        <input 
+                          id={`rms-input-${idx}-batch_no`}
+                          type="text" 
+                          className="cell-input" 
+                          style={{ textAlign: 'center', fontWeight: 'bold', textTransform: 'uppercase', border: 'none', outline: 'none', width: '100%', height: '100%', background: 'transparent' }} 
+                          value={item.batch_no || ''} 
+                          onChange={e => updateRmsCell(idx, 'batch_no', e.target.value)} 
+                          onFocus={() => setActiveCell({ row: idx, col: 'batch_no', subview: 'rms' })}
+                          onBlur={() => setActiveCell(null)}
+                          onKeyDown={e => handleGridKeyDown(e, idx, 1, rmsColKeys, rmsList.length, 'rms')}
+                          placeholder="BATCH" 
+                        />
+                      </td>
+
+                      <td style={getRmsCellStyle('date')}>
+                        <input 
+                          id={`rms-input-${idx}-date`}
+                          type="text" 
+                          className="cell-input" 
+                          style={{ textAlign: 'center', border: 'none', outline: 'none', width: '100%', height: '100%', background: 'transparent' }} 
+                          value={item.date || ''} 
+                          onChange={e => updateRmsCell(idx, 'date', e.target.value)} 
+                          onFocus={() => setActiveCell({ row: idx, col: 'date', subview: 'rms' })}
+                          onBlur={() => setActiveCell(null)}
+                          onKeyDown={e => handleGridKeyDown(e, idx, 2, rmsColKeys, rmsList.length, 'rms')}
+                          placeholder="DD-MM-YYYY" 
+                        />
+                      </td>
+
+                      <td style={getRmsCellStyle('qty_in_kgs_ltr')}>
+                        <input 
+                          id={`rms-input-${idx}-qty_in_kgs_ltr`}
+                          type="text" 
+                          className="cell-input" 
+                          style={{ textAlign: 'right', border: 'none', outline: 'none', width: '100%', height: '100%', background: 'transparent' }} 
+                          value={item.qty_in_kgs_ltr || ''} 
+                          onChange={e => updateRmsCell(idx, 'qty_in_kgs_ltr', e.target.value)} 
+                          onFocus={() => setActiveCell({ row: idx, col: 'qty_in_kgs_ltr', subview: 'rms' })}
+                          onBlur={() => setActiveCell(null)}
+                          onKeyDown={e => handleGridKeyDown(e, idx, 3, rmsColKeys, rmsList.length, 'rms')}
+                          placeholder="0" 
+                        />
+                      </td>
+
+                      <td style={getRmsCellStyle('production')}>
+                        <input 
+                          id={`rms-input-${idx}-production`}
+                          type="text" 
+                          className="cell-input" 
+                          style={{ textAlign: 'right', border: 'none', outline: 'none', width: '100%', height: '100%', background: 'transparent' }} 
+                          value={item.production || ''} 
+                          onChange={e => updateRmsCell(idx, 'production', e.target.value)} 
+                          onFocus={() => setActiveCell({ row: idx, col: 'production', subview: 'rms' })}
+                          onBlur={() => setActiveCell(null)}
+                          onKeyDown={e => handleGridKeyDown(e, idx, 4, rmsColKeys, rmsList.length, 'rms')}
+                          placeholder="0" 
+                        />
+                      </td>
+
+                      <td style={{ textAlign: 'right', fontWeight: 600, color: '#475569', border: '1px solid #cbd5e1', padding: '8px 12px' }}>
+                        {formattedTotal}
+                      </td>
+
+                      <td style={getRmsCellStyle('dispatch')}>
+                        <input 
+                          id={`rms-input-${idx}-dispatch`}
+                          type="text" 
+                          className="cell-input" 
+                          style={{ textAlign: 'right', border: 'none', outline: 'none', width: '100%', height: '100%', background: 'transparent' }} 
+                          value={item.dispatch || ''} 
+                          onChange={e => updateRmsCell(idx, 'dispatch', e.target.value)} 
+                          onFocus={() => setActiveCell({ row: idx, col: 'dispatch', subview: 'rms' })}
+                          onBlur={() => setActiveCell(null)}
+                          onKeyDown={e => handleGridKeyDown(e, idx, 5, rmsColKeys, rmsList.length, 'rms')}
+                          placeholder="0" 
+                        />
+                      </td>
+
+                      <td style={{ textAlign: 'right', fontWeight: 'bold', color: parseFloat(item.balance) > 0 ? '#10b981' : '#ef4444', border: '1px solid #cbd5e1', padding: '8px 12px' }}>
+                        {formattedBalance}
+                      </td>
+
+                      {/* Allotment cell: text input + View button */}
+                      <td style={getRmsCellStyle('allotment')}>
+                        <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: '100%', boxSizing: 'border-box' }}>
+                          <input 
+                            id={`rms-input-${idx}-allotment`}
+                            type="text" 
+                            className="cell-input" 
+                            style={{ 
+                              flexGrow: 1, 
+                              border: 'none', 
+                              outline: 'none', 
+                              padding: '8px 12px',
+                              textTransform: 'uppercase',
+                              background: 'transparent',
+                              height: '100%'
+                            }} 
+                            value={item.allotment || ''} 
+                            onChange={e => updateRmsCell(idx, 'allotment', e.target.value)} 
+                            onFocus={() => setActiveCell({ row: idx, col: 'allotment', subview: 'rms' })}
+                            onBlur={() => setActiveCell(null)}
+                            onKeyDown={e => handleGridKeyDown(e, idx, 6, rmsColKeys, rmsList.length, 'rms')}
+                            placeholder="ALLOTMENT" 
+                          />
+                          <button 
+                            onClick={() => handleOpenAllotment(item)} 
+                            style={{ 
+                              padding: '4px 10px', 
+                              fontSize: '0.8rem', 
+                              marginRight: '8px',
+                              height: '30px',
+                              backgroundColor: '#cbd5e1', 
+                              color: '#1e293b',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontWeight: 'bold',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
+                          >
+                            View
+                          </button>
+                        </div>
+                      </td>
+
+                      <td style={getRmsCellStyle('location')}>
+                        <input 
+                          id={`rms-input-${idx}-location`}
+                          type="text" 
+                          className="cell-input" 
+                          style={{ textTransform: 'uppercase', border: 'none', outline: 'none', width: '100%', height: '100%', background: 'transparent' }} 
+                          value={item.location || ''} 
+                          onChange={e => updateRmsCell(idx, 'location', e.target.value)} 
+                          onFocus={() => setActiveCell({ row: idx, col: 'location', subview: 'rms' })}
+                          onBlur={() => setActiveCell(null)}
+                          onKeyDown={e => handleGridKeyDown(e, idx, 7, rmsColKeys, rmsList.length, 'rms')}
+                          placeholder="LOCATION" 
+                        />
+                      </td>
+
+                      <td style={getRmsCellStyle('remarks')}>
+                        <input 
+                          id={`rms-input-${idx}-remarks`}
+                          type="text" 
+                          className="cell-input" 
+                          style={{ textTransform: 'uppercase', border: 'none', outline: 'none', width: '100%', height: '100%', background: 'transparent' }} 
+                          value={item.remarks || ''} 
+                          onChange={e => updateRmsCell(idx, 'remarks', e.target.value)} 
+                          onFocus={() => setActiveCell({ row: idx, col: 'remarks', subview: 'rms' })}
+                          onBlur={() => setActiveCell(null)}
+                          onKeyDown={e => handleGridKeyDown(e, idx, 8, rmsColKeys, rmsList.length, 'rms')}
+                          placeholder="REMARKS" 
+                        />
+                      </td>
+
+                      {/* Action Cell */}
+                      <td style={{ textAlign: 'center', border: '1px solid #cbd5e1', padding: '4px' }}>
+                        {item.id ? (
+                          <button 
+                            onClick={() => handleRmsDeleteRow(item.id)} 
+                            style={{ 
+                              padding: '4px 8px', 
+                              borderRadius: '4px', 
+                              height: '28px', 
+                              width: '28px', 
+                              display: 'inline-flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'center',
+                              border: 'none',
+                              backgroundColor: '#ef4444',
+                              color: '#ffffff',
+                              cursor: 'pointer'
+                            }}
+                            title="Delete Row"
+                          >
+                            <Trash size={14} />
+                          </button>
+                        ) : null}
+                      </td>
+
+                    </tr>
+                  );
+                })}
+              </tbody>
+              
+              {/* Grand Total Row */}
+              <tfoot>
+                <tr style={{ height: '40px', backgroundColor: '#334155', color: '#ffffff', fontWeight: 'bold' }}>
+                  <td style={{ padding: '8px 12px', border: '1px solid #cbd5e1' }}>GRAND TOTAL</td>
+                  <td style={{ border: '1px solid #cbd5e1' }}></td>
+                  <td style={{ border: '1px solid #cbd5e1' }}></td>
+                  <td style={{ textAlign: 'right', padding: '8px 12px', border: '1px solid #cbd5e1' }}>{rmsList.reduce((sum, r) => sum + (parseFloat(r.qty_in_kgs_ltr) || 0), 0).toFixed(4)}</td>
+                  <td style={{ textAlign: 'right', padding: '8px 12px', border: '1px solid #cbd5e1' }}>{rmsList.reduce((sum, r) => sum + (parseFloat(r.production) || 0), 0).toFixed(4)}</td>
+                  <td style={{ textAlign: 'right', padding: '8px 12px', border: '1px solid #cbd5e1' }}>{rmsList.reduce((sum, r) => sum + (parseFloat(r.total) || 0), 0).toFixed(4)}</td>
+                  <td style={{ textAlign: 'right', padding: '8px 12px', border: '1px solid #cbd5e1' }}>{rmsList.reduce((sum, r) => sum + (parseFloat(r.dispatch) || 0), 0).toFixed(4)}</td>
+                  <td style={{ textAlign: 'right', padding: '8px 12px', border: '1px solid #cbd5e1' }}>{rmsList.reduce((sum, r) => sum + (parseFloat(r.balance) || 0), 0).toFixed(4)}</td>
+                  <td style={{ border: '1px solid #cbd5e1' }}></td>
+                  <td style={{ border: '1px solid #cbd5e1' }}></td>
+                  <td style={{ border: '1px solid #cbd5e1' }}></td>
+                  <td style={{ border: '1px solid #cbd5e1' }}></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+        </div>
+      )}
+
+      {/* ======================================================================
+          MATERIAL REQUISITION FORM (mrq.py)
+          ====================================================================== */}
+      {activeSubView === 'material_requistion_form' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden' }}>
+          
+          {/* Master Toolbar */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '15px 20px',
+            borderBottom: '1px solid #cbd5e1',
+            backgroundColor: '#ffffff'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <FileText size={28} color="#0f172a" />
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#0f172a', lineHeight: '1.2' }}>Material Requisition</span>
+                <span style={{ fontSize: '11px', color: '#64748b' }}>Production Department</span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+              <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#334155' }}>
+                Total Qty: {mrqTotalQty.toFixed(2)}
+              </span>
+              <div style={{ height: '24px', width: '1px', backgroundColor: '#cbd5e1' }} />
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  onClick={handleMrqSave}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    backgroundColor: '#10b981',
+                    color: '#ffffff',
+                    padding: '8px 16px',
+                    borderRadius: '4px',
+                    fontWeight: 'bold',
+                    fontSize: '14px',
+                    border: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <Save size={16} /> Save
+                </button>
+                <button
+                  onClick={handleMrqPrint}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    backgroundColor: '#3b82f6',
+                    color: '#ffffff',
+                    padding: '8px 16px',
+                    borderRadius: '4px',
+                    fontWeight: 'bold',
+                    fontSize: '14px',
+                    border: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <Printer size={16} /> Print
+                </button>
+                <button
+                  onClick={handleMrqClear}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    backgroundColor: '#c2410c',
+                    color: '#ffffff',
+                    padding: '8px 16px',
+                    borderRadius: '4px',
+                    fontWeight: 'bold',
+                    fontSize: '14px',
+                    border: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <X size={16} /> Clear
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Grid Container */}
+          <div className="table-scroll-container" style={{ maxHeight: '600px', overflowX: 'auto', overflowY: 'auto', backgroundColor: '#f1f5f9', padding: '0px' }}>
+            <table style={{ minWidth: '2170px', borderCollapse: 'collapse', tableLayout: 'fixed', width: '2170px' }}>
+              <thead>
+                <tr style={{ height: '55px' }}>
+                  <th style={{ width: '70px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Sr. No.</th>
+                  <th style={{ width: '250px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Department</th>
+                  <th style={{ width: '160px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Date</th>
+                  <th style={{ width: '350px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Product / Material</th>
+                  <th style={{ width: '140px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Quantity</th>
+                  <th style={{ width: '160px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Expected Date</th>
+                  <th style={{ width: '300px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Remarks</th>
+                  <th style={{ width: '250px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Purpose of Indent</th>
+                  <th style={{ width: '180px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Indented By</th>
+                  <th style={{ width: '180px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Verified By</th>
+                  <th style={{ width: '180px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Approved By</th>
+                </tr>
+              </thead>
+              <tbody>
+                {mrqRows.map((r, idx) => {
+                  const rowBg = idx % 2 !== 0 ? '#f8fafc' : '#ffffff';
+                  const getCellStyle = (colName: string) => {
+                    const isFocused = activeCell?.row === idx && activeCell?.col === colName && activeCell?.subview === 'mrq';
+                    return {
+                      border: isFocused ? '2px solid #3b82f6' : '1px solid #cbd5e1',
+                      padding: '0px',
+                      height: '50px',
+                      backgroundColor: isFocused ? '#e0f2fe' : rowBg,
+                      position: 'relative' as const
+                    };
+                  };
+
+                  const getInputProps = (colName: string, alignment: 'center' | 'left') => ({
+                    id: `mrq-input-${idx}-${colName}`,
+                    type: "text",
+                    className: "cell-input",
+                    style: {
+                      border: 'none',
+                      outline: 'none',
+                      width: '100%',
+                      height: '100%',
+                      background: 'transparent',
+                      textTransform: 'uppercase' as const,
+                      textAlign: alignment,
+                      padding: '10px',
+                      fontSize: '14px'
+                    },
+                    value: r[colName],
+                    onChange: (e: React.ChangeEvent<HTMLInputElement>) => updateMrqRow(idx, colName, e.target.value.toUpperCase()),
+                    onFocus: () => setActiveCell({ row: idx, col: colName, subview: 'mrq' }),
+                    onBlur: () => setActiveCell(null)
+                  });
+
+                  return (
+                    <tr key={idx} style={{ height: '50px' }}>
+                      <td style={{
+                        textAlign: 'center',
+                        backgroundColor: rowBg,
+                        border: '1px solid #cbd5e1',
+                        fontWeight: 500,
+                        color: '#475569',
+                        fontSize: '13px'
+                      }}>
+                        {idx + 1}
+                      </td>
+                      <td style={getCellStyle('department')}>
+                        <input {...getInputProps('department', 'left')} onKeyDown={e => handleGridKeyDown(e, idx, 0, ['department', 'date', 'product_or_material', 'quantity', 'expected_date', 'remarks', 'purpose', 'indented_by', 'verified_by', 'approved_by'], 30, 'mrq')} placeholder="DEPT" />
+                      </td>
+                      <td style={getCellStyle('date')}>
+                        <input {...getInputProps('date', 'center')} onKeyDown={e => handleGridKeyDown(e, idx, 1, ['department', 'date', 'product_or_material', 'quantity', 'expected_date', 'remarks', 'purpose', 'indented_by', 'verified_by', 'approved_by'], 30, 'mrq')} placeholder="DD-MM-YYYY" />
+                      </td>
+                      <td style={getCellStyle('product_or_material')}>
+                        <input {...getInputProps('product_or_material', 'left')} onKeyDown={e => handleGridKeyDown(e, idx, 2, ['department', 'date', 'product_or_material', 'quantity', 'expected_date', 'remarks', 'purpose', 'indented_by', 'verified_by', 'approved_by'], 30, 'mrq')} placeholder="MATERIAL DETAILS" />
+                      </td>
+                      <td style={getCellStyle('quantity')}>
+                        <input {...getInputProps('quantity', 'center')} onKeyDown={e => handleGridKeyDown(e, idx, 3, ['department', 'date', 'product_or_material', 'quantity', 'expected_date', 'remarks', 'purpose', 'indented_by', 'verified_by', 'approved_by'], 30, 'mrq')} placeholder="0.00" />
+                      </td>
+                      <td style={getCellStyle('expected_date')}>
+                        <input {...getInputProps('expected_date', 'center')} onKeyDown={e => handleGridKeyDown(e, idx, 4, ['department', 'date', 'product_or_material', 'quantity', 'expected_date', 'remarks', 'purpose', 'indented_by', 'verified_by', 'approved_by'], 30, 'mrq')} placeholder="DD-MM-YYYY" />
+                      </td>
+                      <td style={getCellStyle('remarks')}>
+                        <input {...getInputProps('remarks', 'left')} onKeyDown={e => handleGridKeyDown(e, idx, 5, ['department', 'date', 'product_or_material', 'quantity', 'expected_date', 'remarks', 'purpose', 'indented_by', 'verified_by', 'approved_by'], 30, 'mrq')} placeholder="REMARKS" />
+                      </td>
+                      <td style={getCellStyle('purpose')}>
+                        <input {...getInputProps('purpose', 'left')} onKeyDown={e => handleGridKeyDown(e, idx, 6, ['department', 'date', 'product_or_material', 'quantity', 'expected_date', 'remarks', 'purpose', 'indented_by', 'verified_by', 'approved_by'], 30, 'mrq')} placeholder="REQUIRED FOR" />
+                      </td>
+                      <td style={getCellStyle('indented_by')}>
+                        <input {...getInputProps('indented_by', 'left')} onKeyDown={e => handleGridKeyDown(e, idx, 7, ['department', 'date', 'product_or_material', 'quantity', 'expected_date', 'remarks', 'purpose', 'indented_by', 'verified_by', 'approved_by'], 30, 'mrq')} placeholder="INDENTED BY" />
+                      </td>
+                      <td style={getCellStyle('verified_by')}>
+                        <input {...getInputProps('verified_by', 'left')} onKeyDown={e => handleGridKeyDown(e, idx, 8, ['department', 'date', 'product_or_material', 'quantity', 'expected_date', 'remarks', 'purpose', 'indented_by', 'verified_by', 'approved_by'], 30, 'mrq')} placeholder="VERIFIED BY" />
+                      </td>
+                      <td style={getCellStyle('approved_by')}>
+                        <input {...getInputProps('approved_by', 'left')} onKeyDown={e => handleGridKeyDown(e, idx, 9, ['department', 'date', 'product_or_material', 'quantity', 'expected_date', 'remarks', 'purpose', 'indented_by', 'verified_by', 'approved_by'], 30, 'mrq')} placeholder="APPROVED BY" />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================================
+          REJECTED MATERIAL RECORD (rjm.py)
+          ====================================================================== */}
+      {activeSubView === 'rejected_material_record' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden' }}>
+          
+          {/* Master Toolbar */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '15px 20px',
+            borderBottom: '1px solid #cbd5e1',
+            backgroundColor: '#ffffff'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <ShieldAlert size={28} color="#0f172a" />
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#0f172a', lineHeight: '1.2' }}>Rejected Material</span>
+                <span style={{ fontSize: '11px', color: '#64748b' }}>Production Department</span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+              <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#334155' }}>
+                Total Kgs: {rjmTotalKgs.toFixed(2)} kg
+              </span>
+              <div style={{ height: '24px', width: '1px', backgroundColor: '#cbd5e1' }} />
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  onClick={handleRjmSave}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    backgroundColor: '#10b981',
+                    color: '#ffffff',
+                    padding: '8px 16px',
+                    borderRadius: '4px',
+                    fontWeight: 'bold',
+                    fontSize: '14px',
+                    border: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <Save size={16} /> Save
+                </button>
+                <button
+                  onClick={handleRjmPrint}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    backgroundColor: '#3b82f6',
+                    color: '#ffffff',
+                    padding: '8px 16px',
+                    borderRadius: '4px',
+                    fontWeight: 'bold',
+                    fontSize: '14px',
+                    border: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <Printer size={16} /> Print
+                </button>
+                <button
+                  onClick={handleRjmClear}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    backgroundColor: '#c2410c',
+                    color: '#ffffff',
+                    padding: '8px 16px',
+                    borderRadius: '4px',
+                    fontWeight: 'bold',
+                    fontSize: '14px',
+                    border: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <X size={16} /> Clear
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Grid Container */}
+          <div className="table-scroll-container" style={{ maxHeight: '600px', overflowX: 'auto', overflowY: 'auto', backgroundColor: '#f1f5f9', padding: '0px' }}>
+            <table style={{ minWidth: '1630px', borderCollapse: 'collapse', tableLayout: 'fixed', width: '1630px' }}>
+              <thead>
+                <tr style={{ height: '55px' }}>
+                  <th style={{ width: '70px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Sr. No.</th>
+                  <th style={{ width: '300px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Customer Name</th>
+                  <th style={{ width: '350px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Product Name</th>
+                  <th style={{ width: '180px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Return Material Date</th>
+                  <th style={{ width: '180px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Replacement Date</th>
+                  <th style={{ width: '150px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Kgs</th>
+                  <th style={{ width: '400px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Remarks</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rjmRows.map((r, idx) => {
+                  const rowBg = idx % 2 !== 0 ? '#f8fafc' : '#ffffff';
+                  const getCellStyle = (colName: string) => {
+                    const isFocused = activeCell?.row === idx && activeCell?.col === colName && activeCell?.subview === 'rjm';
+                    return {
+                      border: isFocused ? '2px solid #3b82f6' : '1px solid #cbd5e1',
+                      padding: '0px',
+                      height: '50px',
+                      backgroundColor: isFocused ? '#e0f2fe' : rowBg,
+                      position: 'relative' as const
+                    };
+                  };
+
+                  const getInputProps = (colName: string, alignment: 'center' | 'left') => ({
+                    id: `rjm-input-${idx}-${colName}`,
+                    type: "text",
+                    className: "cell-input",
+                    style: {
+                      border: 'none',
+                      outline: 'none',
+                      width: '100%',
+                      height: '100%',
+                      background: 'transparent',
+                      textTransform: 'uppercase' as const,
+                      textAlign: alignment,
+                      padding: '10px',
+                      fontSize: '14px'
+                    },
+                    value: r[colName],
+                    onChange: (e: React.ChangeEvent<HTMLInputElement>) => updateRjmRow(idx, colName, e.target.value.toUpperCase()),
+                    onFocus: () => setActiveCell({ row: idx, col: colName, subview: 'rjm' }),
+                    onBlur: () => setActiveCell(null)
+                  });
+
+                  return (
+                    <tr key={idx} style={{ height: '50px' }}>
+                      <td style={{
+                        textAlign: 'center',
+                        backgroundColor: rowBg,
+                        border: '1px solid #cbd5e1',
+                        fontWeight: 500,
+                        color: '#475569',
+                        fontSize: '13px'
+                      }}>
+                        {idx + 1}
+                      </td>
+                      <td style={getCellStyle('customer_name')}>
+                        <input {...getInputProps('customer_name', 'left')} onKeyDown={e => handleGridKeyDown(e, idx, 0, ['customer_name', 'product_name', 'return_date', 'replacement_date', 'kgs', 'remarks'], 20, 'rjm')} placeholder="CUSTOMER NAME" />
+                      </td>
+                      <td style={getCellStyle('product_name')}>
+                        <input {...getInputProps('product_name', 'left')} onKeyDown={e => handleGridKeyDown(e, idx, 1, ['customer_name', 'product_name', 'return_date', 'replacement_date', 'kgs', 'remarks'], 20, 'rjm')} placeholder="PRODUCT NAME" />
+                      </td>
+                      <td style={getCellStyle('return_date')}>
+                        <input {...getInputProps('return_date', 'center')} onKeyDown={e => handleGridKeyDown(e, idx, 2, ['customer_name', 'product_name', 'return_date', 'replacement_date', 'kgs', 'remarks'], 20, 'rjm')} placeholder="DD-MM-YYYY" />
+                      </td>
+                      <td style={getCellStyle('replacement_date')}>
+                        <input {...getInputProps('replacement_date', 'center')} onKeyDown={e => handleGridKeyDown(e, idx, 3, ['customer_name', 'product_name', 'return_date', 'replacement_date', 'kgs', 'remarks'], 20, 'rjm')} placeholder="DD-MM-YYYY" />
+                      </td>
+                      <td style={getCellStyle('kgs')}>
+                        <input {...getInputProps('kgs', 'center')} onKeyDown={e => handleGridKeyDown(e, idx, 4, ['customer_name', 'product_name', 'return_date', 'replacement_date', 'kgs', 'remarks'], 20, 'rjm')} placeholder="0.00" />
+                      </td>
+                      <td style={getCellStyle('remarks')}>
+                        <input {...getInputProps('remarks', 'left')} onKeyDown={e => handleGridKeyDown(e, idx, 5, ['customer_name', 'product_name', 'return_date', 'replacement_date', 'kgs', 'remarks'], 20, 'rjm')} placeholder="REMARKS" />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================================
+          LIVE PRODUCTION VIEW (live_production)
+          ====================================================================== */}
+      {activeSubView === 'live_production' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden' }}>
+          
+          {/* Master Toolbar */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '15px 20px',
+            borderBottom: '1px solid #cbd5e1',
+            backgroundColor: '#0f172a',
+            color: '#f8fafc'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Factory size={28} color="#f8fafc" />
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#f8fafc', lineHeight: '1.2' }}>Live Production</span>
+                <span style={{ fontSize: '11px', color: '#94a3b8' }}>Production Department</span>
+              </div>
+            </div>
+
+            {/* Totals Section */}
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '6px 16px', backgroundColor: '#d1fae5', borderRadius: '8px', border: '1px solid #10b981', minWidth: '100px' }}>
+                <span style={{ fontSize: '9px', color: '#475569', fontWeight: 600 }}>KILOGRAMS</span>
+                <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#065f46' }}>{lpTotalKgs.toFixed(2)}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '6px 16px', backgroundColor: '#e0f2fe', borderRadius: '8px', border: '1px solid #3b82f6', minWidth: '100px' }}>
+                <span style={{ fontSize: '9px', color: '#475569', fontWeight: 600 }}>LITERS</span>
+                <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#1e40af' }}>{lpTotalLtrs.toFixed(2)}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '6px 16px', backgroundColor: '#f1f5f9', borderRadius: '8px', border: '1px solid #cbd5e1', minWidth: '100px' }}>
+                <span style={{ fontSize: '9px', color: '#475569', fontWeight: 600 }}>TOTAL QTY</span>
+                <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#1e293b' }}>{lpGrandTotal.toFixed(2)}</span>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <button
+                onClick={addLpRow}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  backgroundColor: '#10b981',
+                  color: '#ffffff',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  fontWeight: 'bold',
+                  fontSize: '13px',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <PlusCircle size={16} /> Add Row
+              </button>
+              <button
+                onClick={deleteLpRow}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  backgroundColor: '#ef4444',
+                  color: '#ffffff',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  fontWeight: 'bold',
+                  fontSize: '13px',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <Trash size={16} /> Delete
+              </button>
+              <button
+                onClick={() => saveLiveProductionState(true)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  backgroundColor: '#3b82f6',
+                  color: '#ffffff',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  fontWeight: 'bold',
+                  fontSize: '13px',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <Save size={16} /> Save
+              </button>
+              <button
+                onClick={clearLpAll}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  backgroundColor: '#f59e0b',
+                  color: '#ffffff',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  fontWeight: 'bold',
+                  fontSize: '13px',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <RefreshCw size={16} /> Clear
+              </button>
+
+              <div style={{ height: '24px', width: '1px', backgroundColor: 'rgba(255,255,255,0.2)', margin: '0 8px' }} />
+              
+              {/* Autosave Status */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: '600', color: lpAutosaveColor }}>
+                <Info size={14} />
+                <span>{lpAutosaveStatus}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Table Container */}
+          <div className="table-scroll-container" style={{ maxHeight: '600px', overflowX: 'auto', overflowY: 'auto', backgroundColor: '#f1f5f9', padding: '0px' }}>
+            <table style={{ minWidth: '1200px', borderCollapse: 'collapse', tableLayout: 'fixed', width: '100%' }}>
+              <thead>
+                <tr style={{ height: '45px', borderBottom: '3px solid #3b82f6' }}>
+                  <th style={{ width: '130px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Customer</th>
+                  <th style={{ width: '220px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Product Name</th>
+                  <th style={{ width: '120px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Batch</th>
+                  <th style={{ width: '90px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Qty</th>
+                  <th style={{ width: '80px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Unit</th>
+                  <th style={{ width: '140px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>In Charge</th>
+                  <th style={{ width: '140px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Packaging</th>
+                  <th style={{ width: '75px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Prod</th>
+                  <th style={{ width: '75px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>QC</th>
+                  <th style={{ width: '75px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Filt</th>
+                  <th style={{ width: '75px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>FG</th>
+                </tr>
+              </thead>
+              <tbody>
+                {liveProdRows.filter(r => !r.is_hidden).map((row, idx) => {
+                  const rowBg = idx % 2 !== 0 ? '#f8fafc' : '#ffffff';
+                  
+                  const getCellStyle = (colName: string) => {
+                    const isFocused = activeCell?.row === idx && activeCell?.col === colName && activeCell?.subview === 'lp';
+                    return {
+                      border: isFocused ? '2px solid #3b82f6' : '1px solid #cbd5e1',
+                      padding: '0px',
+                      height: '55px',
+                      backgroundColor: isFocused ? '#e0f2fe' : rowBg,
+                      position: 'relative' as const
+                    };
+                  };
+
+                  const lpColKeys = ['customer_name', 'product_name', 'batch_no', 'balance_qty', 'charged_by'];
+
+                  const getInputProps = (colName: string, alignment: 'center' | 'left', colIndex: number) => ({
+                    id: `lp-input-${idx}-${colName}`,
+                    type: "text",
+                    className: "cell-input",
+                    style: {
+                      border: 'none',
+                      outline: 'none',
+                      width: '100%',
+                      height: '100%',
+                      background: 'transparent',
+                      textTransform: 'uppercase' as const,
+                      textAlign: alignment,
+                      padding: '10px',
+                      fontSize: '13px',
+                      fontWeight: 500
+                    },
+                    value: row[colName],
+                    onChange: (e: React.ChangeEvent<HTMLInputElement>) => handleLpFieldChange(idx, colName, e.target.value.toUpperCase()),
+                    onFocus: () => setActiveCell({ row: idx, col: colName, subview: 'lp' }),
+                    onBlur: (e: React.FocusEvent<HTMLInputElement>) => {
+                      setActiveCell(null);
+                      if (colName === 'product_name') {
+                        handleProductBlur(idx, e.target.value);
+                      } else {
+                        saveLiveProductionState(false);
+                      }
+                    },
+                    onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => handleGridKeyDown(e, idx, colIndex, lpColKeys, liveProdRows.length, 'lp')
+                  });
+
+                  return (
+                    <tr key={idx} style={{ height: '55px' }}>
+                      <td style={getCellStyle('customer_name')}>
+                        <input {...getInputProps('customer_name', 'left', 0)} placeholder="Customer" />
+                      </td>
+                      <td style={getCellStyle('product_name')}>
+                        <input {...getInputProps('product_name', 'left', 1)} list={`lp-products-list-${idx}`} placeholder="Product Name" />
+                        <datalist id={`lp-products-list-${idx}`}>
+                          {masterProductList.map((item, pIdx) => {
+                            const displayVal = item.sub_product ? `${item.product} - ${item.sub_product}` : item.product;
+                            return <option key={pIdx} value={displayVal.toUpperCase()} />;
+                          })}
+                        </datalist>
+                      </td>
+                      <td style={getCellStyle('batch_no')}>
+                        <input {...getInputProps('batch_no', 'center', 2)} placeholder="Batch" />
+                      </td>
+                      <td style={getCellStyle('balance_qty')}>
+                        <input {...getInputProps('balance_qty', 'center', 3)} placeholder="Qty" />
+                      </td>
+                      
+                      {/* Unit select */}
+                      <td style={{ border: '1px solid #cbd5e1', padding: 0 }}>
+                        <select
+                          value={row.qty_unit}
+                          onChange={e => {
+                            handleLpFieldChange(idx, 'qty_unit', e.target.value);
+                            setTimeout(() => saveLiveProductionState(false), 50);
+                          }}
+                          className="cell-input"
+                          style={{
+                            border: 'none',
+                            outline: 'none',
+                            width: '100%',
+                            height: '100%',
+                            background: 'transparent',
+                            textAlign: 'center',
+                            fontWeight: '600',
+                            fontSize: '11px',
+                            textTransform: 'uppercase',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <option value="kgs">KGS</option>
+                          <option value="ltr">LTR</option>
+                        </select>
+                      </td>
+
+                      <td style={getCellStyle('charged_by')}>
+                        <input {...getInputProps('charged_by', 'left', 4)} placeholder="In Charge" />
+                      </td>
+
+                      {/* Packaging Summary clickable button */}
+                      <td 
+                        onClick={() => handleOpenLpPkg(idx)}
+                        style={{
+                          border: '1px solid #3b82f6',
+                          backgroundColor: '#e0f2fe',
+                          cursor: 'pointer',
+                          padding: '6px 10px',
+                          fontSize: '11px',
+                          color: '#1e3a8a',
+                          fontWeight: '600',
+                          verticalAlign: 'middle',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'pre-line'
+                        }}
+                      >
+                        {row.packaging_entries && row.packaging_entries.length > 0 ? (
+                          row.packaging_entries.map((p: any) => `${p.packets} x ${p.size} ${p.unit}`).join('\n')
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#3b82f6', justifyContent: 'center' }}>
+                            <Plus size={12} /> Add Pkg
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Status Badges */}
+                      {['production', 'qc', 'filteration', 'fg'].map((stage, sIdx) => {
+                        const statusVal = row[`${stage}_status`];
+                        const badgeStyle = getStatusBadgeStyle(statusVal);
+                        const badgeText = getStatusText(statusVal);
+                        return (
+                          <td key={sIdx} style={{ border: '1px solid #cbd5e1', padding: '4px', textAlign: 'center' }}>
+                            <button
+                              onClick={() => handleLpStatusClick(idx, stage as any)}
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                minHeight: '34px',
+                                border: 'none',
+                                borderRadius: '4px',
+                                fontSize: '10px',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                                ...badgeStyle
+                              }}
+                            >
+                              {badgeText}
+                            </button>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================================
+          LIVE MONITOR VIEW (live_prod_view)
+          ====================================================================== */}
+      {activeSubView === 'live_prod_view' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden' }}>
+          
+          {/* Master Toolbar */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '15px 20px',
+            borderBottom: '1px solid #cbd5e1',
+            backgroundColor: '#0f172a',
+            color: '#f8fafc'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Eye size={28} color="#f8fafc" />
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#f8fafc', lineHeight: '1.2' }}>Live Production Monitor</span>
+                <span style={{ fontSize: '11px', color: '#94a3b8' }}>View Only mode</span>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <button
+                onClick={loadLiveProductionData}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  backgroundColor: '#10b981',
+                  color: '#ffffff',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  fontWeight: 'bold',
+                  fontSize: '13px',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <RefreshCw size={16} /> Refresh
+              </button>
+              <button
+                onClick={exportLiveProdToExcel}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  backgroundColor: '#3b82f6',
+                  color: '#ffffff',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  fontWeight: 'bold',
+                  fontSize: '13px',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <Table size={16} /> Excel Report
+              </button>
+              <button
+                onClick={exportLiveProdToPdf}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  backgroundColor: '#8b5cf6',
+                  color: '#ffffff',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  fontWeight: 'bold',
+                  fontSize: '13px',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <Printer size={16} /> PDF Print
+              </button>
+
+              <div style={{ height: '24px', width: '1px', backgroundColor: 'rgba(255,255,255,0.2)', margin: '0 8px' }} />
+              
+              {/* Refresh status */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: '600', color: '#10b981' }}>
+                <CheckCircle2 size={14} />
+                <span>Refreshed at: {lpMonitorRefreshTime}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Table Container */}
+          <div className="table-scroll-container" style={{ maxHeight: '600px', overflowX: 'auto', overflowY: 'auto', backgroundColor: '#f1f5f9', padding: '0px' }}>
+            <table style={{ minWidth: '1200px', borderCollapse: 'collapse', tableLayout: 'fixed', width: '100%' }}>
+              <thead>
+                <tr style={{ height: '45px', borderBottom: '3px solid #10b981' }}>
+                  <th style={{ width: '130px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Customer</th>
+                  <th style={{ width: '220px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Product Name</th>
+                  <th style={{ width: '120px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Batch</th>
+                  <th style={{ width: '90px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Qty</th>
+                  <th style={{ width: '80px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Unit</th>
+                  <th style={{ width: '140px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>In Charge</th>
+                  <th style={{ width: '140px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Packaging</th>
+                  <th style={{ width: '75px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Prod</th>
+                  <th style={{ width: '75px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>QC</th>
+                  <th style={{ width: '75px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Filt</th>
+                  <th style={{ width: '75px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>FG</th>
+                </tr>
+              </thead>
+              <tbody>
+                {liveProdRows.filter(r => !r.is_hidden && r.product_name).map((row, idx) => {
+                  const rowBg = idx % 2 !== 0 ? '#f8fafc' : '#ffffff';
+                  
+                  return (
+                    <tr key={idx} style={{ height: '55px' }}>
+                      <td style={{ border: '1px solid #cbd5e1', padding: '10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', backgroundColor: rowBg }}>
+                        {row.customer_name}
+                      </td>
+                      <td style={{ border: '1px solid #cbd5e1', padding: '10px', fontSize: '13px', fontWeight: 600, color: '#0f172a', backgroundColor: rowBg }}>
+                        {row.product_name}
+                      </td>
+                      <td style={{ border: '1px solid #cbd5e1', padding: '10px', fontSize: '13px', fontWeight: 'bold', color: '#1e293b', textAlign: 'center', backgroundColor: rowBg }}>
+                        {row.batch_no}
+                      </td>
+                      <td style={{ border: '1px solid #cbd5e1', padding: '10px', fontSize: '13px', fontWeight: 'bold', color: '#16a34a', textAlign: 'center', backgroundColor: rowBg }}>
+                        {row.balance_qty}
+                      </td>
+                      <td style={{ border: '1px solid #cbd5e1', padding: '10px', fontSize: '11px', fontWeight: 'bold', color: '#334155', textAlign: 'center', backgroundColor: rowBg }}>
+                        {row.qty_unit.toUpperCase()}
+                      </td>
+                      <td style={{ border: '1px solid #cbd5e1', padding: '10px', fontSize: '13px', color: '#475569', backgroundColor: rowBg }}>
+                        {row.charged_by}
+                      </td>
+
+                      {/* Packaging Summary clickable (read-only) */}
+                      <td 
+                        onClick={() => {
+                          if (row.packaging_entries && row.packaging_entries.length > 0) {
+                            setLpPkgActiveIdx(idx);
+                            setShowLpPkgModal(true);
+                          }
+                        }}
+                        style={{
+                          border: '1px solid #cbd5e1',
+                          backgroundColor: rowBg,
+                          cursor: row.packaging_entries && row.packaging_entries.length > 0 ? 'pointer' : 'default',
+                          padding: '6px 10px',
+                          fontSize: '11px',
+                          color: '#1e3a8a',
+                          fontWeight: '600',
+                          verticalAlign: 'middle',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'pre-line'
+                        }}
+                      >
+                        {row.packaging_entries && row.packaging_entries.length > 0 ? (
+                          row.packaging_entries.map((p: any) => `${p.packets} x ${p.size} ${p.unit}`).join('\n')
+                        ) : (
+                          <span style={{ color: '#94a3b8' }}>None</span>
+                        )}
+                      </td>
+
+                      {/* Read-only Status Badges */}
+                      {['production', 'qc', 'filteration', 'fg'].map((stage, sIdx) => {
+                        const statusVal = row[`${stage}_status`];
+                        const badgeStyle = getStatusBadgeStyle(statusVal);
+                        const badgeText = getStatusText(statusVal);
+                        return (
+                          <td key={sIdx} style={{ border: '1px solid #cbd5e1', padding: '4px', textAlign: 'center', backgroundColor: rowBg }}>
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: '100%',
+                                height: '34px',
+                                borderRadius: '4px',
+                                fontSize: '10px',
+                                ...badgeStyle
+                              }}
+                            >
+                              {badgeText}
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================================
+          LIVE WORKSPACE MONITOR / RM STOCK FALLBACK
+          ====================================================================== */}
+      {activeSubView !== 'formulation_sheet' && 
+       activeSubView !== 'dispatch_register' && 
+       activeSubView !== 'inward_register' && 
+       activeSubView !== 'daily_production' && 
+       activeSubView !== 'warehouse_dept' && 
+       activeSubView !== 'rm_stock' && 
+       activeSubView !== 'material_requistion_form' && 
+       activeSubView !== 'rejected_material_record' && 
+       activeSubView !== 'live_production' && 
+       activeSubView !== 'live_prod_view' && (
+        <div className="glass-card animated-fade" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px', gap: '20px' }}>
+          <Factory size={48} color="var(--primary-color)" />
+          <div style={{ textAlign: 'center' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Live Production Monitor</h3>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', maxWidth: '480px', margin: '6px auto' }}>
+              The module <strong>{activeSubView.split('_').join(' ').toUpperCase()}</strong> is fully connected to the Render cloud database. Live batch trackers operate dynamically behind the scenes.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================================
+          AUTOCOMPLETE SEARCH MODALS
+          ====================================================================== */}
+      
+      {/* Product Autocomplete Modal */}
+      {showProductModal && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ width: '480px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h4 style={{ fontWeight: 700, fontSize: '1.1rem' }}>Select Product Particular</h4>
+              <button className="theme-switch-btn" onClick={() => setShowProductModal(false)}>✕</button>
+            </div>
+            
+            <input 
+              type="text" 
+              className="field-input" 
+              placeholder="Search product..." 
+              value={productSearch.query} 
+              onChange={e => setProductSearch(p => ({ ...p, query: e.target.value }))}
+              style={{ marginBottom: '12px' }}
+              autoFocus
+            />
+
+            <div 
+              onWheel={e => e.stopPropagation()} 
+              style={{ maxHeight: '300px', overflowY: 'auto', display: 'block', paddingRight: '4px' }}
+            >
+              {productSearch.list
+                .filter(p => !p.startsWith('ENC$'))
+                .filter(p => p.toLowerCase().includes(productSearch.query.toLowerCase()))
+                .map((prod, idx) => (
+                  <div 
+                    key={idx} 
+                    onClick={() => selectDrProduct(prod)}
+                    style={{ padding: '10px 14px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', backgroundColor: 'var(--bg-app)', transition: 'background-color var(--transition-fast)', marginBottom: '4px' }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--primary-light)'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--bg-app)'}
+                  >
+                    <span style={{ fontWeight: 500, fontSize: '0.85rem' }}>{prod}</span>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Batch Autocomplete Modal */}
+      {showBatchModal && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ width: '480px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h4 style={{ fontWeight: 700, fontSize: '1.1rem' }}>Select Available Stock Batch</h4>
+              <button className="theme-switch-btn" onClick={() => setShowBatchModal(false)}>✕</button>
+            </div>
+
+            <input 
+              type="text" 
+              className="field-input" 
+              placeholder="Search batch no..." 
+              value={batchSearch.query} 
+              onChange={e => setBatchSearch(p => ({ ...p, query: e.target.value }))}
+              style={{ marginBottom: '12px' }}
+              autoFocus
+            />
+
+            <div 
+              onWheel={e => e.stopPropagation()} 
+              style={{ maxHeight: '300px', overflowY: 'auto', display: 'block', paddingRight: '4px' }}
+            >
+              <div 
+                onClick={() => selectDrBatch('', null)}
+                style={{ padding: '10px 14px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', backgroundColor: 'var(--color-error-light)', color: 'var(--color-error)', fontWeight: 600, fontSize: '0.85rem', marginBottom: '8px' }}
+              >
+                ✕ Clear Selection / Custom Unlisted Batch
+              </div>
+
+              {batchSearch.list
+                .filter(b => String(b.batch_no).toLowerCase().includes(batchSearch.query.toLowerCase()))
+                .map((b, idx) => (
+                  <div 
+                    key={idx} 
+                    onClick={() => selectDrBatch(b.batch_no, b.id)}
+                    style={{ padding: '10px 14px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', backgroundColor: 'var(--bg-app)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--primary-light)'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--bg-app)'}
+                  >
+                    <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{b.batch_no}</span>
+                    <span style={{ fontSize: '0.8rem', color: b.balance > 0 ? 'var(--color-success)' : 'var(--color-error)', fontWeight: 'bold' }}>
+                      Bal: {b.balance} kg
+                    </span>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manage Packaging Details Modal */}
+      {showPkgModal && pkgActiveIdx !== -1 && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ width: '500px', backgroundColor: '#eff3f6', borderRadius: '16px', padding: '24px', boxShadow: '0 8px 30px rgba(0,0,0,0.15)', border: 'none' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+              <h4 style={{ fontWeight: 700, fontSize: '1.35rem', color: '#000000', margin: 0 }}>Manage Packaging</h4>
+            </div>
+
+            {/* Availability details */}
+            {(() => {
+              const row = drRows[pkgActiveIdx];
+              const maxBalance = row.batch_balances[row.batch_no] || 0;
+              const currentTotal = row.packaging_details.reduce((sum: number, p: any) => sum + (parseFloat(p.size) * (parseInt(p.packets) || 0)), 0);
+              const remaining = maxBalance - currentTotal;
+              return (
+                <div style={{ 
+                  color: '#16a34a', 
+                  fontSize: '14px', 
+                  fontWeight: 'bold', 
+                  marginBottom: '16px',
+                  borderBottom: '1px solid #cbd5e1',
+                  paddingBottom: '8px'
+                }}>
+                  Available: {maxBalance.toFixed(2)} | Used: {currentTotal.toFixed(2)} | Remaining: {remaining.toFixed(2)}
+                </div>
+              );
+            })()}
+
+            {/* Inputs Side-by-Side */}
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '8px' }}>
+              {/* Size Input with Resting Label */}
+              <div style={{ position: 'relative', width: '130px', height: '38px' }}>
+                <span style={{
+                  position: 'absolute',
+                  top: '-8px',
+                  left: '10px',
+                  background: '#eff3f6',
+                  padding: '0 4px',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  color: '#2563eb', // Flet active color blue
+                  zIndex: 1,
+                  pointerEvents: 'none'
+                }}>
+                  Size
+                </span>
+                <input 
+                  type="text" 
+                  className="field-input" 
+                  value={newPkg.size} 
+                  onChange={e => setNewPkg(p => ({ ...p, size: e.target.value }))} 
+                  style={{ 
+                    height: '100%', 
+                    width: '100%', 
+                    border: '1.5px solid #2563eb', 
+                    borderRadius: '6px', 
+                    padding: '0 10px', 
+                    fontSize: '14px',
+                    boxSizing: 'border-box',
+                    backgroundColor: '#eff3f6',
+                    color: '#000000'
+                  }} 
+                  autoFocus 
+                />
+              </div>
+
+              {/* Packets Input */}
+              <div style={{ width: '130px', height: '38px' }}>
+                <input 
+                  type="text" 
+                  className="field-input" 
+                  placeholder="Packets" 
+                  value={newPkg.packets} 
+                  onChange={e => setNewPkg(p => ({ ...p, packets: e.target.value }))} 
+                  style={{ 
+                    height: '100%', 
+                    width: '100%', 
+                    border: '1.5px solid #475569', 
+                    borderRadius: '6px', 
+                    padding: '0 10px', 
+                    fontSize: '14px',
+                    boxSizing: 'border-box',
+                    backgroundColor: '#eff3f6',
+                    color: '#000000'
+                  }} 
+                />
+              </div>
+
+              {/* Unit Dropdown */}
+              <div style={{ width: '90px', height: '38px' }}>
+                <select 
+                  className="field-input" 
+                  value={newPkg.unit} 
+                  onChange={e => setNewPkg(p => ({ ...p, unit: e.target.value }))}
+                  style={{ 
+                    height: '100%', 
+                    width: '100%', 
+                    border: '1.5px solid #475569', 
+                    borderRadius: '6px', 
+                    padding: '0 10px', 
+                    fontSize: '14px',
+                    boxSizing: 'border-box',
+                    backgroundColor: '#eff3f6',
+                    color: '#000000',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="kgs">kgs</option>
+                  <option value="ltr">ltr</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Add & Save Centered Button */}
+            <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '16px', marginBottom: '8px' }}>
+              <button 
+                onClick={addDrPkg} 
+                style={{ 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  gap: '6px', 
+                  height: '36px', 
+                  padding: '0 24px', 
+                  fontSize: '13px', 
+                  fontWeight: 'bold', 
+                  borderRadius: '18px', 
+                  border: 'none', 
+                  backgroundColor: '#3b82f6', 
+                  color: '#ffffff', 
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }}
+              >
+                <PlusCircle size={16} /> Add & Save
+              </button>
+            </div>
+
+            <hr style={{ border: 'none', borderBottom: '1px solid #cbd5e1', margin: '16px 0' }} />
+
+            {/* Packaging Item List */}
+            <h5 style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '8px', color: '#334155' }}>Added Packages Log:</h5>
+            <div 
+              onWheel={e => e.stopPropagation()} 
+              style={{ maxHeight: '180px', overflowY: 'auto', display: 'block', paddingRight: '4px' }}
+            >
+              {drRows[pkgActiveIdx].packaging_details.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '16px', color: 'var(--text-light)', fontStyle: 'italic', fontSize: '0.85rem' }}>No packages added.</div>
+              ) : (
+                drRows[pkgActiveIdx].packaging_details.map((pkg: any, idx: number) => {
+                  const weight = parseFloat(pkg.size) * (parseInt(pkg.packets) || 0);
+                  return (
+                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#e2e8f0', padding: '6px 12px', borderRadius: 'var(--radius-sm)', marginBottom: '6px' }}>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 500, color: '#0f172a' }}>
+                        {pkg.packets} x {pkg.size} {pkg.unit} = <strong style={{ color: '#2563eb' }}>{weight.toFixed(2)} {pkg.unit}</strong>
+                      </span>
+                      <button onClick={() => removeDrPkg(idx)} className="btn-danger" style={{ padding: '4px', borderRadius: '4px', height: '24px', width: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        ✕
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Bottom Link Close button */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+              <button 
+                onClick={() => setShowPkgModal(false)}
+                style={{ 
+                  background: 'none', 
+                  border: 'none', 
+                  color: '#2563eb', 
+                  fontSize: '15px', 
+                  fontWeight: 600, 
+                  cursor: 'pointer',
+                  padding: '4px 8px'
+                }}
+              >
+                Close
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* Allotment Detail Modal (warehouse_dept) - Screenshot 2 */}
+      {showAllotmentDetailModal && activeAllotmentRow && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ width: '450px', backgroundColor: '#ffffff', borderRadius: '16px', padding: '24px', boxShadow: '0 8px 30px rgba(0,0,0,0.15)', border: 'none' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+              <h4 style={{ fontWeight: 700, fontSize: '1.35rem', color: '#0f172a', margin: 0 }}>
+                Allotment: {activeAllotmentRow.batch_no}
+              </h4>
+            </div>
+
+            <div style={{ color: '#64748b', fontSize: '14px', fontWeight: 500, marginBottom: '12px' }}>
+              {activeAllotmentRow.particulars}
+            </div>
+
+            <hr style={{ border: 'none', borderBottom: '1px solid #e2e8f0', margin: '12px 0' }} />
+
+            <div style={{ fontSize: '15px', color: '#1e293b', fontWeight: 500, minHeight: '60px', padding: '8px 0' }}>
+              {activeAllotmentRow.allotment || 'No allotment details available.'}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '16px' }}>
+              <button 
+                onClick={handleOpenManageSubAllotments} 
+                className="btn-primary" 
+                style={{ 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  gap: '8px', 
+                  height: '38px', 
+                  padding: '0 20px', 
+                  fontSize: '14px', 
+                  fontWeight: 'bold', 
+                  borderRadius: '6px', 
+                  border: 'none', 
+                  backgroundColor: '#0ea5e9', 
+                  color: '#ffffff', 
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }}
+              >
+                <Users size={16} /> Manage Sub-Allotments
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+              <button 
+                onClick={() => setShowAllotmentDetailModal(false)}
+                style={{ 
+                  background: 'none', 
+                  border: 'none', 
+                  color: '#475569', 
+                  fontSize: '15px', 
+                  fontWeight: 600, 
+                  cursor: 'pointer',
+                  padding: '4px 8px'
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manage Sub-Allotments Modal (warehouse_dept) - Screenshot 3 */}
+      {showManageSubAllotmentsModal && activeAllotmentRow && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ width: '560px', backgroundColor: '#ffffff', borderRadius: '16px', padding: '24px', boxShadow: '0 8px 30px rgba(0,0,0,0.15)', border: 'none' }}>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+              <Users size={22} color="#0ea5e9" />
+              <h4 style={{ fontWeight: 700, fontSize: '1.25rem', color: '#0f172a', margin: 0 }}>
+                Manage Sub-Allotments
+              </h4>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '16px', color: '#475569', fontSize: '13.5px' }}>
+              <div>Particulars: <strong style={{ color: '#0f172a' }}>{activeAllotmentRow.particulars}</strong></div>
+              <div>Batch: <strong style={{ color: '#0f172a' }}>{activeAllotmentRow.batch_no}</strong></div>
+            </div>
+
+            <hr style={{ border: 'none', borderBottom: '1px solid #cbd5e1', margin: '12px 0' }} />
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+              <label style={{ fontSize: '13.5px', fontWeight: 600, color: '#334155' }}>
+                Define sub-customer quantities:
+              </label>
+
+              {/* Sub allotments listbox */}
+              <div 
+                onWheel={e => e.stopPropagation()} 
+                style={{ 
+                  border: '1.5px solid #cbd5e1', 
+                  borderRadius: '8px', 
+                  padding: '12px', 
+                  backgroundColor: '#f8fafc', 
+                  maxHeight: '220px', 
+                  overflowY: 'auto', 
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px'
+                }}
+              >
+                {allotmentList.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '16px', color: '#64748b', fontStyle: 'italic', fontSize: '13px' }}>
+                    No allotments defined. Use inputs below to add entries.
+                  </div>
+                ) : (
+                  allotmentList.map((item, idx) => (
+                    <div key={idx} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                      <input 
+                        type="text" 
+                        className="field-input" 
+                        style={{ flexGrow: 1, textTransform: 'uppercase', height: '36px', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '0 10px', fontSize: '13.5px' }} 
+                        placeholder="SUB-CUSTOMER NAME" 
+                        value={item.customer} 
+                        onChange={e => updateAllotmentItem(idx, 'customer', e.target.value.toUpperCase())} 
+                      />
+                      <input 
+                        type="text" 
+                        className="field-input" 
+                        style={{ width: '120px', textAlign: 'center', height: '36px', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '0 10px', fontSize: '13.5px' }} 
+                        placeholder="QTY" 
+                        value={item.qty} 
+                        onChange={e => updateAllotmentItem(idx, 'qty', e.target.value)} 
+                      />
+                      <button 
+                        onClick={() => removeAllotmentItem(idx)} 
+                        style={{ 
+                          height: '36px', 
+                          width: '36px', 
+                          padding: 0,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          border: 'none',
+                          backgroundColor: '#ef4444',
+                          color: '#ffffff',
+                          borderRadius: '6px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Add New Entry */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+              <label style={{ fontSize: '13.5px', fontWeight: 600, color: '#334155' }}>
+                Add New Entry:
+              </label>
+              
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <input 
+                  type="text" 
+                  className="field-input" 
+                  placeholder="Sub-Customer Name" 
+                  value={newSubCustomer} 
+                  onChange={e => setNewSubCustomer(e.target.value)} 
+                  style={{ flexGrow: 1, textTransform: 'uppercase', height: '38px', border: '1.5px solid #cbd5e1', borderRadius: '6px', padding: '0 10px' }}
+                />
+                <input 
+                  type="text" 
+                  className="field-input" 
+                  placeholder="Quantity" 
+                  value={newSubQty} 
+                  onChange={e => setNewSubQty(e.target.value)} 
+                  style={{ width: '120px', textAlign: 'center', height: '38px', border: '1.5px solid #cbd5e1', borderRadius: '6px', padding: '0 10px' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+                <button 
+                  onClick={handleAddSubAllotmentEntry} 
+                  className="btn-primary" 
+                  style={{ 
+                    display: 'inline-flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    gap: '6px', 
+                    height: '36px', 
+                    padding: '0 20px', 
+                    fontSize: '13px', 
+                    fontWeight: 'bold', 
+                    borderRadius: '6px', 
+                    border: 'none', 
+                    backgroundColor: '#0ea5e9', 
+                    color: '#ffffff', 
+                    cursor: 'pointer',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                  }}
+                >
+                  <Plus size={16} /> Add Entry
+                </button>
+              </div>
+            </div>
+
+            <div style={{ fontSize: '12px', color: '#64748b', fontStyle: 'italic', marginBottom: '16px' }}>
+              Note: Sub-customers with similar names will have quantities combined.
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid #e2e8f0', paddingTop: '16px' }}>
+              <button 
+                onClick={() => setShowManageSubAllotmentsModal(false)}
+                style={{ 
+                  background: 'none', 
+                  border: 'none', 
+                  color: '#475569', 
+                  fontSize: '15px', 
+                  fontWeight: 600, 
+                  cursor: 'pointer',
+                  padding: '8px 16px'
+                }}
+              >
+                Close
+              </button>
+              <button 
+                onClick={saveSubAllotments} 
+                className="btn-primary" 
+                style={{ 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  gap: '8px', 
+                  backgroundColor: '#10b981', 
+                  color: '#ffffff', 
+                  border: 'none', 
+                  padding: '8px 24px', 
+                  borderRadius: '6px', 
+                  fontWeight: 'bold', 
+                  cursor: 'pointer',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                }}
+              >
+                <Save size={16} /> Save Allotments
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================================
+          LIVE PRODUCTION ACTION MODALS
+          ====================================================================== */}
+
+      {/* Add Master Product Dialog Modal */}
+      {showAddProductDlg && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ width: '480px', backgroundColor: '#ffffff', borderRadius: '16px', padding: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h4 style={{ fontWeight: 700, fontSize: '1.2rem', color: '#0f172a' }}>Add Product to Master List</h4>
+              <button className="theme-switch-btn" onClick={() => setShowAddProductDlg(false)}>✕</button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', gap: '20px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: '#334155', fontWeight: 600 }}>
+                  <input
+                    type="radio"
+                    name="add_prod_choice"
+                    checked={addProductDlgChoice === 'sub'}
+                    onChange={() => setAddProductDlgChoice('sub')}
+                  />
+                  Add as Sub-Product (Particulars)
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: '#334155', fontWeight: 600 }}>
+                  <input
+                    type="radio"
+                    name="add_prod_choice"
+                    checked={addProductDlgChoice === 'main'}
+                    onChange={() => setAddProductDlgChoice('main')}
+                  />
+                  Add as New Main Product
+                </label>
+              </div>
+
+              {addProductDlgChoice === 'sub' ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span style={{ fontSize: '12px', color: '#475569', fontWeight: 600 }}>Select Main Product:</span>
+                  <select
+                    value={selectedMainProduct}
+                    onChange={e => setSelectedMainProduct(e.target.value)}
+                    style={{ height: '38px', borderRadius: '6px', border: '1px solid #cbd5e1', padding: '0 10px' }}
+                  >
+                    <option value="">-- Choose Main Product --</option>
+                    {sortedMainProducts.map((p, pIdx) => (
+                      <option key={pIdx} value={p}>{p}</option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span style={{ fontSize: '12px', color: '#475569', fontWeight: 600 }}>Enter Sub-Category:</span>
+                  <input
+                    type="text"
+                    className="field-input"
+                    placeholder="e.g., Common, Standard"
+                    value={newSubProductVal}
+                    onChange={e => setNewSubProductVal(e.target.value.toUpperCase())}
+                  />
+                </div>
+              )}
+
+              {addProductError && (
+                <span style={{ color: '#ef4444', fontSize: '12px', fontWeight: 600 }}>
+                  {addProductError}
+                </span>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button onClick={() => setShowAddProductDlg(false)} style={{ padding: '8px 16px', border: '1px solid #cbd5e1', borderRadius: '6px', backgroundColor: '#ffffff', cursor: 'pointer', fontWeight: 600, color: '#475569' }}>
+                Cancel
+              </button>
+              <button onClick={confirmAddProduct} style={{ padding: '8px 16px', backgroundColor: '#10b981', color: '#ffffff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}>
+                Add Product
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Ambiguity Selection Dialog Modal */}
+      {showAmbiguityDlg && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ width: '450px', backgroundColor: '#ffffff', borderRadius: '16px', padding: '24px' }}>
+            <h4 style={{ fontWeight: 700, fontSize: '1.2rem', color: '#0f172a', marginBottom: '12px' }}>Ambiguity: {enteredProductVal}</h4>
+            <p style={{ color: '#475569', fontSize: '13px', marginBottom: '16px' }}>
+              This product name is associated with multiple main products. Please select the correct Main Product:
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
+              {ambiguousOptions.map((opt, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => resolveAmbiguity(opt)}
+                  style={{
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    border: '1.5px solid #cbd5e1',
+                    textAlign: 'left',
+                    backgroundColor: '#f8fafc',
+                    cursor: 'pointer',
+                    fontSize: '13.5px',
+                    fontWeight: 600,
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e0f2fe'}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f8fafc'}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Live Production Packaging Modal */}
+      {showLpPkgModal && lpPkgActiveIdx !== -1 && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ width: '500px', backgroundColor: '#eff3f6', borderRadius: '16px', padding: '24px', border: 'none' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+              <h4 style={{ fontWeight: 700, fontSize: '1.35rem', color: '#000000', margin: 0 }}>Manage Packaging</h4>
+              {activeSubView === 'live_prod_view' && (
+                <button className="theme-switch-btn" onClick={() => setShowLpPkgModal(false)}>✕</button>
+              )}
+            </div>
+
+            {(() => {
+              const row = liveProdRows[lpPkgActiveIdx];
+              const currentTotal = row.packaging_entries.reduce((sum: number, p: any) => sum + (parseFloat(p.size) * (parseInt(p.packets) || 0)), 0);
+              const remaining = row.balance_qty - currentTotal;
+              return (
+                <div style={{ 
+                  color: '#16a34a', 
+                  fontSize: '14px', 
+                  fontWeight: 'bold', 
+                  marginBottom: '16px',
+                  borderBottom: '1px solid #cbd5e1',
+                  paddingBottom: '8px'
+                }}>
+                  Available: {row.balance_qty.toFixed(2)} | Used: {currentTotal.toFixed(2)} | Remaining: {remaining.toFixed(2)}
+                </div>
+              );
+            })()}
+
+            {activeSubView === 'live_production' && (
+              <>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '8px' }}>
+                  <div style={{ position: 'relative', width: '130px', height: '38px' }}>
+                    <span style={{
+                      position: 'absolute',
+                      top: '-8px',
+                      left: '10px',
+                      background: '#eff3f6',
+                      padding: '0 4px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      color: '#2563eb',
+                      zIndex: 1,
+                      pointerEvents: 'none'
+                    }}>
+                      Size
+                    </span>
+                    <input 
+                      type="text" 
+                      className="field-input" 
+                      value={newLpPkg.size} 
+                      onChange={e => setNewLpPkg(p => ({ ...p, size: e.target.value }))} 
+                      style={{ 
+                        height: '100%', 
+                        width: '100%', 
+                        border: '1.5px solid #2563eb', 
+                        borderRadius: '6px', 
+                        padding: '0 10px', 
+                        fontSize: '14px',
+                        boxSizing: 'border-box',
+                        backgroundColor: '#eff3f6',
+                        color: '#000000'
+                      }} 
+                      autoFocus 
+                    />
+                  </div>
+
+                  <div style={{ width: '130px', height: '38px' }}>
+                    <input 
+                      type="text" 
+                      className="field-input" 
+                      placeholder="Packets" 
+                      value={newLpPkg.packets} 
+                      onChange={e => setNewLpPkg(p => ({ ...p, packets: e.target.value }))} 
+                      style={{ 
+                        height: '100%', 
+                        width: '100%', 
+                        border: '1.5px solid #475569', 
+                        borderRadius: '6px', 
+                        padding: '0 10px', 
+                        fontSize: '14px',
+                        boxSizing: 'border-box',
+                        backgroundColor: '#eff3f6',
+                        color: '#000000'
+                      }} 
+                    />
+                  </div>
+
+                  <div style={{ width: '90px', height: '38px' }}>
+                    <select 
+                      className="field-input" 
+                      value={newLpPkg.unit} 
+                      onChange={e => setNewLpPkg(p => ({ ...p, unit: e.target.value }))}
+                      style={{ 
+                        height: '100%', 
+                        width: '100%', 
+                        border: '1.5px solid #475569', 
+                        borderRadius: '6px', 
+                        padding: '0 10px', 
+                        fontSize: '14px',
+                        boxSizing: 'border-box',
+                        backgroundColor: '#eff3f6',
+                        color: '#000000',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <option value="kgs">kgs</option>
+                      <option value="ltr">ltr</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '16px', marginBottom: '8px' }}>
+                  <button 
+                    onClick={addLpPkg} 
+                    style={{ 
+                      display: 'inline-flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      gap: '6px', 
+                      height: '36px', 
+                      padding: '0 24px', 
+                      fontSize: '13px', 
+                      fontWeight: 'bold', 
+                      borderRadius: '18px', 
+                      border: 'none', 
+                      backgroundColor: '#3b82f6', 
+                      color: '#ffffff', 
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                    }}
+                  >
+                    <PlusCircle size={16} /> Add & Save
+                  </button>
+                </div>
+
+                <hr style={{ border: 'none', borderBottom: '1px solid #cbd5e1', margin: '16px 0' }} />
+              </>
+            )}
+
+            <h5 style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '8px', color: '#334155' }}>Added Packages Log:</h5>
+            <div 
+              onWheel={e => e.stopPropagation()} 
+              style={{ maxHeight: '180px', overflowY: 'auto', display: 'block', paddingRight: '4px' }}
+            >
+              {liveProdRows[lpPkgActiveIdx].packaging_entries.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '16px', color: '#64748b', fontStyle: 'italic', fontSize: '0.85rem' }}>No packages added.</div>
+              ) : (
+                liveProdRows[lpPkgActiveIdx].packaging_entries.map((pkg: any, idx: number) => {
+                  const weight = parseFloat(pkg.size) * (parseInt(pkg.packets) || 0);
+                  return (
+                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#e2e8f0', padding: '6px 12px', borderRadius: '8px', marginBottom: '6px' }}>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 500, color: '#0f172a' }}>
+                        {pkg.packets} x {pkg.size} {pkg.unit} = <strong style={{ color: '#2563eb' }}>{weight.toFixed(2)} {pkg.unit}</strong>
+                      </span>
+                      {activeSubView === 'live_production' && (
+                        <button onClick={() => removeLpPkg(idx)} className="btn-danger" style={{ padding: '4px', borderRadius: '4px', height: '24px', width: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+              <button 
+                onClick={() => setShowLpPkgModal(false)}
+                style={{ 
+                  background: 'none', 
+                  border: 'none', 
+                  color: '#2563eb', 
+                  fontSize: '15px', 
+                  fontWeight: 600, 
+                  cursor: 'pointer',
+                  padding: '4px 8px'
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Live Production Status Update Modal */}
+      {showLpStatusModal && lpStatusActiveRowIdx !== -1 && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ width: '400px', backgroundColor: '#ffffff', borderRadius: '16px', padding: '24px' }}>
+            <h4 style={{ fontWeight: 700, fontSize: '1.2rem', color: '#0f172a', marginBottom: '6px', marginTop: 0 }}>
+              {lpStatusActiveStage.toUpperCase()} Status Update
+            </h4>
+            <p style={{ color: '#475569', fontSize: '14px', marginBottom: '20px' }}>
+              Update the status for the {lpStatusActiveStage} stage:
+            </p>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button 
+                onClick={() => updateLpStatus('ok')} 
+                style={{ padding: '8px 16px', backgroundColor: '#10b981', color: '#ffffff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
+              >
+                ✓ OK
+              </button>
+              <button 
+                onClick={() => updateLpStatus('not_ok')} 
+                style={{ padding: '8px 16px', backgroundColor: '#ef4444', color: '#ffffff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
+              >
+                ✗ NOT OK
+              </button>
+              <button 
+                onClick={() => setShowLpStatusModal(false)} 
+                style={{ padding: '8px 16px', border: '1px solid #cbd5e1', borderRadius: '6px', backgroundColor: '#ffffff', cursor: 'pointer', fontWeight: 600, color: '#475569' }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Live Production Consolidation Destination Choice Modal */}
+      {showLpDestModal && lpDestActiveRowIdx !== -1 && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ width: '450px', backgroundColor: '#ffffff', borderRadius: '16px', padding: '24px', boxShadow: '0 8px 30px rgba(0,0,0,0.15)' }}>
+            <h4 style={{ fontWeight: 700, fontSize: '1.25rem', color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>📦</span> Choose Destination
+            </h4>
+            <p style={{ color: '#475569', fontSize: '13.5px', marginTop: '10px', marginBottom: '4px' }}>
+              Where would you like to consolidate this batch?
+            </p>
+            <p style={{ fontSize: '12px', color: '#3b82f6', fontStyle: 'italic', margin: '0 0 20px 0' }}>
+              (Data will also be saved to Daily Production automatically)
+            </p>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              {lpDestLoading ? (
+                <div style={{ color: '#64748b', fontSize: '14px', fontWeight: 'bold' }}>Consolidating...</div>
+              ) : (
+                <>
+                  <button 
+                    onClick={() => runConsolidation('rm')} 
+                    style={{ 
+                      padding: '10px 20px', 
+                      backgroundColor: '#3b82f6', 
+                      color: '#ffffff', 
+                      border: 'none', 
+                      borderRadius: '8px', 
+                      cursor: 'pointer', 
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px' 
+                    }}
+                  >
+                    <Plus size={16} /> RM Stock
+                  </button>
+                  <button 
+                    onClick={() => runConsolidation('fg')} 
+                    style={{ 
+                      padding: '10px 20px', 
+                      backgroundColor: '#10b981', 
+                      color: '#ffffff', 
+                      border: 'none', 
+                      borderRadius: '8px', 
+                      cursor: 'pointer', 
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <Check size={16} /> Finish Good
+                  </button>
+                  <button 
+                    onClick={() => setShowLpDestModal(false)} 
+                    style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', backgroundColor: '#ffffff', cursor: 'pointer', fontWeight: 600, color: '#475569' }}
+                  >
+                    Cancel
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Clear Confirmation Modal */}
+      {showFgClearConfirm && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ width: '400px', backgroundColor: '#ffffff', borderRadius: '12px', padding: '24px', boxShadow: '0 8px 30px rgba(0,0,0,0.15)', border: 'none' }}>
+            <h4 style={{ fontWeight: 700, fontSize: '1.2rem', color: '#ef4444', marginBottom: '12px', marginTop: 0 }}>Clear All Data?</h4>
+            <p style={{ color: '#334155', fontSize: '14px', marginBottom: '20px', lineHeight: '1.5' }}>
+              This will permanently delete all Finished Goods warehouse ledger entries currently on screen from the database. Are you sure you want to proceed?
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button onClick={() => setShowFgClearConfirm(false)} className="btn-secondary" style={{ padding: '8px 16px', border: '1px solid #cbd5e1', borderRadius: '6px', backgroundColor: '#ffffff', cursor: 'pointer', fontWeight: 600, color: '#475569' }}>
+                Cancel
+              </button>
+              <button onClick={confirmFgClear} className="btn-danger" style={{ padding: '8px 16px', backgroundColor: '#ef4444', color: '#ffffff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}>
+                Delete All
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* RM Stock Clear Confirmation Modal */}
+      {showRmsClearConfirm && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ width: '400px', backgroundColor: '#ffffff', borderRadius: '12px', padding: '24px', boxShadow: '0 8px 30px rgba(0,0,0,0.15)', border: 'none' }}>
+            <h4 style={{ fontWeight: 700, fontSize: '1.2rem', color: '#ef4444', marginBottom: '12px', marginTop: 0 }}>Clear All Data?</h4>
+            <p style={{ color: '#334155', fontSize: '14px', marginBottom: '20px', lineHeight: '1.5' }}>
+              This will permanently delete all Raw Material Stock ledger entries currently on screen from the database. Are you sure you want to proceed?
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button onClick={() => setShowRmsClearConfirm(false)} className="btn-secondary" style={{ padding: '8px 16px', border: '1px solid #cbd5e1', borderRadius: '6px', backgroundColor: '#ffffff', cursor: 'pointer', fontWeight: 600, color: '#475569' }}>
+                Cancel
+              </button>
+              <button onClick={confirmRmsClear} className="btn-danger" style={{ padding: '8px 16px', backgroundColor: '#ef4444', color: '#ffffff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}>
+                Delete All
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        .spin-loader {
+          animation: spin 1.2s linear infinite;
+        }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+        .table-scroll-container table input.cell-input {
+          border: none;
+          background: transparent;
+          width: 100%;
+          height: 100%;
+          padding: 8px;
+          color: var(--text-primary);
+          font-family: inherit;
+          font-size: 0.85rem;
+          transition: background-color var(--transition-fast);
+        }
+        .table-scroll-container table input.cell-input:focus {
+          outline: none;
+          background-color: var(--bg-card-hover);
+        }
+      `}</style>
+
+    </div>
+  );
+};
+export default ProductionMain;

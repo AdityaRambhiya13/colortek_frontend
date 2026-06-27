@@ -2139,7 +2139,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
         <div className="modal-overlay" style={{ zIndex: 9999 }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', color: 'white' }}>
             <RefreshCw size={40} className="spin-loader" />
-            <span style={{ fontWeight: 600 }}>Syncing Laboratory Records with Render Cloud...</span>
+            <span style={{ fontWeight: 600 }}>Loading...</span>
           </div>
         </div>
       )}

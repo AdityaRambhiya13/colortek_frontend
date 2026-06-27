@@ -3605,7 +3605,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
         <div className="modal-overlay" style={{ zIndex: 9999 }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', color: 'white' }}>
             <RefreshCw size={40} className="spin-loader" />
-            <span style={{ fontWeight: 600 }}>Syncing Workspace with Render Cloud...</span>
+            <span style={{ fontWeight: 600 }}>Loading...</span>
           </div>
         </div>
       )}

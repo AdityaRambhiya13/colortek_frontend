@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Base URL for the local FastAPI backend (switch to 'https://colortek-backend.onrender.com' for production)
-export const API_BASE_URL = 'http://localhost:8000';
+// Base URL for the FastAPI backend (uses VITE_API_URL env variable with localhost fallback)
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 axios.defaults.withCredentials = true;
 

@@ -4,6 +4,7 @@ import {
   FileSpreadsheet, FileText, ChevronLeft, ChevronRight, CornerDownRight, X
 } from 'lucide-react';
 import { RDReportAPI } from '../services/api';
+import { useVirtual } from '../hooks/useVirtual';
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -281,6 +282,19 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
   const [pastTotalPages, setPastTotalPages] = useState(1);
   const [searching, setSearching] = useState(false);
   const [selectedBatchDetails, setSelectedBatchDetails] = useState<any | null>(null);
+
+  // Virtualization for R&D search results
+  const {
+    containerRef: searchScrollRef,
+    onScroll: onSearchScroll,
+    startIndex: searchStartIdx,
+    endIndex: searchEndIdx,
+    translateY: searchTranslateY,
+    totalHeight: searchTotalHeight,
+  } = useVirtual({
+    totalItems: searchResults.length,
+    itemHeight: 52,
+  });
 
   // Focus Coordination Refs
   const obsRefs = useRef<{[key: string]: HTMLInputElement | null}>({});
@@ -1609,7 +1623,7 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
           <div style={{
             width: '360px',
             height: '100%',
-            overflowY: 'auto',
+            overflowY: 'hidden',
             backgroundColor: '#f8fafc',
             border: '1px solid #cbd5e1',
             borderRadius: '10px',
@@ -1621,7 +1635,7 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
           }}>
             <h4 style={{ fontWeight: 700, fontSize: '1.1rem', borderBottom: '2px solid var(--primary-color)', paddingBottom: '6px' }}>Search Filters</h4>
             
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', maxHeight: '55%', paddingRight: '4px', flexShrink: 0 }}>
               <div>
                 <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>Batch No.</label>
                 <input 
@@ -1891,41 +1905,52 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
             <div style={{ borderTop: '1px solid #cbd5e1', paddingTop: '15px', display: 'flex', flexDirection: 'column', gap: '10px', flex: 1, minHeight: 0 }}>
               <h5 style={{ fontWeight: 700, fontSize: '0.9rem', margin: 0, color: '#1e293b' }}>Search Results</h5>
               
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, overflowY: 'auto', paddingRight: '4px' }}>
+              <div 
+                ref={searchScrollRef}
+                onScroll={onSearchScroll}
+                style={{ display: 'flex', flexDirection: 'column', flex: 1, overflowY: 'auto', paddingRight: '4px', position: 'relative' }}
+              >
                 {searchResults.length === 0 ? (
                   <span style={{ fontSize: '0.75rem', color: '#64748b', fontStyle: 'italic', padding: '10px 0' }}>No search query executed yet.</span>
                 ) : (
-                  searchResults.map((rec, idx) => (
-                    <div 
-                      key={idx}
-                      onClick={() => handleSelectBatch(rec.batch_no)}
-                      className="interactive"
-                      style={{
-                        padding: '10px',
-                        borderRadius: '6px',
-                        border: '1px solid #cbd5e1',
-                        backgroundColor: selectedBatchDetails?.form?.batch_no === rec.batch_no ? '#e2e8f0' : '#ffffff',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '2px',
-                        transition: 'background-color 0.2s'
-                      }}
-                      onMouseEnter={e => {
-                        if (selectedBatchDetails?.form?.batch_no !== rec.batch_no) {
-                          e.currentTarget.style.backgroundColor = '#f1f5f9';
-                        }
-                      }}
-                      onMouseLeave={e => {
-                        if (selectedBatchDetails?.form?.batch_no !== rec.batch_no) {
-                          e.currentTarget.style.backgroundColor = '#ffffff';
-                        }
-                      }}
-                    >
-                      <strong style={{ fontSize: '0.85rem', color: selectedBatchDetails?.form?.batch_no === rec.batch_no ? '#0f172a' : '#334155' }}>Batch: {rec.batch_no}</strong>
-                      <span style={{ fontSize: '0.75rem', color: '#475569' }}>Date: {rec.report_date || 'N/A'}</span>
+                  <div style={{ height: `${searchTotalHeight}px`, width: '100%', position: 'relative' }}>
+                    <div style={{ transform: `translateY(${searchTranslateY}px)`, display: 'flex', flexDirection: 'column', gap: '6px', position: 'absolute', left: 0, right: 0 }}>
+                      {searchResults.slice(searchStartIdx, searchEndIdx).map((rec, slicedIdx) => {
+                        const idx = searchStartIdx + slicedIdx;
+                        return (
+                          <div 
+                            key={idx}
+                            onClick={() => handleSelectBatch(rec.batch_no)}
+                            className="interactive"
+                            style={{
+                              padding: '10px',
+                              borderRadius: '6px',
+                              border: '1px solid #cbd5e1',
+                              backgroundColor: selectedBatchDetails?.form?.batch_no === rec.batch_no ? '#e2e8f0' : '#ffffff',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '2px',
+                              transition: 'background-color 0.2s'
+                            }}
+                            onMouseEnter={e => {
+                              if (selectedBatchDetails?.form?.batch_no !== rec.batch_no) {
+                                e.currentTarget.style.backgroundColor = '#f1f5f9';
+                              }
+                            }}
+                            onMouseLeave={e => {
+                              if (selectedBatchDetails?.form?.batch_no !== rec.batch_no) {
+                                e.currentTarget.style.backgroundColor = '#ffffff';
+                              }
+                            }}
+                          >
+                            <strong style={{ fontSize: '0.85rem', color: selectedBatchDetails?.form?.batch_no === rec.batch_no ? '#0f172a' : '#334155' }}>Batch: {rec.batch_no}</strong>
+                            <span style={{ fontSize: '0.75rem', color: '#475569' }}>Date: {rec.report_date || 'N/A'}</span>
+                          </div>
+                        );
+                      })}
                     </div>
-                  ))
+                  </div>
                 )}
               </div>
 

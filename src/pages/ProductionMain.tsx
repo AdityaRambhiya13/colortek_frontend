@@ -21,6 +21,7 @@ import {
   LiveProductionAPI,
   RMStockAPI
 } from '../services/api';
+import { useVirtual } from '../hooks/useVirtual';
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -1901,6 +1902,19 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
   });
   const [drHistoryLogs, setDrHistoryLogs] = useState<any[]>([]);
 
+  // Virtualization for Dispatch Register History Logs
+  const {
+    containerRef: drHistoryScrollRef,
+    onScroll: onDrHistoryScroll,
+    startIndex: drHistoryStartIdx,
+    endIndex: drHistoryEndIdx,
+    translateY: drHistoryTranslateY,
+    totalHeight: drHistoryTotalHeight,
+  } = useVirtual({
+    totalItems: drHistoryLogs.length,
+    itemHeight: 40,
+  });
+
   const handleDrHistorySearch = async () => {
     setLoading(true);
     const [success, data] = await DispatchRegisterAPI.getEntries(
@@ -2100,6 +2114,20 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
     };
   });
   const [dpHistoryLogs, setDpHistoryLogs] = useState<any[]>([]);
+
+  // Virtualization for Daily Production History Logs
+  const {
+    containerRef: dpHistoryScrollRef,
+    onScroll: onDpHistoryScroll,
+    startIndex: dpHistoryStartIdx,
+    endIndex: dpHistoryEndIdx,
+    translateY: dpHistoryTranslateY,
+    totalHeight: dpHistoryTotalHeight,
+  } = useVirtual({
+    totalItems: dpHistoryLogs.length,
+    itemHeight: 40,
+  });
+
   const [dpHistoryPage, setDpHistoryPage] = useState(1);
   const [dpHistoryTotalPages, setDpHistoryTotalPages] = useState(1);
 
@@ -4314,7 +4342,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
                 </div>
               </div>
 
-              <div className="table-scroll-container" style={{ maxHeight: '400px' }}>
+              <div ref={drHistoryScrollRef} onScroll={onDrHistoryScroll} className="table-scroll-container" style={{ maxHeight: '400px', overflowY: 'auto' }}>
                 <table className="table-locked-header">
                   <thead>
                     <tr>
@@ -4332,25 +4360,38 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
                         <td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-light)', padding: '20px' }}>No records found. Adjust your date filters.</td>
                       </tr>
                     ) : (
-                      drHistoryLogs.map((log, idx) => {
-                        const pkgs = log.packaging_details || [];
-                        return (
-                          <tr key={idx}>
-                            <td>{log.dispatch_date}</td>
-                            <td style={{ fontWeight: 600 }}>{log.customer_name}</td>
-                            <td>{log.product_name_field}</td>
-                            <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{log.batch_no}</td>
-                            <td>
-                              {pkgs.map((p: any, i: number) => (
-                                <span key={i} style={{ display: 'inline-block', backgroundColor: 'var(--bg-app)', padding: '2px 6px', margin: '2px', borderRadius: '4px', fontSize: '0.8rem' }}>
-                                  {p.packets}x{p.size}{p.unit}
-                                </span>
-                              ))}
-                            </td>
-                            <td style={{ textAlign: 'right', fontWeight: 'bold' }}>{log.total_qty}</td>
+                      <>
+                        {drHistoryStartIdx > 0 && (
+                          <tr>
+                            <td colSpan={6} style={{ height: `${drHistoryStartIdx * 40}px`, border: 0, padding: 0 }} />
                           </tr>
-                        );
-                      })
+                        )}
+                        {drHistoryLogs.slice(drHistoryStartIdx, drHistoryEndIdx).map((log, slicedIdx) => {
+                          const idx = drHistoryStartIdx + slicedIdx;
+                          const pkgs = log.packaging_details || [];
+                          return (
+                            <tr key={idx} style={{ height: '40px' }}>
+                              <td>{log.dispatch_date}</td>
+                              <td style={{ fontWeight: 600 }}>{log.customer_name}</td>
+                              <td>{log.product_name_field}</td>
+                              <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{log.batch_no}</td>
+                              <td>
+                                {pkgs.map((p: any, i: number) => (
+                                  <span key={i} style={{ display: 'inline-block', backgroundColor: 'var(--bg-app)', padding: '2px 6px', margin: '2px', borderRadius: '4px', fontSize: '0.8rem' }}>
+                                    {p.packets}x{p.size}{p.unit}
+                                  </span>
+                                ))}
+                              </td>
+                              <td style={{ textAlign: 'right', fontWeight: 'bold' }}>{log.total_qty}</td>
+                            </tr>
+                          );
+                        })}
+                        {drHistoryEndIdx < drHistoryLogs.length && (
+                          <tr>
+                            <td colSpan={6} style={{ height: `${(drHistoryLogs.length - drHistoryEndIdx) * 40}px`, border: 0, padding: 0 }} />
+                          </tr>
+                        )}
+                      </>
                     )}
                   </tbody>
                 </table>
@@ -5195,7 +5236,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
               </div>
 
               {/* History Table Container */}
-              <div className="table-scroll-container" style={{ maxHeight: '450px', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'auto' }}>
+              <div ref={dpHistoryScrollRef} onScroll={onDpHistoryScroll} className="table-scroll-container" style={{ maxHeight: '450px', border: '1px solid #cbd5e1', borderRadius: '8px', overflowY: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1140px' }}>
                   <thead>
                     <tr style={{ position: 'sticky', top: 0, zIndex: 10 }}>
@@ -5216,40 +5257,53 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
                         </td>
                       </tr>
                     ) : (
-                      dpHistoryLogs.map((log, idx) => {
-                        const isEven = idx % 2 === 0;
-                        const rowBg = isEven ? '#ffffff' : '#f8fafc';
-                        
-                        const prodFull = log.product_name_field || '';
-                        const displayProd = prodFull.includes(" - ") ? prodFull.split(" - ")[1] : prodFull;
-
-                        return (
-                          <tr key={idx} style={{ height: '40px', backgroundColor: rowBg }}>
-                            <td style={{ textAlign: 'center', border: '1px solid #cbd5e1', padding: '8px', fontSize: '0.85rem', color: '#475569' }}>{log.date}</td>
-                            <td style={{ border: '1px solid #cbd5e1', padding: '8px', fontSize: '0.85rem', fontWeight: 600, color: '#0f172a' }}>{log.customer_name}</td>
-                            <td style={{ border: '1px solid #cbd5e1', padding: '8px', fontSize: '0.85rem', color: '#334155' }}>{displayProd}</td>
-                            <td style={{ textAlign: 'center', fontWeight: 'bold', border: '1px solid #cbd5e1', padding: '8px', fontSize: '0.85rem', color: '#0f172a' }}>{log.batch_no}</td>
-                            <td style={{ textAlign: 'right', fontWeight: 'bold', border: '1px solid #cbd5e1', padding: '8px', fontSize: '0.85rem', color: '#16a34a' }}>{log.qty}</td>
-                            <td style={{ textAlign: 'center', border: '1px solid #cbd5e1', padding: '4px' }}>
-                              <span 
-                                style={{
-                                  display: 'inline-block',
-                                  padding: '2px 8px',
-                                  borderRadius: '10px',
-                                  fontSize: '0.7rem',
-                                  fontWeight: 700,
-                                  textTransform: 'uppercase',
-                                  backgroundColor: log.qty_unit === 'kgs' ? '#e8f5e9' : '#e3f2fd',
-                                  color: log.qty_unit === 'kgs' ? '#2e7d32' : '#1565c0',
-                                }}
-                              >
-                                {log.qty_unit}
-                              </span>
-                            </td>
-                            <td style={{ border: '1px solid #cbd5e1', padding: '8px', fontSize: '0.85rem', color: '#475569' }}>{log.charged_by}</td>
+                      <>
+                        {dpHistoryStartIdx > 0 && (
+                          <tr>
+                            <td colSpan={7} style={{ height: `${dpHistoryStartIdx * 40}px`, border: 0, padding: 0 }} />
                           </tr>
-                        );
-                      })
+                        )}
+                        {dpHistoryLogs.slice(dpHistoryStartIdx, dpHistoryEndIdx).map((log, slicedIdx) => {
+                          const idx = dpHistoryStartIdx + slicedIdx;
+                          const isEven = idx % 2 === 0;
+                          const rowBg = isEven ? '#ffffff' : '#f8fafc';
+                          
+                          const prodFull = log.product_name_field || '';
+                          const displayProd = prodFull.includes(" - ") ? prodFull.split(" - ")[1] : prodFull;
+
+                          return (
+                            <tr key={idx} style={{ height: '40px', backgroundColor: rowBg }}>
+                              <td style={{ textAlign: 'center', border: '1px solid #cbd5e1', padding: '8px', fontSize: '0.85rem', color: '#475569' }}>{log.date}</td>
+                              <td style={{ border: '1px solid #cbd5e1', padding: '8px', fontSize: '0.85rem', fontWeight: 600, color: '#0f172a' }}>{log.customer_name}</td>
+                              <td style={{ border: '1px solid #cbd5e1', padding: '8px', fontSize: '0.85rem', color: '#334155' }}>{displayProd}</td>
+                              <td style={{ textAlign: 'center', fontWeight: 'bold', border: '1px solid #cbd5e1', padding: '8px', fontSize: '0.85rem', color: '#0f172a' }}>{log.batch_no}</td>
+                              <td style={{ textAlign: 'right', fontWeight: 'bold', border: '1px solid #cbd5e1', padding: '8px', fontSize: '0.85rem', color: '#16a34a' }}>{log.qty}</td>
+                              <td style={{ textAlign: 'center', border: '1px solid #cbd5e1', padding: '4px' }}>
+                                <span 
+                                  style={{
+                                    display: 'inline-block',
+                                    padding: '2px 8px',
+                                    borderRadius: '10px',
+                                    fontSize: '0.7rem',
+                                    fontWeight: 700,
+                                    textTransform: 'uppercase',
+                                    backgroundColor: log.qty_unit === 'kgs' ? '#e8f5e9' : '#e3f2fd',
+                                    color: log.qty_unit === 'kgs' ? '#2e7d32' : '#1565c0',
+                                  }}
+                                >
+                                  {log.qty_unit}
+                                </span>
+                              </td>
+                              <td style={{ border: '1px solid #cbd5e1', padding: '8px', fontSize: '0.85rem', color: '#475569' }}>{log.charged_by}</td>
+                            </tr>
+                          );
+                        })}
+                        {dpHistoryEndIdx < dpHistoryLogs.length && (
+                          <tr>
+                            <td colSpan={7} style={{ height: `${(dpHistoryLogs.length - dpHistoryEndIdx) * 40}px`, border: 0, padding: 0 }} />
+                          </tr>
+                        )}
+                      </>
                     )}
                   </tbody>
                 </table>

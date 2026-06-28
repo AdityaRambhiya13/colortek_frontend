@@ -342,7 +342,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     }
   }, [leftRows, rightRows]);
 
-  // Reset duplicate matches state when active view changes
+  // Reset duplicate matches state and spreadsheet panels when active view changes
   useEffect(() => {
     setDuplicateMatchesLeft([]);
     setDuplicateMatchesRight([]);
@@ -352,6 +352,22 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     setSelectedDuplicateBatchNoRight(null);
     setDismissedDuplicatesLeft(new Set());
     setDismissedDuplicatesRight(new Set());
+
+    // Reset spreadsheet states to prevent data bleeding between tabs (Lab Formulations vs RM Testing)
+    setLeftForm({ refNo: '', batchNo: '', product: '', rmLot: '', testDate: '', reportDate: '', formulaDate: '' });
+    setLeftRows(initializeRows());
+    setLeftTestRows(initializeTestRows());
+    setLeftRemarks('');
+    setLeftStatus('Select');
+    setLeftApprovedBy('');
+
+    setRightForm({ refNo: '', batchNo: '', product: '', rmLot: '', testDate: '', reportDate: '', formulaDate: '' });
+    setRightRows(initializeRows());
+    setRightTestRows(initializeTestRows());
+    setRightRemarks('');
+    setRightStatus('Select');
+    setRightApprovedBy('');
+    
     setLastCheckedLeftKey('');
     setLastCheckedRightKey('');
   }, [activeSubView]);

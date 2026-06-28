@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Beaker, Search, Filter, RefreshCw, FileSpreadsheet, ArrowLeft, ArrowRight,
   AlertTriangle, Copy, Trash2, CheckCircle2, ChevronLeft, ChevronRight, HelpCircle, Building,
-  Edit3, ZoomIn
+  Edit3, ZoomIn, Bell
 } from 'lucide-react';
-import { CMSAPI, LabPastFormulationsAPI, RMPastFormulationsAPI, LabFormulationsAPI, RMFormulationsAPI, RawMaterialAPI, RepairedFormulationsAPI, API_BASE_URL } from '../services/api';
+import { CMSAPI, LabPastFormulationsAPI, RMPastFormulationsAPI, LabFormulationsAPI, RMFormulationsAPI, RawMaterialAPI, RepairedFormulationsAPI, API_BASE_URL, NotificationsAPI } from '../services/api';
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
 
@@ -41,6 +41,55 @@ interface TestRow {
 
 export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, onChangeView }) => {
   const productName = sessionStorage.getItem('product_name') || '';
+
+  // --------------------------------------------------------------------------
+  // NOTIFICATIONS SYSTEM STATE & LOGIC
+  // --------------------------------------------------------------------------
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const notificationsRef = useRef<HTMLDivElement>(null);
+
+  const fetchNotifications = async () => {
+    const [success, data] = await NotificationsAPI.getNotifications();
+    if (success && Array.isArray(data)) {
+      setNotifications(data);
+      const unseen = data.filter((notif: any) => !notif.seen).length;
+      setUnreadCount(unseen);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 45000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (notificationsRef.current && !notificationsRef.current.contains(e.target as Node)) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+  const markAllAsSeen = async () => {
+    const unseenIds = notifications
+      .filter((n: any) => !n.seen)
+      .map((n: any) => n.id);
+
+    if (unseenIds.length > 0) {
+      const [success] = await NotificationsAPI.markNotificationsSeen(unseenIds);
+      if (success) {
+        setNotifications(prev =>
+          prev.map((n: any) => ({ ...n, seen: true }))
+        );
+        setUnreadCount(0);
+      }
+    }
+  };
 
   // --------------------------------------------------------------------------
   // STATE DEFINITIONS FOR THE DUAL FORMULATION PANELS
@@ -1729,8 +1778,121 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
               </div>
             )}
 
-            <div style={{ fontSize: '12px', color: '#475569', fontWeight: 500 }}>
-              Active Workspace: <strong style={{ color: 'var(--primary-color)' }}>{productName}</strong>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{ fontSize: '12px', color: '#475569', fontWeight: 500 }}>
+                Active Workspace: <strong style={{ color: 'var(--primary-color)' }}>{productName}</strong>
+              </div>
+              
+              {/* Notifications Popover */}
+              <div style={{ position: 'relative' }} ref={notificationsRef}>
+                <button 
+                  onClick={() => {
+                    setShowNotifications(!showNotifications);
+                    if (!showNotifications) markAllAsSeen();
+                  }} 
+                  style={{ 
+                    position: 'relative', 
+                    background: 'none', 
+                    border: 'none', 
+                    cursor: 'pointer',
+                    color: '#64748b',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '4px'
+                  }}
+                  title="Notifications"
+                >
+                  <Bell size={18} />
+                  {unreadCount > 0 && (
+                    <span style={{
+                      position: 'absolute',
+                      top: '-2px',
+                      right: '-2px',
+                      width: '14px',
+                      height: '14px',
+                      backgroundColor: 'var(--color-error)',
+                      color: 'white',
+                      borderRadius: '50%',
+                      fontSize: '0.6rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: 'bold'
+                    }}>
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Notifications Panel */}
+                {showNotifications && (
+                  <div className="glass-card animated-fade" style={{
+                    position: 'absolute',
+                    top: '30px',
+                    right: '0',
+                    width: '320px',
+                    maxHeight: '400px',
+                    padding: '16px',
+                    overflowY: 'auto',
+                    zIndex: 200,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '12px',
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '8px',
+                    boxShadow: 'var(--shadow-lg)'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <h4 style={{ fontWeight: 600, fontSize: '0.9rem', margin: 0, color: '#1e293b' }}>Notifications</h4>
+                      <button 
+                        onClick={fetchNotifications}
+                        style={{ background: 'none', border: 'none', color: 'var(--primary-color)', fontSize: '0.75rem', cursor: 'pointer' }}
+                      >
+                        Refresh
+                      </button>
+                    </div>
+                    <hr style={{ border: 'none', borderBottom: '1px solid var(--border-color)', margin: '4px 0' }} />
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {notifications.length === 0 ? (
+                        <p style={{ textAlign: 'center', color: 'var(--text-light)', fontSize: '0.85rem', padding: '16px 0', margin: 0 }}>
+                          No alerts at this time
+                        </p>
+                      ) : (
+                        notifications.map((notif) => (
+                          <div 
+                            key={notif.id}
+                            style={{
+                              padding: '10px',
+                              borderRadius: 'var(--radius-sm)',
+                              backgroundColor: notif.seen ? 'transparent' : 'rgba(99, 102, 241, 0.08)',
+                              border: '1px solid var(--border-color)',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '4px'
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyItems: 'center', justifyContent: 'space-between' }}>
+                              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                                {notif.title}
+                              </span>
+                              {!notif.seen && <CheckCircle2 size={12} color="var(--primary-color)" />}
+                            </div>
+                            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: 0 }}>
+                              {notif.message}
+                            </p>
+                            <span style={{ fontSize: '0.65rem', color: 'var(--text-light)', textAlign: 'right' }}>
+                              {new Date(notif.timestamp).toLocaleString()}
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

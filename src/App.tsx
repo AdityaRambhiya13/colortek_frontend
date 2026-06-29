@@ -31,6 +31,7 @@ export const App: React.FC = () => {
     const activeTheme = cachedTheme || 'light';
     setTheme(activeTheme);
     document.documentElement.setAttribute('data-theme', activeTheme);
+    document.documentElement.className = activeTheme;
 
     // 2. Auth Session Check
     const verifyUserSession = async () => {
@@ -122,6 +123,7 @@ export const App: React.FC = () => {
     setTheme(nextTheme);
     localStorage.setItem('theme_mode', nextTheme);
     document.documentElement.setAttribute('data-theme', nextTheme);
+    document.documentElement.className = nextTheme;
     showToast(`Switched to ${nextTheme} mode`, 'info');
   };
 

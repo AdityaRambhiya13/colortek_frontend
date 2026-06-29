@@ -17,7 +17,10 @@ import { Sparkles, Layers, ShieldCheck, Factory, Beaker, FileSpreadsheet } from 
 export const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [sessionLoading, setSessionLoading] = useState(true);
-  const [currentView, setCurrentView] = useState('welcome');
+  const [currentView, setCurrentView] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('view') || 'welcome';
+  });
   const [sidebarMini, setSidebarMini] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
@@ -134,10 +137,17 @@ export const App: React.FC = () => {
       sessionStorage.removeItem('product_name');
       sessionStorage.removeItem('user_roles');
       setCurrentView('welcome');
+      const url = new URL(window.location.href);
+      url.searchParams.delete('view');
+      window.history.pushState({}, '', url.toString());
       return;
     }
     setCurrentView(viewName);
     sessionStorage.setItem('active_view', viewName);
+
+    const url = new URL(window.location.href);
+    url.searchParams.set('view', viewName);
+    window.history.pushState({}, '', url.toString());
   };
 
   // Toast trigger helper

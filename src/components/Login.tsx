@@ -12,6 +12,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [isAdminLogin, setIsAdminLogin] = useState(false);
   
   // Workspace Selection State
   const [availableProducts, setAvailableProducts] = useState<string[]>([]);
@@ -68,6 +69,37 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         }
       } else {
         setErrorMsg(typeof data === 'string' ? data : 'Invalid username or password.');
+        setLoading(false);
+      }
+    } catch (err: any) {
+      setErrorMsg('A connection error occurred. Verify that the server is online.');
+      setLoading(false);
+    }
+  };
+
+  const handleAdminLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!username || !password) {
+      setErrorMsg('Please input your admin username and password.');
+      return;
+    }
+
+    setLoading(true);
+    setErrorMsg('');
+
+    try {
+      const [success, data] = await AuthAPI.adminLogin(username, password);
+      
+      if (success) {
+        // Set direct view to user_management
+        sessionStorage.setItem('active_view', 'user_management');
+        const url = new URL(window.location.href);
+        url.searchParams.set('view', 'user_management');
+        window.history.pushState({}, '', url.toString());
+
+        onLoginSuccess();
+      } else {
+        setErrorMsg(typeof data === 'string' ? data : 'Invalid admin username or password.');
         setLoading(false);
       }
     } catch (err: any) {
@@ -279,34 +311,94 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         maxWidth: '400px',
         background: 'rgba(18, 18, 18, 0.75)',
         backdropFilter: 'blur(20px)',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
+        border: isAdminLogin ? '1px solid rgba(168, 85, 247, 0.25)' : '1px solid rgba(255, 255, 255, 0.08)',
         borderRadius: '16px',
         padding: '40px 32px',
         display: 'flex',
         flexDirection: 'column',
         gap: '24px',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+        boxShadow: isAdminLogin ? '0 20px 50px rgba(168, 85, 247, 0.15)' : '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+        transition: 'all 0.3s ease'
       }}>
-        {/* Shield Logo */}
+        {/* Portal Mode Selector Tabs */}
+        <div style={{
+          display: 'flex',
+          backgroundColor: 'rgba(255, 255, 255, 0.02)',
+          border: '1px solid rgba(255, 255, 255, 0.05)',
+          borderRadius: '8px',
+          padding: '4px',
+          width: '100%',
+          boxSizing: 'border-box'
+        }}>
+          <button
+            type="button"
+            onClick={() => {
+              setIsAdminLogin(false);
+              setErrorMsg('');
+            }}
+            style={{
+              flex: 1,
+              padding: '8px 12px',
+              borderRadius: '6px',
+              border: 'none',
+              backgroundColor: !isAdminLogin ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
+              color: !isAdminLogin ? '#818cf8' : '#94a3b8',
+              fontWeight: 600,
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            User Portal
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setIsAdminLogin(true);
+              setErrorMsg('');
+            }}
+            style={{
+              flex: 1,
+              padding: '8px 12px',
+              borderRadius: '6px',
+              border: 'none',
+              backgroundColor: isAdminLogin ? 'rgba(168, 85, 247, 0.15)' : 'transparent',
+              color: isAdminLogin ? '#c084fc' : '#94a3b8',
+              fontWeight: 600,
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            Admin Panel
+          </button>
+        </div>
+
+        {/* Logo and Titles */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
           <div style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: 'rgba(99, 102, 241, 0.1)',
-            border: '1px solid rgba(99, 102, 241, 0.2)',
+            backgroundColor: isAdminLogin ? 'rgba(168, 85, 247, 0.1)' : 'rgba(99, 102, 241, 0.1)',
+            border: isAdminLogin ? '1px solid rgba(168, 85, 247, 0.2)' : '1px solid rgba(99, 102, 241, 0.2)',
             padding: '16px',
             borderRadius: '50%',
-            color: '#818cf8',
-            boxShadow: '0 0 30px rgba(99, 102, 241, 0.15)'
+            color: isAdminLogin ? '#c084fc' : '#818cf8',
+            boxShadow: isAdminLogin ? '0 0 30px rgba(168, 85, 247, 0.15)' : '0 0 30px rgba(99, 102, 241, 0.15)',
+            transition: 'all 0.3s ease'
           }}>
-            <Shield size={36} />
+            {isAdminLogin ? <Shield size={36} /> : <Building size={36} />}
           </div>
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 700, letterSpacing: '0.01em', marginTop: '12px', textAlign: 'center' }}>Colortek Secure Portal</h2>
-          <p style={{ fontSize: '0.8rem', color: '#94a3b8', textAlign: 'center' }}>Sign in to manage batch systems</p>
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 700, letterSpacing: '0.01em', marginTop: '12px', textAlign: 'center' }}>
+            {isAdminLogin ? 'Colortek Admin Panel' : 'Colortek Secure Portal'}
+          </h2>
+          <p style={{ fontSize: '0.8rem', color: '#94a3b8', textAlign: 'center' }}>
+            {isAdminLogin ? 'Sign in to manage system administration' : 'Sign in to manage batch systems'}
+          </p>
         </div>
 
-        <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+        <form onSubmit={isAdminLogin ? handleAdminLoginSubmit : handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
           {errorMsg && (
             <div style={{
               backgroundColor: 'rgba(239, 68, 68, 0.1)',
@@ -332,24 +424,24 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 onFocus={() => setFocusedField('username')}
                 onBlur={() => setFocusedField(null)}
                 className="field-input"
-                placeholder="Enter your username"
+                placeholder={isAdminLogin ? "Enter admin username" : "Enter your username"}
                 style={{
                   backgroundColor: 'rgba(255,255,255,0.03)',
-                  border: focusedField === 'username' ? '1px solid #6366f1' : '1px solid rgba(255,255,255,0.08)',
+                  border: focusedField === 'username' ? (isAdminLogin ? '1px solid #a855f7' : '1px solid #6366f1') : '1px solid rgba(255,255,255,0.08)',
                   borderRadius: '8px',
                   color: 'white',
                   paddingLeft: '40px',
                   height: '40px',
                   fontSize: '0.85rem',
                   outline: 'none',
-                  boxShadow: focusedField === 'username' ? '0 0 10px rgba(99, 102, 241, 0.15)' : 'none',
+                  boxShadow: focusedField === 'username' ? (isAdminLogin ? '0 0 10px rgba(168, 85, 247, 0.15)' : '0 0 10px rgba(99, 102, 241, 0.15)') : 'none',
                   transition: 'all 0.2s ease',
                   width: '100%',
                   boxSizing: 'border-box'
                 }}
                 disabled={loading}
               />
-              <Shield size={16} color={focusedField === 'username' ? '#818cf8' : '#64748b'} style={{ position: 'absolute', left: '14px', top: '12px', transition: 'color 0.2s ease' }} />
+              <Shield size={16} color={focusedField === 'username' ? (isAdminLogin ? '#c084fc' : '#818cf8') : '#64748b'} style={{ position: 'absolute', left: '14px', top: '12px', transition: 'color 0.2s ease' }} />
             </div>
           </div>
 
@@ -367,7 +459,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 placeholder="Enter your password"
                 style={{
                   backgroundColor: 'rgba(255,255,255,0.03)',
-                  border: focusedField === 'password' ? '1px solid #6366f1' : '1px solid rgba(255,255,255,0.08)',
+                  border: focusedField === 'password' ? (isAdminLogin ? '1px solid #a855f7' : '1px solid #6366f1') : '1px solid rgba(255,255,255,0.08)',
                   borderRadius: '8px',
                   color: 'white',
                   paddingLeft: '40px',
@@ -375,14 +467,14 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                   height: '40px',
                   fontSize: '0.85rem',
                   outline: 'none',
-                  boxShadow: focusedField === 'password' ? '0 0 10px rgba(99, 102, 241, 0.15)' : 'none',
+                  boxShadow: focusedField === 'password' ? (isAdminLogin ? '0 0 10px rgba(168, 85, 247, 0.15)' : '0 0 10px rgba(99, 102, 241, 0.15)') : 'none',
                   transition: 'all 0.2s ease',
                   width: '100%',
                   boxSizing: 'border-box'
                 }}
                 disabled={loading}
               />
-              <Key size={16} color={focusedField === 'password' ? '#818cf8' : '#64748b'} style={{ position: 'absolute', left: '14px', top: '12px', transition: 'color 0.2s ease' }} />
+              <Key size={16} color={focusedField === 'password' ? (isAdminLogin ? '#c084fc' : '#818cf8') : '#64748b'} style={{ position: 'absolute', left: '14px', top: '12px', transition: 'color 0.2s ease' }} />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
@@ -414,7 +506,9 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               width: '100%',
               height: '42px',
               marginTop: '12px',
-              background: isLoginHovered ? 'linear-gradient(135deg, #4f46e5, #1d4ed8)' : 'linear-gradient(135deg, #6366f1, #2563eb)',
+              background: isAdminLogin
+                ? (isLoginHovered ? 'linear-gradient(135deg, #7e22ce, #581c87)' : 'linear-gradient(135deg, #a855f7, #7e22ce)')
+                : (isLoginHovered ? 'linear-gradient(135deg, #4f46e5, #1d4ed8)' : 'linear-gradient(135deg, #6366f1, #2563eb)'),
               border: 'none',
               borderRadius: '8px',
               color: 'white',
@@ -426,7 +520,9 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               justifyContent: 'center',
               gap: '8px',
               transform: isLoginHovered ? 'translateY(-1px)' : 'translateY(0)',
-              boxShadow: isLoginHovered ? '0 4px 12px rgba(99, 102, 241, 0.25)' : 'none',
+              boxShadow: isLoginHovered 
+                ? (isAdminLogin ? '0 4px 12px rgba(168, 85, 247, 0.25)' : '0 4px 12px rgba(99, 102, 241, 0.25)')
+                : 'none',
               transition: 'all 0.2s ease'
             }}
             disabled={loading}

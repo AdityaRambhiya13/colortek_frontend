@@ -132,6 +132,28 @@ export const AuthAPI = {
     return [success, data] as [boolean, any];
   },
 
+  adminLogin: async (username: string, secretToken: string) => {
+    const formData = new FormData();
+    formData.append('username', username);
+    formData.append('password', secretToken);
+    
+    const [success, data] = await handleResponse<any>(
+      axios.post(`${API_BASE_URL}/auth/admin-login`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+    );
+
+    if (success && typeof data !== 'string') {
+      sessionStorage.setItem('csrf_token', data.csrf_token);
+      sessionStorage.setItem('username', username);
+      sessionStorage.setItem('product_name', 'System Admin');
+      sessionStorage.setItem('user_roles', ['admin', 'cms', 'mf', 'qc', 'complaints', 'production', 'lab', 'rd'].join(','));
+      localStorage.setItem('username_cache', username);
+    }
+
+    return [success, data] as [boolean, any];
+  },
+
   verifySession: async () => {
     return handleResponse<any>(apiClient.get('/auth/verify-session'));
   },

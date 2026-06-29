@@ -211,6 +211,18 @@ export const AdminAPI = {
 
   deleteUser: async (username: string) => {
     return handleResponse<any>(apiClient.delete(`/admin/users/${username}`));
+  },
+
+  getAuditLogs: async () => {
+    return handleResponse<any>(apiClient.get('/admin/audit-logs'));
+  },
+
+  getLockouts: async () => {
+    return handleResponse<any>(apiClient.get('/admin/lockouts'));
+  },
+
+  unlockIdentifier: async (identifier: string) => {
+    return handleResponse<any>(apiClient.delete(`/admin/lockouts/${identifier}`));
   }
 };
 

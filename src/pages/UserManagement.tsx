@@ -23,6 +23,13 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
   const [usersList, setUsersList] = useState<any[]>([]);
   const [consolidatedUsers, setConsolidatedUsers] = useState<ConsolidatedUser[]>([]);
 
+  // Audit Logs & Lockouts States
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [lockouts, setLockouts] = useState<any[]>([]);
+  const [loadingAudit, setLoadingAudit] = useState(false);
+  const [loadingLockouts, setLoadingLockouts] = useState(false);
+  const [auditSearch, setAuditSearch] = useState('');
+
   // Create User State
   const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -43,6 +50,35 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const MODULES = ['cms', 'mf', 'qc', 'complaints', 'production', 'lab', 'rd'];
+
+  const fetchAuditLogs = async () => {
+    setLoadingAudit(true);
+    const [success, data] = await AdminAPI.getAuditLogs();
+    if (success && Array.isArray(data)) {
+      setAuditLogs(data);
+    }
+    setLoadingAudit(false);
+  };
+
+  const fetchLockouts = async () => {
+    setLoadingLockouts(true);
+    const [success, data] = await AdminAPI.getLockouts();
+    if (success && Array.isArray(data)) {
+      setLockouts(data);
+    }
+    setLoadingLockouts(false);
+  };
+
+  const handleUnlock = async (identifier: string) => {
+    const [success, data] = await AdminAPI.unlockIdentifier(identifier);
+    if (success) {
+      onShowToast(typeof data === 'string' ? data : 'Manually unlocked successfully.', 'success');
+      fetchLockouts();
+      fetchAuditLogs();
+    } else {
+      onShowToast(typeof data === 'string' ? data : 'Failed to release lockout.', 'error');
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -71,6 +107,11 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
     } else {
       onShowToast('Failed to retrieve user database list.', 'error');
     }
+    
+    // Fetch Audit Logs and Lockouts
+    fetchAuditLogs();
+    fetchLockouts();
+    
     setLoading(false);
   };
 
@@ -501,6 +542,141 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
                     </td>
                   </tr>
                 ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Lockouts Manager Card */}
+      <div className="glass-card animated-fade" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <h3 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px' }}>
+          <AlertTriangle size={18} color="#f59e0b" />
+          <span>Active Security Lockouts & Unlock Manager</span>
+        </h3>
+
+        {loadingLockouts ? (
+          <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-light)' }}>Syncing lockout database...</div>
+        ) : lockouts.length === 0 ? (
+          <div style={{ padding: '20px', textAlign: 'center', color: '#10b981', fontStyle: 'italic', fontWeight: 500 }}>
+            ✓ No locked out accounts or IP addresses currently recorded.
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table className="ledger-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  <th>Target User / IP</th>
+                  <th>Failed Attempts</th>
+                  <th>Lockout Until</th>
+                  <th style={{ width: '100px', textAlign: 'center' }}>Release</th>
+                </tr>
+              </thead>
+              <tbody>
+                {lockouts.map(lock => (
+                  <tr key={lock.identifier}>
+                    <td style={{ fontWeight: 600 }}>{lock.identifier}</td>
+                    <td>
+                      <span style={{ color: '#ef4444', fontWeight: 700 }}>{lock.attempt_count}</span>
+                    </td>
+                    <td style={{ color: '#f59e0b', fontWeight: 500 }}>
+                      {new Date(lock.lockout_until).toLocaleString()}
+                    </td>
+                    <td style={{ textAlign: 'center' }}>
+                      <button
+                        onClick={() => handleUnlock(lock.identifier)}
+                        className="btn-primary"
+                        style={{
+                          backgroundColor: '#10b981',
+                          border: 'none',
+                          padding: '6px 12px',
+                          fontSize: '0.8rem',
+                          borderRadius: '6px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Unlock
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* System Audit Logs Card */}
+      <div className="glass-card animated-fade" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px', flexWrap: 'wrap', gap: '12px' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+            <Settings size={18} color="var(--primary-color)" />
+            <span>System Audit Logs & Activity Feed</span>
+          </h3>
+          
+          <input
+            type="text"
+            className="field-input"
+            value={auditSearch}
+            onChange={(e) => setAuditSearch(e.target.value)}
+            placeholder="Search by User or Action..."
+            style={{
+              maxWidth: '240px',
+              height: '34px',
+              fontSize: '0.8rem',
+              backgroundColor: 'rgba(255, 255, 255, 0.03)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '6px',
+              padding: '0 10px'
+            }}
+          />
+        </div>
+
+        {loadingAudit ? (
+          <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-light)' }}>Syncing system logs...</div>
+        ) : auditLogs.length === 0 ? (
+          <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-light)', fontStyle: 'italic' }}>
+            No audit logs recorded in system.
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto', maxHeight: '300px', overflowY: 'auto' }}>
+            <table className="ledger-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+              <thead style={{ position: 'sticky', top: 0, backgroundColor: 'var(--bg-card)', zIndex: 1 }}>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Username</th>
+                  <th>Product Scope</th>
+                  <th>Module</th>
+                  <th>Action</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                {auditLogs
+                  .filter(log => {
+                    const term = auditSearch.toLowerCase();
+                    return (
+                      (log.username || '').toLowerCase().includes(term) ||
+                      (log.action || '').toLowerCase().includes(term) ||
+                      (log.description || '').toLowerCase().includes(term)
+                    );
+                  })
+                  .map((log, idx) => (
+                    <tr key={idx}>
+                      <td style={{ color: 'var(--text-secondary)' }}>
+                        {new Date(log.timestamp).toLocaleString()}
+                      </td>
+                      <td style={{ fontWeight: 600 }}>{log.username}</td>
+                      <td>
+                        <span style={{ fontSize: '0.75rem', backgroundColor: 'var(--primary-light)', color: 'var(--primary-color)', padding: '2px 6px', borderRadius: '10px' }}>
+                          {log.product_name}
+                        </span>
+                      </td>
+                      <td style={{ color: 'var(--text-secondary)' }}>{log.module}</td>
+                      <td style={{ fontWeight: 700, color: 'var(--primary-color)' }}>{log.action}</td>
+                      <td style={{ color: 'var(--text-secondary)' }}>{log.description}</td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>

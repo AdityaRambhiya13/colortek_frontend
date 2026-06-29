@@ -12,7 +12,11 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const [isAdminLogin, setIsAdminLogin] = useState(false);
+  const [isAdminLogin] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const view = params.get('view');
+    return view === 'user_management' || view === 'database_management' || view === 'products_master';
+  });
   
   // Workspace Selection State
   const [availableProducts, setAvailableProducts] = useState<string[]>([]);
@@ -297,12 +301,14 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
   return (
     <div style={{
-      minHeight: '100vh',
+      height: '100vh',
+      overflowY: 'auto',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       background: 'radial-gradient(circle at center, #18181b 0%, #09090b 100%)',
-      padding: '24px',
+      padding: '40px 24px',
+      boxSizing: 'border-box',
       color: '#ffffff',
       fontFamily: 'system-ui, -apple-system, sans-serif'
     }}>
@@ -318,62 +324,9 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         flexDirection: 'column',
         gap: '24px',
         boxShadow: isAdminLogin ? '0 20px 50px rgba(168, 85, 247, 0.15)' : '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-        transition: 'all 0.3s ease'
+        transition: 'all 0.3s ease',
+        margin: 'auto' // Center horizontally and vertically within the scrollable container
       }}>
-        {/* Portal Mode Selector Tabs */}
-        <div style={{
-          display: 'flex',
-          backgroundColor: 'rgba(255, 255, 255, 0.02)',
-          border: '1px solid rgba(255, 255, 255, 0.05)',
-          borderRadius: '8px',
-          padding: '4px',
-          width: '100%',
-          boxSizing: 'border-box'
-        }}>
-          <button
-            type="button"
-            onClick={() => {
-              setIsAdminLogin(false);
-              setErrorMsg('');
-            }}
-            style={{
-              flex: 1,
-              padding: '8px 12px',
-              borderRadius: '6px',
-              border: 'none',
-              backgroundColor: !isAdminLogin ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
-              color: !isAdminLogin ? '#818cf8' : '#94a3b8',
-              fontWeight: 600,
-              fontSize: '0.8rem',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-            }}
-          >
-            User Portal
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setIsAdminLogin(true);
-              setErrorMsg('');
-            }}
-            style={{
-              flex: 1,
-              padding: '8px 12px',
-              borderRadius: '6px',
-              border: 'none',
-              backgroundColor: isAdminLogin ? 'rgba(168, 85, 247, 0.15)' : 'transparent',
-              color: isAdminLogin ? '#c084fc' : '#94a3b8',
-              fontWeight: 600,
-              fontSize: '0.8rem',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-            }}
-          >
-            Admin Panel
-          </button>
-        </div>
-
         {/* Logo and Titles */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
           <div style={{

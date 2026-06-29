@@ -14,13 +14,21 @@ const apiClient = axios.create({
   withCredentials: true,
 });
 
-// Axios Request Interceptor: Attach CSRF token automatically on all mutating methods
+// Axios Request Interceptor: Attach CSRF and JWT Authorization tokens
 apiClient.interceptors.request.use(
   (config) => {
+    // Attach CSRF token automatically on mutating methods
     const csrfToken = sessionStorage.getItem('csrf_token');
     if (csrfToken && config.method && ['post', 'put', 'delete', 'patch'].includes(config.method)) {
       config.headers['X-CSRF-Token'] = csrfToken;
     }
+
+    // Attach JWT Authorization header to support cross-origin sessions
+    const jwtToken = sessionStorage.getItem('jwt_token');
+    if (jwtToken) {
+      config.headers['Authorization'] = `Bearer ${jwtToken}`;
+    }
+
     return config;
   },
   (error) => Promise.reject(error)
@@ -56,11 +64,14 @@ apiClient.interceptors.response.use(
           {},
           { withCredentials: true }
         );
-        const { csrf_token } = refreshResp.data;
+        const { csrf_token, access_token } = refreshResp.data;
         if (csrf_token) sessionStorage.setItem('csrf_token', csrf_token);
+        if (access_token) sessionStorage.setItem('jwt_token', access_token);
+        
         // Flush queued requests
         _refreshQueue.forEach((cb) => cb(csrf_token));
         _refreshQueue = [];
+        
         // Retry original request
         return apiClient(originalRequest);
       } catch {
@@ -120,8 +131,8 @@ export const AuthAPI = {
     );
 
     if (success && typeof data !== 'string') {
-      // Store session data upon successful login (excluding jwt_token which is HttpOnly)
       sessionStorage.setItem('csrf_token', data.csrf_token);
+      sessionStorage.setItem('jwt_token', data.access_token);
       sessionStorage.setItem('username', username);
       sessionStorage.setItem('product_name', productName);
       sessionStorage.setItem('user_roles', data.roles.join(','));
@@ -145,6 +156,7 @@ export const AuthAPI = {
 
     if (success && typeof data !== 'string') {
       sessionStorage.setItem('csrf_token', data.csrf_token);
+      sessionStorage.setItem('jwt_token', data.access_token);
       sessionStorage.setItem('username', username);
       sessionStorage.setItem('product_name', 'System Admin');
       sessionStorage.setItem('user_roles', ['admin', 'cms', 'mf', 'qc', 'complaints', 'production', 'lab', 'rd'].join(','));
@@ -164,6 +176,9 @@ export const AuthAPI = {
       const resp = await axios.post(`${API_BASE_URL}/auth/refresh`, {}, { withCredentials: true });
       if (resp.data?.csrf_token) {
         sessionStorage.setItem('csrf_token', resp.data.csrf_token);
+      }
+      if (resp.data?.access_token) {
+        sessionStorage.setItem('jwt_token', resp.data.access_token);
       }
       return true;
     } catch {

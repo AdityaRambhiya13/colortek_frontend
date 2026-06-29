@@ -12,7 +12,7 @@ import { UserManagement } from './pages/UserManagement';
 import { DatabaseManagement } from './pages/DatabaseManagement';
 import { ProductsMaster } from './pages/ProductsMaster';
 import { AuthAPI } from './services/api';
-import { Sparkles, Layers, ShieldCheck, Factory, Beaker, FileSpreadsheet } from 'lucide-react';
+import { Sparkles, Layers, ShieldCheck, Factory, Beaker, FileSpreadsheet, Moon, Sun, LogOut } from 'lucide-react';
 
 export const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -163,6 +163,23 @@ export const App: React.FC = () => {
     setIsAuthenticated(false);
     setCurrentView('welcome');
     showToast('Logged out successfully', 'success');
+  };
+
+  const handleLoginSuccess = () => {
+    setIsAuthenticated(true);
+    const cachedView = sessionStorage.getItem('active_view');
+    const params = new URLSearchParams(window.location.search);
+    const urlView = params.get('view');
+    
+    const isMasterAdmin = sessionStorage.getItem('product_name') === 'System Admin';
+    let targetView = urlView || cachedView || 'welcome';
+    
+    if (isMasterAdmin && !['user_management', 'database_management', 'products_master'].includes(targetView)) {
+      targetView = 'user_management';
+    }
+    
+    setCurrentView(targetView);
+    sessionStorage.setItem('active_view', targetView);
   };
 
   // Router switch rendering individual screen pages
@@ -337,7 +354,184 @@ export const App: React.FC = () => {
 
   // Render Login portal if unauthenticated
   if (!isAuthenticated) {
-    return <Login onLoginSuccess={() => setIsAuthenticated(true)} />;
+    return <Login onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  const isMasterAdmin = sessionStorage.getItem('product_name') === 'System Admin';
+
+  if (isMasterAdmin) {
+    return (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100vh',
+        backgroundColor: 'var(--bg-app)',
+        color: 'var(--text-primary)',
+        fontFamily: 'system-ui, -apple-system, sans-serif'
+      }}>
+        {/* App Header (No Sidebar) */}
+        <header style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '12px 24px',
+          background: 'rgba(18, 18, 18, 0.8)',
+          backdropFilter: 'blur(10px)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+          height: '60px',
+          boxSizing: 'border-box'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{
+              fontWeight: 700,
+              fontSize: '1.2rem',
+              letterSpacing: '0.03em',
+              background: 'linear-gradient(135deg, #c084fc, #818cf8)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent'
+            }}>
+              Colortek Admin Panel
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>
+              Logged in as <strong style={{ color: '#ffffff' }}>{sessionStorage.getItem('username')}</strong>
+            </span>
+            <button
+              onClick={handleThemeToggle}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#cbd5e1',
+                padding: '8px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'rgba(255,255,255,0.02)'
+              }}
+            >
+              {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+            </button>
+            <button
+              onClick={handleLogout}
+              style={{
+                backgroundColor: '#dc2626',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '8px 16px',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#b91c1c'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
+            >
+              <LogOut size={14} />
+              Logout
+            </button>
+          </div>
+        </header>
+
+        {/* Tab Selector Bar */}
+        <div style={{
+          display: 'flex',
+          backgroundColor: 'rgba(18, 18, 18, 0.4)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+          padding: '0 24px',
+          boxSizing: 'border-box'
+        }}>
+          <button
+            onClick={() => handleViewChange('user_management')}
+            style={{
+              padding: '16px 20px',
+              backgroundColor: 'transparent',
+              border: 'none',
+              borderBottom: currentView === 'user_management' ? '2px solid #a855f7' : '2px solid transparent',
+              color: currentView === 'user_management' ? '#c084fc' : '#94a3b8',
+              fontWeight: 600,
+              fontSize: '0.9rem',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              outline: 'none'
+            }}
+          >
+            User Management
+          </button>
+          <button
+            onClick={() => handleViewChange('database_management')}
+            style={{
+              padding: '16px 20px',
+              backgroundColor: 'transparent',
+              border: 'none',
+              borderBottom: currentView === 'database_management' ? '2px solid #a855f7' : '2px solid transparent',
+              color: currentView === 'database_management' ? '#c084fc' : '#94a3b8',
+              fontWeight: 600,
+              fontSize: '0.9rem',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              outline: 'none'
+            }}
+          >
+            Database Management
+          </button>
+          <button
+            onClick={() => handleViewChange('products_master')}
+            style={{
+              padding: '16px 20px',
+              backgroundColor: 'transparent',
+              border: 'none',
+              borderBottom: currentView === 'products_master' ? '2px solid #a855f7' : '2px solid transparent',
+              color: currentView === 'products_master' ? '#c084fc' : '#94a3b8',
+              fontWeight: 600,
+              fontSize: '0.9rem',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              outline: 'none'
+            }}
+          >
+            Products Master
+          </button>
+        </div>
+
+        {/* Admin Content Area */}
+        <main style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: '24px',
+          boxSizing: 'border-box',
+          backgroundColor: 'var(--bg-app)'
+        }}>
+          {renderActivePage()}
+        </main>
+
+        {/* Toast Alert Dialog */}
+        {toast && (
+          <div className="toast-notification" style={{
+            position: 'fixed',
+            bottom: '24px',
+            right: '24px',
+            backgroundColor: toast.type === 'error' ? '#ef4444' : toast.type === 'warning' ? '#f59e0b' : toast.type === 'info' ? '#3b82f6' : '#10b981',
+            color: 'white',
+            padding: '12px 20px',
+            borderRadius: '8px',
+            boxShadow: '0 10px 15px -3px rgba(0,0,0,0.3)',
+            zIndex: 1000,
+            fontWeight: 600,
+            fontSize: '0.85rem'
+          }}>
+            {toast.message}
+          </div>
+        )}
+      </div>
+    );
   }
 
   return (

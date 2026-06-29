@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Sun, Moon, Bell, LogOut, Briefcase, HelpCircle, Layers, CheckCircle2 } from 'lucide-react';
+import { Sun, Moon, Bell, LogOut, Briefcase, HelpCircle, Layers, CheckCircle2, AlertTriangle, Info } from 'lucide-react';
 import { NotificationsAPI } from '../services/api';
 
 interface HeaderProps {
@@ -27,6 +27,23 @@ export const Header: React.FC<HeaderProps> = ({
 
   const username = sessionStorage.getItem('username') || 'User';
   const productName = sessionStorage.getItem('product_name') || 'No Workspace Selected';
+
+  const getTypeClass = (type: string) => {
+    const t = (type || '').toLowerCase().trim();
+    if (t === 'success' || t === 'ok') return 'success';
+    if (t === 'warning' || t === 'not_ok') return 'warning';
+    if (t === 'info') return 'info';
+    if (t === 'error' || t === 'danger') return 'error';
+    return 'info';
+  };
+
+  const renderNotificationIcon = (type: string) => {
+    const t = getTypeClass(type);
+    if (t === 'success') return <CheckCircle2 size={14} style={{ color: '#10B981' }} />;
+    if (t === 'warning') return <AlertTriangle size={14} style={{ color: '#F59E0B' }} />;
+    if (t === 'info') return <Info size={14} style={{ color: '#3B82F6' }} />;
+    return <AlertTriangle size={14} style={{ color: '#EF4444' }} />;
+  };
 
   // Format header title text based on current view name
   const getHeaderTitle = () => {
@@ -111,19 +128,19 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Quick Product Switcher */}
         <button 
           onClick={() => onChangeView('product_select')}
-          className="theme-switch-btn"
+          className="header-icon-btn"
           title="Switch Product Workspace"
         >
-          <Layers size={20} />
+          <Layers size={18} />
         </button>
 
         {/* Theme Switcher */}
         <button 
           onClick={onThemeToggle} 
-          className="theme-switch-btn"
+          className="header-icon-btn"
           title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
         >
-          {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+          {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
         </button>
 
         {/* Notifications Popover */}
@@ -133,27 +150,12 @@ export const Header: React.FC<HeaderProps> = ({
               setShowNotifications(!showNotifications);
               if (!showNotifications) markAllAsSeen();
             }} 
-            className="theme-switch-btn"
+            className={`header-icon-btn ${showNotifications ? 'active-bell' : ''}`}
             title="Notifications"
-            style={{ position: 'relative' }}
           >
-            <Bell size={20} />
+            <Bell size={18} />
             {unreadCount > 0 && (
-              <span style={{
-                position: 'absolute',
-                top: '4px',
-                right: '4px',
-                width: '16px',
-                height: '16px',
-                backgroundColor: 'var(--color-error)',
-                color: 'white',
-                borderRadius: '50%',
-                fontSize: '0.65rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 'bold'
-              }}>
+              <span className="notification-badge-pulse">
                 {unreadCount > 99 ? '99+' : unreadCount}
               </span>
             )}
@@ -161,59 +163,71 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Notifications Panel */}
           {showNotifications && (
-            <div className="glass-card animated-fade" style={{
-              position: 'absolute',
-              top: '50px',
-              right: '0',
-              width: '320px',
-              maxHeight: '400px',
-              padding: '16px',
-              overflowY: 'auto',
-              zIndex: 200,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px'
-            }}>
+            <div className="notification-panel">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h4 style={{ fontWeight: 600 }}>Notifications</h4>
+                <h4 style={{ fontWeight: 700, fontSize: '0.95rem', margin: 0, color: theme === 'light' ? '#1e293b' : '#f8fafc' }}>
+                  Notifications
+                </h4>
                 <button 
                   onClick={fetchNotifications}
-                  style={{ background: 'none', border: 'none', color: 'var(--primary-color)', fontSize: '0.75rem', cursor: 'pointer' }}
+                  style={{ 
+                    background: 'none', 
+                    border: 'none', 
+                    color: 'var(--primary-color)', 
+                    fontSize: '0.75rem', 
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    transition: 'opacity 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                  onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                 >
                   Refresh
                 </button>
               </div>
-              <hr style={{ border: 'none', borderBottom: '1px solid var(--border-color)' }} />
+              <hr style={{ border: 'none', borderBottom: '1px solid var(--border-color)', margin: '4px 0' }} />
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {notifications.length === 0 ? (
-                  <p style={{ textAlign: 'center', color: 'var(--text-light)', fontSize: '0.85rem', padding: '16px 0' }}>
-                    No alerts at this time
-                  </p>
+                  <div style={{ 
+                    textAlign: 'center', 
+                    color: 'var(--text-light)', 
+                    fontSize: '0.85rem', 
+                    padding: '24px 0',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <Bell size={24} style={{ opacity: 0.3 }} />
+                    <span>No alerts at this time</span>
+                  </div>
                 ) : (
                   notifications.map((notif) => (
                     <div 
                       key={notif.id}
-                      style={{
-                        padding: '10px',
-                        borderRadius: 'var(--radius-sm)',
-                        backgroundColor: notif.seen ? 'transparent' : 'var(--primary-light)',
-                        border: '1px solid var(--border-color)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '4px'
-                      }}
+                      className={`notification-card ${getTypeClass(notif.notification_type)} ${notif.seen ? 'seen' : 'unread'}`}
                     >
-                      <div style={{ display: 'flex', justifyItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                          {notif.title}
-                        </span>
-                        {!notif.seen && <CheckCircle2 size={12} color="var(--primary-color)" />}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          {renderNotificationIcon(notif.notification_type)}
+                          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: theme === 'light' ? '#1e293b' : '#f8fafc' }}>
+                            {notif.title}
+                          </span>
+                        </div>
+                        {!notif.seen && (
+                          <span style={{
+                            width: '6px',
+                            height: '6px',
+                            backgroundColor: 'var(--primary-color)',
+                            borderRadius: '50%'
+                          }} />
+                        )}
                       </div>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: '2px 0 0 0', lineHeight: 1.4 }}>
                         {notif.message}
                       </p>
-                      <span style={{ fontSize: '0.65rem', color: 'var(--text-light)', textAlign: 'right' }}>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--text-light)', alignSelf: 'flex-end', marginTop: '2px' }}>
                         {new Date(notif.timestamp).toLocaleString()}
                       </span>
                     </div>

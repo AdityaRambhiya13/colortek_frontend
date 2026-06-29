@@ -19,7 +19,8 @@ import {
   MasterFormulationAPI,
   ProductMasterAPI,
   LiveProductionAPI,
-  RMStockAPI
+  RMStockAPI,
+  NotificationsAPI
 } from '../services/api';
 import { useVirtual } from '../hooks/useVirtual';
 import * as XLSX from 'xlsx';
@@ -842,6 +843,16 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
     });
 
     setShowLpStatusModal(false);
+
+    if (stage === 'production' && statusVal === 'ok') {
+      const row = liveProdRows[idx];
+      NotificationsAPI.createNotification(
+        "Batch Ready for QC",
+        `${row.batch_no || 'Batch'} ready.`,
+        "info",
+        ["qc"]
+      );
+    }
 
     // Save immediately!
     setTimeout(() => {

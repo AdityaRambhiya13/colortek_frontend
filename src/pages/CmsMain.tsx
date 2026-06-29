@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Beaker, Search, Filter, RefreshCw, FileSpreadsheet, ArrowLeft, ArrowRight,
   AlertTriangle, Copy, Trash2, CheckCircle2, ChevronLeft, ChevronRight, HelpCircle, Building,
-  Edit3, ZoomIn, Bell
+  Edit3, ZoomIn, Bell, Info
 } from 'lucide-react';
 import { CMSAPI, LabPastFormulationsAPI, RMPastFormulationsAPI, LabFormulationsAPI, RMFormulationsAPI, RawMaterialAPI, RepairedFormulationsAPI, API_BASE_URL, NotificationsAPI } from '../services/api';
 import * as XLSX from 'xlsx';
@@ -49,6 +49,23 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const notificationsRef = useRef<HTMLDivElement>(null);
+
+  const getTypeClass = (type: string) => {
+    const t = (type || '').toLowerCase().trim();
+    if (t === 'success' || t === 'ok') return 'success';
+    if (t === 'warning' || t === 'not_ok') return 'warning';
+    if (t === 'info') return 'info';
+    if (t === 'error' || t === 'danger') return 'error';
+    return 'info';
+  };
+
+  const renderNotificationIcon = (type: string) => {
+    const t = getTypeClass(type);
+    if (t === 'success') return <CheckCircle2 size={14} style={{ color: '#10B981' }} />;
+    if (t === 'warning') return <AlertTriangle size={14} style={{ color: '#F59E0B' }} />;
+    if (t === 'info') return <Info size={14} style={{ color: '#3B82F6' }} />;
+    return <AlertTriangle size={14} style={{ color: '#EF4444' }} />;
+  };
 
   const fetchNotifications = async () => {
     const [success, data] = await NotificationsAPI.getNotifications();
@@ -1011,6 +1028,12 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
     if (success) {
       onShowToast(`Master formulation saved for batch ${form.batchNo}`, 'success');
+      NotificationsAPI.createNotification(
+        "[SUCCESS] Batch Approved!",
+        `Batch ${form.batchNo} approved and saved to master formulations.`,
+        "success",
+        ["production", "mf"]
+      );
     } else {
       onShowToast(typeof data === 'string' ? data : 'Failed to save master.', 'error');
     }
@@ -1116,15 +1139,27 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       const setApprovedBy = side === 'left' ? setLeftApprovedBy : setRightApprovedBy;
 
       const fd = data.form_data || [];
-      setForm({
-        refNo: data.ref_no || '',
-        batchNo: data.batch_no || '',
-        product: fd[2] || data.product_name || '',
-        rmLot: fd[3] || data.rm_name_lot_no || '',
-        testDate: fd[4] || data.test_date || '',
-        reportDate: fd[5] || data.report_date || '',
-        formulaDate: fd[6] || data.formula_date || '',
-      });
+      if (isLab) {
+        setForm({
+          refNo: data.ref_no || fd[0] || '',
+          batchNo: data.batch_no || fd[1] || '',
+          product: fd[2] || '',
+          rmLot: '',
+          testDate: fd[3] || '',
+          reportDate: fd[4] || '',
+          formulaDate: fd[5] || '',
+        });
+      } else {
+        setForm({
+          refNo: data.ref_no || fd[0] || '',
+          batchNo: data.batch_no || fd[1] || '',
+          product: fd[2] || '',
+          rmLot: fd[3] || '',
+          testDate: fd[4] || '',
+          reportDate: fd[5] || '',
+          formulaDate: fd[6] || '',
+        });
+      }
 
       setRemarks(data.remarks || '');
       
@@ -1779,7 +1814,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
             )}
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <div style={{ fontSize: '12px', color: '#475569', fontWeight: 500 }}>
+              <div style={{ fontSize: '12px', color: 'var(--header-text-secondary)', fontWeight: 500 }}>
                 Active Workspace: <strong style={{ color: 'var(--primary-color)' }}>{productName}</strong>
               </div>
               
@@ -1790,36 +1825,12 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                     setShowNotifications(!showNotifications);
                     if (!showNotifications) markAllAsSeen();
                   }} 
-                  style={{ 
-                    position: 'relative', 
-                    background: 'none', 
-                    border: 'none', 
-                    cursor: 'pointer',
-                    color: '#64748b',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '4px'
-                  }}
+                  className={`header-icon-btn ${showNotifications ? 'active-bell' : ''}`}
                   title="Notifications"
                 >
                   <Bell size={18} />
                   {unreadCount > 0 && (
-                    <span style={{
-                      position: 'absolute',
-                      top: '-2px',
-                      right: '-2px',
-                      width: '14px',
-                      height: '14px',
-                      backgroundColor: 'var(--color-error)',
-                      color: 'white',
-                      borderRadius: '50%',
-                      fontSize: '0.6rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontWeight: 'bold'
-                    }}>
+                    <span className="notification-badge-pulse">
                       {unreadCount > 99 ? '99+' : unreadCount}
                     </span>
                   )}
@@ -1827,28 +1838,24 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
                 {/* Notifications Panel */}
                 {showNotifications && (
-                  <div className="glass-card animated-fade" style={{
-                    position: 'absolute',
-                    top: '30px',
-                    right: '0',
-                    width: '320px',
-                    maxHeight: '400px',
-                    padding: '16px',
-                    overflowY: 'auto',
-                    zIndex: 200,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '12px',
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #cbd5e1',
-                    borderRadius: '8px',
-                    boxShadow: 'var(--shadow-lg)'
-                  }}>
+                  <div className="notification-panel" style={{ top: '30px', right: '0' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <h4 style={{ fontWeight: 600, fontSize: '0.9rem', margin: 0, color: '#1e293b' }}>Notifications</h4>
+                      <h4 style={{ fontWeight: 700, fontSize: '0.95rem', margin: 0, color: '#1e293b' }}>
+                        Notifications
+                      </h4>
                       <button 
                         onClick={fetchNotifications}
-                        style={{ background: 'none', border: 'none', color: 'var(--primary-color)', fontSize: '0.75rem', cursor: 'pointer' }}
+                        style={{ 
+                          background: 'none', 
+                          border: 'none', 
+                          color: 'var(--primary-color)', 
+                          fontSize: '0.75rem', 
+                          cursor: 'pointer',
+                          fontWeight: 600,
+                          transition: 'opacity 0.2s'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                        onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                       >
                         Refresh
                       </button>
@@ -1857,33 +1864,45 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                     
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {notifications.length === 0 ? (
-                        <p style={{ textAlign: 'center', color: 'var(--text-light)', fontSize: '0.85rem', padding: '16px 0', margin: 0 }}>
-                          No alerts at this time
-                        </p>
+                        <div style={{ 
+                          textAlign: 'center', 
+                          color: 'var(--text-light)', 
+                          fontSize: '0.85rem', 
+                          padding: '24px 0',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: '8px'
+                        }}>
+                          <Bell size={24} style={{ opacity: 0.3, color: '#64748b' }} />
+                          <span style={{ color: '#64748b' }}>No alerts at this time</span>
+                        </div>
                       ) : (
                         notifications.map((notif) => (
                           <div 
                             key={notif.id}
-                            style={{
-                              padding: '10px',
-                              borderRadius: 'var(--radius-sm)',
-                              backgroundColor: notif.seen ? 'transparent' : 'rgba(99, 102, 241, 0.08)',
-                              border: '1px solid var(--border-color)',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: '4px'
-                            }}
+                            className={`notification-card ${getTypeClass(notif.notification_type)} ${notif.seen ? 'seen' : 'unread'}`}
                           >
-                            <div style={{ display: 'flex', justifyItems: 'center', justifyContent: 'space-between' }}>
-                              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                                {notif.title}
-                              </span>
-                              {!notif.seen && <CheckCircle2 size={12} color="var(--primary-color)" />}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                {renderNotificationIcon(notif.notification_type)}
+                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b' }}>
+                                  {notif.title}
+                                </span>
+                              </div>
+                              {!notif.seen && (
+                                <span style={{
+                                  width: '6px',
+                                  height: '6px',
+                                  backgroundColor: 'var(--primary-color)',
+                                  borderRadius: '50%'
+                                }} />
+                              )}
                             </div>
-                            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: 0 }}>
+                            <p style={{ fontSize: '0.75rem', color: '#475569', margin: '2px 0 0 0', lineHeight: 1.4 }}>
                               {notif.message}
                             </p>
-                            <span style={{ fontSize: '0.65rem', color: 'var(--text-light)', textAlign: 'right' }}>
+                            <span style={{ fontSize: '0.65rem', color: '#94a3b8', alignSelf: 'flex-end', marginTop: '2px' }}>
                               {new Date(notif.timestamp).toLocaleString()}
                             </span>
                           </div>

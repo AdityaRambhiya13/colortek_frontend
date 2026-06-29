@@ -12,8 +12,8 @@ import {
   W56RndAPI, 
   ProductionBatchEntryAPI, 
   LabReturnAPI, 
-  LabFormulationsAPI,
-  LiveProductionAPI
+  LiveProductionAPI,
+  NotificationsAPI
 } from '../services/api';
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
@@ -836,6 +836,12 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
 
     if (success) {
       onShowToast(`Batch ${batchNo} has been marked as ${status === 'ok' ? 'Approved' : 'Rejected'}.`, 'success');
+      NotificationsAPI.createNotification(
+        "QC Status Updated",
+        `Batch '${batchNo}' (${productName}) QC status set to ${status} by QC.`,
+        status === 'ok' ? 'info' : 'warning',
+        ["production"]
+      );
       loadLiveQCList();
     } else {
       onShowToast(`Failed to update status: ${response}`, 'error');

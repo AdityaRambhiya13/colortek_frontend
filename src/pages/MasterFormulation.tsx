@@ -52,6 +52,33 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
   const [localInventory, setLocalInventory] = useState<any[]>([]);
   const autosaveTimer = useRef<number | null>(null);
 
+  const getRecordValue = (key: string, defaultVal = '') => {
+    if (!detailData) return defaultVal;
+    const form = detailData.form || {};
+    const variations = [
+      key,
+      key.toLowerCase(),
+      key.toUpperCase(),
+      key.replace(/_/g, ' ').toLowerCase(),
+      key.replace(/_/g, ' ').toUpperCase(),
+      key.replace(/\s+/g, '_').toLowerCase(),
+      key.replace(/\s+/g, '_').toUpperCase()
+    ];
+    for (const k of variations) {
+      if (form[k] !== undefined && form[k] !== null && String(form[k]).trim() !== '') {
+        return String(form[k]);
+      }
+    }
+    // Check top level
+    const topVariations = [key, key.toLowerCase(), key.toUpperCase()];
+    for (const k of topVariations) {
+      if (detailData[k] !== undefined && detailData[k] !== null && String(detailData[k]).trim() !== '') {
+        return String(detailData[k]);
+      }
+    }
+    return defaultVal;
+  };
+
   const loadMasterList = async () => {
     setLoading(true);
     const [success, data] = await MasterFormulationAPI.getBatchList(productName, fromDate, toDate, searchTerm);
@@ -259,27 +286,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
     if (!detailData) return;
 
     const get_val = (key: string, defaultVal = '') => {
-      const form = detailData.form || {};
-      const variations = [
-        key,
-        key.toLowerCase(),
-        key.toUpperCase(),
-        key.replace(/\s+/g, '_').toLowerCase(),
-        key.replace(/\s+/g, '_').toUpperCase()
-      ];
-      for (const k of variations) {
-        if (form[k] !== undefined && form[k] !== null && String(form[k]).trim() !== '') {
-          return String(form[k]);
-        }
-      }
-      // Check top level
-      const topVariations = [key, key.toLowerCase(), key.toUpperCase()];
-      for (const k of topVariations) {
-        if (detailData[k] !== undefined && detailData[k] !== null && String(detailData[k]).trim() !== '') {
-          return String(detailData[k]);
-        }
-      }
-      return defaultVal;
+      return getRecordValue(key, defaultVal);
     };
 
     const format_date = (val: string) => {
@@ -646,7 +653,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                     </div>
                     <div style={{ background: '#ecfdf5', padding: '10px 14px', borderRadius: '10px', border: '1px solid #a7f3d0', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                       <span className="premium-field-label" style={{ color: '#059669' }}>Product Name</span>
-                      <strong style={{ fontSize: '13px', color: '#1e293b' }}>{productName}</strong>
+                      <strong style={{ fontSize: '13px', color: '#1e293b' }}>{getRecordValue('product_name', productName)}</strong>
                     </div>
                     <div style={{ background: '#f8fafc', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                       <span className="premium-field-label">Formula Date</span>

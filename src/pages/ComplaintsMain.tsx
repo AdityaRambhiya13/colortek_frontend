@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import {
   ComplaintsAPI, ComplaintRegistrationAPI, ComplaintLabAPI, RepairedFormulationsAPI,
-  ComplaintResolutionAPI, API_BASE_URL
+  ComplaintResolutionAPI, API_BASE_URL, NotificationsAPI
 } from '../services/api';
 
 interface ComplaintsMainProps {
@@ -199,6 +199,12 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
     setSaving(false);
     if (success) {
       onShowToast(`Complaint for Batch '${batchNo}' registered!`, 'success');
+      NotificationsAPI.createNotification(
+        "📌 Complaint Registered",
+        `Batch ${batchNo} has been successfully registered.`,
+        "success",
+        ["production", "qc", "lab", "mf", "complaints", "cms"]
+      );
     } else {
       onShowToast(`Failed to register: ${data}`, 'error');
     }
@@ -357,6 +363,12 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
     setSolving(false);
     if (success) {
       onShowToast('Complaint resolved! Batch removed from lab queue.', 'success');
+      NotificationsAPI.createNotification(
+        "[SUCCESS] Complaint Solved",
+        `Batch ${selectedLabComplaint.batch_no} marked as solved.`,
+        "success",
+        ["complaints", "lab"]
+      );
       setSelectedLabComplaint(null); setLabComplaintDetails(null); setShowModalImages(false);
       loadLabComplaints();
     } else { onShowToast(`Failed to resolve: ${data}`, 'error'); }

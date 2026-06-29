@@ -13,6 +13,7 @@
   --text-primary: #1e293b;
   --text-secondary: #475569;
   --text-light: #94a3b8;
+  --header-text-secondary: #cbd5e1;
   
   --border-color: #E2E8F0;
   --border-hover: #cbd5e1;
@@ -117,16 +118,33 @@ body {
 
 /* Fixed Global Header */
 .header-bar {
-  height: 64px;
-  background-color: var(--bg-header);
-  border-bottom: 1px solid var(--border-color);
+  height: 70px; /* Slightly taller for elegance */
+  background: rgba(15, 23, 42, 0.85); /* Dark transparent glass background */
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
+  padding: 0 24px;
   flex-shrink: 0;
   z-index: 90;
+  transition: background-color 0.3s ease;
 }
+
+.light .header-bar {
+  background: rgba(255, 255, 255, 0.85); /* Light transparent glass background */
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.header-bar h2 {
+  color: #f8fafc;
+  margin: 0;
+}
+
+.light .header-bar h2 {
+  color: #0f172a;
+}
+
 
 .content-wrapper {
   flex-grow: 1;
@@ -139,22 +157,33 @@ body {
 
 /* Flet Style Fixed Top Toolbar Header (Height 70-80px) */
 .flet-fixed-toolbar {
-  height: 75px;
-  background-color: #f1f5f9;
-  border-bottom: 2px solid #cbd5e1;
+  height: 70px;
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 20px;
+  padding: 0 24px;
   flex-shrink: 0;
   width: 100%;
 }
 
+.light .flet-fixed-toolbar {
+  background: rgba(255, 255, 255, 0.85);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
 .flet-toolbar-title {
-  font-size: 20px;
+  font-size: 1.15rem;
   font-weight: 700;
+  color: #f8fafc;
+}
+
+.light .flet-toolbar-title {
   color: #0f172a;
 }
+
 
 /* Search bar and pagination wrapper in a single row */
 .flet-toolbar-row {
@@ -517,3 +546,176 @@ body {
     opacity: 1;
   }
 }
+
+/* Notification Badge Pulsing */
+.notification-badge-pulse {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 18px;
+  height: 18px;
+  background-color: var(--color-error, #EF4444);
+  color: white;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  border: 2px solid rgba(15, 23, 42, 0.95);
+  box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  animation: pulse-badge 1.8s infinite;
+  z-index: 10;
+}
+
+.light .notification-badge-pulse {
+  border: 2px solid rgba(255, 255, 255, 0.95);
+}
+
+
+@keyframes pulse-badge {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+/* Glassmorphism Notification Panel */
+.notification-panel {
+  position: absolute;
+  top: 50px;
+  right: 0;
+  width: 350px;
+  max-height: 480px;
+  padding: 16px;
+  overflow-y: auto;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+  scrollbar-width: thin;
+}
+
+.light .notification-panel {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+/* Notification Item Card */
+.notification-card {
+  padding: 12px 12px 12px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.light .notification-card {
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  background: rgba(0, 0, 0, 0.01);
+}
+
+.notification-card:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.light .notification-card:hover {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+/* Left Accent strips based on type */
+.notification-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+}
+
+.notification-card.success::before { background-color: #10B981; }
+.notification-card.warning::before { background-color: #F59E0B; }
+.notification-card.info::before { background-color: #3B82F6; }
+.notification-card.error::before { background-color: #EF4444; }
+
+/* Unread highlights */
+.notification-card.unread {
+  background: rgba(99, 102, 241, 0.06);
+  border-color: rgba(99, 102, 241, 0.15);
+}
+
+.light .notification-card.unread {
+  background: rgba(99, 102, 241, 0.04);
+  border-color: rgba(99, 102, 241, 0.1);
+}
+
+.notification-card.unread:hover {
+  background: rgba(99, 102, 241, 0.1);
+}
+
+/* Rounded Header Icon Buttons */
+.header-icon-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  outline: none;
+}
+
+.light .header-icon-btn {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.02);
+  color: #64748b;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.header-icon-btn:hover {
+  transform: translateY(-2px);
+  background: rgba(99, 102, 241, 0.1);
+  border-color: rgba(99, 102, 241, 0.3);
+  color: #818cf8;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+
+.header-icon-btn:active {
+  transform: translateY(0);
+}
+
+.header-icon-btn.active-bell {
+  color: var(--primary-color);
+  background: rgba(99, 102, 241, 0.15);
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+.light {
+  --header-text-secondary: #475569;
+}
+

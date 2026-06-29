@@ -361,12 +361,12 @@ export const App: React.FC = () => {
 
   if (isMasterAdmin) {
     return (
-      <div style={{
+      <div className="dark-theme" data-theme="dark" style={{
         display: 'flex',
         flexDirection: 'column',
         height: '100vh',
-        backgroundColor: 'var(--bg-app)',
-        color: 'var(--text-primary)',
+        backgroundColor: '#090c15',
+        color: '#f8fafc',
         fontFamily: 'system-ui, -apple-system, sans-serif'
       }}>
         {/* App Header (No Sidebar) */}
@@ -375,8 +375,7 @@ export const App: React.FC = () => {
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '12px 24px',
-          background: 'rgba(18, 18, 18, 0.8)',
-          backdropFilter: 'blur(10px)',
+          background: '#0b0f19',
           borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
           height: '60px',
           boxSizing: 'border-box'
@@ -443,8 +442,8 @@ export const App: React.FC = () => {
         {/* Tab Selector Bar */}
         <div style={{
           display: 'flex',
-          backgroundColor: 'rgba(18, 18, 18, 0.4)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+          backgroundColor: '#0f172a',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
           padding: '0 24px',
           boxSizing: 'border-box'
         }}>
@@ -454,9 +453,9 @@ export const App: React.FC = () => {
               padding: '16px 20px',
               backgroundColor: 'transparent',
               border: 'none',
-              borderBottom: currentView === 'user_management' ? '2px solid #a855f7' : '2px solid transparent',
-              color: currentView === 'user_management' ? '#c084fc' : '#94a3b8',
-              fontWeight: 600,
+              borderBottom: currentView === 'user_management' ? '3px solid #c084fc' : '3px solid transparent',
+              color: currentView === 'user_management' ? '#ffffff' : '#94a3b8',
+              fontWeight: currentView === 'user_management' ? 700 : 600,
               fontSize: '0.9rem',
               cursor: 'pointer',
               transition: 'all 0.2s ease',
@@ -471,9 +470,9 @@ export const App: React.FC = () => {
               padding: '16px 20px',
               backgroundColor: 'transparent',
               border: 'none',
-              borderBottom: currentView === 'database_management' ? '2px solid #a855f7' : '2px solid transparent',
-              color: currentView === 'database_management' ? '#c084fc' : '#94a3b8',
-              fontWeight: 600,
+              borderBottom: currentView === 'database_management' ? '3px solid #c084fc' : '3px solid transparent',
+              color: currentView === 'database_management' ? '#ffffff' : '#94a3b8',
+              fontWeight: currentView === 'database_management' ? 700 : 600,
               fontSize: '0.9rem',
               cursor: 'pointer',
               transition: 'all 0.2s ease',
@@ -488,9 +487,9 @@ export const App: React.FC = () => {
               padding: '16px 20px',
               backgroundColor: 'transparent',
               border: 'none',
-              borderBottom: currentView === 'products_master' ? '2px solid #a855f7' : '2px solid transparent',
-              color: currentView === 'products_master' ? '#c084fc' : '#94a3b8',
-              fontWeight: 600,
+              borderBottom: currentView === 'products_master' ? '3px solid #c084fc' : '3px solid transparent',
+              color: currentView === 'products_master' ? '#ffffff' : '#94a3b8',
+              fontWeight: currentView === 'products_master' ? 700 : 600,
               fontSize: '0.9rem',
               cursor: 'pointer',
               transition: 'all 0.2s ease',
@@ -507,7 +506,7 @@ export const App: React.FC = () => {
           overflowY: 'auto',
           padding: '24px',
           boxSizing: 'border-box',
-          backgroundColor: 'var(--bg-app)'
+          backgroundColor: '#090c15'
         }}>
           {renderActivePage()}
         </main>

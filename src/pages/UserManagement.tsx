@@ -29,6 +29,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
   const [loadingAudit, setLoadingAudit] = useState(false);
   const [loadingLockouts, setLoadingLockouts] = useState(false);
   const [auditSearch, setAuditSearch] = useState('');
+  const [subView, setSubView] = useState<'registry' | 'lockouts' | 'audit'>('registry');
 
   // Create User State
   const [newUsername, setNewUsername] = useState('');
@@ -305,7 +306,78 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '24px' }}>
+      {/* Sub-Section Navigation Tabs */}
+      <div style={{
+        display: 'flex',
+        backgroundColor: '#0f172a',
+        border: '1px solid rgba(255, 255, 255, 0.08)',
+        borderRadius: '8px',
+        padding: '6px',
+        gap: '8px',
+        boxSizing: 'border-box'
+      }}>
+        <button
+          onClick={() => setSubView('registry')}
+          style={{
+            flex: 1,
+            padding: '12px 16px',
+            backgroundColor: subView === 'registry' ? '#7c3aed' : 'transparent',
+            border: 'none',
+            borderRadius: '6px',
+            color: '#ffffff',
+            fontWeight: 700,
+            fontSize: '0.85rem',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            opacity: subView === 'registry' ? 1 : 0.6,
+            outline: 'none'
+          }}
+        >
+          👤 User Credentials Registry
+        </button>
+        <button
+          onClick={() => setSubView('lockouts')}
+          style={{
+            flex: 1,
+            padding: '12px 16px',
+            backgroundColor: subView === 'lockouts' ? '#7c3aed' : 'transparent',
+            border: 'none',
+            borderRadius: '6px',
+            color: '#ffffff',
+            fontWeight: 700,
+            fontSize: '0.85rem',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            opacity: subView === 'lockouts' ? 1 : 0.6,
+            outline: 'none'
+          }}
+        >
+          🔒 Active Security Lockouts ({lockouts.length})
+        </button>
+        <button
+          onClick={() => setSubView('audit')}
+          style={{
+            flex: 1,
+            padding: '12px 16px',
+            backgroundColor: subView === 'audit' ? '#7c3aed' : 'transparent',
+            border: 'none',
+            borderRadius: '6px',
+            color: '#ffffff',
+            fontWeight: 700,
+            fontSize: '0.85rem',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            opacity: subView === 'audit' ? 1 : 0.6,
+            outline: 'none'
+          }}
+        >
+          📋 System Audit Logs & Feed
+        </button>
+      </div>
+
+      {subView === 'registry' && (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '24px' }}>
         
         {/* CREATE NEW USER */}
         <div className="glass-card animated-fade" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -547,9 +619,13 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
           </div>
         )}
       </div>
+      </>
+      )}
 
-      {/* Lockouts Manager Card */}
-      <div className="glass-card animated-fade" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {subView === 'lockouts' && (
+        <>
+          {/* Lockouts Manager Card */}
+          <div className="glass-card animated-fade" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <h3 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px' }}>
           <AlertTriangle size={18} color="#f59e0b" />
           <span>Active Security Lockouts & Unlock Manager</span>
@@ -605,9 +681,13 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
           </div>
         )}
       </div>
+      </>
+      )}
 
-      {/* System Audit Logs Card */}
-      <div className="glass-card animated-fade" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {subView === 'audit' && (
+        <>
+          {/* System Audit Logs Card */}
+          <div className="glass-card animated-fade" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px', flexWrap: 'wrap', gap: '12px' }}>
           <h3 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
             <Settings size={18} color="var(--primary-color)" />
@@ -682,6 +762,8 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
           </div>
         )}
       </div>
+      </>
+      )}
 
       {/* Premium Glassmorphic Delete Confirmation Modal */}
       {showDeleteModal && (

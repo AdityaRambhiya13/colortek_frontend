@@ -134,6 +134,20 @@ body {
   border-right: 1px solid var(--border-color);
 }
 
+.sidebar-panel::-webkit-scrollbar {
+  width: 4px;
+}
+.sidebar-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar-panel::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+.sidebar-panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 .sidebar-panel.mini {
   width: 60px;
 }
@@ -154,6 +168,7 @@ body {
 /* Fixed Global Header */
 .header-bar {
   height: 70px; /* Slightly taller for elegance */
+  position: relative;
   background: rgba(15, 23, 42, 0.85); /* Dark transparent glass background */
   backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
@@ -162,7 +177,7 @@ body {
   justify-content: space-between;
   padding: 0 24px;
   flex-shrink: 0;
-  z-index: 90;
+  z-index: 900;
   transition: background-color 0.3s ease;
 }
 
@@ -311,25 +326,25 @@ body {
 }
 
 .desktop-data-grid tr:hover {
-  background-color: #f8fafc;
+  background-color: var(--bg-card-hover);
 }
 
 .desktop-data-grid tr.total-row {
-  background-color: #e2e8f0;
+  background-color: var(--border-color);
   font-weight: 700;
 }
 
 .desktop-data-grid tr.total-row td {
-  border-top: 2px solid #94a3b8;
+  border-top: 2px solid var(--border-hover);
 }
 
 /* Scroll wrapper for inner table scrolling */
 .table-scroll-container {
   overflow: auto;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border-color);
   border-radius: 2px;
   flex-grow: 1;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
 }
 
 .table-locked-header {
@@ -341,18 +356,18 @@ body {
 .table-locked-header th {
   position: sticky;
   top: 0;
-  background-color: #f1f5f9;
-  color: #0f172a;
+  background-color: var(--bg-header);
+  color: var(--text-primary);
   font-weight: 600;
   font-size: 12px;
   padding: 4px 6px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border-color);
   z-index: 10;
 }
 
 .table-locked-header td {
   padding: 0;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border-color);
   vertical-align: middle;
 }
 
@@ -392,7 +407,7 @@ body {
   border: none;
   background: transparent;
   padding: 4px 6px;
-  color: #0f172a;
+  color: var(--text-primary);
   font-family: inherit;
   font-size: 12px;
   height: 26px;
@@ -400,7 +415,7 @@ body {
 
 .cell-input:focus {
   outline: none;
-  background-color: #eff6ff;
+  background-color: var(--bg-sidebar-active);
 }
 
 /* Windows Desktop-style Modal Dialog */

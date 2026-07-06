@@ -3,7 +3,8 @@ import {
   UserPlus, UserMinus, Shield, Eye, EyeOff, Building, 
   RefreshCw, CheckCircle, Trash2, AlertTriangle, Settings, Users
 } from 'lucide-react';
-import { AdminAPI, DatabaseAPI, type UserResponse, type AuditLogResponse, type LockoutResponse } from '../services/api';
+import { AdminAPI, DatabaseAPI } from '../services/api';
+import type { UserResponse, AuditLogResponse, LockoutResponse } from '../services/api';
 import { TableSkeleton } from '../components/TableSkeleton';
 
 interface UserManagementProps {
@@ -180,7 +181,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
     setLoading(false);
 
     if (success) {
-      onShowToast((data as any)?.message || 'User created successfully!', 'success');
+      onShowToast(typeof data === 'string' ? data : ((data as Record<string, any>)?.message || 'User created successfully!'), 'success');
       setNewUsername('');
       setNewPassword('');
       // Reset checklists
@@ -256,7 +257,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
     setLoading(false);
 
     if (success) {
-      onShowToast((data as any)?.message || 'User credentials modified successfully!', 'success');
+      onShowToast(typeof data === 'string' ? data : ((data as Record<string, any>)?.message || 'User credentials modified successfully!'), 'success');
       setUpdatePassword('');
       loadData();
     } else {
@@ -273,7 +274,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
     setLoading(false);
 
     if (success) {
-      onShowToast((data as any)?.message || `User "${deleteUsername}" successfully deleted.`, 'success');
+      onShowToast(typeof data === 'string' ? data : ((data as Record<string, any>)?.message || `User "${deleteUsername}" successfully deleted.`), 'success');
       if (selectedUser === deleteUsername) {
         setSelectedUser('');
       }

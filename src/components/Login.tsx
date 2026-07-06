@@ -21,6 +21,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   // Workspace Selection State
   const [availableProducts, setAvailableProducts] = useState<string[]>([]);
   const [showProductSelect, setShowProductSelect] = useState(false);
+  const [preAuthToken, setPreAuthToken] = useState('');
 
   // Focus & Hover States
   const [focusedField, setFocusedField] = useState<'username' | 'password' | null>(null);
@@ -29,7 +30,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
   useEffect(() => {
     // Autofill username from cache if available
-    const cachedUser = localStorage.getItem('username_cache');
+    const cachedUser = sessionStorage.getItem('username_cache');
     if (cachedUser) {
       setUsername(cachedUser);
     }
@@ -58,14 +59,14 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           return;
         }
 
-        // Cache pre-auth token temporarily
-        sessionStorage.setItem('pre_auth_token', data.pre_auth_token);
+        // Store pre-auth token in React state
+        setPreAuthToken(data.pre_auth_token);
         
         setAvailableProducts(products);
 
         if (products.length === 1) {
           // If only 1 product, login instantly
-          completeWorkspaceLogin(products[0]);
+          completeWorkspaceLogin(products[0], data.pre_auth_token);
         } else {
           // If multiple products, show workspace cards selection screen
           setShowProductSelect(true);
@@ -112,18 +113,18 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     }
   };
 
-  const completeWorkspaceLogin = async (productName: string) => {
+  const completeWorkspaceLogin = async (productName: string, tokenParam?: string) => {
     setLoading(true);
     setErrorMsg('');
 
-    const preAuthToken = sessionStorage.getItem('pre_auth_token') || '';
+    const tokenToUse = tokenParam || preAuthToken;
 
     try {
-      const [success, data] = await AuthAPI.login(username, preAuthToken, productName);
+      const [success, data] = await AuthAPI.login(username, tokenToUse, productName);
       
       if (success) {
-        // Clear temporary pre-auth token
-        sessionStorage.removeItem('pre_auth_token');
+        // Clear temporary pre-auth token state
+        setPreAuthToken('');
         
         onLoginSuccess();
       } else {

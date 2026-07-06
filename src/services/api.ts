@@ -160,8 +160,8 @@ export const AuthAPI = {
       sessionStorage.setItem('username', username);
       sessionStorage.setItem('product_name', productName);
       sessionStorage.setItem('user_roles', data.roles.join(','));
-      localStorage.setItem('username_cache', username);
-      localStorage.setItem('product_name_cache', productName);
+      sessionStorage.setItem('username_cache', username);
+      sessionStorage.setItem('product_name_cache', productName);
     }
 
     return [success, data] as [boolean, any];
@@ -183,7 +183,7 @@ export const AuthAPI = {
       sessionStorage.setItem('username', username);
       sessionStorage.setItem('product_name', 'System Admin');
       sessionStorage.setItem('user_roles', ['admin', 'cms', 'mf', 'qc', 'complaints', 'production', 'lab', 'rd'].join(','));
-      localStorage.setItem('username_cache', username);
+      sessionStorage.setItem('username_cache', username);
     }
 
     return [success, data] as [boolean, any];

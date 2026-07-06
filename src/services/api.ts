@@ -1,5 +1,37 @@
 import axios from 'axios';
 
+// TypeScript Interfaces for Core Response Models
+export interface GeneralResponse {
+  status: string;
+  message: string;
+}
+
+export interface UserResponse {
+  username: string;
+  role: string;
+  product: string;
+}
+
+export interface ProductResponse {
+  products: string[];
+}
+
+export interface AuditLogResponse {
+  product_name: string;
+  timestamp: string | null;
+  username: string;
+  action: string;
+  module: string;
+  description: string;
+}
+
+export interface LockoutResponse {
+  identifier: string;
+  attempt_count: number;
+  last_attempt_at: string | null;
+  lockout_until: string | null;
+}
+
 // Base URL for the FastAPI backend (uses VITE_API_URL env variable with localhost fallback)
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -21,12 +53,6 @@ apiClient.interceptors.request.use(
     const csrfToken = sessionStorage.getItem('csrf_token');
     if (csrfToken && config.method && ['post', 'put', 'delete', 'patch'].includes(config.method)) {
       config.headers['X-CSRF-Token'] = csrfToken;
-    }
-
-    // Attach JWT Authorization header to support cross-origin sessions
-    const jwtToken = sessionStorage.getItem('jwt_token');
-    if (jwtToken) {
-      config.headers['Authorization'] = `Bearer ${jwtToken}`;
     }
 
     return config;
@@ -64,9 +90,8 @@ apiClient.interceptors.response.use(
           {},
           { withCredentials: true }
         );
-        const { csrf_token, access_token } = refreshResp.data;
+        const { csrf_token } = refreshResp.data;
         if (csrf_token) sessionStorage.setItem('csrf_token', csrf_token);
-        if (access_token) sessionStorage.setItem('jwt_token', access_token);
         
         // Flush queued requests
         _refreshQueue.forEach((cb) => cb(csrf_token));
@@ -132,7 +157,6 @@ export const AuthAPI = {
 
     if (success && typeof data !== 'string') {
       sessionStorage.setItem('csrf_token', data.csrf_token);
-      sessionStorage.setItem('jwt_token', data.access_token);
       sessionStorage.setItem('username', username);
       sessionStorage.setItem('product_name', productName);
       sessionStorage.setItem('user_roles', data.roles.join(','));
@@ -156,7 +180,6 @@ export const AuthAPI = {
 
     if (success && typeof data !== 'string') {
       sessionStorage.setItem('csrf_token', data.csrf_token);
-      sessionStorage.setItem('jwt_token', data.access_token);
       sessionStorage.setItem('username', username);
       sessionStorage.setItem('product_name', 'System Admin');
       sessionStorage.setItem('user_roles', ['admin', 'cms', 'mf', 'qc', 'complaints', 'production', 'lab', 'rd'].join(','));
@@ -177,9 +200,6 @@ export const AuthAPI = {
       if (resp.data?.csrf_token) {
         sessionStorage.setItem('csrf_token', resp.data.csrf_token);
       }
-      if (resp.data?.access_token) {
-        sessionStorage.setItem('jwt_token', resp.data.access_token);
-      }
       return true;
     } catch {
       return false;
@@ -198,31 +218,31 @@ export const AuthAPI = {
 // ============================================================================
 export const AdminAPI = {
   getUsers: async () => {
-    return handleResponse<any>(apiClient.get('/admin/users'));
+    return handleResponse<UserResponse[]>(apiClient.get('/admin/users'));
   },
 
   createUser: async (payload: any) => {
-    return handleResponse<any>(apiClient.post('/admin/users', payload));
+    return handleResponse<GeneralResponse>(apiClient.post('/admin/users', payload));
   },
 
   updateUser: async (username: string, payload: any) => {
-    return handleResponse<any>(apiClient.put(`/admin/users/${username}`, payload));
+    return handleResponse<GeneralResponse>(apiClient.put(`/admin/users/${username}`, payload));
   },
 
   deleteUser: async (username: string) => {
-    return handleResponse<any>(apiClient.delete(`/admin/users/${username}`));
+    return handleResponse<GeneralResponse>(apiClient.delete(`/admin/users/${username}`));
   },
 
   getAuditLogs: async () => {
-    return handleResponse<any>(apiClient.get('/admin/audit-logs'));
+    return handleResponse<AuditLogResponse[]>(apiClient.get('/admin/audit-logs'));
   },
 
   getLockouts: async () => {
-    return handleResponse<any>(apiClient.get('/admin/lockouts'));
+    return handleResponse<LockoutResponse[]>(apiClient.get('/admin/lockouts'));
   },
 
   unlockIdentifier: async (identifier: string) => {
-    return handleResponse<any>(apiClient.delete(`/admin/lockouts/${identifier}`));
+    return handleResponse<GeneralResponse>(apiClient.delete(`/admin/lockouts/${identifier}`));
   }
 };
 

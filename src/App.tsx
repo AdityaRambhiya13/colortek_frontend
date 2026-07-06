@@ -2,15 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { Login } from './components/Login';
-import { CmsMain } from './pages/CmsMain';
-import { MasterFormulation } from './pages/MasterFormulation';
-import { QcMain } from './pages/QcMain';
-import { ProductionMain } from './pages/ProductionMain';
-import { RdMain } from './pages/RdMain';
-import { ComplaintsMain } from './pages/ComplaintsMain';
-import { UserManagement } from './pages/UserManagement';
-import { DatabaseManagement } from './pages/DatabaseManagement';
-import { ProductsMaster } from './pages/ProductsMaster';
+import { PageLoadingSpinner } from './components/PageLoadingSpinner';
+
+const CmsMain = React.lazy(() => import('./pages/CmsMain').then(m => ({ default: m.CmsMain })));
+const MasterFormulation = React.lazy(() => import('./pages/MasterFormulation').then(m => ({ default: m.MasterFormulation })));
+const QcMain = React.lazy(() => import('./pages/QcMain').then(m => ({ default: m.QcMain })));
+const ProductionMain = React.lazy(() => import('./pages/ProductionMain').then(m => ({ default: m.ProductionMain })));
+const RdMain = React.lazy(() => import('./pages/RdMain').then(m => ({ default: m.RdMain })));
+const ComplaintsMain = React.lazy(() => import('./pages/ComplaintsMain').then(m => ({ default: m.ComplaintsMain })));
+const UserManagement = React.lazy(() => import('./pages/UserManagement').then(m => ({ default: m.UserManagement })));
+const DatabaseManagement = React.lazy(() => import('./pages/DatabaseManagement').then(m => ({ default: m.DatabaseManagement })));
+const ProductsMaster = React.lazy(() => import('./pages/ProductsMaster').then(m => ({ default: m.ProductsMaster })));
 import { AuthAPI } from './services/api';
 import { Sparkles, Layers, ShieldCheck, Factory, Beaker, FileSpreadsheet, Moon, Sun, LogOut } from 'lucide-react';
 
@@ -26,6 +28,18 @@ export const App: React.FC = () => {
 
   // Toast Notification System State
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info' } | null>(null);
+
+  // Monitor network connection status
+  useEffect(() => {
+    const handleOffline = () => showToast('Network connection lost. Offline mode active.', 'error');
+    const handleOnline = () => showToast('Network connection restored. Back online.', 'success');
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('online', handleOnline);
+    return () => {
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', handleOnline);
+    };
+  }, []);
 
   // Initialize theme and verify active cached session
   useEffect(() => {
@@ -508,7 +522,9 @@ export const App: React.FC = () => {
           boxSizing: 'border-box',
           backgroundColor: '#090c15'
         }}>
-          {renderActivePage()}
+          <React.Suspense fallback={<PageLoadingSpinner />}>
+            {renderActivePage()}
+          </React.Suspense>
         </main>
 
         {/* Toast Alert Dialog */}
@@ -558,7 +574,9 @@ export const App: React.FC = () => {
 
         {/* Global Page Content Container */}
         <div className="content-wrapper">
-          {renderActivePage()}
+          <React.Suspense fallback={<PageLoadingSpinner />}>
+            {renderActivePage()}
+          </React.Suspense>
         </div>
       </main>
 

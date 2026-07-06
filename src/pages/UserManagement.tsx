@@ -3,7 +3,8 @@ import {
   UserPlus, UserMinus, Shield, Eye, EyeOff, Building, 
   RefreshCw, CheckCircle, Trash2, AlertTriangle, Settings, Users
 } from 'lucide-react';
-import { AdminAPI, DatabaseAPI } from '../services/api';
+import { AdminAPI, DatabaseAPI, UserResponse, AuditLogResponse, LockoutResponse } from '../services/api';
+import { TableSkeleton } from '../components/TableSkeleton';
 
 interface UserManagementProps {
   onShowToast: (msg: string, type: 'success' | 'error' | 'warning' | 'info') => void;
@@ -20,12 +21,12 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
 
   // Lists from DB
   const [productsList, setProductsList] = useState<string[]>([]);
-  const [usersList, setUsersList] = useState<any[]>([]);
+  const [usersList, setUsersList] = useState<UserResponse[]>([]);
   const [consolidatedUsers, setConsolidatedUsers] = useState<ConsolidatedUser[]>([]);
 
   // Audit Logs & Lockouts States
-  const [auditLogs, setAuditLogs] = useState<any[]>([]);
-  const [lockouts, setLockouts] = useState<any[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLogResponse[]>([]);
+  const [lockouts, setLockouts] = useState<LockoutResponse[]>([]);
   const [loadingAudit, setLoadingAudit] = useState(false);
   const [loadingLockouts, setLoadingLockouts] = useState(false);
   const [auditSearch, setAuditSearch] = useState('');
@@ -558,9 +559,26 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
           <span>Active User Credentials Registry</span>
         </h3>
 
-        {consolidatedUsers.length === 0 ? (
-          <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-light)', fontStyle: 'italic' }}>
-            No registered users found in the database.
+        {loading ? (
+          <TableSkeleton rows={4} cols={4} />
+        ) : consolidatedUsers.length === 0 ? (
+          <div style={{
+            padding: '40px',
+            textAlign: 'center',
+            color: 'var(--text-light, #94a3b8)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '12px',
+            backgroundColor: 'rgba(0,0,0,0.01)',
+            borderRadius: '8px',
+            border: '1px dashed var(--border-color, #E2E8F0)'
+          }}>
+            <Users size={36} style={{ opacity: 0.4 }} />
+            <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>No Registered Users Found</span>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #475569)', margin: 0 }}>
+              Use the forms above to register new user credentials and product scope access.
+            </p>
           </div>
         ) : (
           <div className="table-scroll-container" style={{ maxHeight: '400px' }}>
@@ -632,7 +650,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
         </h3>
 
         {loadingLockouts ? (
-          <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-light)' }}>Syncing lockout database...</div>
+          <TableSkeleton rows={3} cols={4} />
         ) : lockouts.length === 0 ? (
           <div style={{ padding: '20px', textAlign: 'center', color: '#10b981', fontStyle: 'italic', fontWeight: 500 }}>
             ✓ No locked out accounts or IP addresses currently recorded.
@@ -713,7 +731,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
         </div>
 
         {loadingAudit ? (
-          <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-light)' }}>Syncing system logs...</div>
+          <TableSkeleton rows={5} cols={6} />
         ) : auditLogs.length === 0 ? (
           <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-light)', fontStyle: 'italic' }}>
             No audit logs recorded in system.

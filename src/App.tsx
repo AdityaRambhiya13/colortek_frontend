@@ -28,6 +28,7 @@ export const App: React.FC = () => {
 
   // Toast Notification System State
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info' } | null>(null);
+  const lastSessionVerifyTimeRef = React.useRef<number>(0);
 
   // Monitor network connection status
   useEffect(() => {
@@ -100,7 +101,7 @@ export const App: React.FC = () => {
         setCurrentView('welcome');
       } else {
         // Every 5 minutes: silently refresh the access token using the refresh_token cookie
-        const timeSinceLastVerify = Date.now() - ((window as any).lastSessionVerifyTime || 0);
+        const timeSinceLastVerify = Date.now() - lastSessionVerifyTimeRef.current;
         if (timeSinceLastVerify > 300000) {
           const storedUser = sessionStorage.getItem('username');
           if (storedUser) {
@@ -119,7 +120,7 @@ export const App: React.FC = () => {
                 return;
               }
             }
-            (window as any).lastSessionVerifyTime = Date.now();
+            lastSessionVerifyTimeRef.current = Date.now();
           }
         }
       }

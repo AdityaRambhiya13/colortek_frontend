@@ -674,7 +674,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
                       <span style={{ color: '#ef4444', fontWeight: 700 }}>{lock.attempt_count}</span>
                     </td>
                     <td style={{ color: '#f59e0b', fontWeight: 500 }}>
-                      {new Date(lock.lockout_until).toLocaleString()}
+                      {lock.lockout_until ? new Date(lock.lockout_until).toLocaleString() : 'Permanent / N/A'}
                     </td>
                     <td style={{ textAlign: 'center' }}>
                       <button
@@ -762,7 +762,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
                   .map((log, idx) => (
                     <tr key={idx}>
                       <td style={{ color: 'var(--text-secondary)' }}>
-                        {new Date(log.timestamp).toLocaleString()}
+                        {log.timestamp ? new Date(log.timestamp).toLocaleString() : 'N/A'}
                       </td>
                       <td style={{ fontWeight: 600 }}>{log.username}</td>
                       <td>

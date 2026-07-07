@@ -1325,16 +1325,23 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
           </div>
           {/* Scrollable Content Pane */}
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1.05fr 0.95fr',
-            gap: '24px',
+            display: 'block',
             padding: '24px',
             boxSizing: 'border-box',
             overflowY: 'auto',
+            overflowX: 'auto',
             height: 'calc(100% - 75px)',
             paddingTop: '95px',
             backgroundColor: '#f1f5f9'
           }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1.05fr 0.95fr',
+              gap: '24px',
+              minWidth: '1280px',
+              width: '100%',
+              boxSizing: 'border-box'
+            }}>
 
             {/* LEFT SHEET: R & D Batch Sheet */}
             <div style={{
@@ -1682,6 +1689,7 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
 
             </div>
 
+          </div>
           </div>
         </div>
       )}
@@ -2107,6 +2115,7 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
                 <div className="animated-fade" style={{
                   flex: 1,
                   overflowY: 'auto',
+                  overflowX: 'auto',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '20px',
@@ -2185,6 +2194,7 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
                     display: 'grid',
                     gridTemplateColumns: '1.05fr 0.95fr',
                     gap: '24px',
+                    minWidth: '1280px',
                     boxSizing: 'border-box'
                   }}>
 

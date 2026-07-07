@@ -44,12 +44,10 @@ export const App: React.FC = () => {
 
   // Initialize theme and verify active cached session
   useEffect(() => {
-    // 1. Theme Configuration
-    const cachedTheme = localStorage.getItem('theme_mode') as 'light' | 'dark';
-    const activeTheme = cachedTheme || 'light';
-    setTheme(activeTheme);
-    document.documentElement.setAttribute('data-theme', activeTheme);
-    document.documentElement.className = activeTheme;
+    // 1. Theme Configuration (Forced Light Mode)
+    setTheme('light');
+    document.documentElement.setAttribute('data-theme', 'light');
+    document.documentElement.className = 'light';
 
     // 2. Auth Session Check
     const verifyUserSession = async () => {
@@ -135,14 +133,9 @@ export const App: React.FC = () => {
     };
   }, [isAuthenticated]);
 
-  // Theme Toggler
+  // Theme Toggler (Disabled)
   const handleThemeToggle = () => {
-    const nextTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(nextTheme);
-    localStorage.setItem('theme_mode', nextTheme);
-    document.documentElement.setAttribute('data-theme', nextTheme);
-    document.documentElement.className = nextTheme;
-    showToast(`Switched to ${nextTheme} mode`, 'info');
+    // Dark mode is permanently disabled
   };
 
   // View Router
@@ -412,23 +405,6 @@ export const App: React.FC = () => {
             <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>
               Logged in as <strong style={{ color: '#ffffff' }}>{sessionStorage.getItem('username')}</strong>
             </span>
-            <button
-              onClick={handleThemeToggle}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                color: '#cbd5e1',
-                padding: '8px',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: 'rgba(255,255,255,0.02)'
-              }}
-            >
-              {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
-            </button>
             <button
               onClick={handleLogout}
               style={{

@@ -45,22 +45,6 @@
   --transition-fast: 0.1s ease;
 }
 
-/* Dark Mode design tokens */
-[data-theme="dark"], .dark {
-  --bg-app: #0f172a; /* Slate 900 */
-  --bg-card: #1e293b; /* Slate 800 */
-  --bg-card-hover: #334155; /* Slate 700 */
-  --bg-header: #1e293b;
-  
-  --text-primary: #f8fafc; /* Slate 50 */
-  --text-secondary: #94a3b8; /* Slate 400 */
-  --text-light: #64748b; /* Slate 500 */
-  --header-text-secondary: #f8fafc;
-  
-  --border-color: #334155; /* Slate 700 */
-  --border-hover: #475569;
-  --input-bg: #1e293b;
-}
 
 /* Glass Card Styles */
 .glass-card {

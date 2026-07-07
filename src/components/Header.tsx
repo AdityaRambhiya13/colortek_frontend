@@ -134,14 +134,6 @@ export const Header: React.FC<HeaderProps> = ({
           <Layers size={18} />
         </button>
 
-        {/* Theme Switcher */}
-        <button 
-          onClick={onThemeToggle} 
-          className="header-icon-btn"
-          title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
-        >
-          {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
-        </button>
 
         {/* Notifications Popover */}
         <div style={{ position: 'relative' }} ref={notificationsRef}>

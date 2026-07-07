@@ -1337,11 +1337,12 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
             backgroundColor: '#f1f5f9'
           }}>
             <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1.05fr 0.95fr',
-              gap: '24px',
-              minWidth: '1280px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '32px',
               width: '100%',
+              maxWidth: '1200px',
+              margin: '0 auto',
               boxSizing: 'border-box'
             }}>
 
@@ -2191,12 +2192,14 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
                     </div>
                   </div>
 
-                  {/* Side-by-side Grid layout */}
+                  {/* Vertical Stacked Layout */}
                   <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1.05fr 0.95fr',
-                    gap: '24px',
-                    minWidth: '1280px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '32px',
+                    width: '100%',
+                    maxWidth: '1200px',
+                    margin: '0 auto',
                     boxSizing: 'border-box'
                   }}>
 

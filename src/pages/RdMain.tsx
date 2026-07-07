@@ -1275,8 +1275,8 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
           </div>
           {/* Scrollable Content Pane */}
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
+            display: 'flex',
+            flexDirection: 'column',
             gap: '24px',
             padding: '24px',
             boxSizing: 'border-box',
@@ -2001,10 +2001,10 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
                     </div>
                   </div>
 
-                  {/* Side-by-Side Landscape layout */}
+                  {/* Stacked Vertical layout */}
                   <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
+                    display: 'flex',
+                    flexDirection: 'column',
                     gap: '20px',
                     boxSizing: 'border-box'
                   }}>

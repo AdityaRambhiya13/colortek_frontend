@@ -345,9 +345,14 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
   };
 
   const handleObservationChange = (rowIdx: number, field: keyof RDObservationRow, val: string) => {
-    const copy = [...observations];
-    copy[rowIdx][field] = val;
-    setObservations(copy);
+    setObservations(prev => {
+      const copy = [...prev];
+      copy[rowIdx] = {
+        ...copy[rowIdx],
+        [field]: val
+      };
+      return copy;
+    });
   };
 
   const handleResultChange = (field: keyof RDResults, val: string) => {

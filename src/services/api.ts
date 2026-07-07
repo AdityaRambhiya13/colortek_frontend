@@ -189,6 +189,26 @@ export const AuthAPI = {
     return [success, data] as [boolean, any];
   },
 
+  switchProduct: async (productName: string) => {
+    const formData = new FormData();
+    formData.append('product_name', productName);
+    
+    const [success, data] = await handleResponse<any>(
+      apiClient.post('/auth/switch', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+    );
+
+    if (success && typeof data !== 'string') {
+      sessionStorage.setItem('csrf_token', data.csrf_token);
+      sessionStorage.setItem('product_name', productName);
+      sessionStorage.setItem('user_roles', data.roles.join(','));
+      sessionStorage.setItem('product_name_cache', productName);
+    }
+
+    return [success, data] as [boolean, any];
+  },
+
   verifySession: async () => {
     return handleResponse<any>(apiClient.get('/auth/verify-session'));
   },

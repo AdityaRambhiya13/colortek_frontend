@@ -64,14 +64,11 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         
         setAvailableProducts(products);
 
-        if (products.length === 1) {
-          // If only 1 product, login instantly
-          completeWorkspaceLogin(products[0], data.pre_auth_token);
-        } else {
-          // If multiple products, show workspace cards selection screen
-          setShowProductSelect(true);
-          setLoading(false);
-        }
+        // Cache available products list in sessionStorage for dashboard switcher
+        sessionStorage.setItem('available_products', JSON.stringify(products));
+
+        // Automatically log into the first workspace context instantly
+        completeWorkspaceLogin(products[0], data.pre_auth_token);
       } else {
         setErrorMsg(typeof data === 'string' ? data : 'Invalid username or password.');
         setLoading(false);

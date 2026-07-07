@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Sun, Moon, Bell, LogOut, Briefcase, HelpCircle, Layers, CheckCircle2, AlertTriangle, Info } from 'lucide-react';
+import { Bell, LogOut, CheckCircle2, AlertTriangle, Info, Home } from 'lucide-react';
+
+
 import { NotificationsAPI } from '../services/api';
 
 interface HeaderProps {
@@ -103,37 +105,15 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="header-bar">
       {/* Title & View Indicator */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>{getHeaderTitle()}</h2>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>
+          {currentView === 'welcome'
+            ? `Welcome, ${username}`
+            : getHeaderTitle()}
+        </h2>
       </div>
 
       {/* Control Actions Panel */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-        {/* Workspace Pill */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          backgroundColor: 'var(--primary-light)',
-          color: 'var(--primary-color)',
-          padding: '6px 14px',
-          borderRadius: '50px',
-          fontSize: '0.8rem',
-          fontWeight: 600,
-          border: '1px solid rgba(99, 102, 241, 0.2)'
-        }}>
-          <Briefcase size={14} />
-          <span>{productName}</span>
-        </div>
-
-        {/* Quick Product Switcher */}
-        <button 
-          onClick={() => onChangeView('product_select')}
-          className="header-icon-btn"
-          title="Switch Product Workspace"
-        >
-          <Layers size={18} />
-        </button>
-
 
         {/* Notifications Popover */}
         <div style={{ position: 'relative' }} ref={notificationsRef}>
@@ -277,7 +257,8 @@ export const Header: React.FC<HeaderProps> = ({
                 className="theme-switch-btn"
                 style={{ justifyContent: 'flex-start', width: '100%', fontSize: '0.85rem', gap: '8px' }}
               >
-                <HelpCircle size={16} />
+                <Home size={16} />
+
                 <span>Dashboard</span>
               </button>
               

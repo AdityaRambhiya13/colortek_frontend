@@ -14,7 +14,8 @@ const UserManagement = React.lazy(() => import('./pages/UserManagement').then(m 
 const DatabaseManagement = React.lazy(() => import('./pages/DatabaseManagement').then(m => ({ default: m.DatabaseManagement })));
 const ProductsMaster = React.lazy(() => import('./pages/ProductsMaster').then(m => ({ default: m.ProductsMaster })));
 import { AuthAPI } from './services/api';
-import { Sparkles, Layers, ShieldCheck, Factory, Beaker, FileSpreadsheet, Moon, Sun, LogOut } from 'lucide-react';
+import { LogOut, Info as InfoIcon } from 'lucide-react';
+
 
 export const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -168,6 +169,7 @@ export const App: React.FC = () => {
 
   const handleLogout = () => {
     AuthAPI.logout();
+    sessionStorage.removeItem('available_products');
     setIsAuthenticated(false);
     setCurrentView('welcome');
     showToast('Logged out successfully', 'success');
@@ -188,6 +190,23 @@ export const App: React.FC = () => {
     
     setCurrentView(targetView);
     sessionStorage.setItem('active_view', targetView);
+  };
+
+  const handleProductSwitch = async (productName: string) => {
+    const currentProduct = sessionStorage.getItem('product_name');
+    if (productName === currentProduct) return;
+    showToast(`Switching to ${productName}...`, 'info');
+    const [success, data] = await AuthAPI.switchProduct(productName);
+    if (success) {
+      // Clear the active view so we land on welcome fresh
+      sessionStorage.setItem('active_view', 'welcome');
+      setCurrentView('welcome');
+      showToast(`Switched to ${productName}`, 'success');
+      // Force a full page reload so sidebar permissions and views reload cleanly
+      setTimeout(() => window.location.reload(), 600);
+    } else {
+      showToast(typeof data === 'string' ? data : 'Failed to switch product workspace.', 'error');
+    }
   };
 
   // Router switch rendering individual screen pages
@@ -256,81 +275,114 @@ export const App: React.FC = () => {
 
       // Fallback Welcome Dashboard
       case 'welcome':
-      default:
+      default: {
+        const availableProductsRaw = sessionStorage.getItem('available_products');
+        const availableProducts: string[] = availableProductsRaw ? JSON.parse(availableProductsRaw) : [];
+        const activeProduct = sessionStorage.getItem('product_name') || '';
+        const username = sessionStorage.getItem('username') || '';
+
+        // Format product name for display: replace underscores with spaces, title-case each word
+        const formatProduct = (name: string) =>
+          name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
         return (
           <div className="animated-fade" style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
-            padding: '40px',
+            padding: '60px 40px 40px',
             textAlign: 'center',
             minHeight: '60vh',
-            gap: '24px'
+            gap: '40px'
           }}>
-            <div style={{
-              backgroundColor: 'var(--primary-light)',
-              padding: '24px',
-              borderRadius: '50%',
-              color: 'var(--primary-color)',
-              boxShadow: 'var(--shadow-glow)'
-            }}>
-              <ShieldCheck size={48} />
-            </div>
-            
-            <div>
-              <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '8px' }}>
-                Welcome, {sessionStorage.getItem('username')}!
+            {/* Welcome Heading */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+              <h1 style={{
+                fontSize: '2.2rem',
+                fontWeight: 800,
+                margin: 0,
+                background: 'linear-gradient(135deg, var(--primary-color), #6366f1)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}>
+                Welcome, {username}!
               </h1>
-              <p style={{ color: 'var(--text-secondary)', maxWidth: '480px' }}>
-                Active product workspace: <strong style={{ color: 'var(--primary-color)' }}>{sessionStorage.getItem('product_name')}</strong>. Use the sidebar folders to compile, test, or approve batch systems.
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0 }}>
+                Active workspace: <strong style={{ color: 'var(--primary-color)' }}>{formatProduct(activeProduct)}</strong>
               </p>
             </div>
 
-            {/* Quick Cards Navigation Dashboard */}
-            <div style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: '20px',
-              justifyContent: 'center',
-              marginTop: '16px',
-              maxWidth: '800px'
-            }}>
-              {/* Card 1 */}
-              <div 
-                onClick={() => handleViewChange('lab_formulations')}
-                className="glass-card interactive" 
-                style={{ width: '220px', padding: '20px', textAlign: 'left', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '8px' }}
-              >
-                <Beaker size={24} color="var(--primary-color)" />
-                <h4 style={{ fontWeight: 600, fontSize: '0.95rem' }}>CMS Laboratory</h4>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Compare and compile dual formulation grids.</p>
+            {/* Product Switcher — only shown when user has multiple products */}
+            {availableProducts.length > 1 && (
+              <div style={{ width: '100%', maxWidth: '1100px' }}>
+                <p style={{
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  color: 'var(--text-secondary)',
+                  marginBottom: '16px'
+                }}>
+                  Switch Product Workspace
+                </p>
+                <div style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '10px',
+                  justifyContent: 'center',
+                }}>
+                  {availableProducts.map((product) => {
+                    const isActive = product === activeProduct;
+                    return (
+                      <button
+                        key={product}
+                        id={`ws-switch-${product}`}
+                        onClick={() => handleProductSwitch(product)}
+                        title={formatProduct(product)}
+                        style={{
+                          padding: '8px 18px',
+                          borderRadius: '999px',
+                          border: isActive
+                            ? '2px solid var(--primary-color)'
+                            : '2px solid transparent',
+                          background: isActive
+                            ? 'var(--primary-light)'
+                            : 'var(--card-bg, #f1f5f9)',
+                          color: isActive ? 'var(--primary-color)' : 'var(--text-secondary)',
+                          fontWeight: isActive ? 700 : 500,
+                          fontSize: '0.8rem',
+                          cursor: isActive ? 'default' : 'pointer',
+                          boxShadow: isActive ? 'var(--shadow-glow)' : 'none',
+                          whiteSpace: 'nowrap',
+                          transition: 'all 0.2s ease',
+                          outline: 'none',
+                          letterSpacing: '0.02em'
+                        }}
+                        onMouseEnter={e => {
+                          if (!isActive) {
+                            (e.currentTarget as HTMLButtonElement).style.background = 'var(--primary-light)';
+                            (e.currentTarget as HTMLButtonElement).style.color = 'var(--primary-color)';
+                            (e.currentTarget as HTMLButtonElement).style.border = '2px solid var(--primary-color)';
+                          }
+                        }}
+                        onMouseLeave={e => {
+                          if (!isActive) {
+                            (e.currentTarget as HTMLButtonElement).style.background = 'var(--card-bg, #f1f5f9)';
+                            (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)';
+                            (e.currentTarget as HTMLButtonElement).style.border = '2px solid transparent';
+                          }
+                        }}
+                      >
+                        {formatProduct(product)}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-
-              {/* Card 2 */}
-              <div 
-                onClick={() => handleViewChange('formulation_sheet')}
-                className="glass-card interactive" 
-                style={{ width: '220px', padding: '20px', textAlign: 'left', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '8px' }}
-              >
-                <FileSpreadsheet size={24} color="var(--color-success)" />
-                <h4 style={{ fontWeight: 600, fontSize: '0.95rem' }}>Perfect Batch Sheet</h4>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Calculate raw material weights for batch lines.</p>
-              </div>
-
-              {/* Card 3 */}
-              <div 
-                onClick={() => handleViewChange('live_qc_approval')}
-                className="glass-card interactive" 
-                style={{ width: '220px', padding: '20px', textAlign: 'left', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '8px' }}
-              >
-                <ShieldCheck size={24} color="var(--color-warning)" />
-                <h4 style={{ fontWeight: 600, fontSize: '0.95rem' }}>QC Approvals</h4>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Review active production batches and sign off.</p>
-              </div>
-            </div>
+            )}
           </div>
         );
+      }
     }
   };
 
@@ -560,7 +612,8 @@ export const App: React.FC = () => {
       {/* Toast Alert Dialog */}
       {toast && (
         <div className={`toast-alert success ${toast.type}`}>
-          <Sparkles size={16} color="var(--primary-color)" />
+          <InfoIcon size={16} color="var(--primary-color)" />
+
           <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)' }}>
             {toast.message}
           </span>

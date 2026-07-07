@@ -285,6 +285,7 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
   const [pastTotalPages, setPastTotalPages] = useState(1);
   const [searching, setSearching] = useState(false);
   const [selectedBatchDetails, setSelectedBatchDetails] = useState<any | null>(null);
+  const [customParameters, setCustomParameters] = useState<{ key: string; value: string }[]>([]);
 
   // Virtualization for R&D search results
   const {
@@ -311,6 +312,22 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
   // Row Adders
   const addRawMaterialRow = () => {
     setRawMaterials(prev => [...prev, { raw_material: '', parts_by_weight: '', raw_material_pct: '', remarks: '' }]);
+  };
+
+  const addObservationRow = () => {
+    setObservations(prev => [...prev, { time: '', vt: '', ft: '', charge_obs: '', observed: '', remark: '' }]);
+  };
+
+  const addCustomParameterRow = () => {
+    setCustomParameters(prev => [...prev, { key: '', value: '' }]);
+  };
+
+  const handleCustomParameterChange = (idx: number, field: 'key' | 'value', val: string) => {
+    setCustomParameters(prev => {
+      const copy = [...prev];
+      copy[idx] = { ...copy[idx], [field]: val };
+      return copy;
+    });
   };
 
   // Input Change Handlers
@@ -344,6 +361,7 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
       setObservations(initialObservations());
       setResults(initialResults());
       setBatchsheetNo('');
+      setCustomParameters([]);
       onShowToast("Form cleared successfully.", "info");
     }
   };
@@ -587,13 +605,20 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
 
     setSaving(true);
 
+    const customParamsDict: Record<string, string> = {};
+    customParameters.forEach(row => {
+      if (row.key.trim()) {
+        customParamsDict[row.key.trim()] = row.value.trim();
+      }
+    });
+
     const payload = {
       form: {
         ...form,
         batch_no: form.batch_no.trim()
       },
       raw_materials: rawMaterials.filter(x => x.raw_material.trim()),
-      theoretical_values: {},
+      theoretical_values: customParamsDict,
       procedure: [],
       observations: observations.map(obs => ({
         time: obs.time.trim(),
@@ -729,6 +754,35 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
     wsRows.push(["Viscosity @ 25°C (mPa.s):", res.viscosity || '', "Mol / Wt (g/mol):", res.mol_wt || '']);
     wsRows.push(["GT Tube Viscosity @ 25°C:", res.gt_tube_viscosity || '', "Color (Gardner):", res.color_gardner || '']);
     wsRows.push(["Input Quantity:", res.input_qty || '', "Output Quantity:", res.output_qty || '']);
+
+    // Add custom parameters to Excel
+    const customParamsList: { key: string; value: string }[] = [];
+    if (customData) {
+      const savedTheo = d.theoretical_values || {};
+      const standardKeys = [
+        'k_value', 'hydroxyl_value', 'nco_pct', 'solid_pct', 'solid_content', 'acid_value', 'eew', 'viscosity', 'gt_tube_viscosity', 'input_qty',
+        'functionality', 'theoretical_value', 'desired_specifications', 'water_spec_acid', 'clarity', 'water_of_reaction', 'mol_wt', 'color_gardner', 'colour', 'output_qty', 'output_expected'
+      ];
+      Object.entries(savedTheo).forEach(([k, v]) => {
+        const normalizedKey = k.toLowerCase().replace(/%/g, '').replace(/ /g, '_');
+        const isStandard = standardKeys.some(sk => sk.toLowerCase() === normalizedKey);
+        if (!isStandard) {
+          customParamsList.push({ key: k, value: String(v) });
+        }
+      });
+    } else {
+      customParamsList.push(...customParameters);
+    }
+
+    for (let i = 0; i < customParamsList.length; i += 2) {
+      const p1 = customParamsList[i];
+      const p2 = customParamsList[i + 1];
+      wsRows.push([
+        p1.key ? (p1.key + ":") : "", p1.value || '',
+        p2 ? (p2.key + ":") : "", p2 ? (p2.value || '') : ""
+      ]);
+    }
+
     wsRows.push(["Conclusion:", res.conclusion || '', "", ""]);
     wsRows.push([]);
 
@@ -965,6 +1019,34 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
       { p1: 'GT Tube Viscosity @ 25°C', val1: res.gt_tube_viscosity, p2: 'Color (Gardner)', val2: res.color_gardner },
       { p1: 'Input Quantity :', val1: res.input_qty, p2: 'Output Quantity :', val2: res.output_qty },
     ];
+
+    // Add custom parameters to PDF Batch Result
+    const customParamsPDF: { key: string; value: string }[] = [];
+    if (customData) {
+      const savedTheo = d.theoretical_values || {};
+      const standardKeys = [
+        'k_value', 'hydroxyl_value', 'nco_pct', 'solid_pct', 'solid_content', 'acid_value', 'eew', 'viscosity', 'gt_tube_viscosity', 'input_qty',
+        'functionality', 'theoretical_value', 'desired_specifications', 'water_spec_acid', 'clarity', 'water_of_reaction', 'mol_wt', 'color_gardner', 'colour', 'output_qty', 'output_expected'
+      ];
+      Object.entries(savedTheo).forEach(([k, v]) => {
+        const normalizedKey = k.toLowerCase().replace(/%/g, '').replace(/ /g, '_');
+        const isStandard = standardKeys.some(sk => sk.toLowerCase() === normalizedKey);
+        if (!isStandard) {
+          customParamsPDF.push({ key: k, value: String(v) });
+        }
+      });
+    } else {
+      customParamsPDF.push(...customParameters);
+    }
+
+    for (let i = 0; i < customParamsPDF.length; i += 2) {
+      brRows.push({
+        p1: customParamsPDF[i].key,
+        val1: customParamsPDF[i].value,
+        p2: customParamsPDF[i + 1]?.key || '',
+        val2: customParamsPDF[i + 1]?.value || ''
+      });
+    }
 
     doc.setTextColor(0, 0, 0);
     brRows.forEach((row, rIdx) => {
@@ -1332,7 +1414,31 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
 
               {/* Raw Materials formula Table */}
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <div style={{ fontSize: '0.85rem', fontWeight: 'bold', textAlign: 'center', backgroundColor: '#475569', color: '#ffffff', padding: '6px', border: '1px solid #334155', borderBottom: 'none', borderTopLeftRadius: '6px', borderTopRightRadius: '6px', textTransform: 'uppercase' }}>Raw Materials formula</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#475569', color: '#ffffff', padding: '6px 12px', border: '1px solid #334155', borderBottom: 'none', borderTopLeftRadius: '6px', borderTopRightRadius: '6px' }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Raw Materials formula</span>
+                  <button 
+                    type="button"
+                    onClick={addRawMaterialRow}
+                    style={{
+                      backgroundColor: '#10b981',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      fontSize: '0.75rem',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      transition: 'background-color 0.2s'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#059669'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = '#10b981'}
+                  >
+                    <Plus size={10} /> Add Row
+                  </button>
+                </div>
                 <div style={{ overflowX: 'auto', border: '1px solid #334155' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
                     <thead>
@@ -1346,7 +1452,7 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
                     </thead>
                     <tbody>
                       {rawMaterials.map((rm, idx) => (
-                        <tr key={idx} style={{ borderBottom: idx === 14 ? 'none' : '1px solid #cbd5e1' }}>
+                        <tr key={idx} style={{ borderBottom: idx === rawMaterials.length - 1 ? 'none' : '1px solid #cbd5e1' }}>
                           <td style={{ padding: '2px', borderRight: '1px solid #334155', textAlign: 'center', fontWeight: 'bold', color: '#64748b', backgroundColor: '#f8fafc' }}>{idx + 1}</td>
                           <td style={{ padding: '2px', borderRight: '1px solid #334155' }}>
                             <input type="text" value={rm.raw_material} onChange={e => handleRawMaterialRowChange(idx, 'raw_material', e.target.value)} style={{ width: '100%', border: 'none', padding: '2px 4px', fontSize: '0.8rem', outline: 'none', color: '#1e293b' }} />
@@ -1369,7 +1475,31 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
 
               {/* Batch Result Table */}
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <div style={{ fontSize: '0.85rem', fontWeight: 'bold', textAlign: 'center', backgroundColor: '#475569', color: '#ffffff', padding: '6px', border: '1px solid #334155', borderBottom: 'none', borderTopLeftRadius: '6px', borderTopRightRadius: '6px', textTransform: 'uppercase' }}>Batch Result</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#475569', color: '#ffffff', padding: '6px 12px', border: '1px solid #334155', borderBottom: 'none', borderTopLeftRadius: '6px', borderTopRightRadius: '6px' }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Batch Result</span>
+                  <button 
+                    type="button"
+                    onClick={addCustomParameterRow}
+                    style={{
+                      backgroundColor: '#10b981',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      fontSize: '0.75rem',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      transition: 'background-color 0.2s'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#059669'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = '#10b981'}
+                  >
+                    <Plus size={10} /> Add Parameter
+                  </button>
+                </div>
                 <div style={{ border: '1px solid #334155' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
                     <thead>
@@ -1392,7 +1522,7 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
                         { p1: 'GT Tube Viscosity @ 25°C', key1: 'gt_tube_viscosity', p2: 'Color (Gardner)', key2: 'color_gardner' },
                         { p1: 'Input Quantity :', key1: 'input_qty', p2: 'Output Quantity :', key2: 'output_qty' },
                       ].map((row, idx) => (
-                        <tr key={idx} style={{ borderBottom: idx === 8 ? 'none' : '1px solid #cbd5e1' }}>
+                        <tr key={idx} style={{ borderBottom: (idx === 8 && customParameters.length === 0) ? 'none' : '1px solid #cbd5e1' }}>
                           <td style={{ padding: '4px 8px', borderRight: '1px solid #cbd5e1', fontWeight: 'bold', color: '#334155', backgroundColor: '#f8fafc', fontSize: '0.75rem' }}>{row.p1}</td>
                           <td style={{ padding: '2px', borderRight: '1px solid #cbd5e1' }}>
                             <input type="text" value={results[row.key1 as keyof RDResults] || ''} onChange={e => handleResultChange(row.key1 as keyof RDResults, e.target.value)} style={{ width: '100%', border: 'none', padding: '2px 4px', fontSize: '0.8rem', outline: 'none', color: '#1e293b', textAlign: 'center' }} />
@@ -1403,6 +1533,63 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
                           </td>
                         </tr>
                       ))}
+                      {(() => {
+                        const pairs: { key1: string; val1: string; idx1: number; key2?: string; val2?: string; idx2?: number }[] = [];
+                        for (let i = 0; i < customParameters.length; i += 2) {
+                          pairs.push({
+                            key1: customParameters[i].key,
+                            val1: customParameters[i].value,
+                            idx1: i,
+                            key2: customParameters[i + 1]?.key,
+                            val2: customParameters[i + 1]?.value,
+                            idx2: i + 1
+                          });
+                        }
+                        return pairs.map((pair, pIdx) => (
+                          <tr key={`custom-${pIdx}`} style={{ borderBottom: pIdx === pairs.length - 1 ? 'none' : '1px solid #cbd5e1' }}>
+                            <td style={{ padding: '2px', borderRight: '1px solid #cbd5e1' }}>
+                              <input 
+                                type="text" 
+                                placeholder="Custom Parameter" 
+                                value={pair.key1} 
+                                onChange={e => handleCustomParameterChange(pair.idx1, 'key', e.target.value)} 
+                                style={{ width: '100%', border: 'none', padding: '2px 4px', fontSize: '0.8rem', outline: 'none', color: '#334155', fontWeight: 'bold', backgroundColor: '#f8fafc' }} 
+                              />
+                            </td>
+                            <td style={{ padding: '2px', borderRight: '1px solid #cbd5e1' }}>
+                              <input 
+                                type="text" 
+                                placeholder="Value" 
+                                value={pair.val1} 
+                                onChange={e => handleCustomParameterChange(pair.idx1, 'value', e.target.value)} 
+                                style={{ width: '100%', border: 'none', padding: '2px 4px', fontSize: '0.8rem', outline: 'none', color: '#1e293b', textAlign: 'center' }} 
+                              />
+                            </td>
+                            <td style={{ padding: '2px', borderRight: '1px solid #cbd5e1' }}>
+                              {pair.idx2 !== undefined && (
+                                <input 
+                                  type="text" 
+                                  placeholder="Custom Parameter" 
+                                  value={pair.key2} 
+                                  onChange={e => handleCustomParameterChange(pair.idx2!, 'key', e.target.value)} 
+                                  style={{ width: '100%', border: 'none', padding: '2px 4px', fontSize: '0.8rem', outline: 'none', color: '#334155', fontWeight: 'bold', backgroundColor: '#f8fafc' }} 
+                                />
+                              )}
+                            </td>
+                            <td style={{ padding: '2px' }}>
+                              {pair.idx2 !== undefined && (
+                                <input 
+                                  type="text" 
+                                  placeholder="Value" 
+                                  value={pair.val2} 
+                                  onChange={e => handleCustomParameterChange(pair.idx2!, 'value', e.target.value)} 
+                                  style={{ width: '100%', border: 'none', padding: '2px 4px', fontSize: '0.8rem', outline: 'none', color: '#1e293b', textAlign: 'center' }} 
+                                />
+                              )}
+                            </td>
+                          </tr>
+                        ));
+                      })()}
                     </tbody>
                   </table>
                 </div>
@@ -1445,9 +1632,33 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
 
               {/* Batchsheet No and Table */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid #cbd5e1', padding: '10px', borderRadius: '6px', backgroundColor: '#f8fafc', width: 'max-content' }}>
-                  <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#475569' }}>Batchsheet No:</span>
-                  <input type="text" value={batchsheetNo} onChange={e => setBatchsheetNo(e.target.value)} style={{ width: '150px', border: 'none', borderBottom: '1px dotted #334155', backgroundColor: 'transparent', fontSize: '0.85rem', fontWeight: 600, color: '#1e293b', padding: 0 }} />
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid #cbd5e1', padding: '10px', borderRadius: '6px', backgroundColor: '#f8fafc', width: 'max-content' }}>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#475569' }}>Batchsheet No:</span>
+                    <input type="text" value={batchsheetNo} onChange={e => setBatchsheetNo(e.target.value)} style={{ width: '150px', border: 'none', borderBottom: '1px dotted #334155', backgroundColor: 'transparent', fontSize: '0.85rem', fontWeight: 600, color: '#1e293b', padding: 0 }} />
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={addObservationRow}
+                    style={{
+                      backgroundColor: '#10b981',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '6px 12px',
+                      borderRadius: '6px',
+                      fontSize: '0.8rem',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      transition: 'background-color 0.2s'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#059669'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = '#10b981'}
+                  >
+                    <Plus size={12} /> Add Observation Row
+                  </button>
                 </div>
 
                 <div style={{ overflowX: 'auto', border: '1px solid #334155', borderRadius: '6px' }}>
@@ -2106,14 +2317,56 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
                                 { p1: 'Viscosity @ 25°C (mPa.s)', val1: res.viscosity, p2: 'Mol / Wt (g/mol)', val2: res.mol_wt },
                                 { p1: 'GT Tube Viscosity @ 25°C', val1: res.gt_tube_viscosity, p2: 'Color (Gardner)', val2: res.color_gardner || res.colour },
                                 { p1: 'Input Quantity :', val1: res.input_qty, p2: 'Output Quantity :', val2: res.output_qty || res.output_expected },
-                              ].map((row, idx) => (
-                                <tr key={idx} style={{ borderBottom: idx === 8 ? 'none' : '1px solid #cbd5e1', backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
-                                  <td style={{ padding: '4px 6px', borderRight: '1px solid #cbd5e1', fontWeight: 'bold', color: '#334155', fontSize: '0.7rem' }}>{row.p1}</td>
-                                  <td style={{ padding: '4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', color: '#1e293b' }}>{String(row.val1 || '')}</td>
-                                  <td style={{ padding: '4px 6px', borderRight: '1px solid #cbd5e1', fontWeight: 'bold', color: '#334155', fontSize: '0.7rem' }}>{row.p2}</td>
-                                  <td style={{ padding: '4px', textAlign: 'center', color: '#1e293b' }}>{String(row.val2 || '')}</td>
-                                </tr>
-                              ))}
+                              ].map((row, idx) => {
+                                const savedTheo = selectedBatchDetails.theoretical_values || {};
+                                const hasCustom = Object.keys(savedTheo).some(k => {
+                                  const nk = k.toLowerCase().replace(/%/g, '').replace(/ /g, '_');
+                                  const standards = ['k_value', 'hydroxyl_value', 'nco_pct', 'solid_pct', 'solid_content', 'acid_value', 'eew', 'viscosity', 'gt_tube_viscosity', 'input_qty', 'functionality', 'theoretical_value', 'desired_specifications', 'water_spec_acid', 'clarity', 'water_of_reaction', 'mol_wt', 'color_gardner', 'colour', 'output_qty', 'output_expected'];
+                                  return !standards.includes(nk);
+                                });
+                                return (
+                                  <tr key={idx} style={{ borderBottom: (idx === 8 && !hasCustom) ? 'none' : '1px solid #cbd5e1', backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
+                                    <td style={{ padding: '4px 6px', borderRight: '1px solid #cbd5e1', fontWeight: 'bold', color: '#334155', fontSize: '0.7rem' }}>{row.p1}</td>
+                                    <td style={{ padding: '4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', color: '#1e293b' }}>{String(row.val1 || '')}</td>
+                                    <td style={{ padding: '4px 6px', borderRight: '1px solid #cbd5e1', fontWeight: 'bold', color: '#334155', fontSize: '0.7rem' }}>{row.p2}</td>
+                                    <td style={{ padding: '4px', textAlign: 'center', color: '#1e293b' }}>{String(row.val2 || '')}</td>
+                                  </tr>
+                                );
+                              })}
+                              {(() => {
+                                const savedTheo = selectedBatchDetails.theoretical_values || {};
+                                const standardKeys = [
+                                  'k_value', 'hydroxyl_value', 'nco_pct', 'solid_pct', 'solid_content', 'acid_value', 'eew', 'viscosity', 'gt_tube_viscosity', 'input_qty',
+                                  'functionality', 'theoretical_value', 'desired_specifications', 'water_spec_acid', 'clarity', 'water_of_reaction', 'mol_wt', 'color_gardner', 'colour', 'output_qty', 'output_expected'
+                                ];
+                                const customParams: { key: string; value: string }[] = [];
+                                Object.entries(savedTheo).forEach(([k, v]) => {
+                                  const normalizedKey = k.toLowerCase().replace(/%/g, '').replace(/ /g, '_');
+                                  const isStandard = standardKeys.some(sk => sk.toLowerCase() === normalizedKey);
+                                  if (!isStandard) {
+                                    customParams.push({ key: k, value: String(v) });
+                                  }
+                                });
+                                
+                                const pairs: { key1: string; val1: string; key2?: string; val2?: string }[] = [];
+                                for (let i = 0; i < customParams.length; i += 2) {
+                                  pairs.push({
+                                    key1: customParams[i].key,
+                                    val1: customParams[i].value,
+                                    key2: customParams[i + 1]?.key,
+                                    val2: customParams[i + 1]?.value,
+                                  });
+                                }
+                                
+                                return pairs.map((pair, pIdx) => (
+                                  <tr key={`past-custom-${pIdx}`} style={{ borderBottom: pIdx === pairs.length - 1 ? 'none' : '1px solid #cbd5e1', backgroundColor: pIdx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
+                                    <td style={{ padding: '4px 6px', borderRight: '1px solid #cbd5e1', fontWeight: 'bold', color: '#334155', fontSize: '0.7rem' }}>{pair.key1}</td>
+                                    <td style={{ padding: '4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', color: '#1e293b' }}>{pair.val1}</td>
+                                    <td style={{ padding: '4px 6px', borderRight: '1px solid #cbd5e1', fontWeight: 'bold', color: '#334155', fontSize: '0.7rem' }}>{pair.key2 || ''}</td>
+                                    <td style={{ padding: '4px', textAlign: 'center', color: '#1e293b' }}>{pair.val2 || ''}</td>
+                                  </tr>
+                                ));
+                              })()}
                             </tbody>
                           </table>
                         </div>

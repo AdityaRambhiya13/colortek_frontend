@@ -1329,7 +1329,7 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
             top: '75px',
             left: 0,
             right: 0,
-            bottom: 0,
+            bottom: '15px',
             padding: '24px',
             boxSizing: 'border-box',
             overflowY: 'auto',

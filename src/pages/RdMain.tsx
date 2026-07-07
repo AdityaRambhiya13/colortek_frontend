@@ -1234,44 +1234,7 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: 0 }}>Product database context: {productName}</p>
               </div>
             </div>
-                       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Date:</span>
-                <input 
-                  type="text" 
-                  value={form.date} 
-                  disabled 
-                  style={{
-                    width: '120px',
-                    padding: '6px 12px',
-                    fontSize: '0.85rem',
-                    textAlign: 'center',
-                    border: '1px solid #94a3b8',
-                    borderRadius: '6px',
-                    backgroundColor: '#f1f5f9',
-                    color: '#475569'
-                  }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Batch No.:</span>
-                <input 
-                  type="text" 
-                  value={form.batch_no} 
-                  onChange={e => handleFormChange('batch_no', e.target.value)}
-                  style={{
-                    width: '160px',
-                    padding: '6px 12px',
-                    fontSize: '0.85rem',
-                    border: '1px solid #94a3b8',
-                    borderRadius: '6px',
-                    backgroundColor: '#ffffff',
-                    color: '#1e293b'
-                  }}
-                />
-              </div>
-
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <button 
                   onClick={handleSaveReport}

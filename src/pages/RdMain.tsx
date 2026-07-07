@@ -1325,13 +1325,15 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
           </div>
           {/* Scrollable Content Pane */}
           <div style={{
-            display: 'block',
+            position: 'absolute',
+            top: '75px',
+            left: 0,
+            right: 0,
+            bottom: 0,
             padding: '24px',
             boxSizing: 'border-box',
             overflowY: 'auto',
             overflowX: 'auto',
-            height: 'calc(100% - 75px)',
-            paddingTop: '95px',
             backgroundColor: '#f1f5f9'
           }}>
             <div style={{

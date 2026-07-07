@@ -22,6 +22,19 @@ interface RDFormData {
   output_qty: string;
   prepared_by: string;
   checked_by: string;
+  lb_no?: string;
+  mo_no?: string;
+  input_qty_100?: string;
+  output_qty_100?: string;
+  production_manager?: string;
+  notes_remarks?: string;
+}
+
+interface RDRawMaterialRow {
+  raw_material: string;
+  parts_by_weight: string;
+  raw_material_pct: string;
+  remarks: string;
 }
 
 interface RDObservationRow {
@@ -34,20 +47,36 @@ interface RDObservationRow {
 }
 
 interface RDResults {
-  output_expected: string;
-  liberated_quantity: string;
-  final_value: string;
-  viscosity: string;
-  colour: string;
-  theoretical_80: string;
-  practical_80: string;
-  solid_content: string;
   conclusion: string;
-}
 
-interface TheoreticalRow {
-  key: string;
-  value: string;
+  // New PDF parameter fields
+  k_value?: string;
+  functionality?: string;
+  hydroxyl_value?: string;
+  theoretical_value?: string;
+  nco_pct?: string;
+  desired_specifications?: string;
+  solid_pct?: string;
+  water_spec_acid?: string;
+  acid_value?: string;
+  clarity?: string;
+  eew?: string;
+  water_of_reaction?: string;
+  viscosity?: string;
+  mol_wt?: string;
+  gt_tube_viscosity?: string;
+  color_gardner?: string;
+  input_qty?: string;
+  output_qty?: string;
+
+  // Backward compatibility fields
+  output_expected?: string;
+  liberated_quantity?: string;
+  final_value?: string;
+  colour?: string;
+  theoretical_80?: string;
+  practical_80?: string;
+  solid_content?: string;
 }
 
 interface ObservationRowProps {
@@ -59,113 +88,84 @@ interface ObservationRowProps {
 }
 
 const ObservationRow = React.memo<ObservationRowProps>(({ row, idx, onChange, onKeyDown, obsRefs }) => {
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '4px 8px',
+    fontSize: '0.8rem',
+    border: '1px solid transparent',
+    borderRadius: '4px',
+    backgroundColor: 'transparent',
+    color: '#000000',
+    textAlign: 'center',
+    outline: 'none'
+  };
+
   return (
     <tr style={{ 
-      borderBottom: '1px solid #94a3b8', 
+      borderBottom: '1px solid #334155', 
       backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc' 
     }}>
       {/* Time */}
-      <td style={{ padding: '4px 6px', borderRight: '1px solid #94a3b8' }}>
+      <td style={{ padding: '4px 6px', borderRight: '1px solid #334155' }}>
         <input 
           type="text"
           ref={el => { obsRefs.current[`obs-${idx}-0`] = el; }}
           value={row.time}
           onChange={e => onChange(idx, 'time', e.target.value)}
           onKeyDown={e => onKeyDown(e, idx, 0)}
-          style={{
-            width: '100%',
-            padding: '4px 8px',
-            fontSize: '0.8rem',
-            border: '1px solid transparent',
-            borderRadius: '4px',
-            backgroundColor: 'transparent',
-            color: '#1e293b'
-          }}
+          style={inputStyle}
         />
       </td>
 
-      {/* VT / FT */}
-      <td style={{ padding: '4px 4px', borderRight: '1px solid #94a3b8' }}>
-        <div style={{ display: 'flex', gap: '2px' }}>
-          <input 
-            type="text"
-            ref={el => { obsRefs.current[`obs-${idx}-1`] = el; }}
-            value={row.vt}
-            onChange={e => onChange(idx, 'vt', e.target.value)}
-            onKeyDown={e => onKeyDown(e, idx, 1)}
-            style={{
-              width: '50%',
-              padding: '4px 4px',
-              textAlign: 'center',
-              fontSize: '0.8rem',
-              border: '1px solid transparent',
-              borderRadius: '4px',
-              backgroundColor: 'transparent',
-              color: '#1e293b'
-            }}
-          />
-          <div style={{ width: '1px', backgroundColor: '#94a3b8' }}></div>
-          <input 
-            type="text"
-            ref={el => { obsRefs.current[`obs-${idx}-2`] = el; }}
-            value={row.ft}
-            onChange={e => onChange(idx, 'ft', e.target.value)}
-            onKeyDown={e => onKeyDown(e, idx, 2)}
-            style={{
-              width: '50%',
-              padding: '4px 4px',
-              textAlign: 'center',
-              fontSize: '0.8rem',
-              border: '1px solid transparent',
-              borderRadius: '4px',
-              backgroundColor: 'transparent',
-              color: '#1e293b'
-            }}
-          />
-        </div>
+      {/* Temp of V.T. */}
+      <td style={{ padding: '4px 6px', borderRight: '1px solid #334155' }}>
+        <input 
+          type="text"
+          ref={el => { obsRefs.current[`obs-${idx}-1`] = el; }}
+          value={row.vt}
+          onChange={e => onChange(idx, 'vt', e.target.value)}
+          onKeyDown={e => onKeyDown(e, idx, 1)}
+          style={inputStyle}
+        />
       </td>
 
-      {/* Charge & Obs */}
-      <td style={{ padding: '4px 6px', borderRight: '1px solid #94a3b8' }}>
+      {/* Temp of F.T. */}
+      <td style={{ padding: '4px 6px', borderRight: '1px solid #334155' }}>
+        <input 
+          type="text"
+          ref={el => { obsRefs.current[`obs-${idx}-2`] = el; }}
+          value={row.ft}
+          onChange={e => onChange(idx, 'ft', e.target.value)}
+          onKeyDown={e => onKeyDown(e, idx, 2)}
+          style={inputStyle}
+        />
+      </td>
+
+      {/* H2O */}
+      <td style={{ padding: '4px 6px', borderRight: '1px solid #334155' }}>
         <input 
           type="text"
           ref={el => { obsRefs.current[`obs-${idx}-3`] = el; }}
           value={row.charge_obs}
           onChange={e => onChange(idx, 'charge_obs', e.target.value)}
           onKeyDown={e => onKeyDown(e, idx, 3)}
-          style={{
-            width: '100%',
-            padding: '4px 8px',
-            fontSize: '0.8rem',
-            border: '1px solid transparent',
-            borderRadius: '4px',
-            backgroundColor: 'transparent',
-            color: '#1e293b'
-          }}
+          style={inputStyle}
         />
       </td>
 
-      {/* Observed Value */}
-      <td style={{ padding: '4px 6px', borderRight: '1px solid #94a3b8' }}>
+      {/* AV / AM.V / Nc.V / EEW */}
+      <td style={{ padding: '4px 6px', borderRight: '1px solid #334155' }}>
         <input 
           type="text"
           ref={el => { obsRefs.current[`obs-${idx}-4`] = el; }}
           value={row.observed}
           onChange={e => onChange(idx, 'observed', e.target.value)}
           onKeyDown={e => onKeyDown(e, idx, 4)}
-          style={{
-            width: '100%',
-            padding: '4px 8px',
-            fontSize: '0.8rem',
-            border: '1px solid transparent',
-            borderRadius: '4px',
-            backgroundColor: 'transparent',
-            color: '#1e293b'
-          }}
+          style={{ ...inputStyle, textAlign: 'left' }}
         />
       </td>
 
-      {/* Remark/Observation */}
+      {/* Observations & Remarks */}
       <td style={{ padding: '4px 6px' }}>
         <input 
           type="text"
@@ -173,15 +173,7 @@ const ObservationRow = React.memo<ObservationRowProps>(({ row, idx, onChange, on
           value={row.remark}
           onChange={e => onChange(idx, 'remark', e.target.value)}
           onKeyDown={e => onKeyDown(e, idx, 5)}
-          style={{
-            width: '100%',
-            padding: '4px 8px',
-            fontSize: '0.8rem',
-            border: '1px solid transparent',
-            borderRadius: '4px',
-            backgroundColor: 'transparent',
-            color: '#1e293b'
-          }}
+          style={{ ...inputStyle, textAlign: 'left' }}
         />
       </td>
     </tr>
@@ -219,44 +211,55 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
     input_qty: '',
     output_qty: '',
     prepared_by: '',
-    checked_by: ''
+    checked_by: '',
+    lb_no: '',
+    mo_no: '',
+    input_qty_100: '',
+    output_qty_100: '',
+    production_manager: '',
+    notes_remarks: ''
   });
 
   const [form, setForm] = useState<RDFormData>(initialForm());
 
-  // Raw Materials List (Starts with 10 rows)
-  const [rawMaterials, setRawMaterials] = useState<string[]>(Array(10).fill(''));
-  
-  // Theoretical Values (Initial key-value list with 10 elements)
-  const initialTheoretical = (): TheoreticalRow[] => {
-    const keys = ["Molecular Weight", "Hydroxyl", "Functionality", "Acid value", "Amine value", "Epoxy Value"];
-    const rows: TheoreticalRow[] = keys.map(k => ({ key: k, value: '' }));
-    while (rows.length < 10) {
-      rows.push({ key: '', value: '' });
-    }
-    return rows;
-  };
-  const [theoreticalValues, setTheoreticalValues] = useState<TheoreticalRow[]>(initialTheoretical());
+  // Raw Materials List (Starts with 15 rows)
+  const initialRawMaterials = (): RDRawMaterialRow[] =>
+    Array.from({ length: 15 }, () => ({ raw_material: '', parts_by_weight: '', raw_material_pct: '', remarks: '' }));
+  const [rawMaterials, setRawMaterials] = useState<RDRawMaterialRow[]>(initialRawMaterials());
 
-  // Procedure steps (Starts with 10 rows)
-  const [procedures, setProcedures] = useState<string[]>(Array(10).fill(''));
-
-  // Observation matrix (12 pre-allocated rows)
+  // Observation matrix (15 pre-allocated rows)
   const initialObservations = (): RDObservationRow[] =>
-    Array.from({ length: 12 }, () => ({ time: '', vt: '', ft: '', charge_obs: '', observed: '', remark: '' }));
+    Array.from({ length: 15 }, () => ({ time: '', vt: '', ft: '', charge_obs: '', observed: '', remark: '' }));
   const [observations, setObservations] = useState<RDObservationRow[]>(initialObservations());
 
-  // Results & Conclusions
+  // Results & Parameters
   const initialResults = (): RDResults => ({
+    conclusion: '',
+    k_value: '',
+    functionality: '',
+    hydroxyl_value: '',
+    theoretical_value: '',
+    nco_pct: '',
+    desired_specifications: '',
+    solid_pct: '',
+    water_spec_acid: '',
+    acid_value: '',
+    clarity: '',
+    eew: '',
+    water_of_reaction: '',
+    viscosity: '',
+    mol_wt: '',
+    gt_tube_viscosity: '',
+    color_gardner: '',
+    input_qty: '',
+    output_qty: '',
     output_expected: '',
     liberated_quantity: '',
     final_value: '',
-    viscosity: '',
     colour: '',
     theoretical_80: '',
     practical_80: '',
-    solid_content: '',
-    conclusion: ''
+    solid_content: ''
   });
   const [results, setResults] = useState<RDResults>(initialResults());
 
@@ -307,15 +310,7 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
 
   // Row Adders
   const addRawMaterialRow = () => {
-    setRawMaterials(prev => [...prev, '']);
-  };
-
-  const addTheoreticalRow = () => {
-    setTheoreticalValues(prev => [...prev, { key: '', value: '' }]);
-  };
-
-  const addProcedureRow = () => {
-    setProcedures(prev => [...prev, '']);
+    setRawMaterials(prev => [...prev, { raw_material: '', parts_by_weight: '', raw_material_pct: '', remarks: '' }]);
   };
 
   // Input Change Handlers
@@ -323,22 +318,13 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
     setForm(prev => ({ ...prev, [field]: val }));
   };
 
-  const handleRawChange = (idx: number, val: string) => {
+  const handleRawMaterialRowChange = (idx: number, field: keyof RDRawMaterialRow, val: string) => {
     const copy = [...rawMaterials];
-    copy[idx] = val;
+    copy[idx] = {
+      ...copy[idx],
+      [field]: val
+    };
     setRawMaterials(copy);
-  };
-
-  const handleTheoreticalChange = (idx: number, type: 'key' | 'value', val: string) => {
-    const copy = [...theoreticalValues];
-    copy[idx][type] = val;
-    setTheoreticalValues(copy);
-  };
-
-  const handleProcedureChange = (idx: number, val: string) => {
-    const copy = [...procedures];
-    copy[idx] = val;
-    setProcedures(copy);
   };
 
   const handleObservationChange = (rowIdx: number, field: keyof RDObservationRow, val: string) => {
@@ -354,9 +340,7 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
   const clearAllFields = () => {
     if (window.confirm("Are you sure you want to clear all fields? Unsaved changes will be lost.")) {
       setForm(initialForm());
-      setRawMaterials(Array(10).fill(''));
-      setTheoreticalValues(initialTheoretical());
-      setProcedures(Array(10).fill(''));
+      setRawMaterials(initialRawMaterials());
       setObservations(initialObservations());
       setResults(initialResults());
       setBatchsheetNo('');
@@ -602,22 +586,15 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
     }
 
     setSaving(true);
-    // Build Theoretical Values Dictionary mapping non-empty keys to values
-    const theoDict: Record<string, string> = {};
-    theoreticalValues.forEach(row => {
-      if (row.key.trim() && row.value.trim()) {
-        theoDict[row.key.trim()] = row.value.trim();
-      }
-    });
 
     const payload = {
       form: {
         ...form,
         batch_no: form.batch_no.trim()
       },
-      raw_materials: rawMaterials.filter(x => x.trim()),
-      theoretical_values: theoDict,
-      procedure: procedures.filter(x => x.trim()),
+      raw_materials: rawMaterials.filter(x => x.raw_material.trim()),
+      theoretical_values: {},
+      procedure: [],
       observations: observations.map(obs => ({
         time: obs.time.trim(),
         vt: obs.vt.trim(),
@@ -701,12 +678,7 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
   const handleExportExcel = (customData?: any) => {
     const d = customData || {
       form,
-      raw_materials: rawMaterials.filter(x => x.trim()),
-      theoretical_values: theoreticalValues.reduce((acc: any, curr) => {
-        if (curr.key.trim() && curr.value.trim()) acc[curr.key.trim()] = curr.value.trim();
-        return acc;
-      }, {}),
-      procedure: procedures.filter(x => x.trim()),
+      raw_materials: rawMaterials,
       observations: observations,
       results: results,
       batchsheet_no: batchsheetNo
@@ -717,40 +689,53 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
     const wsRows: any[] = [];
 
     // Title Row
-    wsRows.push(["R&D REPORT", "", "", "", "", "", ""]);
-    wsRows.push(["Date:", d.form?.date || '', "", "Batch No.:", d.form?.batch_no || '', "", ""]);
-    wsRows.push(["Aim:", d.form?.aim || '', "", "", "", "", ""]);
+    wsRows.push(["R&D BATCH SHEET", "", "", "", "", "", ""]);
+    wsRows.push(["Date:", d.form?.date || '', "Batch No:", d.form?.batch_no || '', "LB No:", d.form?.lb_no || '', "Mo No:", d.form?.mo_no || '']);
+    wsRows.push(["Aim:", d.form?.aim || '', "", "", "", "", "", ""]);
     wsRows.push([]);
 
-    // Split raw materials and theoretical values
-    wsRows.push(["Raw Materials", "", "", "Theoretical Values", "", "", ""]);
+    // Raw Materials Headers
+    wsRows.push(["Raw Materials Formula", "", "", "", "", ""]);
+    wsRows.push(["Sr. No.", "Raw Material", "Parts by Weight", "Raw Material %", "Remarks"]);
     
-    const rawList = d.raw_materials || [];
-    const theoItems = Object.entries(d.theoretical_values || {});
-    const maxLen = Math.max(rawList.length, theoItems.length, 10);
+    // Normalize raw materials:
+    const rawList: any[] = (d.raw_materials || []).map((rm: any) => {
+      if (typeof rm === 'string') {
+        return { raw_material: rm, parts_by_weight: '', raw_material_pct: '', remarks: '' };
+      }
+      return rm;
+    });
 
-    for (let i = 0; i < maxLen; i++) {
-      const rm = rawList[i] || '';
-      const theo = theoItems[i] ? `${theoItems[i][0]}: ${theoItems[i][1]}` : '';
-      wsRows.push([`${i+1}) ${rm}`, "", "", theo, "", "", ""]);
-    }
-    wsRows.push([]);
-
-    // Quantities
-    wsRows.push(["Input Quantity:", d.form?.input_qty || '', "", "Output Quantity:", d.form?.output_qty || '', "", ""]);
-    wsRows.push([]);
-
-    // Procedure
-    wsRows.push(["Procedure:", "", "", "", "", "", ""]);
-    const procList = d.procedure || [];
-    procList.forEach((step: string, idx: number) => {
-      wsRows.push([`${idx+1}) ${step}`, "", "", "", "", "", ""]);
+    rawList.forEach((rm: any, idx: number) => {
+      wsRows.push([
+        idx + 1,
+        rm.raw_material || '',
+        rm.parts_by_weight || '',
+        rm.raw_material_pct || '',
+        rm.remarks || ''
+      ]);
     });
     wsRows.push([]);
 
+    // Batch Results
+    wsRows.push(["Batch Results", "", "", "", "", ""]);
+    const res = d.results || {};
+    wsRows.push(["K Value:", res.k_value || '', "Functionality:", res.functionality || '']);
+    wsRows.push(["Hydroxyl Value (mg KOH/g):", res.hydroxyl_value || '', "Theoretical Value:", res.theoretical_value || '']);
+    wsRows.push(["% NCO:", res.nco_pct || '', "Desired Specifications:", res.desired_specifications || '']);
+    wsRows.push(["% Solid:", res.solid_pct || '', "Water @ Specific Acid Value:", res.water_spec_acid || '']);
+    wsRows.push(["% Acid Value:", res.acid_value || '', "Clarity:", res.clarity || '']);
+    wsRows.push(["EEW (g/eq):", res.eew || '', "Water of Reaction (g):", res.water_of_reaction || '']);
+    wsRows.push(["Viscosity @ 25°C (mPa.s):", res.viscosity || '', "Mol / Wt (g/mol):", res.mol_wt || '']);
+    wsRows.push(["GT Tube Viscosity @ 25°C:", res.gt_tube_viscosity || '', "Color (Gardner):", res.color_gardner || '']);
+    wsRows.push(["Input Quantity:", res.input_qty || '', "Output Quantity:", res.output_qty || '']);
+    wsRows.push(["Conclusion:", res.conclusion || '', "", ""]);
+    wsRows.push([]);
+
     // Observations
-    wsRows.push(["Observations Matrix:", "", "", "", "", "", ""]);
-    wsRows.push(["Time", "V.T. Temp", "F.T. Temp", "Charge & Obs", "Observed Value", "Remark/Observation", ""]);
+    wsRows.push(["Process Observation Sheet", "", "", "", "", ""]);
+    wsRows.push(["Batchsheet No:", d.batchsheet_no || '']);
+    wsRows.push(["Time", "Temp of V.T.", "Temp of F.T.", "H2O", "AV / AM.V / Nc.V / EEW", "Observations & Remarks"]);
     
     const obsList = d.observations || [];
     obsList.forEach((obs: any) => {
@@ -760,28 +745,18 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
         obs.ft || '',
         obs.charge_obs || '',
         obs.observed || '',
-        obs.remark || '',
-        ''
+        obs.remark || ''
       ]);
     });
     wsRows.push([]);
-
-    // Batch Results
-    wsRows.push(["Batch Results", "", "", "", "", "", ""]);
-    const res = d.results || {};
-    wsRows.push(["Output (Expected):", res.output_expected || '']);
-    wsRows.push(["Liberated Quantity:", res.liberated_quantity || '']);
-    wsRows.push(["Final Value:", res.final_value || '']);
-    wsRows.push(["Viscosity @ 25°C:", res.viscosity || '']);
-    wsRows.push(["Colour:", res.colour || '']);
-    wsRows.push(["80% H2O Theoretical:", res.theoretical_80 || '']);
-    wsRows.push(["80% H2O Practical:", res.practical_80 || '']);
-    wsRows.push(["Solid Content:", res.solid_content || '']);
-    wsRows.push(["Conclusion:", res.conclusion || '']);
+    
+    // Bottom details of Observation sheet
+    wsRows.push(["Input Quantity 100%:", d.form?.input_qty_100 || '', "Output Quantity 100%:", d.form?.output_qty_100 || '']);
+    wsRows.push(["Notes / Remarks:", d.form?.notes_remarks || '']);
     wsRows.push([]);
 
     // Signatures
-    wsRows.push(["Prepared By:", d.form?.prepared_by || '', "", "Checked By:", d.form?.checked_by || '', "", ""]);
+    wsRows.push(["Prepared By:", d.form?.prepared_by || '', "Checked By:", d.form?.checked_by || '', "Production Manager:", d.form?.production_manager || '']);
 
     const ws = XLSX.utils.aoa_to_sheet(wsRows);
 
@@ -789,16 +764,13 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
     ws['!merges'] = [
       { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }, // Title
       { s: { r: 2, c: 1 }, e: { r: 2, c: 6 } }, // Aim
-      { s: { r: 4, c: 0 }, e: { r: 4, c: 2 } }, // RM header
-      { s: { r: 4, c: 3 }, e: { r: 4, c: 6 } }, // Theo header
     ];
 
-    // Auto fit column widths
     ws['!cols'] = [
-      { wch: 22 },
-      { wch: 15 },
-      { wch: 15 },
       { wch: 25 },
+      { wch: 25 },
+      { wch: 15 },
+      { wch: 15 },
       { wch: 25 },
       { wch: 30 }
     ];
@@ -814,186 +786,330 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
   const handleExportPDF = (customData?: any) => {
     const d = customData || {
       form,
-      raw_materials: rawMaterials.filter(x => x.trim()),
-      theoretical_values: theoreticalValues.reduce((acc: any, curr) => {
-        if (curr.key.trim() && curr.value.trim()) acc[curr.key.trim()] = curr.value.trim();
-        return acc;
-      }, {}),
-      procedure: procedures.filter(x => x.trim()),
+      raw_materials: rawMaterials,
       observations: observations,
       results: results,
       batchsheet_no: batchsheetNo
     };
 
     const activeBatchNo = d.form?.batch_no || 'RD_Report';
-    const doc = new jsPDF('p', 'mm', 'a4');
+    const doc = new jsPDF('l', 'mm', 'a4'); // width = 297, height = 210
     
-    // Page 1
+    // Draw boundary line down the middle
+    doc.setDrawColor(51, 65, 85); // Slate 700 (#334155)
+    doc.setLineWidth(0.5);
+    doc.line(148.5, 0, 148.5, 210);
+
+    // ==========================================
+    // LEFT SHEET: R & D BATCH SHEET
+    // ==========================================
+    const leftMargin = 8;
+    const leftWidth = 132.5;
+
+    // Header Title
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(22);
-    doc.text("R&D BATCH SHEET", 15, 20);
-    
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    
-    // Date & Batch No Top right block
-    doc.text("Date :", 130, 16);
-    doc.text(d.form?.date || '', 160, 16);
-    doc.line(160, 18, 195, 18);
+    doc.setFontSize(14);
+    doc.setTextColor(30, 41, 59); // Slate 800
+    doc.text("R & D BATCH SHEET", leftMargin + leftWidth / 2, 12, { align: "center" });
 
-    doc.text("Batch No. :", 130, 24);
-    doc.text(d.form?.batch_no || '', 160, 24);
-    doc.line(160, 26, 195, 26);
+    // Underline
+    doc.line(leftMargin + leftWidth / 2 - 25, 14, leftMargin + leftWidth / 2 + 25, 14);
 
-    // Aim Block
+    // Metadata Grid
+    doc.setFontSize(7.5);
     doc.setFont("helvetica", "bold");
-    doc.text("Aim :", 15, 34);
-    doc.setFont("helvetica", "normal");
-    const splitAim = doc.splitTextToSize(d.form?.aim || 'None', 170);
-    doc.rect(15, 36, 180, 18);
-    doc.text(splitAim, 18, 41);
-
-    // Split Raw Materials and Theoretical Value Titles
-    doc.setFont("helvetica", "bold");
-    doc.text("Raw Materials :", 15, 61);
-    doc.text("Theoretical Value :", 105, 61);
-    doc.setFont("helvetica", "normal");
-
-    // Grid details
-    const rawList = d.raw_materials || [];
-    const theoItems = Object.entries(d.theoretical_values || {});
-    const printRows = Math.max(10, rawList.length, theoItems.length);
     
-    let currentY = 66;
-    for (let i = 0; i < printRows; i++) {
-      const rmVal = rawList[i] || '';
-      doc.text(`${i+1})`, 15, currentY);
-      doc.line(21, currentY + 1, 95, currentY + 1);
-      doc.text(rmVal, 22, currentY);
+    // Y-position for metadata
+    const metaY = 17;
+    doc.text("Date:", leftMargin, metaY);
+    doc.setFont("helvetica", "normal");
+    doc.text(d.form?.date || '', leftMargin + 8, metaY);
+    doc.line(leftMargin + 8, metaY + 1, leftMargin + 25, metaY + 1);
 
-      if (i < theoItems.length) {
-        const [k, v] = theoItems[i];
-        doc.text(`${k} :`, 105, currentY);
-        doc.line(155, currentY + 1, 195, currentY + 1);
-        doc.text(String(v), 156, currentY);
-      } else {
-        doc.line(105, currentY + 1, 195, currentY + 1);
+    doc.setFont("helvetica", "bold");
+    doc.text("Batch No:", leftMargin + 28, metaY);
+    doc.setFont("helvetica", "normal");
+    doc.text(d.form?.batch_no || '', leftMargin + 41, metaY);
+    doc.line(leftMargin + 41, metaY + 1, leftMargin + 65, metaY + 1);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("LB No:", leftMargin + 68, metaY);
+    doc.setFont("helvetica", "normal");
+    doc.text(d.form?.lb_no || '', leftMargin + 78, metaY);
+    doc.line(leftMargin + 78, metaY + 1, leftMargin + 98, metaY + 1);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Mo. No:", leftMargin + 101, metaY);
+    doc.setFont("helvetica", "normal");
+    doc.text(d.form?.mo_no || '', leftMargin + 112, metaY);
+    doc.line(leftMargin + 112, metaY + 1, leftMargin + leftWidth, metaY + 1);
+
+    // Aim Box
+    const aimY = 21;
+    doc.rect(leftMargin, aimY, leftWidth, 10);
+    doc.setFont("helvetica", "bold");
+    doc.text("Aim :", leftMargin + 2, aimY + 4);
+    doc.setFont("helvetica", "normal");
+    const splitAim = doc.splitTextToSize(d.form?.aim || '', leftWidth - 14);
+    doc.text(splitAim, leftMargin + 10, aimY + 4);
+
+    // Raw Materials Title
+    const rmTitleY = 34;
+    doc.setFillColor(71, 85, 105); // Slate 600
+    doc.rect(leftMargin, rmTitleY, leftWidth, 5, 'F');
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(255, 255, 255);
+    doc.text("RAW MATERIALS FORMULA", leftMargin + leftWidth / 2, rmTitleY + 3.5, { align: "center" });
+
+    // Raw Materials Grid Headers
+    const rmHeaderY = 39;
+    doc.setFillColor(241, 245, 249); // Slate 100
+    doc.rect(leftMargin, rmHeaderY, leftWidth, 5, 'F');
+    doc.setTextColor(30, 41, 59);
+    doc.setFontSize(7);
+    doc.rect(leftMargin, rmHeaderY, leftWidth, 5); // Border
+
+    // Draw RM Header columns:
+    // Sr.No (10), Raw Material (52), Parts by Wt (20), RM% (20), Remarks (30.5)
+    doc.line(leftMargin + 10, rmHeaderY, leftMargin + 10, rmHeaderY + 5);
+    doc.line(leftMargin + 62, rmHeaderY, leftMargin + 62, rmHeaderY + 5);
+    doc.line(leftMargin + 82, rmHeaderY, leftMargin + 82, rmHeaderY + 5);
+    doc.line(leftMargin + 102, rmHeaderY, leftMargin + 102, rmHeaderY + 5);
+
+    doc.text("Sr. No.", leftMargin + 5, rmHeaderY + 3.5, { align: "center" });
+    doc.text("Raw Material", leftMargin + 12, rmHeaderY + 3.5);
+    doc.text("Parts by Weight", leftMargin + 72, rmHeaderY + 3.5, { align: "center" });
+    doc.text("Raw Material %", leftMargin + 92, rmHeaderY + 3.5, { align: "center" });
+    doc.text("Observations & Remarks", leftMargin + 104, rmHeaderY + 3.5);
+
+    // Raw Materials Rows
+    let currentY = rmHeaderY + 5;
+    const rawList: any[] = (d.raw_materials || []).map((rm: any) => {
+      if (typeof rm === 'string') return { raw_material: rm, parts_by_weight: '', raw_material_pct: '', remarks: '' };
+      return rm;
+    });
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(0, 0, 0);
+
+    for (let idx = 0; idx < 15; idx++) {
+      const rm = rawList[idx] || { raw_material: '', parts_by_weight: '', raw_material_pct: '', remarks: '' };
+      
+      // Alternating backgrounds
+      if (idx % 2 === 1) {
+        doc.setFillColor(248, 250, 252);
+        doc.rect(leftMargin, currentY, leftWidth, 4.5, 'F');
       }
-      currentY += 8;
-    }
+      doc.rect(leftMargin, currentY, leftWidth, 4.5); // Row border
 
-    currentY += 4;
-    // Input / Output Quantities
-    doc.setFont("helvetica", "bold");
-    doc.text("Input Quantity :", 15, currentY);
-    doc.setFont("helvetica", "normal");
-    doc.line(45, currentY + 1, 95, currentY + 1);
-    doc.text(d.form?.input_qty || '', 47, currentY);
+      // Cell borders
+      doc.line(leftMargin + 10, currentY, leftMargin + 10, currentY + 4.5);
+      doc.line(leftMargin + 62, currentY, leftMargin + 62, currentY + 4.5);
+      doc.line(leftMargin + 82, currentY, leftMargin + 82, currentY + 4.5);
+      doc.line(leftMargin + 102, currentY, leftMargin + 102, currentY + 4.5);
 
-    doc.setFont("helvetica", "bold");
-    doc.text("Output Quantity :", 108, currentY);
-    doc.setFont("helvetica", "normal");
-    doc.line(142, currentY + 1, 195, currentY + 1);
-    doc.text(d.form?.output_qty || '', 144, currentY);
-
-    currentY += 10;
-    // Procedure Steps
-    doc.setFont("helvetica", "bold");
-    doc.text("Procedure :", 15, currentY);
-    doc.setFont("helvetica", "normal");
-    currentY += 5;
-
-    const procList = d.procedure || [];
-    const printProcRows = Math.max(10, procList.length);
-    for (let i = 0; i < printProcRows; i++) {
-      const procVal = procList[i] || '';
-      doc.text(`${i+1})`, 15, currentY);
-      doc.line(21, currentY + 1, 195, currentY + 1);
-      doc.text(procVal, 22, currentY);
-      currentY += 8;
-    }
-
-    // Page 2 - Observations & Results
-    doc.addPage();
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.text(`Batchsheet No :  ${d.batchsheet_no || 'N/A'}`, 15, 15);
-
-    // Render Observations Table using autoTable
-    const tableHeaders = [
-      ["Time", "V.T.", "F.T.", "Charge & Obs.", "Observed Value", "Remark/Observation"]
-    ];
-    const obsList = d.observations || [];
-    const tableRows = obsList.map((obs: any) => [
-      obs.time || '',
-      obs.vt || '',
-      obs.ft || '',
-      obs.charge_obs || '',
-      obs.observed || '',
-      obs.remark || ''
-    ]);
-
-    autoTable(doc, {
-      head: tableHeaders,
-      body: tableRows,
-      startY: 20,
-      margin: { left: 15, right: 15 },
-      theme: 'grid',
-      headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], lineColor: [148, 163, 184], lineWidth: 0.2, fontStyle: 'bold' },
-      styles: { fontSize: 8, cellPadding: 2, textColor: [0, 0, 0], lineColor: [148, 163, 184] }
-    });
-
-    let resultsY = (doc as any).lastAutoTable.finalY + 10;
-    
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.text("Batch Results", 15, resultsY);
-    resultsY += 5;
-
-    doc.setFontSize(10);
-    const resFields = [
-      ["Output (Expected)", d.results?.output_expected || ''],
-      ["Liberated Quantity", d.results?.liberated_quantity || ''],
-      ["Final Value", d.results?.final_value || ''],
-      ["Viscosity @ 25°C", d.results?.viscosity || ''],
-      ["Colour", d.results?.colour || ''],
-      ["80% H2O Theoretical", d.results?.theoretical_80 || ''],
-      ["80% H2O Practical", d.results?.practical_80 || ''],
-      ["Solid Content", d.results?.solid_content || '']
-    ];
-
-    resFields.forEach(([label, value]) => {
       doc.setFont("helvetica", "bold");
-      doc.text(`${label} :`, 15, resultsY);
+      doc.text(String(idx + 1), leftMargin + 5, currentY + 3.2, { align: "center" });
       doc.setFont("helvetica", "normal");
-      doc.line(65, resultsY + 1, 195, resultsY + 1);
-      doc.text(String(value), 66, resultsY);
-      resultsY += 8;
+
+      // Text truncation to avoid overlapping columns
+      const rmName = doc.splitTextToSize(rm.raw_material || '', 50)[0] || '';
+      doc.text(rmName, leftMargin + 12, currentY + 3.2);
+      doc.text(rm.parts_by_weight || '', leftMargin + 72, currentY + 3.2, { align: "center" });
+      doc.text(rm.raw_material_pct || '', leftMargin + 92, currentY + 3.2, { align: "center" });
+      
+      const remarkText = doc.splitTextToSize(rm.remarks || '', 29)[0] || '';
+      doc.text(remarkText, leftMargin + 104, currentY + 3.2);
+
+      currentY += 4.5;
+    }
+
+    // Batch Result Title
+    const brTitleY = currentY + 3;
+    doc.setFillColor(71, 85, 105);
+    doc.rect(leftMargin, brTitleY, leftWidth, 5, 'F');
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(255, 255, 255);
+    doc.text("BATCH RESULT", leftMargin + leftWidth / 2, brTitleY + 3.5, { align: "center" });
+
+    // Batch Result Grid Headers
+    const brHeaderY = brTitleY + 5;
+    doc.setFillColor(241, 245, 249);
+    doc.rect(leftMargin, brHeaderY, leftWidth, 4.5, 'F');
+    doc.setTextColor(30, 41, 59);
+    doc.setFontSize(7);
+    doc.rect(leftMargin, brHeaderY, leftWidth, 4.5); // Border
+    doc.line(leftMargin + 40, brHeaderY, leftMargin + 40, brHeaderY + 4.5);
+    doc.line(leftMargin + 66, brHeaderY, leftMargin + 66, brHeaderY + 4.5);
+    doc.line(leftMargin + 106, brHeaderY, leftMargin + 106, brHeaderY + 4.5);
+
+    doc.text("Parameter", leftMargin + 2, brHeaderY + 3.2);
+    doc.text("Value", leftMargin + 53, brHeaderY + 3.2, { align: "center" });
+    doc.text("Parameter", leftMargin + 68, brHeaderY + 3.2);
+    doc.text("Value", leftMargin + 119, brHeaderY + 3.2, { align: "center" });
+
+    // Draw Batch Result Rows
+    let brY = brHeaderY + 4.5;
+    const res = d.results || {};
+    const brRows = [
+      { p1: 'K Value', val1: res.k_value, p2: 'Functionality', val2: res.functionality },
+      { p1: 'Hydroxyl Value (mg KOH/g)', val1: res.hydroxyl_value, p2: 'Theoretical Value', val2: res.theoretical_value },
+      { p1: '% NCO', val1: res.nco_pct, p2: 'Desired Specifications', val2: res.desired_specifications },
+      { p1: '% Solid', val1: res.solid_pct, p2: 'Water @ Specific Acid Value', val2: res.water_spec_acid },
+      { p1: '% Acid Value', val1: res.acid_value, p2: 'Clarity', val2: res.clarity },
+      { p1: 'EEW (g/eq)', val1: res.eew, p2: 'Water of Reaction (g)', val2: res.water_of_reaction },
+      { p1: 'Viscosity @ 25°C (mPa.s)', val1: res.viscosity, p2: 'Mol / Wt (g/mol)', val2: res.mol_wt },
+      { p1: 'GT Tube Viscosity @ 25°C', val1: res.gt_tube_viscosity, p2: 'Color (Gardner)', val2: res.color_gardner },
+      { p1: 'Input Quantity :', val1: res.input_qty, p2: 'Output Quantity :', val2: res.output_qty },
+    ];
+
+    doc.setTextColor(0, 0, 0);
+    brRows.forEach((row, rIdx) => {
+      doc.rect(leftMargin, brY, leftWidth, 4.5);
+      doc.line(leftMargin + 40, brY, leftMargin + 40, brY + 4.5);
+      doc.line(leftMargin + 66, brY, leftMargin + 66, brY + 4.5);
+      doc.line(leftMargin + 106, brY, leftMargin + 106, brY + 4.5);
+
+      // Parameter 1 & Value 1
+      doc.setFont("helvetica", "bold");
+      doc.text(row.p1, leftMargin + 2, brY + 3.2);
+      doc.setFont("helvetica", "normal");
+      doc.text(String(row.val1 || ''), leftMargin + 53, brY + 3.2, { align: "center" });
+
+      // Parameter 2 & Value 2
+      doc.setFont("helvetica", "bold");
+      doc.text(row.p2, leftMargin + 68, brY + 3.2);
+      doc.setFont("helvetica", "normal");
+      doc.text(String(row.val2 || ''), leftMargin + 119, brY + 3.2, { align: "center" });
+
+      brY += 4.5;
     });
 
-    resultsY += 2;
+    // Signatures Section
+    const sigY = brY + 3;
+    doc.rect(leftMargin, sigY, leftWidth, 13);
+    doc.line(leftMargin + 44, sigY, leftMargin + 44, sigY + 13);
+    doc.line(leftMargin + 88, sigY, leftMargin + 88, sigY + 13);
+
     doc.setFont("helvetica", "bold");
-    doc.text("Conclusion :", 15, resultsY);
-    resultsY += 5;
+    doc.setFontSize(6.5);
+    doc.text("Prepared by:", leftMargin + 2, sigY + 3);
+    doc.text("QC Checked by:", leftMargin + 46, sigY + 3);
+    doc.text("Production Manager:", leftMargin + 90, sigY + 3);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.text(d.form?.prepared_by || '', leftMargin + 22, sigY + 9, { align: "center" });
+    doc.text(d.form?.checked_by || '', leftMargin + 66, sigY + 9, { align: "center" });
+    doc.text(d.form?.production_manager || '', leftMargin + 110, sigY + 9, { align: "center" });
+
+    // ==========================================
+    // RIGHT SHEET: PROCESS OBSERVATION SHEET
+    // ==========================================
+    const rightMargin = 156.5;
+    const rightWidth = 132.5;
+
+    // Header Title
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(30, 41, 59);
+    doc.text("PROCESS OBSERVATION SHEET", rightMargin + rightWidth / 2, 12, { align: "center" });
+    doc.line(rightMargin + rightWidth / 2 - 35, 14, rightMargin + rightWidth / 2 + 35, 14);
+
+    // Batchsheet No
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "bold");
+    doc.text("Batchsheet No:", rightMargin, 19);
+    doc.setFont("helvetica", "normal");
+    doc.text(d.batchsheet_no || '', rightMargin + 22, 19);
+    doc.line(rightMargin + 22, 20, rightMargin + 60, 20);
+
+    // Observation Table Header
+    const obsHeaderY = 22;
+    doc.setFillColor(226, 232, 240); // Grey 200
+    doc.rect(rightMargin, obsHeaderY, rightWidth, 6, 'F');
+    doc.rect(rightMargin, obsHeaderY, rightWidth, 6);
+    doc.setTextColor(30, 41, 59);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(6.8);
+
+    // Observation Columns layout:
+    // Time (12), Temp of VT (18), Temp of FT (18), H2O (12), AV/AM/NC (35), Remarks (37.5)
+    doc.line(rightMargin + 12, obsHeaderY, rightMargin + 12, obsHeaderY + 6);
+    doc.line(rightMargin + 30, obsHeaderY, rightMargin + 30, obsHeaderY + 6);
+    doc.line(rightMargin + 48, obsHeaderY, rightMargin + 48, obsHeaderY + 6);
+    doc.line(rightMargin + 60, obsHeaderY, rightMargin + 60, obsHeaderY + 6);
+    doc.line(rightMargin + 95, obsHeaderY, rightMargin + 95, obsHeaderY + 6);
+
+    doc.text("Time", rightMargin + 6, obsHeaderY + 4, { align: "center" });
+    doc.text("Temp of V.T.", rightMargin + 21, obsHeaderY + 4, { align: "center" });
+    doc.text("Temp of F.T.", rightMargin + 39, obsHeaderY + 4, { align: "center" });
+    doc.text("H₂O", rightMargin + 54, obsHeaderY + 4, { align: "center" });
+    doc.text("AV / AM.V / Nc.V / EEW", rightMargin + 62, obsHeaderY + 4);
+    doc.text("Observations & Remarks", rightMargin + 97, obsHeaderY + 4);
+
+    // Observations rows
+    let obsY = obsHeaderY + 6;
+    const obsList = d.observations || [];
     
-    const splitConclusion = doc.splitTextToSize(d.results?.conclusion || 'None', 180);
     doc.setFont("helvetica", "normal");
-    doc.rect(15, resultsY, 180, 24);
-    doc.text(splitConclusion, 18, resultsY + 5);
+    doc.setTextColor(0, 0, 0);
 
-    resultsY += 34;
-    // Signatures
-    doc.setFont("helvetica", "bold");
-    doc.text("Prepared By :", 15, resultsY);
-    doc.setFont("helvetica", "normal");
-    doc.line(40, resultsY + 1, 95, resultsY + 1);
-    doc.text(d.form?.prepared_by || '', 42, resultsY);
+    for (let idx = 0; idx < 15; idx++) {
+      const obs = obsList[idx] || { time: '', vt: '', ft: '', charge_obs: '', observed: '', remark: '' };
+      
+      if (idx % 2 === 1) {
+        doc.setFillColor(248, 250, 252);
+        doc.rect(rightMargin, obsY, rightWidth, 7.5, 'F');
+      }
+      doc.rect(rightMargin, obsY, rightWidth, 7.5);
+
+      doc.line(rightMargin + 12, obsY, rightMargin + 12, obsY + 7.5);
+      doc.line(rightMargin + 30, obsY, rightMargin + 30, obsY + 7.5);
+      doc.line(rightMargin + 48, obsY, rightMargin + 48, obsY + 7.5);
+      doc.line(rightMargin + 60, obsY, rightMargin + 60, obsY + 7.5);
+      doc.line(rightMargin + 95, obsY, rightMargin + 95, obsY + 7.5);
+
+      doc.text(obs.time || '', rightMargin + 6, obsY + 4.8, { align: "center" });
+      doc.text(obs.vt || '', rightMargin + 21, obsY + 4.8, { align: "center" });
+      doc.text(obs.ft || '', rightMargin + 39, obsY + 4.8, { align: "center" });
+      doc.text(obs.charge_obs || '', rightMargin + 54, obsY + 4.8, { align: "center" });
+      
+      const obsVal = doc.splitTextToSize(obs.observed || '', 33)[0] || '';
+      doc.text(obsVal, rightMargin + 62, obsY + 4.8);
+      
+      const remarkText = doc.splitTextToSize(obs.remark || '', 35)[0] || '';
+      doc.text(remarkText, rightMargin + 97, obsY + 4.8);
+
+      obsY += 7.5;
+    }
+
+    // Quantities 100% Box
+    const qtyY = obsY + 3;
+    doc.rect(rightMargin, qtyY, rightWidth, 9);
+    doc.line(rightMargin + rightWidth / 2, qtyY, rightMargin + rightWidth / 2, qtyY + 9);
 
     doc.setFont("helvetica", "bold");
-    doc.text("Checked By :", 108, resultsY);
+    doc.text("Input Quantity 100%:", rightMargin + 2, qtyY + 5.5);
     doc.setFont("helvetica", "normal");
-    doc.line(132, resultsY + 1, 195, resultsY + 1);
-    doc.text(d.form?.checked_by || '', 134, resultsY);
+    doc.text(String(d.form?.input_qty_100 || ''), rightMargin + 32, qtyY + 5.5);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Output Quantity 100%:", rightMargin + rightWidth / 2 + 2, qtyY + 5.5);
+    doc.setFont("helvetica", "normal");
+    doc.text(String(d.form?.output_qty_100 || ''), rightMargin + rightWidth / 2 + 34, qtyY + 5.5);
+
+    // Notes / Remarks Box
+    const noteY = qtyY + 12;
+    doc.rect(rightMargin, noteY, rightWidth, 23);
+    doc.setFont("helvetica", "bold");
+    doc.text("Notes / Remarks :", rightMargin + 2, noteY + 4.5);
+    doc.setFont("helvetica", "normal");
+    const splitNotes = doc.splitTextToSize(d.form?.notes_remarks || '', rightWidth - 6);
+    doc.text(splitNotes, rightMargin + 2, noteY + 9.5);
 
     doc.save(`${activeBatchNo}_RD_Report.pdf`);
     onShowToast(`PDF file for batch ${activeBatchNo} downloaded successfully!`, "success");
@@ -1157,456 +1273,232 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
               </div>
             </div>
           </div>
-
           {/* Scrollable Content Pane */}
           <div style={{
-            height: '100%',
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '24px',
+            padding: '24px',
+            boxSizing: 'border-box',
             overflowY: 'auto',
-            padding: '20px',
+            height: 'calc(100% - 75px)',
             paddingTop: '95px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '20px'
+            backgroundColor: '#f1f5f9'
           }}>
 
-            {/* Aim Section */}
-            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px', backgroundColor: '#ffffff', border: '1px solid #94a3b8', borderRadius: '10px' }}>
-              <h4 style={{ fontWeight: 700, fontSize: '1rem', borderBottom: '2px solid var(--primary-color)', paddingBottom: '6px', width: 'max-content', margin: 0 }}>Aim:</h4>
-              <textarea 
-                rows={2}
-                value={form.aim}
-                onChange={e => handleFormChange('aim', e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  fontSize: '0.85rem',
-                  border: '1px solid #94a3b8',
-                  borderRadius: '6px',
-                  backgroundColor: '#ffffff',
-                  color: '#1e293b',
-                  resize: 'none'
-                }}
-              />
-            </div>
+            {/* LEFT SHEET: R & D Batch Sheet */}
+            <div style={{
+              backgroundColor: '#ffffff',
+              border: '2px solid #334155',
+              borderRadius: '8px',
+              padding: '24px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              color: '#000000',
+              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+            }}>
+              {/* Header Title */}
+              <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+                <h2 style={{ fontSize: '1.4rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: '#1e293b', margin: 0 }}>R & D Batch Sheet</h2>
+                <div style={{ height: '3px', backgroundColor: '#334155', margin: '8px auto 0 auto', width: '180px' }}></div>
+              </div>
 
-            {/* Split Materials & Theoretical Values Pane */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-              
-              {/* Raw Materials Column */}
-              <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px', backgroundColor: '#f8fafc', border: '1px solid #94a3b8', borderRadius: '10px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <h4 style={{ fontWeight: 700, fontSize: '1rem', borderBottom: '2px solid var(--primary-color)', paddingBottom: '6px', width: 'max-content' }}>Raw Materials List</h4>
-                  <button 
-                    onClick={addRawMaterialRow}
-                    className="btn"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      fontSize: '0.75rem',
-                      padding: '4px 10px',
-                      borderRadius: '4px',
-                      backgroundColor: 'var(--primary-light)',
-                      color: 'var(--primary-color)',
-                      border: '1px solid var(--primary-color)',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <Plus size={12} /> Add Row
-                  </button>
+              {/* Top metadata grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr 1fr 1fr', gap: '12px', border: '1px solid #cbd5e1', padding: '12px', borderRadius: '6px', backgroundColor: '#f8fafc' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#475569' }}>Date:</span>
+                  <input type="text" value={form.date} disabled style={{ flex: 1, border: 'none', borderBottom: '1px dotted #334155', backgroundColor: 'transparent', fontSize: '0.8rem', fontWeight: 600, color: '#64748b', padding: 0, textAlign: 'center' }} />
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '420px', overflowY: 'auto', paddingRight: '8px' }}>
-                  {rawMaterials.map((rm, idx) => (
-                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', width: '30px', fontWeight: 600 }}>{idx + 1})</span>
-                      <input 
-                        type="text"
-                        id={`rm-${idx}`}
-                        value={rm}
-                        onChange={e => handleRawChange(idx, e.target.value)}
-                        onKeyDown={e => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            const nextInput = document.getElementById(`rm-${idx + 1}`) as HTMLInputElement;
-                            if (nextInput) nextInput.focus();
-                          }
-                        }}
-                        style={{
-                          flex: 1,
-                          padding: '6px 12px',
-                          fontSize: '0.85rem',
-                          border: '1px solid #94a3b8',
-                          borderRadius: '6px',
-                          backgroundColor: '#ffffff',
-                          color: '#1e293b'
-                        }}
-                      />
-                    </div>
-                  ))}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#475569' }}>Batch No:</span>
+                  <input type="text" value={form.batch_no} onChange={e => handleFormChange('batch_no', e.target.value)} style={{ flex: 1, border: 'none', borderBottom: '1px dotted #334155', backgroundColor: 'transparent', fontSize: '0.8rem', fontWeight: 600, color: '#1e293b', padding: 0 }} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#475569' }}>LB No:</span>
+                  <input type="text" value={form.lb_no || ''} onChange={e => handleFormChange('lb_no', e.target.value)} style={{ flex: 1, border: 'none', borderBottom: '1px dotted #334155', backgroundColor: 'transparent', fontSize: '0.8rem', fontWeight: 600, color: '#1e293b', padding: 0 }} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#475569' }}>Mo. No:</span>
+                  <input type="text" value={form.mo_no || ''} onChange={e => handleFormChange('mo_no', e.target.value)} style={{ flex: 1, border: 'none', borderBottom: '1px dotted #334155', backgroundColor: 'transparent', fontSize: '0.8rem', fontWeight: 600, color: '#1e293b', padding: 0 }} />
                 </div>
               </div>
 
-              {/* Theoretical Values Column */}
-              <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px', backgroundColor: '#f8fafc', border: '1px solid #94a3b8', borderRadius: '10px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <h4 style={{ fontWeight: 700, fontSize: '1rem', borderBottom: '2px solid var(--primary-color)', paddingBottom: '6px', width: 'max-content' }}>Theoretical Values Matrix</h4>
-                  <button 
-                    onClick={addTheoreticalRow}
-                    className="btn"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      fontSize: '0.75rem',
-                      padding: '4px 10px',
-                      borderRadius: '4px',
-                      backgroundColor: 'var(--primary-light)',
-                      color: 'var(--primary-color)',
-                      border: '1px solid var(--primary-color)',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <Plus size={12} /> Add Custom
-                  </button>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '420px', overflowY: 'auto', paddingRight: '8px' }}>
-                  {theoreticalValues.map((row, idx) => (
-                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <input 
-                        type="text"
-                        value={row.key}
-                        onChange={e => handleTheoreticalChange(idx, 'key', e.target.value)}
-                        style={{
-                          width: '180px',
-                          padding: '6px 12px',
-                          fontSize: '0.85rem',
-                          fontWeight: 600,
-                          border: '1px solid #94a3b8',
-                          borderRadius: '6px',
-                          backgroundColor: '#f1f5f9',
-                          color: '#475569'
-                        }}
-                      />
-                      <input 
-                        type="text"
-                        id={`theo-val-${idx}`}
-                        value={row.value}
-                        onChange={e => handleTheoreticalChange(idx, 'value', e.target.value)}
-                        onKeyDown={e => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            const nextInput = document.getElementById(`theo-val-${idx + 1}`) as HTMLInputElement;
-                            if (nextInput) nextInput.focus();
-                          }
-                        }}
-                        style={{
-                          flex: 1,
-                          padding: '6px 12px',
-                          fontSize: '0.85rem',
-                          border: '1px solid #94a3b8',
-                          borderRadius: '6px',
-                          backgroundColor: '#ffffff',
-                          color: '#1e293b'
-                        }}
-                      />
-                    </div>
-                  ))}
+              {/* Aim Box */}
+              <div style={{ display: 'flex', gap: '10px', border: '1px solid #cbd5e1', padding: '12px', borderRadius: '6px', backgroundColor: '#f8fafc' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#475569', minWidth: '40px' }}>Aim :</span>
+                <textarea value={form.aim} onChange={e => handleFormChange('aim', e.target.value)} rows={2} style={{ flex: 1, border: 'none', resize: 'none', fontSize: '0.85rem', color: '#1e293b', padding: 0, outline: 'none', backgroundColor: 'transparent' }} />
+              </div>
+
+              {/* Raw Materials formula Table */}
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: 'bold', textAlign: 'center', backgroundColor: '#475569', color: '#ffffff', padding: '6px', border: '1px solid #334155', borderBottom: 'none', borderTopLeftRadius: '6px', borderTopRightRadius: '6px', textTransform: 'uppercase' }}>Raw Materials formula</div>
+                <div style={{ overflowX: 'auto', border: '1px solid #334155' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+                    <thead>
+                      <tr style={{ backgroundColor: '#f1f5f9', borderBottom: '1px solid #334155' }}>
+                        <th style={{ width: '40px', padding: '4px', borderRight: '1px solid #334155', textAlign: 'center', color: '#475569', fontWeight: 'bold' }}>Sr. No.</th>
+                        <th style={{ padding: '4px', borderRight: '1px solid #334155', color: '#475569', fontWeight: 'bold' }}>Raw Material</th>
+                        <th style={{ width: '100px', padding: '4px', borderRight: '1px solid #334155', textAlign: 'center', color: '#475569', fontWeight: 'bold' }}>Parts by Weight</th>
+                        <th style={{ width: '100px', padding: '4px', borderRight: '1px solid #334155', textAlign: 'center', color: '#475569', fontWeight: 'bold' }}>Raw Material %</th>
+                        <th style={{ padding: '4px', color: '#475569', fontWeight: 'bold' }}>Observations & Remarks</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rawMaterials.map((rm, idx) => (
+                        <tr key={idx} style={{ borderBottom: idx === 14 ? 'none' : '1px solid #cbd5e1' }}>
+                          <td style={{ padding: '2px', borderRight: '1px solid #334155', textAlign: 'center', fontWeight: 'bold', color: '#64748b', backgroundColor: '#f8fafc' }}>{idx + 1}</td>
+                          <td style={{ padding: '2px', borderRight: '1px solid #334155' }}>
+                            <input type="text" value={rm.raw_material} onChange={e => handleRawMaterialRowChange(idx, 'raw_material', e.target.value)} style={{ width: '100%', border: 'none', padding: '2px 4px', fontSize: '0.8rem', outline: 'none', color: '#1e293b' }} />
+                          </td>
+                          <td style={{ padding: '2px', borderRight: '1px solid #334155' }}>
+                            <input type="text" value={rm.parts_by_weight} onChange={e => handleRawMaterialRowChange(idx, 'parts_by_weight', e.target.value)} style={{ width: '100%', border: 'none', textAlign: 'center', padding: '2px 4px', fontSize: '0.8rem', outline: 'none', color: '#1e293b' }} />
+                          </td>
+                          <td style={{ padding: '2px', borderRight: '1px solid #334155' }}>
+                            <input type="text" value={rm.raw_material_pct} onChange={e => handleRawMaterialRowChange(idx, 'raw_material_pct', e.target.value)} style={{ width: '100%', border: 'none', textAlign: 'center', padding: '2px 4px', fontSize: '0.8rem', outline: 'none', color: '#1e293b' }} />
+                          </td>
+                          <td style={{ padding: '2px' }}>
+                            <input type="text" value={rm.remarks} onChange={e => handleRawMaterialRowChange(idx, 'remarks', e.target.value)} style={{ width: '100%', border: 'none', padding: '2px 4px', fontSize: '0.8rem', outline: 'none', color: '#1e293b' }} />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
+              {/* Batch Result Table */}
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: 'bold', textAlign: 'center', backgroundColor: '#475569', color: '#ffffff', padding: '6px', border: '1px solid #334155', borderBottom: 'none', borderTopLeftRadius: '6px', borderTopRightRadius: '6px', textTransform: 'uppercase' }}>Batch Result</div>
+                <div style={{ border: '1px solid #334155' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+                    <thead>
+                      <tr style={{ backgroundColor: '#f1f5f9', borderBottom: '1px solid #334155' }}>
+                        <th style={{ width: '30%', padding: '4px', borderRight: '1px solid #334155', color: '#475569', fontWeight: 'bold' }}>Parameter</th>
+                        <th style={{ width: '20%', padding: '4px', borderRight: '1px solid #334155', color: '#475569', fontWeight: 'bold' }}>Value</th>
+                        <th style={{ width: '30%', padding: '4px', borderRight: '1px solid #334155', color: '#475569', fontWeight: 'bold' }}>Parameter</th>
+                        <th style={{ width: '20%', padding: '4px', color: '#475569', fontWeight: 'bold' }}>Value</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        { p1: 'K Value', key1: 'k_value', p2: 'Functionality', key2: 'functionality' },
+                        { p1: 'Hydroxyl Value (mg KOH/g)', key1: 'hydroxyl_value', p2: 'Theoretical Value', key2: 'theoretical_value' },
+                        { p1: '% NCO', key1: 'nco_pct', p2: 'Desired Specifications', key2: 'desired_specifications' },
+                        { p1: '% Solid', key1: 'solid_pct', p2: 'Water @ Specific Acid Value', key2: 'water_spec_acid' },
+                        { p1: '% Acid Value', key1: 'acid_value', p2: 'Clarity', key2: 'clarity' },
+                        { p1: 'EEW (g/eq)', key1: 'eew', p2: 'Water of Reaction (g)', key2: 'water_of_reaction' },
+                        { p1: 'Viscosity @ 25°C (mPa.s)', key1: 'viscosity', p2: 'Mol / Wt (g/mol)', key2: 'mol_wt' },
+                        { p1: 'GT Tube Viscosity @ 25°C', key1: 'gt_tube_viscosity', p2: 'Color (Gardner)', key2: 'color_gardner' },
+                        { p1: 'Input Quantity :', key1: 'input_qty', p2: 'Output Quantity :', key2: 'output_qty' },
+                      ].map((row, idx) => (
+                        <tr key={idx} style={{ borderBottom: idx === 8 ? 'none' : '1px solid #cbd5e1' }}>
+                          <td style={{ padding: '4px 8px', borderRight: '1px solid #cbd5e1', fontWeight: 'bold', color: '#334155', backgroundColor: '#f8fafc', fontSize: '0.75rem' }}>{row.p1}</td>
+                          <td style={{ padding: '2px', borderRight: '1px solid #cbd5e1' }}>
+                            <input type="text" value={results[row.key1 as keyof RDResults] || ''} onChange={e => handleResultChange(row.key1 as keyof RDResults, e.target.value)} style={{ width: '100%', border: 'none', padding: '2px 4px', fontSize: '0.8rem', outline: 'none', color: '#1e293b', textAlign: 'center' }} />
+                          </td>
+                          <td style={{ padding: '4px 8px', borderRight: '1px solid #cbd5e1', fontWeight: 'bold', color: '#334155', backgroundColor: '#f8fafc', fontSize: '0.75rem' }}>{row.p2}</td>
+                          <td style={{ padding: '2px' }}>
+                            <input type="text" value={results[row.key2 as keyof RDResults] || ''} onChange={e => handleResultChange(row.key2 as keyof RDResults, e.target.value)} style={{ width: '100%', border: 'none', padding: '2px 4px', fontSize: '0.8rem', outline: 'none', color: '#1e293b', textAlign: 'center' }} />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Signatures footer */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginTop: 'auto', border: '1px solid #cbd5e1', padding: '12px', borderRadius: '6px', backgroundColor: '#f8fafc' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#475569' }}>Prepared by:</span>
+                  <input type="text" value={form.prepared_by} onChange={e => handleFormChange('prepared_by', e.target.value)} style={{ width: '100%', border: 'none', borderBottom: '1px solid #94a3b8', fontSize: '0.8rem', outline: 'none', padding: '2px 0', backgroundColor: 'transparent', color: '#1e293b' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#475569' }}>QC Checked by:</span>
+                  <input type="text" value={form.checked_by} onChange={e => handleFormChange('checked_by', e.target.value)} style={{ width: '100%', border: 'none', borderBottom: '1px solid #94a3b8', fontSize: '0.8rem', outline: 'none', padding: '2px 0', backgroundColor: 'transparent', color: '#1e293b' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#475569' }}>Production Manager:</span>
+                  <input type="text" value={form.production_manager || ''} onChange={e => handleFormChange('production_manager', e.target.value)} style={{ width: '100%', border: 'none', borderBottom: '1px solid #94a3b8', fontSize: '0.8rem', outline: 'none', padding: '2px 0', backgroundColor: 'transparent', color: '#1e293b' }} />
+                </div>
+              </div>
             </div>
 
-            {/* Quantities Card */}
-            <div style={{ padding: '20px', display: 'flex', justifyContent: 'space-around', gap: '20px', backgroundColor: '#ffffff', border: '1px solid #94a3b8', borderRadius: '10px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>Input Quantity:</span>
-                <input 
-                  type="text"
-                  value={form.input_qty}
-                  onChange={e => handleFormChange('input_qty', e.target.value)}
-                  style={{
-                    width: '200px',
-                    padding: '8px 12px',
-                    fontSize: '0.85rem',
-                    border: '1px solid #94a3b8',
-                    borderRadius: '6px',
-                    backgroundColor: '#ffffff',
-                    color: '#1e293b'
-                  }}
+            {/* RIGHT SHEET: Process Observation Sheet */}
+            <div style={{
+              backgroundColor: '#ffffff',
+              border: '2px solid #334155',
+              borderRadius: '8px',
+              padding: '24px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              color: '#000000',
+              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+            }}>
+              {/* Header Title */}
+              <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+                <h2 style={{ fontSize: '1.4rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: '#1e293b', margin: 0 }}>Process Observation Sheet</h2>
+                <div style={{ height: '3px', backgroundColor: '#334155', margin: '8px auto 0 auto', width: '220px' }}></div>
+              </div>
+
+              {/* Batchsheet No and Table */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid #cbd5e1', padding: '10px', borderRadius: '6px', backgroundColor: '#f8fafc', width: 'max-content' }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#475569' }}>Batchsheet No:</span>
+                  <input type="text" value={batchsheetNo} onChange={e => setBatchsheetNo(e.target.value)} style={{ width: '150px', border: 'none', borderBottom: '1px dotted #334155', backgroundColor: 'transparent', fontSize: '0.85rem', fontWeight: 600, color: '#1e293b', padding: 0 }} />
+                </div>
+
+                <div style={{ overflowX: 'auto', border: '1px solid #334155', borderRadius: '6px' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', textAlign: 'left' }}>
+                    <thead>
+                      <tr style={{ backgroundColor: '#e2e8f0', color: '#1e293b', borderBottom: '2px solid #334155' }}>
+                        <th style={{ padding: '8px 10px', width: '80px', borderRight: '1px solid #334155', color: '#475569', fontWeight: 'bold', textAlign: 'center' }}>Time</th>
+                        <th style={{ padding: '8px 10px', width: '90px', borderRight: '1px solid #334155', color: '#475569', fontWeight: 'bold', textAlign: 'center' }}>Temp of V.T.</th>
+                        <th style={{ padding: '8px 10px', width: '90px', borderRight: '1px solid #334155', color: '#475569', fontWeight: 'bold', textAlign: 'center' }}>Temp of F.T.</th>
+                        <th style={{ padding: '8px 10px', width: '70px', borderRight: '1px solid #334155', color: '#475569', fontWeight: 'bold', textAlign: 'center' }}>H₂O</th>
+                        <th style={{ padding: '8px 10px', width: '180px', borderRight: '1px solid #334155', color: '#475569', fontWeight: 'bold' }}>AV / AM.V / Nc.V / EEW</th>
+                        <th style={{ padding: '8px 10px', color: '#475569', fontWeight: 'bold' }}>Observations & Remarks</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {observations.map((row, idx) => (
+                        <ObservationRow 
+                          key={idx}
+                          row={row}
+                          idx={idx}
+                          onChange={handleObservationChange}
+                          onKeyDown={handleObsKeyDown}
+                          obsRefs={obsRefs}
+                        />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Quantities 100% */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', border: '1px solid #cbd5e1', padding: '12px', borderRadius: '6px', backgroundColor: '#f8fafc' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#475569' }}>Input Quantity 100% :</span>
+                  <input type="text" value={form.input_qty_100 || ''} onChange={e => handleFormChange('input_qty_100', e.target.value)} style={{ flex: 1, border: 'none', borderBottom: '1px solid #cbd5e1', fontSize: '0.8rem', padding: '2px 0', outline: 'none', backgroundColor: 'transparent', color: '#1e293b' }} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#475569' }}>Output Quantity 100% :</span>
+                  <input type="text" value={form.output_qty_100 || ''} onChange={e => handleFormChange('output_qty_100', e.target.value)} style={{ flex: 1, border: 'none', borderBottom: '1px solid #cbd5e1', fontSize: '0.8rem', padding: '2px 0', outline: 'none', backgroundColor: 'transparent', color: '#1e293b' }} />
+                </div>
+              </div>
+
+              {/* Notes / Remarks textarea */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', border: '1px solid #cbd5e1', padding: '12px', borderRadius: '6px', backgroundColor: '#f8fafc', height: '120px' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#475569' }}>Notes / Remarks :</span>
+                <textarea 
+                  value={form.notes_remarks || ''} 
+                  onChange={e => handleFormChange('notes_remarks', e.target.value)} 
+                  rows={3} 
+                  style={{ width: '100%', border: 'none', resize: 'none', fontSize: '0.8rem', color: '#1e293b', padding: 0, outline: 'none', backgroundColor: 'transparent', flex: 1 }} 
                 />
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>Output Quantity:</span>
-                <input 
-                  type="text"
-                  value={form.output_qty}
-                  onChange={e => handleFormChange('output_qty', e.target.value)}
-                  style={{
-                    width: '200px',
-                    padding: '8px 12px',
-                    fontSize: '0.85rem',
-                    border: '1px solid #94a3b8',
-                    borderRadius: '6px',
-                    backgroundColor: '#ffffff',
-                    color: '#1e293b'
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Procedure Steps Section */}
-            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px', backgroundColor: '#f8fafc', border: '1px solid #94a3b8', borderRadius: '10px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h4 style={{ fontWeight: 700, fontSize: '1rem', borderBottom: '2px solid var(--primary-color)', paddingBottom: '6px', width: 'max-content' }}>Reaction/Compounding Procedure</h4>
-                <button 
-                  onClick={addProcedureRow}
-                  className="btn"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    fontSize: '0.75rem',
-                    padding: '4px 10px',
-                    borderRadius: '4px',
-                    backgroundColor: 'var(--primary-light)',
-                    color: 'var(--primary-color)',
-                    border: '1px solid var(--primary-color)',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <Plus size={12} /> Add Step
-                </button>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '350px', overflowY: 'auto', paddingRight: '8px' }}>
-                {procedures.map((proc, idx) => (
-                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', width: '30px', fontWeight: 600 }}>{idx + 1})</span>
-                    <input 
-                      type="text"
-                      id={`proc-${idx}`}
-                      value={proc}
-                      onChange={e => handleProcedureChange(idx, e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          const nextInput = document.getElementById(`proc-${idx + 1}`) as HTMLInputElement;
-                          if (nextInput) nextInput.focus();
-                        }
-                      }}
-                      style={{
-                        flex: 1,
-                        padding: '6px 12px',
-                        fontSize: '0.85rem',
-                        border: '1px solid #94a3b8',
-                        borderRadius: '6px',
-                        backgroundColor: '#ffffff',
-                        color: '#1e293b'
-                      }}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Observations Grid */}
-            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px', backgroundColor: '#ffffff', border: '1px solid #94a3b8', borderRadius: '10px' }}>
-              <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                <h4 style={{ fontWeight: 700, fontSize: '1rem', borderBottom: '2px solid var(--primary-color)', paddingBottom: '6px', width: 'max-content', margin: 0 }}>R&D Observations Log</h4>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Batchsheet No.:</span>
-                  <input 
-                    type="text" 
-                    value={batchsheetNo}
-                    onChange={e => setBatchsheetNo(e.target.value)}
-                    style={{
-                      width: '180px',
-                      padding: '5px 10px',
-                      fontSize: '0.8rem',
-                      border: '1px solid #94a3b8',
-                      borderRadius: '6px',
-                      backgroundColor: '#ffffff',
-                      color: '#1e293b'
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Custom Grid Table */}
-              <div style={{ overflowX: 'auto', border: '1px solid #94a3b8', borderRadius: '8px' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', textAlign: 'left' }}>
-                  <thead>
-                    <tr style={{ backgroundColor: '#e2e8f0', color: '#1e293b', borderBottom: '2px solid #94a3b8' }}>
-                      <th style={{ padding: '10px 12px', width: '90px', borderRight: '1px solid #94a3b8' }}>Time</th>
-                      <th style={{ padding: 0, width: '140px', borderRight: '1px solid #94a3b8' }}>
-                        <div style={{ textAlign: 'center', padding: '6px 12px', borderBottom: '1px solid #94a3b8', fontWeight: 600 }}>Temp (°C)</div>
-                        <div style={{ display: 'flex' }}>
-                          <div style={{ flex: 1, textAlign: 'center', padding: '4px 6px', borderRight: '1px solid #94a3b8', fontWeight: 600 }}>V.T.</div>
-                          <div style={{ flex: 1, textAlign: 'center', padding: '4px 6px', fontWeight: 600 }}>F.T.</div>
-                        </div>
-                      </th>
-                      <th style={{ padding: '10px 12px', width: '220px', borderRight: '1px solid #94a3b8' }}>Charge & Obs.</th>
-                      <th style={{ padding: '10px 12px', width: '220px', borderRight: '1px solid #94a3b8' }}>Observed Value</th>
-                      <th style={{ padding: '10px 12px' }}>Remark/Observation</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {observations.map((row, idx) => (
-                      <ObservationRow 
-                        key={idx}
-                        row={row}
-                        idx={idx}
-                        onChange={handleObservationChange}
-                        onKeyDown={handleObsKeyDown}
-                        obsRefs={obsRefs}
-                      />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Results & Conclusions */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-              
-              {/* Batch Results Left Column */}
-              <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px', backgroundColor: '#f8fafc', border: '1px solid #94a3b8', borderRadius: '8px' }}>
-                <h4 style={{ fontWeight: 700, fontSize: '1rem', borderBottom: '2px solid var(--primary-color)', paddingBottom: '6px', width: 'max-content' }}>Batch Results</h4>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600, width: '160px' }}>Output (Expected):</span>
-                    <input 
-                      type="text"
-                      value={results.output_expected}
-                      onChange={e => handleResultChange('output_expected', e.target.value)}
-                      style={{ flex: 1, padding: '6px 12px', fontSize: '0.85rem', border: '1px solid #94a3b8', borderRadius: '6px', backgroundColor: '#ffffff', color: '#1e293b' }}
-                    />
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600, width: '160px' }}>Liberated Quantity:</span>
-                    <input 
-                      type="text"
-                      value={results.liberated_quantity}
-                      onChange={e => handleResultChange('liberated_quantity', e.target.value)}
-                      style={{ flex: 1, padding: '6px 12px', fontSize: '0.85rem', border: '1px solid #94a3b8', borderRadius: '6px', backgroundColor: '#ffffff', color: '#1e293b' }}
-                    />
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600, width: '160px' }}>Final Value:</span>
-                    <input 
-                      type="text"
-                      value={results.final_value}
-                      onChange={e => handleResultChange('final_value', e.target.value)}
-                      style={{ flex: 1, padding: '6px 12px', fontSize: '0.85rem', border: '1px solid #94a3b8', borderRadius: '6px', backgroundColor: '#ffffff', color: '#1e293b' }}
-                    />
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600, width: '160px' }}>Viscosity @ 25°C:</span>
-                    <input 
-                      type="text"
-                      value={results.viscosity}
-                      onChange={e => handleResultChange('viscosity', e.target.value)}
-                      style={{ flex: 1, padding: '6px 12px', fontSize: '0.85rem', border: '1px solid #94a3b8', borderRadius: '6px', backgroundColor: '#ffffff', color: '#1e293b' }}
-                    />
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600, width: '160px' }}>Colour:</span>
-                    <input 
-                      type="text"
-                      value={results.colour}
-                      onChange={e => handleResultChange('colour', e.target.value)}
-                      style={{ flex: 1, padding: '6px 12px', fontSize: '0.85rem', border: '1px solid #94a3b8', borderRadius: '6px', backgroundColor: '#ffffff', color: '#1e293b' }}
-                    />
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600, width: '160px' }}>Solid Content:</span>
-                    <input 
-                      type="text"
-                      value={results.solid_content}
-                      onChange={e => handleResultChange('solid_content', e.target.value)}
-                      style={{ flex: 1, padding: '6px 12px', fontSize: '0.85rem', border: '1px solid #94a3b8', borderRadius: '6px', backgroundColor: '#ffffff', color: '#1e293b' }}
-                    />
-                  </div>
-
-                  <div style={{ margin: '10px 0 5px 0', borderTop: '1px solid #94a3b8', paddingTop: '10px' }}>
-                    <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--primary-color)' }}>80% H2O Recover:</span>
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600, width: '160px', paddingLeft: '12px' }}>Theoretical:</span>
-                    <input 
-                      type="text"
-                      value={results.theoretical_80}
-                      onChange={e => handleResultChange('theoretical_80', e.target.value)}
-                      style={{ flex: 1, padding: '6px 12px', fontSize: '0.85rem', border: '1px solid #94a3b8', borderRadius: '6px', backgroundColor: '#ffffff', color: '#1e293b' }}
-                    />
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600, width: '160px', paddingLeft: '12px' }}>Practical:</span>
-                    <input 
-                      type="text"
-                      value={results.practical_80}
-                      onChange={e => handleResultChange('practical_80', e.target.value)}
-                      style={{ flex: 1, padding: '6px 12px', fontSize: '0.85rem', border: '1px solid #94a3b8', borderRadius: '6px', backgroundColor: '#ffffff', color: '#1e293b' }}
-                    />
-                  </div>
-
-                </div>
-              </div>
-
-              {/* Conclusions & Signatures Right Column */}
-              <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px', backgroundColor: '#ffffff', border: '1px solid #94a3b8', borderRadius: '8px' }}>
-                <h4 style={{ fontWeight: 700, fontSize: '1rem', borderBottom: '2px solid var(--primary-color)', paddingBottom: '6px', width: 'max-content' }}>Conclusions & Signatures</h4>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
-                  <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Conclusion Narrative:</span>
-                  <textarea 
-                    rows={8}
-                    value={results.conclusion}
-                    onChange={e => handleResultChange('conclusion', e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '10px',
-                      fontSize: '0.85rem',
-                      border: '1px solid #94a3b8',
-                      borderRadius: '8px',
-                      backgroundColor: '#ffffff',
-                      color: '#1e293b',
-                      resize: 'none',
-                      flex: 1
-                    }}
-                  />
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ fontSize: '0.85rem', fontWeight: 600, width: '110px' }}>Prepared By:</span>
-                      <input 
-                        type="text"
-                        value={form.prepared_by}
-                        onChange={e => handleFormChange('prepared_by', e.target.value)}
-                        style={{ flex: 1, padding: '6px 12px', fontSize: '0.85rem', border: '1px solid #94a3b8', borderRadius: '6px', backgroundColor: '#ffffff', color: '#1e293b' }}
-                      />
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ fontSize: '0.85rem', fontWeight: 600, width: '110px' }}>Checked By:</span>
-                      <input 
-                        type="text"
-                        value={form.checked_by}
-                        onChange={e => handleFormChange('checked_by', e.target.value)}
-                        style={{ flex: 1, padding: '6px 12px', fontSize: '0.85rem', border: '1px solid #94a3b8', borderRadius: '6px', backgroundColor: '#ffffff', color: '#1e293b' }}
-                      />
-                    </div>
-                  </div>
-
-                </div>
               </div>
 
             </div>
@@ -2002,41 +1894,35 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
                 </div>
               </div>
             ) : (() => {
-              const detailRawMaterials = [...(selectedBatchDetails.raw_materials || [])];
-              while (detailRawMaterials.length < 10) {
-                detailRawMaterials.push('');
+              // Normalize raw materials:
+              const detailRawMaterials: RDRawMaterialRow[] = (selectedBatchDetails.raw_materials || []).map((rm: any) => {
+                if (typeof rm === 'string') {
+                  return { raw_material: rm, parts_by_weight: '', raw_material_pct: '', remarks: '' };
+                }
+                return {
+                  raw_material: rm.raw_material || '',
+                  parts_by_weight: rm.parts_by_weight || '',
+                  raw_material_pct: rm.raw_material_pct || '',
+                  remarks: rm.remarks || ''
+                };
+              });
+              while (detailRawMaterials.length < 15) {
+                detailRawMaterials.push({ raw_material: '', parts_by_weight: '', raw_material_pct: '', remarks: '' });
               }
 
-              const detailProcedures = [...(selectedBatchDetails.procedure || [])];
-              while (detailProcedures.length < 10) {
-                detailProcedures.push('');
-              }
-
-              const detailObservations = [...(selectedBatchDetails.observations || [])];
-              while (detailObservations.length < 12) {
+              const detailObservations: RDObservationRow[] = (selectedBatchDetails.observations || []).map((obs: any) => ({
+                time: obs.time || '',
+                vt: obs.vt || '',
+                ft: obs.ft || '',
+                charge_obs: obs.charge_obs || '',
+                observed: obs.observed || '',
+                remark: obs.remark || ''
+              }));
+              while (detailObservations.length < 15) {
                 detailObservations.push({ time: '', vt: '', ft: '', charge_obs: '', observed: '', remark: '' });
               }
 
-              const savedTheo = selectedBatchDetails.theoretical_values || {};
-              const standardKeys = ["Molecular Weight", "Hydroxyl", "Functionality", "Acid value", "Amine value", "Epoxy Value"];
-              const detailTheoreticalRows: { key: string; value: string }[] = [];
-              
-              // First, populate standard keys
-              standardKeys.forEach(k => {
-                detailTheoreticalRows.push({ key: k, value: savedTheo[k] || '' });
-              });
-              
-              // Then, populate any other custom keys that were saved and aren't in standard keys
-              Object.entries(savedTheo).forEach(([k, v]) => {
-                if (!standardKeys.includes(k)) {
-                  detailTheoreticalRows.push({ key: k, value: String(v) });
-                }
-              });
-              
-              // Pad to at least 10 rows
-              while (detailTheoreticalRows.length < 10) {
-                detailTheoreticalRows.push({ key: '', value: '' });
-              }
+              const res = selectedBatchDetails.results || {};
 
               return (
                 <div className="animated-fade" style={{
@@ -2054,949 +1940,273 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
                     flexWrap: 'wrap', 
                     alignItems: 'center', 
                     justifyContent: 'space-between', 
-                    padding: '25px',
+                    padding: '16px 24px',
                     backgroundColor: '#f8fafc',
                     borderRadius: '10px',
-                    border: '1px solid #94a3b8'
+                    border: '1px solid #cbd5e1'
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <Lightbulb size={28} color="#334155" />
+                      <Lightbulb size={24} color="#334155" />
                       <div>
-                        <h2 style={{ fontSize: '36px', fontWeight: 'bold', color: '#1e293b', margin: 0 }}>R&D BATCH SHEET</h2>
+                        <h4 style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1e293b', margin: 0 }}>Batch sheet: {selectedBatchDetails.form?.batch_no || 'N/A'}</h4>
                         <p style={{ fontSize: '0.75rem', color: '#64748b', margin: 0 }}>Product database context: {productName}</p>
                       </div>
                     </div>
                     
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', alignItems: 'flex-end' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontSize: '16px', fontWeight: 500, width: '100px', color: '#334155' }}>Date:</span>
-                        <input 
-                          type="text" 
-                          ref={el => { detailRefs.current['past-date'] = el; }}
-                          value={selectedBatchDetails.form?.date || ''} 
-                          readOnly 
-                          onKeyDown={e => handlePastDetailKeyDown(e, 'past-date')}
-                          style={{
-                            width: '150px',
-                            height: '45px',
-                            padding: '6px 12px',
-                            fontSize: '0.85rem',
-                            textAlign: 'center',
-                            border: '1px solid #cbd5e1',
-                            borderRadius: '6px',
-                            backgroundColor: '#f8fafc',
-                            color: '#334155',
-                            outline: 'none',
-                            transition: 'border-color 0.15s, box-shadow 0.15s'
-                          }}
-                          onFocus={e => {
-                            e.currentTarget.style.borderColor = '#3b82f6';
-                            e.currentTarget.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.2)';
-                          }}
-                          onBlur={e => {
-                            e.currentTarget.style.borderColor = '#cbd5e1';
-                            e.currentTarget.style.boxShadow = 'none';
-                          }}
-                        />
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontSize: '16px', fontWeight: 500, width: '100px', color: '#334155' }}>Batch No.:</span>
-                        <input 
-                          type="text" 
-                          ref={el => { detailRefs.current['past-batch_no'] = el; }}
-                          value={selectedBatchDetails.form?.batch_no || ''} 
-                          readOnly 
-                          onKeyDown={e => handlePastDetailKeyDown(e, 'past-batch_no')}
-                          style={{
-                            width: '150px',
-                            height: '45px',
-                            padding: '6px 12px',
-                            fontSize: '0.85rem',
-                            border: '1px solid #cbd5e1',
-                            borderRadius: '6px',
-                            backgroundColor: '#f8fafc',
-                            color: '#334155',
-                            outline: 'none',
-                            transition: 'border-color 0.15s, box-shadow 0.15s'
-                          }}
-                          onFocus={e => {
-                            e.currentTarget.style.borderColor = '#3b82f6';
-                            e.currentTarget.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.2)';
-                          }}
-                          onBlur={e => {
-                            e.currentTarget.style.borderColor = '#cbd5e1';
-                            e.currentTarget.style.boxShadow = 'none';
-                          }}
-                        />
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
-                        <button 
-                          onClick={() => handleExportPDF(selectedBatchDetails)}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            height: '40px',
-                            padding: '0 16px',
-                            fontSize: '0.85rem',
-                            fontWeight: 600,
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            backgroundColor: '#334155',
-                            color: '#ffffff',
-                            border: 'none',
-                            transition: 'background-color 0.2s'
-                          }}
-                          onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1e293b'}
-                          onMouseLeave={e => e.currentTarget.style.backgroundColor = '#334155'}
-                        >
-                          <FileText size={14} /> Print PDF
-                        </button>
-                        <button 
-                          onClick={() => handleExportExcel(selectedBatchDetails)}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            height: '40px',
-                            padding: '0 16px',
-                            fontSize: '0.85rem',
-                            fontWeight: 600,
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            backgroundColor: '#475569',
-                            color: '#ffffff',
-                            border: 'none',
-                            transition: 'background-color 0.2s'
-                          }}
-                          onMouseEnter={e => e.currentTarget.style.backgroundColor = '#334155'}
-                          onMouseLeave={e => e.currentTarget.style.backgroundColor = '#475569'}
-                        >
-                          <FileSpreadsheet size={14} /> Export Excel
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Technical objective block */}
-                  <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '10px' }}>
-                    <h4 style={{ fontWeight: 700, fontSize: '1rem', borderBottom: '2px solid #64748b', paddingBottom: '6px', width: 'max-content', margin: 0, color: '#1e293b' }}>Aim:</h4>
-                    <textarea 
-                      rows={2}
-                      ref={el => { detailRefs.current['past-aim'] = el; }}
-                      value={selectedBatchDetails.form?.aim || ''}
-                      readOnly
-                      onKeyDown={e => handlePastDetailKeyDown(e, 'past-aim')}
-                      style={{
-                        width: '100%',
-                        padding: '10px',
-                        fontSize: '0.85rem',
-                        border: '1px solid #cbd5e1',
-                        borderRadius: '8px',
-                        backgroundColor: '#f8fafc',
-                        color: '#334155',
-                        resize: 'none',
-                        outline: 'none',
-                        transition: 'border-color 0.15s, box-shadow 0.15s'
-                      }}
-                      onFocus={e => {
-                        e.currentTarget.style.borderColor = '#3b82f6';
-                        e.currentTarget.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.2)';
-                      }}
-                      onBlur={e => {
-                        e.currentTarget.style.borderColor = '#cbd5e1';
-                        e.currentTarget.style.boxShadow = 'none';
-                      }}
-                    />
-                  </div>
-
-                  {/* Split Materials & Theoretical Values Pane */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                    
-                    {/* Raw Materials Column */}
-                    <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px', backgroundColor: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '10px' }}>
-                      <h4 style={{ fontWeight: 700, fontSize: '1rem', borderBottom: '2px solid #64748b', paddingBottom: '6px', width: 'max-content', color: '#1e293b' }}>Raw Materials:</h4>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '420px', overflowY: 'auto', paddingRight: '8px' }}>
-                        {detailRawMaterials.map((rm, idx) => (
-                          <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '0.8rem', color: '#475569', width: '30px', fontWeight: 600 }}>{idx + 1})</span>
-                            <input 
-                              type="text"
-                              ref={el => { detailRefs.current[`past-rm-${idx}`] = el; }}
-                              value={rm}
-                              readOnly
-                              onKeyDown={e => handlePastDetailKeyDown(e, `past-rm-${idx}`)}
-                              style={{
-                                flex: 1,
-                                padding: '6px 12px',
-                                fontSize: '0.85rem',
-                                border: '1px solid #cbd5e1',
-                                borderRadius: '6px',
-                                backgroundColor: '#f8fafc',
-                                color: '#334155',
-                                outline: 'none',
-                                transition: 'border-color 0.15s, box-shadow 0.15s'
-                              }}
-                              onFocus={e => {
-                                e.currentTarget.style.borderColor = '#3b82f6';
-                                e.currentTarget.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.2)';
-                              }}
-                              onBlur={e => {
-                                e.currentTarget.style.borderColor = '#cbd5e1';
-                                e.currentTarget.style.boxShadow = 'none';
-                              }}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Theoretical Values Column */}
-                    <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px', backgroundColor: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '10px' }}>
-                      <h4 style={{ fontWeight: 700, fontSize: '1rem', borderBottom: '2px solid #64748b', paddingBottom: '6px', width: 'max-content', color: '#1e293b' }}>Theoretical Value:</h4>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '420px', overflowY: 'auto', paddingRight: '8px' }}>
-                        {detailTheoreticalRows.map((row, idx) => (
-                          <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <input 
-                              type="text"
-                              ref={el => { detailRefs.current[`past-theo-key-${idx}`] = el; }}
-                              value={row.key}
-                              readOnly
-                              onKeyDown={e => handlePastDetailKeyDown(e, `past-theo-key-${idx}`)}
-                              style={{
-                                width: '180px',
-                                padding: '6px 12px',
-                                fontSize: '0.85rem',
-                                fontWeight: 600,
-                                border: '1px solid #cbd5e1',
-                                borderRadius: '6px',
-                                backgroundColor: '#f1f5f9',
-                                color: '#475569',
-                                outline: 'none',
-                                transition: 'border-color 0.15s, box-shadow 0.15s'
-                              }}
-                              onFocus={e => {
-                                e.currentTarget.style.borderColor = '#3b82f6';
-                                e.currentTarget.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.2)';
-                              }}
-                              onBlur={e => {
-                                e.currentTarget.style.borderColor = '#cbd5e1';
-                                e.currentTarget.style.boxShadow = 'none';
-                              }}
-                            />
-                            <input 
-                              type="text"
-                              ref={el => { detailRefs.current[`past-theo-val-${idx}`] = el; }}
-                              value={row.value}
-                              readOnly
-                              onKeyDown={e => handlePastDetailKeyDown(e, `past-theo-val-${idx}`)}
-                              style={{
-                                flex: 1,
-                                padding: '6px 12px',
-                                fontSize: '0.85rem',
-                                border: '1px solid #cbd5e1',
-                                borderRadius: '6px',
-                                backgroundColor: '#f8fafc',
-                                color: '#334155',
-                                outline: 'none',
-                                transition: 'border-color 0.15s, box-shadow 0.15s'
-                              }}
-                              onFocus={e => {
-                                e.currentTarget.style.borderColor = '#3b82f6';
-                                e.currentTarget.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.2)';
-                              }}
-                              onBlur={e => {
-                                e.currentTarget.style.borderColor = '#cbd5e1';
-                                e.currentTarget.style.boxShadow = 'none';
-                              }}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                  </div>
-
-                  {/* Quantities Card */}
-                  <div style={{ padding: '20px', display: 'flex', justifyContent: 'space-around', gap: '20px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '10px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#334155' }}>Input Quantity:</span>
-                      <input 
-                        type="text"
-                        ref={el => { detailRefs.current['past-input_qty'] = el; }}
-                        value={selectedBatchDetails.form?.input_qty || ''}
-                        readOnly
-                        onKeyDown={e => handlePastDetailKeyDown(e, 'past-input_qty')}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <button 
+                        onClick={() => handleExportPDF(selectedBatchDetails)}
                         style={{
-                          width: '200px',
-                          padding: '8px 12px',
-                          fontSize: '0.85rem',
-                          border: '1px solid #cbd5e1',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          height: '36px',
+                          padding: '0 14px',
+                          fontSize: '0.8rem',
+                          fontWeight: 600,
                           borderRadius: '6px',
-                          backgroundColor: '#f8fafc',
-                          color: '#334155',
-                          outline: 'none',
-                          transition: 'border-color 0.15s, box-shadow 0.15s'
+                          cursor: 'pointer',
+                          backgroundColor: '#334155',
+                          color: '#ffffff',
+                          border: 'none',
+                          transition: 'background-color 0.2s'
                         }}
-                        onFocus={e => {
-                          e.currentTarget.style.borderColor = '#3b82f6';
-                          e.currentTarget.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.2)';
-                        }}
-                        onBlur={e => {
-                          e.currentTarget.style.borderColor = '#cbd5e1';
-                          e.currentTarget.style.boxShadow = 'none';
-                        }}
-                      />
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#334155' }}>Output Quantity:</span>
-                      <input 
-                        type="text"
-                        ref={el => { detailRefs.current['past-output_qty'] = el; }}
-                        value={selectedBatchDetails.form?.output_qty || ''}
-                        readOnly
-                        onKeyDown={e => handlePastDetailKeyDown(e, 'past-output_qty')}
+                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1e293b'}
+                        onMouseLeave={e => e.currentTarget.style.backgroundColor = '#334155'}
+                      >
+                        <FileText size={14} /> Print PDF
+                      </button>
+                      <button 
+                        onClick={() => handleExportExcel(selectedBatchDetails)}
                         style={{
-                          width: '200px',
-                          padding: '8px 12px',
-                          fontSize: '0.85rem',
-                          border: '1px solid #cbd5e1',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          height: '36px',
+                          padding: '0 14px',
+                          fontSize: '0.8rem',
+                          fontWeight: 600,
                           borderRadius: '6px',
-                          backgroundColor: '#f8fafc',
-                          color: '#334155',
-                          outline: 'none',
-                          transition: 'border-color 0.15s, box-shadow 0.15s'
+                          cursor: 'pointer',
+                          backgroundColor: '#475569',
+                          color: '#ffffff',
+                          border: 'none',
+                          transition: 'background-color 0.2s'
                         }}
-                        onFocus={e => {
-                          e.currentTarget.style.borderColor = '#3b82f6';
-                          e.currentTarget.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.2)';
-                        }}
-                        onBlur={e => {
-                          e.currentTarget.style.borderColor = '#cbd5e1';
-                          e.currentTarget.style.boxShadow = 'none';
-                        }}
-                      />
+                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#334155'}
+                        onMouseLeave={e => e.currentTarget.style.backgroundColor = '#475569'}
+                      >
+                        <FileSpreadsheet size={14} /> Export Excel
+                      </button>
                     </div>
                   </div>
 
-                  {/* Procedure Steps Section */}
-                  <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px', backgroundColor: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '10px' }}>
-                    <h4 style={{ fontWeight: 700, fontSize: '1rem', borderBottom: '2px solid #64748b', paddingBottom: '6px', width: 'max-content', margin: 0, color: '#1e293b' }}>Procedure:</h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '350px', overflowY: 'auto', paddingRight: '8px' }}>
-                      {detailProcedures.map((proc, idx) => (
-                        <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '0.8rem', color: '#475569', width: '30px', fontWeight: 600 }}>{idx + 1})</span>
-                          <input 
-                            type="text"
-                            ref={el => { detailRefs.current[`past-proc-${idx}`] = el; }}
-                            value={proc}
-                            readOnly
-                            onKeyDown={e => handlePastDetailKeyDown(e, `past-proc-${idx}`)}
-                            style={{
-                              flex: 1,
-                              padding: '6px 12px',
-                              fontSize: '0.85rem',
-                              border: '1px solid #cbd5e1',
-                              borderRadius: '6px',
-                              backgroundColor: '#f8fafc',
-                              color: '#334155',
-                              outline: 'none',
-                              transition: 'border-color 0.15s, box-shadow 0.15s'
-                            }}
-                            onFocus={e => {
-                              e.currentTarget.style.borderColor = '#3b82f6';
-                              e.currentTarget.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.2)';
-                            }}
-                            onBlur={e => {
-                              e.currentTarget.style.borderColor = '#cbd5e1';
-                              e.currentTarget.style.boxShadow = 'none';
-                            }}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                  {/* Side-by-Side Landscape layout */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '20px',
+                    boxSizing: 'border-box'
+                  }}>
 
-                  {/* Observations Grid */}
-                  <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '10px' }}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                      <h4 style={{ fontWeight: 700, fontSize: '1rem', borderBottom: '2px solid #64748b', paddingBottom: '6px', width: 'max-content', margin: 0, color: '#1e293b' }}>Observations Matrix Logs</h4>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155' }}>Batchsheet No.:</span>
-                        <input 
-                          type="text" 
-                          value={selectedBatchDetails.batchsheet_no || ''}
-                          readOnly
-                          style={{
-                            width: '180px',
-                            padding: '5px 10px',
-                            fontSize: '0.8rem',
-                            border: '1px solid #cbd5e1',
-                            borderRadius: '6px',
-                            backgroundColor: '#f1f5f9',
-                            color: '#475569',
-                            outline: 'none'
-                          }}
-                        />
+                    {/* LEFT SHEET: R & D Batch Sheet */}
+                    <div style={{
+                      backgroundColor: '#ffffff',
+                      border: '2px solid #334155',
+                      borderRadius: '8px',
+                      padding: '20px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '12px',
+                      color: '#000000',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)'
+                    }}>
+                      {/* Header Title */}
+                      <div style={{ textAlign: 'center', marginBottom: '4px' }}>
+                        <h2 style={{ fontSize: '1.2rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#1e293b', margin: 0 }}>R & D Batch Sheet</h2>
+                        <div style={{ height: '2px', backgroundColor: '#334155', margin: '4px auto 0 auto', width: '140px' }}></div>
+                      </div>
+
+                      {/* Top metadata grid */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr 1fr 1fr', gap: '8px', border: '1px solid #cbd5e1', padding: '10px', borderRadius: '6px', backgroundColor: '#f8fafc' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#475569' }}>Date:</span>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', borderBottom: '1px dotted #334155', padding: '0 4px', flex: 1, textAlign: 'center' }}>{selectedBatchDetails.form?.date || ''}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#475569' }}>Batch:</span>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#1e293b', borderBottom: '1px dotted #334155', padding: '0 4px', flex: 1 }}>{selectedBatchDetails.form?.batch_no || ''}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#475569' }}>LB No:</span>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#1e293b', borderBottom: '1px dotted #334155', padding: '0 4px', flex: 1 }}>{selectedBatchDetails.form?.lb_no || ''}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#475569' }}>Mo. No:</span>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#1e293b', borderBottom: '1px dotted #334155', padding: '0 4px', flex: 1 }}>{selectedBatchDetails.form?.mo_no || ''}</span>
+                        </div>
+                      </div>
+
+                      {/* Aim Box */}
+                      <div style={{ display: 'flex', gap: '6px', border: '1px solid #cbd5e1', padding: '10px', borderRadius: '6px', backgroundColor: '#f8fafc' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#475569', minWidth: '40px' }}>Aim :</span>
+                        <div style={{ fontSize: '0.75rem', color: '#1e293b', whiteSpace: 'pre-wrap' }}>{selectedBatchDetails.form?.aim || 'N/A'}</div>
+                      </div>
+
+                      {/* Raw Materials Table */}
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ fontSize: '0.8rem', fontWeight: 'bold', textAlign: 'center', backgroundColor: '#475569', color: '#ffffff', padding: '4px', border: '1px solid #334155', borderBottom: 'none', borderTopLeftRadius: '6px', borderTopRightRadius: '6px' }}>RAW MATERIALS FORMULA</div>
+                        <div style={{ overflowX: 'auto', border: '1px solid #334155' }}>
+                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem' }}>
+                            <thead>
+                              <tr style={{ backgroundColor: '#f1f5f9', borderBottom: '1px solid #334155' }}>
+                                <th style={{ width: '40px', padding: '4px', borderRight: '1px solid #334155', textAlign: 'center' }}>Sr. No.</th>
+                                <th style={{ padding: '4px', borderRight: '1px solid #334155' }}>Raw Material</th>
+                                <th style={{ width: '80px', padding: '4px', borderRight: '1px solid #334155', textAlign: 'center' }}>Parts by Wt</th>
+                                <th style={{ width: '80px', padding: '4px', borderRight: '1px solid #334155', textAlign: 'center' }}>RM %</th>
+                                <th style={{ padding: '4px' }}>Remarks</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {detailRawMaterials.map((rm, idx) => (
+                                <tr key={idx} style={{ borderBottom: idx === 14 ? 'none' : '1px solid #cbd5e1', backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
+                                  <td style={{ padding: '2px', borderRight: '1px solid #334155', textAlign: 'center', fontWeight: 'bold', color: '#64748b' }}>{idx + 1}</td>
+                                  <td style={{ padding: '2px 6px', borderRight: '1px solid #334155', color: '#1e293b' }}>{rm.raw_material || ''}</td>
+                                  <td style={{ padding: '2px', borderRight: '1px solid #334155', textAlign: 'center', color: '#1e293b' }}>{rm.parts_by_weight || ''}</td>
+                                  <td style={{ padding: '2px', borderRight: '1px solid #334155', textAlign: 'center', color: '#1e293b' }}>{rm.raw_material_pct || ''}</td>
+                                  <td style={{ padding: '2px 6px', color: '#1e293b' }}>{rm.remarks || ''}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      {/* Batch Result Table */}
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ fontSize: '0.8rem', fontWeight: 'bold', textAlign: 'center', backgroundColor: '#475569', color: '#ffffff', padding: '4px', border: '1px solid #334155', borderBottom: 'none', borderTopLeftRadius: '6px', borderTopRightRadius: '6px' }}>BATCH RESULT</div>
+                        <div style={{ border: '1px solid #334155' }}>
+                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem' }}>
+                            <thead>
+                              <tr style={{ backgroundColor: '#f1f5f9', borderBottom: '1px solid #334155' }}>
+                                <th style={{ width: '30%', padding: '4px', borderRight: '1px solid #334155' }}>Parameter</th>
+                                <th style={{ width: '20%', padding: '4px', borderRight: '1px solid #334155', textAlign: 'center' }}>Value</th>
+                                <th style={{ width: '30%', padding: '4px', borderRight: '1px solid #334155' }}>Parameter</th>
+                                <th style={{ width: '20%', padding: '4px', textAlign: 'center' }}>Value</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {[
+                                { p1: 'K Value', val1: res.k_value, p2: 'Functionality', val2: res.functionality },
+                                { p1: 'Hydroxyl Value (mg KOH/g)', val1: res.hydroxyl_value, p2: 'Theoretical Value', val2: res.theoretical_value },
+                                { p1: '% NCO', val1: res.nco_pct, p2: 'Desired Specifications', val2: res.desired_specifications },
+                                { p1: '% Solid', val1: res.solid_pct || res.solid_content, p2: 'Water @ Specific Acid Value', val2: res.water_spec_acid },
+                                { p1: '% Acid Value', val1: res.acid_value, p2: 'Clarity', val2: res.clarity },
+                                { p1: 'EEW (g/eq)', val1: res.eew, p2: 'Water of Reaction (g)', val2: res.water_of_reaction },
+                                { p1: 'Viscosity @ 25°C (mPa.s)', val1: res.viscosity, p2: 'Mol / Wt (g/mol)', val2: res.mol_wt },
+                                { p1: 'GT Tube Viscosity @ 25°C', val1: res.gt_tube_viscosity, p2: 'Color (Gardner)', val2: res.color_gardner || res.colour },
+                                { p1: 'Input Quantity :', val1: res.input_qty, p2: 'Output Quantity :', val2: res.output_qty || res.output_expected },
+                              ].map((row, idx) => (
+                                <tr key={idx} style={{ borderBottom: idx === 8 ? 'none' : '1px solid #cbd5e1', backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
+                                  <td style={{ padding: '4px 6px', borderRight: '1px solid #cbd5e1', fontWeight: 'bold', color: '#334155', fontSize: '0.7rem' }}>{row.p1}</td>
+                                  <td style={{ padding: '4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', color: '#1e293b' }}>{String(row.val1 || '')}</td>
+                                  <td style={{ padding: '4px 6px', borderRight: '1px solid #cbd5e1', fontWeight: 'bold', color: '#334155', fontSize: '0.7rem' }}>{row.p2}</td>
+                                  <td style={{ padding: '4px', textAlign: 'center', color: '#1e293b' }}>{String(row.val2 || '')}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      {/* Signatures footer */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', border: '1px solid #cbd5e1', padding: '8px', borderRadius: '6px', backgroundColor: '#f8fafc' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ fontSize: '0.7rem', fontWeight: 'bold', color: '#475569' }}>Prepared by:</span>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#1e293b', borderBottom: '1px solid #94a3b8', padding: '2px 0', textAlign: 'center' }}>{selectedBatchDetails.form?.prepared_by || ''}</span>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ fontSize: '0.7rem', fontWeight: 'bold', color: '#475569' }}>QC Checked by:</span>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#1e293b', borderBottom: '1px solid #94a3b8', padding: '2px 0', textAlign: 'center' }}>{selectedBatchDetails.form?.checked_by || ''}</span>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ fontSize: '0.7rem', fontWeight: 'bold', color: '#475569' }}>Production Manager:</span>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#1e293b', borderBottom: '1px solid #94a3b8', padding: '2px 0', textAlign: 'center' }}>{selectedBatchDetails.form?.production_manager || ''}</span>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Custom Grid Table */}
-                    <div style={{ overflowX: 'auto', border: '1px solid #cbd5e1', borderRadius: '8px' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', textAlign: 'left' }}>
-                        <thead>
-                          <tr style={{ backgroundColor: '#f1f5f9', color: '#1e293b', borderBottom: '2px solid #cbd5e1' }}>
-                            <th style={{ padding: '10px 12px', width: '90px', borderRight: '1px solid #cbd5e1' }}>Time</th>
-                            <th style={{ padding: 0, width: '140px', borderRight: '1px solid #cbd5e1' }}>
-                              <div style={{ textAlign: 'center', padding: '6px 12px', borderBottom: '1px solid #cbd5e1', fontWeight: 600 }}>Temp (°C)</div>
-                              <div style={{ display: 'flex' }}>
-                                <div style={{ flex: 1, textAlign: 'center', padding: '4px 6px', borderRight: '1px solid #cbd5e1', fontWeight: 600 }}>V.T.</div>
-                                <div style={{ flex: 1, textAlign: 'center', padding: '4px 6px', fontWeight: 600 }}>F.T.</div>
-                              </div>
-                            </th>
-                            <th style={{ padding: '10px 12px', width: '220px', borderRight: '1px solid #cbd5e1' }}>Charge & Obs.</th>
-                            <th style={{ padding: '10px 12px', width: '220px', borderRight: '1px solid #cbd5e1' }}>Observed Value</th>
-                            <th style={{ padding: '10px 12px' }}>Remark/Observation</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {detailObservations.map((row, idx) => (
-                            <tr key={idx} style={{ 
-                              borderBottom: '1px solid #cbd5e1', 
-                              backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc' 
-                            }}>
-                              
-                              {/* Time */}
-                              <td style={{ padding: '4px 6px', borderRight: '1px solid #cbd5e1' }}>
-                                <input 
-                                  type="text"
-                                  ref={el => { detailRefs.current[`past-obs-${idx}-0`] = el; }}
-                                  value={row.time}
-                                  readOnly
-                                  onKeyDown={e => handlePastDetailKeyDown(e, `past-obs-${idx}-0`)}
-                                  style={{
-                                    width: '100%',
-                                    padding: '4px 8px',
-                                    fontSize: '0.8rem',
-                                    border: '1px solid transparent',
-                                    borderRadius: '4px',
-                                    backgroundColor: 'transparent',
-                                    color: '#334155',
-                                    outline: 'none'
-                                  }}
-                                  onFocus={e => {
-                                    e.currentTarget.style.outline = '2px solid #3b82f6';
-                                    e.currentTarget.style.outlineOffset = '-2px';
-                                  }}
-                                  onBlur={e => {
-                                    e.currentTarget.style.outline = 'none';
-                                  }}
-                                />
-                              </td>
-
-                              {/* VT / FT */}
-                              <td style={{ padding: '4px 4px', borderRight: '1px solid #cbd5e1' }}>
-                                <div style={{ display: 'flex', gap: '2px' }}>
-                                  <input 
-                                    type="text"
-                                    ref={el => { detailRefs.current[`past-obs-${idx}-1`] = el; }}
-                                    value={row.vt}
-                                    readOnly
-                                    onKeyDown={e => handlePastDetailKeyDown(e, `past-obs-${idx}-1`)}
-                                    style={{
-                                      width: '50%',
-                                      padding: '4px 4px',
-                                      textAlign: 'center',
-                                      fontSize: '0.8rem',
-                                      border: '1px solid transparent',
-                                      borderRadius: '4px',
-                                      backgroundColor: 'transparent',
-                                      color: '#334155',
-                                      outline: 'none'
-                                    }}
-                                    onFocus={e => {
-                                      e.currentTarget.style.outline = '2px solid #3b82f6';
-                                      e.currentTarget.style.outlineOffset = '-2px';
-                                    }}
-                                    onBlur={e => {
-                                      e.currentTarget.style.outline = 'none';
-                                    }}
-                                  />
-                                  <div style={{ width: '1px', backgroundColor: '#cbd5e1' }}></div>
-                                  <input 
-                                    type="text"
-                                    ref={el => { detailRefs.current[`past-obs-${idx}-2`] = el; }}
-                                    value={row.ft}
-                                    readOnly
-                                    onKeyDown={e => handlePastDetailKeyDown(e, `past-obs-${idx}-2`)}
-                                    style={{
-                                      width: '50%',
-                                      padding: '4px 4px',
-                                      textAlign: 'center',
-                                      fontSize: '0.8rem',
-                                      border: '1px solid transparent',
-                                      borderRadius: '4px',
-                                      backgroundColor: 'transparent',
-                                      color: '#334155',
-                                      outline: 'none'
-                                    }}
-                                    onFocus={e => {
-                                      e.currentTarget.style.outline = '2px solid #3b82f6';
-                                      e.currentTarget.style.outlineOffset = '-2px';
-                                    }}
-                                    onBlur={e => {
-                                      e.currentTarget.style.outline = 'none';
-                                    }}
-                                  />
-                                </div>
-                              </td>
-
-                              {/* Charge & Obs */}
-                              <td style={{ padding: '4px 6px', borderRight: '1px solid #cbd5e1' }}>
-                                <input 
-                                  type="text"
-                                  ref={el => { detailRefs.current[`past-obs-${idx}-3`] = el; }}
-                                  value={row.charge_obs}
-                                  readOnly
-                                  onKeyDown={e => handlePastDetailKeyDown(e, `past-obs-${idx}-3`)}
-                                  style={{
-                                    width: '100%',
-                                    padding: '4px 8px',
-                                    fontSize: '0.8rem',
-                                    border: '1px solid transparent',
-                                    borderRadius: '4px',
-                                    backgroundColor: 'transparent',
-                                    color: '#334155',
-                                    outline: 'none'
-                                  }}
-                                  onFocus={e => {
-                                    e.currentTarget.style.outline = '2px solid #3b82f6';
-                                    e.currentTarget.style.outlineOffset = '-2px';
-                                  }}
-                                  onBlur={e => {
-                                    e.currentTarget.style.outline = 'none';
-                                  }}
-                                />
-                              </td>
-
-                              {/* Observed Value */}
-                              <td style={{ padding: '4px 6px', borderRight: '1px solid #cbd5e1' }}>
-                                <input 
-                                  type="text"
-                                  ref={el => { detailRefs.current[`past-obs-${idx}-4`] = el; }}
-                                  value={row.observed}
-                                  readOnly
-                                  onKeyDown={e => handlePastDetailKeyDown(e, `past-obs-${idx}-4`)}
-                                  style={{
-                                    width: '100%',
-                                    padding: '4px 8px',
-                                    fontSize: '0.8rem',
-                                    border: '1px solid transparent',
-                                    borderRadius: '4px',
-                                    backgroundColor: 'transparent',
-                                    color: '#334155',
-                                    outline: 'none'
-                                  }}
-                                  onFocus={e => {
-                                    e.currentTarget.style.outline = '2px solid #3b82f6';
-                                    e.currentTarget.style.outlineOffset = '-2px';
-                                  }}
-                                  onBlur={e => {
-                                    e.currentTarget.style.outline = 'none';
-                                  }}
-                                />
-                              </td>
-
-                              {/* Remark/Observation */}
-                              <td style={{ padding: '4px 6px' }}>
-                                <input 
-                                  type="text"
-                                  ref={el => { detailRefs.current[`past-obs-${idx}-5`] = el; }}
-                                  value={row.remark}
-                                  readOnly
-                                  onKeyDown={e => handlePastDetailKeyDown(e, `past-obs-${idx}-5`)}
-                                  style={{
-                                    width: '100%',
-                                    padding: '4px 8px',
-                                    fontSize: '0.8rem',
-                                    border: '1px solid transparent',
-                                    borderRadius: '4px',
-                                    backgroundColor: 'transparent',
-                                    color: '#334155',
-                                    outline: 'none'
-                                  }}
-                                  onFocus={e => {
-                                    e.currentTarget.style.outline = '2px solid #3b82f6';
-                                    e.currentTarget.style.outlineOffset = '-2px';
-                                  }}
-                                  onBlur={e => {
-                                    e.currentTarget.style.outline = 'none';
-                                  }}
-                                />
-                              </td>
-
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  {/* Results & Conclusions */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                    
-                    {/* Batch Results Left Column */}
-                    <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px', backgroundColor: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px' }}>
-                      <h4 style={{ fontWeight: 700, fontSize: '1rem', borderBottom: '2px solid #64748b', paddingBottom: '6px', width: 'max-content', color: '#1e293b' }}>Batch Results</h4>
-                      
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span style={{ fontSize: '0.85rem', fontWeight: 600, width: '160px', color: '#334155' }}>Output (Expected):</span>
-                          <input 
-                            type="text"
-                            ref={el => { detailRefs.current['past-res-0'] = el; }}
-                            value={selectedBatchDetails.results?.output_expected || ''}
-                            readOnly
-                            onKeyDown={e => handlePastDetailKeyDown(e, 'past-res-0')}
-                            style={{
-                              flex: 1,
-                              padding: '6px 12px',
-                              fontSize: '0.85rem',
-                              border: '1px solid #cbd5e1',
-                              borderRadius: '6px',
-                              backgroundColor: '#f8fafc',
-                              color: '#334155',
-                              outline: 'none',
-                              transition: 'border-color 0.15s, box-shadow 0.15s'
-                            }}
-                            onFocus={e => {
-                              e.currentTarget.style.borderColor = '#3b82f6';
-                              e.currentTarget.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.2)';
-                            }}
-                            onBlur={e => {
-                              e.currentTarget.style.borderColor = '#cbd5e1';
-                              e.currentTarget.style.boxShadow = 'none';
-                            }}
-                          />
-                        </div>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span style={{ fontSize: '0.85rem', fontWeight: 600, width: '160px', color: '#334155' }}>Liberated Quantity:</span>
-                          <input 
-                            type="text"
-                            ref={el => { detailRefs.current['past-res-1'] = el; }}
-                            value={selectedBatchDetails.results?.liberated_quantity || ''}
-                            readOnly
-                            onKeyDown={e => handlePastDetailKeyDown(e, 'past-res-1')}
-                            style={{
-                              flex: 1,
-                              padding: '6px 12px',
-                              fontSize: '0.85rem',
-                              border: '1px solid #cbd5e1',
-                              borderRadius: '6px',
-                              backgroundColor: '#f8fafc',
-                              color: '#334155',
-                              outline: 'none',
-                              transition: 'border-color 0.15s, box-shadow 0.15s'
-                            }}
-                            onFocus={e => {
-                              e.currentTarget.style.borderColor = '#3b82f6';
-                              e.currentTarget.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.2)';
-                            }}
-                            onBlur={e => {
-                              e.currentTarget.style.borderColor = '#cbd5e1';
-                              e.currentTarget.style.boxShadow = 'none';
-                            }}
-                          />
-                        </div>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span style={{ fontSize: '0.85rem', fontWeight: 600, width: '160px', color: '#334155' }}>Final Value:</span>
-                          <input 
-                            type="text"
-                            ref={el => { detailRefs.current['past-res-2'] = el; }}
-                            value={selectedBatchDetails.results?.final_value || ''}
-                            readOnly
-                            onKeyDown={e => handlePastDetailKeyDown(e, 'past-res-2')}
-                            style={{
-                              flex: 1,
-                              padding: '6px 12px',
-                              fontSize: '0.85rem',
-                              border: '1px solid #cbd5e1',
-                              borderRadius: '6px',
-                              backgroundColor: '#f8fafc',
-                              color: '#334155',
-                              outline: 'none',
-                              transition: 'border-color 0.15s, box-shadow 0.15s'
-                            }}
-                            onFocus={e => {
-                              e.currentTarget.style.borderColor = '#3b82f6';
-                              e.currentTarget.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.2)';
-                            }}
-                            onBlur={e => {
-                              e.currentTarget.style.borderColor = '#cbd5e1';
-                              e.currentTarget.style.boxShadow = 'none';
-                            }}
-                          />
-                        </div>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span style={{ fontSize: '0.85rem', fontWeight: 600, width: '160px', color: '#334155' }}>Viscosity @ 25°C:</span>
-                          <input 
-                            type="text"
-                            ref={el => { detailRefs.current['past-res-3'] = el; }}
-                            value={selectedBatchDetails.results?.viscosity || ''}
-                            readOnly
-                            onKeyDown={e => handlePastDetailKeyDown(e, 'past-res-3')}
-                            style={{
-                              flex: 1,
-                              padding: '6px 12px',
-                              fontSize: '0.85rem',
-                              border: '1px solid #cbd5e1',
-                              borderRadius: '6px',
-                              backgroundColor: '#f8fafc',
-                              color: '#334155',
-                              outline: 'none',
-                              transition: 'border-color 0.15s, box-shadow 0.15s'
-                            }}
-                            onFocus={e => {
-                              e.currentTarget.style.borderColor = '#3b82f6';
-                              e.currentTarget.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.2)';
-                            }}
-                            onBlur={e => {
-                              e.currentTarget.style.borderColor = '#cbd5e1';
-                              e.currentTarget.style.boxShadow = 'none';
-                            }}
-                          />
-                        </div>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span style={{ fontSize: '0.85rem', fontWeight: 600, width: '160px', color: '#334155' }}>Colour:</span>
-                          <input 
-                            type="text"
-                            ref={el => { detailRefs.current['past-res-4'] = el; }}
-                            value={selectedBatchDetails.results?.colour || ''}
-                            readOnly
-                            onKeyDown={e => handlePastDetailKeyDown(e, 'past-res-4')}
-                            style={{
-                              flex: 1,
-                              padding: '6px 12px',
-                              fontSize: '0.85rem',
-                              border: '1px solid #cbd5e1',
-                              borderRadius: '6px',
-                              backgroundColor: '#f8fafc',
-                              color: '#334155',
-                              outline: 'none',
-                              transition: 'border-color 0.15s, box-shadow 0.15s'
-                            }}
-                            onFocus={e => {
-                              e.currentTarget.style.borderColor = '#3b82f6';
-                              e.currentTarget.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.2)';
-                            }}
-                            onBlur={e => {
-                              e.currentTarget.style.borderColor = '#cbd5e1';
-                              e.currentTarget.style.boxShadow = 'none';
-                            }}
-                          />
-                        </div>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span style={{ fontSize: '0.85rem', fontWeight: 600, width: '160px', color: '#334155' }}>Solid Content:</span>
-                          <input 
-                            type="text"
-                            ref={el => { detailRefs.current['past-res-5'] = el; }}
-                            value={selectedBatchDetails.results?.solid_content || ''}
-                            readOnly
-                            onKeyDown={e => handlePastDetailKeyDown(e, 'past-res-5')}
-                            style={{
-                              flex: 1,
-                              padding: '6px 12px',
-                              fontSize: '0.85rem',
-                              border: '1px solid #cbd5e1',
-                              borderRadius: '6px',
-                              backgroundColor: '#f8fafc',
-                              color: '#334155',
-                              outline: 'none',
-                              transition: 'border-color 0.15s, box-shadow 0.15s'
-                            }}
-                            onFocus={e => {
-                              e.currentTarget.style.borderColor = '#3b82f6';
-                              e.currentTarget.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.2)';
-                            }}
-                            onBlur={e => {
-                              e.currentTarget.style.borderColor = '#cbd5e1';
-                              e.currentTarget.style.boxShadow = 'none';
-                            }}
-                          />
-                        </div>
-
-                        <div style={{ margin: '10px 0 5px 0', borderTop: '1px solid #cbd5e1', paddingTop: '10px' }}>
-                          <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#334155' }}>80% H2O Recover:</span>
-                        </div>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span style={{ fontSize: '0.85rem', fontWeight: 600, width: '160px', paddingLeft: '12px', color: '#334155' }}>Theoretical:</span>
-                          <input 
-                            type="text"
-                            ref={el => { detailRefs.current['past-res-6'] = el; }}
-                            value={selectedBatchDetails.results?.theoretical_80 || ''}
-                            readOnly
-                            onKeyDown={e => handlePastDetailKeyDown(e, 'past-res-6')}
-                            style={{
-                              flex: 1,
-                              padding: '6px 12px',
-                              fontSize: '0.85rem',
-                              border: '1px solid #cbd5e1',
-                              borderRadius: '6px',
-                              backgroundColor: '#f8fafc',
-                              color: '#334155',
-                              outline: 'none',
-                              transition: 'border-color 0.15s, box-shadow 0.15s'
-                            }}
-                            onFocus={e => {
-                              e.currentTarget.style.borderColor = '#3b82f6';
-                              e.currentTarget.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.2)';
-                            }}
-                            onBlur={e => {
-                              e.currentTarget.style.borderColor = '#cbd5e1';
-                              e.currentTarget.style.boxShadow = 'none';
-                            }}
-                          />
-                        </div>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span style={{ fontSize: '0.85rem', fontWeight: 600, width: '160px', paddingLeft: '12px', color: '#334155' }}>Practical:</span>
-                          <input 
-                            type="text"
-                            ref={el => { detailRefs.current['past-res-7'] = el; }}
-                            value={selectedBatchDetails.results?.practical_80 || ''}
-                            readOnly
-                            onKeyDown={e => handlePastDetailKeyDown(e, 'past-res-7')}
-                            style={{
-                              flex: 1,
-                              padding: '6px 12px',
-                              fontSize: '0.85rem',
-                              border: '1px solid #cbd5e1',
-                              borderRadius: '6px',
-                              backgroundColor: '#f8fafc',
-                              color: '#334155',
-                              outline: 'none',
-                              transition: 'border-color 0.15s, box-shadow 0.15s'
-                            }}
-                            onFocus={e => {
-                              e.currentTarget.style.borderColor = '#3b82f6';
-                              e.currentTarget.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.2)';
-                            }}
-                            onBlur={e => {
-                              e.currentTarget.style.borderColor = '#cbd5e1';
-                              e.currentTarget.style.boxShadow = 'none';
-                            }}
-                          />
-                        </div>
-
+                    {/* RIGHT SHEET: Process Observation Sheet */}
+                    <div style={{
+                      backgroundColor: '#ffffff',
+                      border: '2px solid #334155',
+                      borderRadius: '8px',
+                      padding: '20px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '12px',
+                      color: '#000000',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)'
+                    }}>
+                      {/* Header Title */}
+                      <div style={{ textAlign: 'center', marginBottom: '4px' }}>
+                        <h2 style={{ fontSize: '1.2rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#1e293b', margin: 0 }}>Process Observation Sheet</h2>
+                        <div style={{ height: '2px', backgroundColor: '#334155', margin: '4px auto 0 auto', width: '180px' }}></div>
                       </div>
-                    </div>
 
-                    {/* Conclusions & Signatures Right Column */}
-                    <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '8px' }}>
-                      <h4 style={{ fontWeight: 700, fontSize: '1rem', borderBottom: '2px solid #64748b', paddingBottom: '6px', width: 'max-content', color: '#1e293b' }}>Conclusion:</h4>
-                      
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
-                        <textarea 
-                          rows={11}
-                          ref={el => { detailRefs.current['past-conclusion'] = el; }}
-                          value={selectedBatchDetails.results?.conclusion || ''}
-                          readOnly
-                          onKeyDown={e => handlePastDetailKeyDown(e, 'past-conclusion')}
-                          style={{
-                            width: '100%',
-                            padding: '10px',
-                            fontSize: '0.85rem',
-                            border: '1px solid #cbd5e1',
-                            borderRadius: '8px',
-                            backgroundColor: '#f8fafc',
-                            color: '#334155',
-                            resize: 'none',
-                            outline: 'none',
-                            flex: 1,
-                            transition: 'border-color 0.15s, box-shadow 0.15s'
-                          }}
-                          onFocus={e => {
-                            e.currentTarget.style.borderColor = '#3b82f6';
-                            e.currentTarget.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.2)';
-                          }}
-                          onBlur={e => {
-                            e.currentTarget.style.borderColor = '#cbd5e1';
-                            e.currentTarget.style.boxShadow = 'none';
-                          }}
-                        />
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <span style={{ fontSize: '0.85rem', fontWeight: 600, width: '120px', color: '#334155' }}>Prepared By:</span>
-                            <input 
-                              type="text"
-                              ref={el => { detailRefs.current['past-prepared_by'] = el; }}
-                              value={selectedBatchDetails.form?.prepared_by || ''}
-                              readOnly
-                              onKeyDown={e => handlePastDetailKeyDown(e, 'past-prepared_by')}
-                              style={{
-                                flex: 1,
-                                padding: '6px 12px',
-                                fontSize: '0.85rem',
-                                border: '1px solid #cbd5e1',
-                                borderRadius: '6px',
-                                backgroundColor: '#f8fafc',
-                                color: '#334155',
-                                outline: 'none',
-                                transition: 'border-color 0.15s, box-shadow 0.15s'
-                              }}
-                              onFocus={e => {
-                                e.currentTarget.style.borderColor = '#3b82f6';
-                                e.currentTarget.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.2)';
-                              }}
-                              onBlur={e => {
-                                e.currentTarget.style.borderColor = '#cbd5e1';
-                                e.currentTarget.style.boxShadow = 'none';
-                              }}
-                            />
-                          </div>
-
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <span style={{ fontSize: '0.85rem', fontWeight: 600, width: '120px', color: '#334155' }}>Checked By:</span>
-                            <input 
-                              type="text"
-                              ref={el => { detailRefs.current['past-checked_by'] = el; }}
-                              value={selectedBatchDetails.form?.checked_by || ''}
-                              readOnly
-                              onKeyDown={e => handlePastDetailKeyDown(e, 'past-checked_by')}
-                              style={{
-                                flex: 1,
-                                padding: '6px 12px',
-                                fontSize: '0.85rem',
-                                border: '1px solid #cbd5e1',
-                                borderRadius: '6px',
-                                backgroundColor: '#f8fafc',
-                                color: '#334155',
-                                outline: 'none',
-                                transition: 'border-color 0.15s, box-shadow 0.15s'
-                              }}
-                              onFocus={e => {
-                                e.currentTarget.style.borderColor = '#3b82f6';
-                                e.currentTarget.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.2)';
-                              }}
-                              onBlur={e => {
-                                e.currentTarget.style.borderColor = '#cbd5e1';
-                                e.currentTarget.style.boxShadow = 'none';
-                              }}
-                            />
-                          </div>
+                      {/* Batchsheet No and Table */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid #cbd5e1', padding: '8px', borderRadius: '6px', backgroundColor: '#f8fafc', width: 'max-content' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#475569' }}>Batchsheet No:</span>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#1e293b', borderBottom: '1px dotted #334155', padding: '0 4px' }}>{selectedBatchDetails.batchsheet_no || ''}</span>
                         </div>
 
+                        <div style={{ overflowX: 'auto', border: '1px solid #334155', borderRadius: '6px' }}>
+                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem', textAlign: 'left' }}>
+                            <thead>
+                              <tr style={{ backgroundColor: '#e2e8f0', color: '#1e293b', borderBottom: '2px solid #334155' }}>
+                                <th style={{ padding: '6px 8px', width: '60px', borderRight: '1px solid #334155', textAlign: 'center' }}>Time</th>
+                                <th style={{ padding: '6px 8px', width: '70px', borderRight: '1px solid #334155', textAlign: 'center' }}>Temp of V.T.</th>
+                                <th style={{ padding: '6px 8px', width: '70px', borderRight: '1px solid #334155', textAlign: 'center' }}>Temp of F.T.</th>
+                                <th style={{ padding: '6px 8px', width: '50px', borderRight: '1px solid #334155', textAlign: 'center' }}>H₂O</th>
+                                <th style={{ padding: '6px 8px', width: '130px', borderRight: '1px solid #334155' }}>AV / AM.V / Nc.V / EEW</th>
+                                <th style={{ padding: '6px 8px' }}>Observations & Remarks</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {detailObservations.map((row, idx) => (
+                                <tr key={idx} style={{ borderBottom: idx === 14 ? 'none' : '1px solid #cbd5e1', backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
+                                  <td style={{ padding: '4px 6px', borderRight: '1px solid #334155', textAlign: 'center' }}>{row.time || ''}</td>
+                                  <td style={{ padding: '4px 6px', borderRight: '1px solid #334155', textAlign: 'center' }}>{row.vt || ''}</td>
+                                  <td style={{ padding: '4px 6px', borderRight: '1px solid #334155', textAlign: 'center' }}>{row.ft || ''}</td>
+                                  <td style={{ padding: '4px 6px', borderRight: '1px solid #334155', textAlign: 'center' }}>{row.charge_obs || ''}</td>
+                                  <td style={{ padding: '4px 6px', borderRight: '1px solid #334155' }}>{row.observed || ''}</td>
+                                  <td style={{ padding: '4px 6px' }}>{row.remark || ''}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
+
+                      {/* Quantities 100% */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', border: '1px solid #cbd5e1', padding: '10px', borderRadius: '6px', backgroundColor: '#f8fafc' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ fontSize: '0.7rem', fontWeight: 'bold', color: '#475569' }}>Input Qty 100%:</span>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#1e293b', borderBottom: '1px solid #cbd5e1', padding: '2px 0', flex: 1 }}>{selectedBatchDetails.form?.input_qty_100 || ''}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ fontSize: '0.7rem', fontWeight: 'bold', color: '#475569' }}>Output Qty 100%:</span>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#1e293b', borderBottom: '1px solid #cbd5e1', padding: '2px 0', flex: 1 }}>{selectedBatchDetails.form?.output_qty_100 || ''}</span>
+                        </div>
+                      </div>
+
+                      {/* Notes / Remarks */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', border: '1px solid #cbd5e1', padding: '10px', borderRadius: '6px', backgroundColor: '#f8fafc', minHeight: '80px' }}>
+                        <span style={{ fontSize: '0.7rem', fontWeight: 'bold', color: '#475569' }}>Notes / Remarks :</span>
+                        <div style={{ fontSize: '0.75rem', color: '#1e293b', whiteSpace: 'pre-wrap' }}>{selectedBatchDetails.form?.notes_remarks || 'N/A'}</div>
+                      </div>
+
                     </div>
 
                   </div>

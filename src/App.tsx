@@ -495,16 +495,13 @@ export const App: React.FC = () => {
         <main style={{
           flex: 1,
           overflowY: 'auto',
-          overflowX: 'auto',
           padding: '24px',
           boxSizing: 'border-box',
           backgroundColor: '#090c15'
         }}>
-          <div style={{ minWidth: '1280px', display: 'flex', flexDirection: 'column', flexShrink: 0, height: '100%', width: '100%' }}>
-            <React.Suspense fallback={<PageLoadingSpinner />}>
-              {renderActivePage()}
-            </React.Suspense>
-          </div>
+          <React.Suspense fallback={<PageLoadingSpinner />}>
+            {renderActivePage()}
+          </React.Suspense>
         </main>
 
         {/* Toast Alert Dialog */}
@@ -554,11 +551,9 @@ export const App: React.FC = () => {
 
         {/* Global Page Content Container */}
         <div className="content-wrapper">
-          <div style={{ minWidth: '1280px', display: 'flex', flexDirection: 'column', flexShrink: 0, height: '100%', width: '100%' }}>
-            <React.Suspense fallback={<PageLoadingSpinner />}>
-              {renderActivePage()}
-            </React.Suspense>
-          </div>
+          <React.Suspense fallback={<PageLoadingSpinner />}>
+            {renderActivePage()}
+          </React.Suspense>
         </div>
       </main>
 

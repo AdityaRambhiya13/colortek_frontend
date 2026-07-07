@@ -842,7 +842,7 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
   // --------------------------------------------------------------------------
   // PDF EXPORT (JSPDF)
   // --------------------------------------------------------------------------
-  const handleExportPDF = (customData?: any) => {
+    const handleExportPDF = (customData?: any) => {
     const d = customData || {
       form,
       raw_materials: rawMaterials,
@@ -852,105 +852,102 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
     };
 
     const activeBatchNo = d.form?.batch_no || 'RD_Report';
-    const doc = new jsPDF('l', 'mm', 'a4'); // width = 297, height = 210
+    const doc = new jsPDF('p', 'mm', 'a4'); // width = 210, height = 297
     
-    // Draw boundary line down the middle
-    doc.setDrawColor(51, 65, 85); // Slate 700 (#334155)
-    doc.setLineWidth(0.5);
-    doc.line(148.5, 0, 148.5, 210);
-
     // ==========================================
-    // LEFT SHEET: R & D BATCH SHEET
+    // PAGE 1: R & D BATCH SHEET
     // ==========================================
-    const leftMargin = 8;
-    const leftWidth = 132.5;
+    const leftMargin = 10;
+    const leftWidth = 190;
 
     // Header Title
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
+    doc.setFontSize(16);
     doc.setTextColor(30, 41, 59); // Slate 800
-    doc.text("R & D BATCH SHEET", leftMargin + leftWidth / 2, 12, { align: "center" });
+    doc.text("R & D BATCH SHEET", leftMargin + leftWidth / 2, 15, { align: "center" });
 
     // Underline
-    doc.line(leftMargin + leftWidth / 2 - 25, 14, leftMargin + leftWidth / 2 + 25, 14);
+    doc.setDrawColor(51, 65, 85);
+    doc.setLineWidth(0.5);
+    doc.line(leftMargin + leftWidth / 2 - 30, 18, leftMargin + leftWidth / 2 + 30, 18);
 
     // Metadata Grid
-    doc.setFontSize(7.5);
+    doc.setFontSize(8.5);
     doc.setFont("helvetica", "bold");
     
     // Y-position for metadata
-    const metaY = 17;
+    const metaY = 25;
     doc.text("Date:", leftMargin, metaY);
     doc.setFont("helvetica", "normal");
-    doc.text(d.form?.date || '', leftMargin + 8, metaY);
-    doc.line(leftMargin + 8, metaY + 1, leftMargin + 25, metaY + 1);
+    doc.text(d.form?.date || '', leftMargin + 10, metaY);
+    doc.line(leftMargin + 10, metaY + 1, leftMargin + 35, metaY + 1);
 
     doc.setFont("helvetica", "bold");
-    doc.text("Batch No:", leftMargin + 28, metaY);
+    doc.text("Batch No:", leftMargin + 42, metaY);
     doc.setFont("helvetica", "normal");
-    doc.text(d.form?.batch_no || '', leftMargin + 41, metaY);
-    doc.line(leftMargin + 41, metaY + 1, leftMargin + 65, metaY + 1);
+    doc.text(d.form?.batch_no || '', leftMargin + 58, metaY);
+    doc.line(leftMargin + 58, metaY + 1, leftMargin + 95, metaY + 1);
 
     doc.setFont("helvetica", "bold");
-    doc.text("LB No:", leftMargin + 68, metaY);
+    doc.text("LB No:", leftMargin + 102, metaY);
     doc.setFont("helvetica", "normal");
-    doc.text(d.form?.lb_no || '', leftMargin + 78, metaY);
-    doc.line(leftMargin + 78, metaY + 1, leftMargin + 98, metaY + 1);
+    doc.text(d.form?.lb_no || '', leftMargin + 114, metaY);
+    doc.line(leftMargin + 114, metaY + 1, leftMargin + 142, metaY + 1);
 
     doc.setFont("helvetica", "bold");
-    doc.text("Mo. No:", leftMargin + 101, metaY);
+    doc.text("Mo. No:", leftMargin + 149, metaY);
     doc.setFont("helvetica", "normal");
-    doc.text(d.form?.mo_no || '', leftMargin + 112, metaY);
-    doc.line(leftMargin + 112, metaY + 1, leftMargin + leftWidth, metaY + 1);
+    doc.text(d.form?.mo_no || '', leftMargin + 163, metaY);
+    doc.line(leftMargin + 163, metaY + 1, leftMargin + leftWidth, metaY + 1);
 
     // Aim Box
-    const aimY = 21;
-    doc.rect(leftMargin, aimY, leftWidth, 10);
+    const aimY = 30;
+    doc.rect(leftMargin, aimY, leftWidth, 12);
     doc.setFont("helvetica", "bold");
-    doc.text("Aim :", leftMargin + 2, aimY + 4);
+    doc.text("Aim :", leftMargin + 3, aimY + 5);
     doc.setFont("helvetica", "normal");
-    const splitAim = doc.splitTextToSize(d.form?.aim || '', leftWidth - 14);
-    doc.text(splitAim, leftMargin + 10, aimY + 4);
+    const splitAim = doc.splitTextToSize(d.form?.aim || '', leftWidth - 16);
+    doc.text(splitAim, leftMargin + 13, aimY + 5);
 
     // Raw Materials Title
-    const rmTitleY = 34;
+    const rmTitleY = 46;
     doc.setFillColor(71, 85, 105); // Slate 600
-    doc.rect(leftMargin, rmTitleY, leftWidth, 5, 'F');
+    doc.rect(leftMargin, rmTitleY, leftWidth, 7, 'F');
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
+    doc.setFontSize(9.5);
     doc.setTextColor(255, 255, 255);
-    doc.text("RAW MATERIALS FORMULA", leftMargin + leftWidth / 2, rmTitleY + 3.5, { align: "center" });
+    doc.text("RAW MATERIALS FORMULA", leftMargin + leftWidth / 2, rmTitleY + 4.8, { align: "center" });
 
     // Raw Materials Grid Headers
-    const rmHeaderY = 39;
+    const rmHeaderY = 53;
     doc.setFillColor(241, 245, 249); // Slate 100
-    doc.rect(leftMargin, rmHeaderY, leftWidth, 5, 'F');
+    doc.rect(leftMargin, rmHeaderY, leftWidth, 7, 'F');
     doc.setTextColor(30, 41, 59);
-    doc.setFontSize(7);
-    doc.rect(leftMargin, rmHeaderY, leftWidth, 5); // Border
+    doc.setFontSize(8);
+    doc.rect(leftMargin, rmHeaderY, leftWidth, 7); // Border
 
     // Draw RM Header columns:
-    // Sr.No (10), Raw Material (52), Parts by Wt (20), RM% (20), Remarks (30.5)
-    doc.line(leftMargin + 10, rmHeaderY, leftMargin + 10, rmHeaderY + 5);
-    doc.line(leftMargin + 62, rmHeaderY, leftMargin + 62, rmHeaderY + 5);
-    doc.line(leftMargin + 82, rmHeaderY, leftMargin + 82, rmHeaderY + 5);
-    doc.line(leftMargin + 102, rmHeaderY, leftMargin + 102, rmHeaderY + 5);
+    // Sr.No (15), Raw Material (80), Parts by Wt (30), RM% (30), Remarks (35)
+    doc.line(leftMargin + 15, rmHeaderY, leftMargin + 15, rmHeaderY + 7);
+    doc.line(leftMargin + 95, rmHeaderY, leftMargin + 95, rmHeaderY + 7);
+    doc.line(leftMargin + 125, rmHeaderY, leftMargin + 125, rmHeaderY + 7);
+    doc.line(leftMargin + 155, rmHeaderY, leftMargin + 155, rmHeaderY + 7);
 
-    doc.text("Sr. No.", leftMargin + 5, rmHeaderY + 3.5, { align: "center" });
-    doc.text("Raw Material", leftMargin + 12, rmHeaderY + 3.5);
-    doc.text("Parts by Weight", leftMargin + 72, rmHeaderY + 3.5, { align: "center" });
-    doc.text("Raw Material %", leftMargin + 92, rmHeaderY + 3.5, { align: "center" });
-    doc.text("Observations & Remarks", leftMargin + 104, rmHeaderY + 3.5);
+    doc.text("Sr. No.", leftMargin + 7.5, rmHeaderY + 4.8, { align: "center" });
+    doc.text("Raw Material", leftMargin + 18, rmHeaderY + 4.8);
+    doc.text("Parts by Weight", leftMargin + 110, rmHeaderY + 4.8, { align: "center" });
+    doc.text("Raw Material %", leftMargin + 140, rmHeaderY + 4.8, { align: "center" });
+    doc.text("Observations & Remarks", leftMargin + 158, rmHeaderY + 4.8);
 
     // Raw Materials Rows
-    let currentY = rmHeaderY + 5;
+    let currentY = rmHeaderY + 7;
     const rawList: any[] = (d.raw_materials || []).map((rm: any) => {
       if (typeof rm === 'string') return { raw_material: rm, parts_by_weight: '', raw_material_pct: '', remarks: '' };
       return rm;
     });
 
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(7);
+    doc.setFontSize(8);
     doc.setTextColor(0, 0, 0);
 
     for (let idx = 0; idx < 15; idx++) {
@@ -959,59 +956,59 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
       // Alternating backgrounds
       if (idx % 2 === 1) {
         doc.setFillColor(248, 250, 252);
-        doc.rect(leftMargin, currentY, leftWidth, 4.5, 'F');
+        doc.rect(leftMargin, currentY, leftWidth, 6, 'F');
       }
-      doc.rect(leftMargin, currentY, leftWidth, 4.5); // Row border
+      doc.rect(leftMargin, currentY, leftWidth, 6); // Row border
 
       // Cell borders
-      doc.line(leftMargin + 10, currentY, leftMargin + 10, currentY + 4.5);
-      doc.line(leftMargin + 62, currentY, leftMargin + 62, currentY + 4.5);
-      doc.line(leftMargin + 82, currentY, leftMargin + 82, currentY + 4.5);
-      doc.line(leftMargin + 102, currentY, leftMargin + 102, currentY + 4.5);
+      doc.line(leftMargin + 15, currentY, leftMargin + 15, currentY + 6);
+      doc.line(leftMargin + 95, currentY, leftMargin + 95, currentY + 6);
+      doc.line(leftMargin + 125, currentY, leftMargin + 125, currentY + 6);
+      doc.line(leftMargin + 155, currentY, leftMargin + 155, currentY + 6);
 
       doc.setFont("helvetica", "bold");
-      doc.text(String(idx + 1), leftMargin + 5, currentY + 3.2, { align: "center" });
+      doc.text(String(idx + 1), leftMargin + 7.5, currentY + 4.2, { align: "center" });
       doc.setFont("helvetica", "normal");
 
       // Text truncation to avoid overlapping columns
-      const rmName = doc.splitTextToSize(rm.raw_material || '', 50)[0] || '';
-      doc.text(rmName, leftMargin + 12, currentY + 3.2);
-      doc.text(rm.parts_by_weight || '', leftMargin + 72, currentY + 3.2, { align: "center" });
-      doc.text(rm.raw_material_pct || '', leftMargin + 92, currentY + 3.2, { align: "center" });
+      const rmName = doc.splitTextToSize(rm.raw_material || '', 75)[0] || '';
+      doc.text(rmName, leftMargin + 18, currentY + 4.2);
+      doc.text(rm.parts_by_weight || '', leftMargin + 110, currentY + 4.2, { align: "center" });
+      doc.text(rm.raw_material_pct || '', leftMargin + 140, currentY + 4.2, { align: "center" });
       
-      const remarkText = doc.splitTextToSize(rm.remarks || '', 29)[0] || '';
-      doc.text(remarkText, leftMargin + 104, currentY + 3.2);
+      const remarkText = doc.splitTextToSize(rm.remarks || '', 33)[0] || '';
+      doc.text(remarkText, leftMargin + 158, currentY + 4.2);
 
-      currentY += 4.5;
+      currentY += 6;
     }
 
     // Batch Result Title
-    const brTitleY = currentY + 3;
+    const brTitleY = currentY + 4;
     doc.setFillColor(71, 85, 105);
-    doc.rect(leftMargin, brTitleY, leftWidth, 5, 'F');
+    doc.rect(leftMargin, brTitleY, leftWidth, 7, 'F');
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
+    doc.setFontSize(9.5);
     doc.setTextColor(255, 255, 255);
-    doc.text("BATCH RESULT", leftMargin + leftWidth / 2, brTitleY + 3.5, { align: "center" });
+    doc.text("BATCH RESULT", leftMargin + leftWidth / 2, brTitleY + 4.8, { align: "center" });
 
     // Batch Result Grid Headers
-    const brHeaderY = brTitleY + 5;
+    const brHeaderY = brTitleY + 7;
     doc.setFillColor(241, 245, 249);
-    doc.rect(leftMargin, brHeaderY, leftWidth, 4.5, 'F');
+    doc.rect(leftMargin, brHeaderY, leftWidth, 6, 'F');
     doc.setTextColor(30, 41, 59);
-    doc.setFontSize(7);
-    doc.rect(leftMargin, brHeaderY, leftWidth, 4.5); // Border
-    doc.line(leftMargin + 40, brHeaderY, leftMargin + 40, brHeaderY + 4.5);
-    doc.line(leftMargin + 66, brHeaderY, leftMargin + 66, brHeaderY + 4.5);
-    doc.line(leftMargin + 106, brHeaderY, leftMargin + 106, brHeaderY + 4.5);
+    doc.setFontSize(8);
+    doc.rect(leftMargin, brHeaderY, leftWidth, 6); // Border
+    doc.line(leftMargin + 60, brHeaderY, leftMargin + 60, brHeaderY + 6);
+    doc.line(leftMargin + 95, brHeaderY, leftMargin + 95, brHeaderY + 6);
+    doc.line(leftMargin + 155, brHeaderY, leftMargin + 155, brHeaderY + 6);
 
-    doc.text("Parameter", leftMargin + 2, brHeaderY + 3.2);
-    doc.text("Value", leftMargin + 53, brHeaderY + 3.2, { align: "center" });
-    doc.text("Parameter", leftMargin + 68, brHeaderY + 3.2);
-    doc.text("Value", leftMargin + 119, brHeaderY + 3.2, { align: "center" });
+    doc.text("Parameter", leftMargin + 3, brHeaderY + 4.2);
+    doc.text("Value", leftMargin + 77.5, brHeaderY + 4.2, { align: "center" });
+    doc.text("Parameter", leftMargin + 98, brHeaderY + 4.2);
+    doc.text("Value", leftMargin + 177.5, brHeaderY + 4.2, { align: "center" });
 
     // Draw Batch Result Rows
-    let brY = brHeaderY + 4.5;
+    let brY = brHeaderY + 6;
     const res = d.results || {};
     const brRows = [
       { p1: 'K Value', val1: res.k_value, p2: 'Functionality', val2: res.functionality },
@@ -1054,92 +1051,95 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
     }
 
     doc.setTextColor(0, 0, 0);
-    brRows.forEach((row, rIdx) => {
-      doc.rect(leftMargin, brY, leftWidth, 4.5);
-      doc.line(leftMargin + 40, brY, leftMargin + 40, brY + 4.5);
-      doc.line(leftMargin + 66, brY, leftMargin + 66, brY + 4.5);
-      doc.line(leftMargin + 106, brY, leftMargin + 106, brY + 4.5);
+    brRows.forEach((row) => {
+      doc.rect(leftMargin, brY, leftWidth, 6);
+      doc.line(leftMargin + 60, brY, leftMargin + 60, brY + 6);
+      doc.line(leftMargin + 95, brY, leftMargin + 95, brY + 6);
+      doc.line(leftMargin + 155, brY, leftMargin + 155, brY + 6);
 
       // Parameter 1 & Value 1
       doc.setFont("helvetica", "bold");
-      doc.text(row.p1, leftMargin + 2, brY + 3.2);
+      doc.text(row.p1, leftMargin + 3, brY + 4.2);
       doc.setFont("helvetica", "normal");
-      doc.text(String(row.val1 || ''), leftMargin + 53, brY + 3.2, { align: "center" });
+      doc.text(String(row.val1 || ''), leftMargin + 77.5, brY + 4.2, { align: "center" });
 
       // Parameter 2 & Value 2
       doc.setFont("helvetica", "bold");
-      doc.text(row.p2, leftMargin + 68, brY + 3.2);
+      doc.text(row.p2, leftMargin + 98, brY + 4.2);
       doc.setFont("helvetica", "normal");
-      doc.text(String(row.val2 || ''), leftMargin + 119, brY + 3.2, { align: "center" });
+      doc.text(String(row.val2 || ''), leftMargin + 177.5, brY + 4.2, { align: "center" });
 
-      brY += 4.5;
+      brY += 6;
     });
 
     // Signatures Section
-    const sigY = brY + 3;
-    doc.rect(leftMargin, sigY, leftWidth, 13);
-    doc.line(leftMargin + 44, sigY, leftMargin + 44, sigY + 13);
-    doc.line(leftMargin + 88, sigY, leftMargin + 88, sigY + 13);
+    const sigY = brY + 4;
+    doc.rect(leftMargin, sigY, leftWidth, 16);
+    doc.line(leftMargin + 63.3, sigY, leftMargin + 63.3, sigY + 16);
+    doc.line(leftMargin + 126.6, sigY, leftMargin + 126.6, sigY + 16);
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(6.5);
-    doc.text("Prepared by:", leftMargin + 2, sigY + 3);
-    doc.text("QC Checked by:", leftMargin + 46, sigY + 3);
-    doc.text("Production Manager:", leftMargin + 90, sigY + 3);
+    doc.setFontSize(8);
+    doc.text("Prepared by:", leftMargin + 3, sigY + 4);
+    doc.text("QC Checked by:", leftMargin + 66.3, sigY + 4);
+    doc.text("Production Manager:", leftMargin + 129.6, sigY + 4);
 
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(7.5);
-    doc.text(d.form?.prepared_by || '', leftMargin + 22, sigY + 9, { align: "center" });
-    doc.text(d.form?.checked_by || '', leftMargin + 66, sigY + 9, { align: "center" });
-    doc.text(d.form?.production_manager || '', leftMargin + 110, sigY + 9, { align: "center" });
+    doc.setFontSize(9);
+    doc.text(d.form?.prepared_by || '', leftMargin + 31.6, sigY + 11, { align: "center" });
+    doc.text(d.form?.checked_by || '', leftMargin + 94.9, sigY + 11, { align: "center" });
+    doc.text(d.form?.production_manager || '', leftMargin + 158.3, sigY + 11, { align: "center" });
 
     // ==========================================
-    // RIGHT SHEET: PROCESS OBSERVATION SHEET
+    // PAGE 2: PROCESS OBSERVATION SHEET
     // ==========================================
-    const rightMargin = 156.5;
-    const rightWidth = 132.5;
+    doc.addPage('a4', 'p');
+    const rightMargin = 10;
+    const rightWidth = 190;
 
     // Header Title
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
+    doc.setFontSize(16);
     doc.setTextColor(30, 41, 59);
-    doc.text("PROCESS OBSERVATION SHEET", rightMargin + rightWidth / 2, 12, { align: "center" });
-    doc.line(rightMargin + rightWidth / 2 - 35, 14, rightMargin + rightWidth / 2 + 35, 14);
+    doc.text("PROCESS OBSERVATION SHEET", rightMargin + rightWidth / 2, 15, { align: "center" });
+    
+    // Underline
+    doc.line(rightMargin + rightWidth / 2 - 40, 18, rightMargin + rightWidth / 2 + 40, 18);
 
     // Batchsheet No
-    doc.setFontSize(8);
+    doc.setFontSize(9.5);
     doc.setFont("helvetica", "bold");
-    doc.text("Batchsheet No:", rightMargin, 19);
+    doc.text("Batchsheet No:", rightMargin, 25);
     doc.setFont("helvetica", "normal");
-    doc.text(d.batchsheet_no || '', rightMargin + 22, 19);
-    doc.line(rightMargin + 22, 20, rightMargin + 60, 20);
+    doc.text(d.batchsheet_no || '', rightMargin + 26, 25);
+    doc.line(rightMargin + 26, 26, rightMargin + 70, 26);
 
     // Observation Table Header
-    const obsHeaderY = 22;
+    const obsHeaderY = 30;
     doc.setFillColor(226, 232, 240); // Grey 200
-    doc.rect(rightMargin, obsHeaderY, rightWidth, 6, 'F');
-    doc.rect(rightMargin, obsHeaderY, rightWidth, 6);
+    doc.rect(rightMargin, obsHeaderY, rightWidth, 8, 'F');
+    doc.rect(rightMargin, obsHeaderY, rightWidth, 8);
     doc.setTextColor(30, 41, 59);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(6.8);
+    doc.setFontSize(8);
 
     // Observation Columns layout:
-    // Time (12), Temp of VT (18), Temp of FT (18), H2O (12), AV/AM/NC (35), Remarks (37.5)
-    doc.line(rightMargin + 12, obsHeaderY, rightMargin + 12, obsHeaderY + 6);
-    doc.line(rightMargin + 30, obsHeaderY, rightMargin + 30, obsHeaderY + 6);
-    doc.line(rightMargin + 48, obsHeaderY, rightMargin + 48, obsHeaderY + 6);
-    doc.line(rightMargin + 60, obsHeaderY, rightMargin + 60, obsHeaderY + 6);
-    doc.line(rightMargin + 95, obsHeaderY, rightMargin + 95, obsHeaderY + 6);
+    // Time (15), Temp of VT (25), Temp of FT (25), H2O (15), AV/AM/NC (50), Remarks (60)
+    doc.line(rightMargin + 15, obsHeaderY, rightMargin + 15, obsHeaderY + 8);
+    doc.line(rightMargin + 40, obsHeaderY, rightMargin + 40, obsHeaderY + 8);
+    doc.line(rightMargin + 65, obsHeaderY, rightMargin + 65, obsHeaderY + 8);
+    doc.line(rightMargin + 80, obsHeaderY, rightMargin + 80, obsHeaderY + 8);
+    doc.line(rightMargin + 130, obsHeaderY, rightMargin + 130, obsHeaderY + 8);
 
-    doc.text("Time", rightMargin + 6, obsHeaderY + 4, { align: "center" });
-    doc.text("Temp of V.T.", rightMargin + 21, obsHeaderY + 4, { align: "center" });
-    doc.text("Temp of F.T.", rightMargin + 39, obsHeaderY + 4, { align: "center" });
-    doc.text("H₂O", rightMargin + 54, obsHeaderY + 4, { align: "center" });
-    doc.text("AV / AM.V / Nc.V / EEW", rightMargin + 62, obsHeaderY + 4);
-    doc.text("Observations & Remarks", rightMargin + 97, obsHeaderY + 4);
+    doc.text("Time", rightMargin + 7.5, obsHeaderY + 5.2, { align: "center" });
+    doc.text("Temp of V.T.", rightMargin + 27.5, obsHeaderY + 5.2, { align: "center" });
+    doc.text("Temp of F.T.", rightMargin + 52.5, obsHeaderY + 5.2, { align: "center" });
+    doc.text("H₂O", rightMargin + 72.5, obsHeaderY + 5.2, { align: "center" });
+    doc.text("AV / AM.V / Nc.V / EEW", rightMargin + 83, obsHeaderY + 5.2);
+    doc.text("Observations & Remarks", rightMargin + 133, obsHeaderY + 5.2);
 
     // Observations rows
-    let obsY = obsHeaderY + 6;
+    let obsY = obsHeaderY + 8;
     const obsList = d.observations || [];
     
     doc.setFont("helvetica", "normal");
@@ -1150,53 +1150,53 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
       
       if (idx % 2 === 1) {
         doc.setFillColor(248, 250, 252);
-        doc.rect(rightMargin, obsY, rightWidth, 7.5, 'F');
+        doc.rect(rightMargin, obsY, rightWidth, 9, 'F');
       }
-      doc.rect(rightMargin, obsY, rightWidth, 7.5);
+      doc.rect(rightMargin, obsY, rightWidth, 9);
 
-      doc.line(rightMargin + 12, obsY, rightMargin + 12, obsY + 7.5);
-      doc.line(rightMargin + 30, obsY, rightMargin + 30, obsY + 7.5);
-      doc.line(rightMargin + 48, obsY, rightMargin + 48, obsY + 7.5);
-      doc.line(rightMargin + 60, obsY, rightMargin + 60, obsY + 7.5);
-      doc.line(rightMargin + 95, obsY, rightMargin + 95, obsY + 7.5);
+      doc.line(rightMargin + 15, obsY, rightMargin + 15, obsY + 9);
+      doc.line(rightMargin + 40, obsY, rightMargin + 40, obsY + 9);
+      doc.line(rightMargin + 65, obsY, rightMargin + 65, obsY + 9);
+      doc.line(rightMargin + 80, obsY, rightMargin + 80, obsY + 9);
+      doc.line(rightMargin + 130, obsY, rightMargin + 130, obsY + 9);
 
-      doc.text(obs.time || '', rightMargin + 6, obsY + 4.8, { align: "center" });
-      doc.text(obs.vt || '', rightMargin + 21, obsY + 4.8, { align: "center" });
-      doc.text(obs.ft || '', rightMargin + 39, obsY + 4.8, { align: "center" });
-      doc.text(obs.charge_obs || '', rightMargin + 54, obsY + 4.8, { align: "center" });
+      doc.text(obs.time || '', rightMargin + 7.5, obsY + 5.8, { align: "center" });
+      doc.text(obs.vt || '', rightMargin + 27.5, obsY + 5.8, { align: "center" });
+      doc.text(obs.ft || '', rightMargin + 52.5, obsY + 5.8, { align: "center" });
+      doc.text(obs.charge_obs || '', rightMargin + 72.5, obsY + 5.8, { align: "center" });
       
-      const obsVal = doc.splitTextToSize(obs.observed || '', 33)[0] || '';
-      doc.text(obsVal, rightMargin + 62, obsY + 4.8);
+      const obsVal = doc.splitTextToSize(obs.observed || '', 47)[0] || '';
+      doc.text(obsVal, rightMargin + 83, obsY + 5.8);
       
-      const remarkText = doc.splitTextToSize(obs.remark || '', 35)[0] || '';
-      doc.text(remarkText, rightMargin + 97, obsY + 4.8);
+      const remarkText = doc.splitTextToSize(obs.remark || '', 57)[0] || '';
+      doc.text(remarkText, rightMargin + 133, obsY + 5.8);
 
-      obsY += 7.5;
+      obsY += 9;
     }
 
     // Quantities 100% Box
-    const qtyY = obsY + 3;
-    doc.rect(rightMargin, qtyY, rightWidth, 9);
-    doc.line(rightMargin + rightWidth / 2, qtyY, rightMargin + rightWidth / 2, qtyY + 9);
+    const qtyY = obsY + 4;
+    doc.rect(rightMargin, qtyY, rightWidth, 12);
+    doc.line(rightMargin + rightWidth / 2, qtyY, rightMargin + rightWidth / 2, qtyY + 12);
 
     doc.setFont("helvetica", "bold");
-    doc.text("Input Quantity 100%:", rightMargin + 2, qtyY + 5.5);
+    doc.text("Input Quantity 100%:", rightMargin + 3, qtyY + 7.5);
     doc.setFont("helvetica", "normal");
-    doc.text(String(d.form?.input_qty_100 || ''), rightMargin + 32, qtyY + 5.5);
+    doc.text(String(d.form?.input_qty_100 || ''), rightMargin + 43, qtyY + 7.5);
 
     doc.setFont("helvetica", "bold");
-    doc.text("Output Quantity 100%:", rightMargin + rightWidth / 2 + 2, qtyY + 5.5);
+    doc.text("Output Quantity 100%:", rightMargin + rightWidth / 2 + 3, qtyY + 7.5);
     doc.setFont("helvetica", "normal");
-    doc.text(String(d.form?.output_qty_100 || ''), rightMargin + rightWidth / 2 + 34, qtyY + 5.5);
+    doc.text(String(d.form?.output_qty_100 || ''), rightMargin + rightWidth / 2 + 45, qtyY + 7.5);
 
     // Notes / Remarks Box
-    const noteY = qtyY + 12;
-    doc.rect(rightMargin, noteY, rightWidth, 23);
+    const noteY = qtyY + 16;
+    doc.rect(rightMargin, noteY, rightWidth, 35);
     doc.setFont("helvetica", "bold");
-    doc.text("Notes / Remarks :", rightMargin + 2, noteY + 4.5);
+    doc.text("Notes / Remarks :", rightMargin + 3, noteY + 6);
     doc.setFont("helvetica", "normal");
-    const splitNotes = doc.splitTextToSize(d.form?.notes_remarks || '', rightWidth - 6);
-    doc.text(splitNotes, rightMargin + 2, noteY + 9.5);
+    const splitNotes = doc.splitTextToSize(d.form?.notes_remarks || '', rightWidth - 8);
+    doc.text(splitNotes, rightMargin + 3, noteY + 13);
 
     doc.save(`${activeBatchNo}_RD_Report.pdf`);
     onShowToast(`PDF file for batch ${activeBatchNo} downloaded successfully!`, "success");

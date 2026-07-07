@@ -50,7 +50,17 @@ export const App: React.FC = () => {
     document.documentElement.setAttribute('data-theme', 'light');
     document.documentElement.className = 'light';
 
-    // 2. Auth Session Check
+    // 2. Re-hydrate CSRF token from cookie into sessionStorage on page load
+    // (The csrf_token cookie is NOT httponly so JS can read it)
+    const existingCsrf = sessionStorage.getItem('csrf_token');
+    if (!existingCsrf) {
+      const cookieMatch = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/);
+      if (cookieMatch) {
+        sessionStorage.setItem('csrf_token', decodeURIComponent(cookieMatch[1]));
+      }
+    }
+
+    // 3. Auth Session Check
     const verifyUserSession = async () => {
       const storedUser = sessionStorage.getItem('username');
       if (storedUser) {
@@ -195,15 +205,12 @@ export const App: React.FC = () => {
   const handleProductSwitch = async (productName: string) => {
     const currentProduct = sessionStorage.getItem('product_name');
     if (productName === currentProduct) return;
-    showToast(`Switching to ${productName}...`, 'info');
+    showToast(`Switching to ${productName.replace(/_/g, ' ')}...`, 'info');
     const [success, data] = await AuthAPI.switchProduct(productName);
     if (success) {
-      // Clear the active view so we land on welcome fresh
-      sessionStorage.setItem('active_view', 'welcome');
+      // sessionStorage already updated in switchProduct — just force re-render
       setCurrentView('welcome');
-      showToast(`Switched to ${productName}`, 'success');
-      // Force a full page reload so sidebar permissions and views reload cleanly
-      setTimeout(() => window.location.reload(), 600);
+      showToast(`Switched to ${productName.replace(/_/g, ' ')}`, 'success');
     } else {
       showToast(typeof data === 'string' ? data : 'Failed to switch product workspace.', 'error');
     }

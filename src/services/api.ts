@@ -46,11 +46,21 @@ const apiClient = axios.create({
   withCredentials: true,
 });
 
+// Helper: read a cookie value by name (works since csrf_token is NOT httponly)
+const getCookieValue = (name: string): string | null => {
+  const match = document.cookie.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]*)'));
+  return match ? decodeURIComponent(match[1]) : null;
+};
+
 // Axios Request Interceptor: Attach CSRF and JWT Authorization tokens
 apiClient.interceptors.request.use(
   (config) => {
-    // Attach CSRF token automatically on mutating methods
-    const csrfToken = sessionStorage.getItem('csrf_token');
+    // Prefer sessionStorage, fall back to cookie (handles page-reload case)
+    let csrfToken = sessionStorage.getItem('csrf_token');
+    if (!csrfToken) {
+      csrfToken = getCookieValue('csrf_token');
+      if (csrfToken) sessionStorage.setItem('csrf_token', csrfToken);
+    }
     if (csrfToken && config.method && ['post', 'put', 'delete', 'patch'].includes(config.method)) {
       config.headers['X-CSRF-Token'] = csrfToken;
     }
@@ -100,8 +110,12 @@ apiClient.interceptors.response.use(
         // Retry original request
         return apiClient(originalRequest);
       } catch {
-        // Refresh failed — clear session and force re-login
+        // Refresh failed — preserve username cache and product list, then force re-login
+        const cachedUsername = sessionStorage.getItem('username_cache');
+        const cachedProducts = sessionStorage.getItem('available_products');
         sessionStorage.clear();
+        if (cachedUsername) sessionStorage.setItem('username_cache', cachedUsername);
+        if (cachedProducts) sessionStorage.setItem('available_products', cachedProducts);
         window.location.href = '/';
         return Promise.reject(error);
       } finally {
@@ -200,10 +214,13 @@ export const AuthAPI = {
     );
 
     if (success && typeof data !== 'string') {
+      // Update sessionStorage in-place — no page reload needed
       sessionStorage.setItem('csrf_token', data.csrf_token);
       sessionStorage.setItem('product_name', productName);
       sessionStorage.setItem('user_roles', data.roles.join(','));
       sessionStorage.setItem('product_name_cache', productName);
+      // Also remove stale active_view so welcome page re-renders with new context
+      sessionStorage.setItem('active_view', 'welcome');
     }
 
     return [success, data] as [boolean, any];

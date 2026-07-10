@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, LogOut, CheckCircle2, AlertTriangle, Info, Home } from 'lucide-react';
+import { Bell, LogOut, CheckCircle2, AlertTriangle, Info, Home, ShieldAlert } from 'lucide-react';
 
 
 import { NotificationsAPI } from '../services/api';
@@ -21,14 +21,30 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [showComplaintNotifications, setShowComplaintNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   
   const notificationsRef = useRef<HTMLDivElement>(null);
+  const complaintsRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
   const username = sessionStorage.getItem('username') || 'User';
   const productName = sessionStorage.getItem('product_name') || 'No Workspace Selected';
+
+  // Filter complaints vs regular notifications
+  const complaintNotifications = notifications.filter((notif: any) => 
+    (notif.target_role || '').toLowerCase().includes('complaint') || 
+    (notif.title || '').toLowerCase().includes('complaint') ||
+    (notif.message || '').toLowerCase().includes('complaint')
+  );
+  const complaintUnreadCount = complaintNotifications.filter((notif: any) => !notif.seen).length;
+
+  const regularNotifications = notifications.filter((notif: any) => 
+    !((notif.target_role || '').toLowerCase().includes('complaint') || 
+      (notif.title || '').toLowerCase().includes('complaint') ||
+      (notif.message || '').toLowerCase().includes('complaint'))
+  );
+  const regularUnreadCount = regularNotifications.filter((notif: any) => !notif.seen).length;
 
   const getTypeClass = (type: string) => {
     const t = (type || '').toLowerCase().trim();
@@ -58,9 +74,6 @@ export const Header: React.FC<HeaderProps> = ({
     const [success, data] = await NotificationsAPI.getNotifications();
     if (success && Array.isArray(data)) {
       setNotifications(data);
-      // Count unseen notifications
-      const unseen = data.filter((notif: any) => !notif.seen).length;
-      setUnreadCount(unseen);
     }
   };
 
@@ -77,6 +90,9 @@ export const Header: React.FC<HeaderProps> = ({
       if (notificationsRef.current && !notificationsRef.current.contains(e.target as Node)) {
         setShowNotifications(false);
       }
+      if (complaintsRef.current && !complaintsRef.current.contains(e.target as Node)) {
+        setShowComplaintNotifications(false);
+      }
       if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
         setShowProfileMenu(false);
       }
@@ -85,8 +101,8 @@ export const Header: React.FC<HeaderProps> = ({
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
 
-  const markAllAsSeen = async () => {
-    const unseenIds = notifications
+  const markRegularAsSeen = async () => {
+    const unseenIds = regularNotifications
       .filter((n: any) => !n.seen)
       .map((n: any) => n.id);
 
@@ -94,9 +110,23 @@ export const Header: React.FC<HeaderProps> = ({
       const [success] = await NotificationsAPI.markNotificationsSeen(unseenIds);
       if (success) {
         setNotifications(prev =>
-          prev.map((n: any) => ({ ...n, seen: true }))
+          prev.map((n: any) => unseenIds.includes(n.id) ? { ...n, seen: true } : n)
         );
-        setUnreadCount(0);
+      }
+    }
+  };
+
+  const markComplaintsAsSeen = async () => {
+    const unseenIds = complaintNotifications
+      .filter((n: any) => !n.seen)
+      .map((n: any) => n.id);
+
+    if (unseenIds.length > 0) {
+      const [success] = await NotificationsAPI.markNotificationsSeen(unseenIds);
+      if (success) {
+        setNotifications(prev =>
+          prev.map((n: any) => unseenIds.includes(n.id) ? { ...n, seen: true } : n)
+        );
       }
     }
   };
@@ -115,20 +145,117 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Control Actions Panel */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
 
+        {/* Complaints-Specific Notifications Bell */}
+        <div style={{ position: 'relative' }} ref={complaintsRef}>
+          <button 
+            onClick={() => {
+              setShowComplaintNotifications(!showComplaintNotifications);
+              setShowNotifications(false);
+              if (!showComplaintNotifications) markComplaintsAsSeen();
+            }} 
+            className={`header-icon-btn ${showComplaintNotifications ? 'active-bell' : ''} ${complaintUnreadCount > 0 ? 'complaints-bell-blinking' : ''}`}
+            title="Complaints Alerts"
+            style={{ 
+              border: complaintUnreadCount > 0 ? '1px solid rgba(239, 68, 68, 0.4)' : undefined
+            }}
+          >
+            <ShieldAlert size={18} />
+            {complaintUnreadCount > 0 && (
+              <span className="notification-badge-pulse" style={{ backgroundColor: '#EF4444' }}>
+                {complaintUnreadCount > 99 ? '99+' : complaintUnreadCount}
+              </span>
+            )}
+          </button>
+
+          {/* Complaints Notifications Panel */}
+          {showComplaintNotifications && (
+            <div className="notification-panel">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h4 style={{ fontWeight: 700, fontSize: '0.95rem', margin: 0, color: '#EF4444' }}>
+                  Complaints Alerts
+                </h4>
+                <button 
+                  onClick={fetchNotifications}
+                  style={{ 
+                    background: 'none', 
+                    border: 'none', 
+                    color: '#EF4444', 
+                    fontSize: '0.75rem', 
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                  }}
+                >
+                  Refresh
+                </button>
+              </div>
+              <hr style={{ border: 'none', borderBottom: '1px solid var(--border-color)', margin: '4px 0' }} />
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {complaintNotifications.length === 0 ? (
+                  <div style={{ 
+                    textAlign: 'center', 
+                    color: 'var(--text-light)', 
+                    fontSize: '0.85rem', 
+                    padding: '24px 0',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <ShieldAlert size={24} style={{ opacity: 0.3, color: '#EF4444' }} />
+                    <span>No complaint alerts</span>
+                  </div>
+                ) : (
+                  complaintNotifications.map((notif) => (
+                    <div 
+                      key={notif.id}
+                      className={`notification-card ${getTypeClass(notif.notification_type)} ${notif.seen ? 'seen' : 'unread'}`}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          {renderNotificationIcon(notif.notification_type)}
+                          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: theme === 'light' ? '#1e293b' : '#f8fafc' }}>
+                            {notif.title}
+                          </span>
+                        </div>
+                        {!notif.seen && (
+                          <span style={{
+                            width: '6px',
+                            height: '6px',
+                            backgroundColor: '#EF4444',
+                            borderRadius: '50%'
+                          }} />
+                        )}
+                      </div>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: '2px 0 0 0', lineHeight: 1.4 }}>
+                        {notif.message}
+                      </p>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--text-light)', alignSelf: 'flex-end', marginTop: '2px' }}>
+                        {new Date(notif.timestamp).toLocaleString()}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Notifications Popover */}
         <div style={{ position: 'relative' }} ref={notificationsRef}>
           <button 
             onClick={() => {
               setShowNotifications(!showNotifications);
-              if (!showNotifications) markAllAsSeen();
+              setShowComplaintNotifications(false);
+              if (!showNotifications) markRegularAsSeen();
             }} 
             className={`header-icon-btn ${showNotifications ? 'active-bell' : ''}`}
-            title="Notifications"
+            title="General Notifications"
           >
             <Bell size={18} />
-            {unreadCount > 0 && (
+            {regularUnreadCount > 0 && (
               <span className="notification-badge-pulse">
-                {unreadCount > 99 ? '99+' : unreadCount}
+                {regularUnreadCount > 99 ? '99+' : regularUnreadCount}
               </span>
             )}
           </button>
@@ -160,7 +287,7 @@ export const Header: React.FC<HeaderProps> = ({
               <hr style={{ border: 'none', borderBottom: '1px solid var(--border-color)', margin: '4px 0' }} />
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {notifications.length === 0 ? (
+                {regularNotifications.length === 0 ? (
                   <div style={{ 
                     textAlign: 'center', 
                     color: 'var(--text-light)', 
@@ -175,7 +302,7 @@ export const Header: React.FC<HeaderProps> = ({
                     <span>No alerts at this time</span>
                   </div>
                 ) : (
-                  notifications.map((notif) => (
+                  regularNotifications.map((notif) => (
                     <div 
                       key={notif.id}
                       className={`notification-card ${getTypeClass(notif.notification_type)} ${notif.seen ? 'seen' : 'unread'}`}

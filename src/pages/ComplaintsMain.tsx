@@ -584,47 +584,60 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
               
               {/* Left Column: Form Fields */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                <input 
-                  type="text" 
-                  value={productNameUi} 
-                  onChange={e => setProductNameUi(e.target.value)}
-                  placeholder="Product Name"
-                  style={{ padding: '10px 14px', fontSize: '0.85rem', border: '1px solid var(--border-medium)', borderRadius: '6px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', width: '100%', boxSizing: 'border-box' }} 
-                />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Product Name</label>
+                  <input 
+                    type="text" 
+                    value={productNameUi} 
+                    onChange={e => setProductNameUi(e.target.value)}
+                    placeholder="Enter Product Name"
+                    style={{ padding: '10px 14px', fontSize: '0.85rem', border: '1.5px solid var(--border-medium)', borderRadius: '6px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', width: '100%', boxSizing: 'border-box', outline: 'none' }} 
+                  />
+                </div>
                 
-                <input 
-                  type="text" 
-                  value={customerName} 
-                  onChange={e => setCustomerName(e.target.value)}
-                  placeholder="Customer Name"
-                  style={{ padding: '10px 14px', fontSize: '0.85rem', border: '1px solid var(--border-medium)', borderRadius: '6px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', width: '100%', boxSizing: 'border-box' }} 
-                />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Customer Name</label>
+                  <input 
+                    type="text" 
+                    value={customerName} 
+                    onChange={e => setCustomerName(e.target.value)}
+                    placeholder="Enter Customer Name"
+                    style={{ padding: '10px 14px', fontSize: '0.85rem', border: '1.5px solid var(--border-medium)', borderRadius: '6px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', width: '100%', boxSizing: 'border-box', outline: 'none' }} 
+                  />
+                </div>
                 
-                <input 
-                  type="text" 
-                  value={batchNo} 
-                  onChange={e => setBatchNo(e.target.value)}
-                  placeholder="Batch Number"
-                  onKeyDown={e => { if (e.key === 'Enter') handleBatchSearch(); }}
-                  style={{ padding: '10px 14px', fontSize: '0.85rem', border: '1px solid var(--border-medium)', borderRadius: '6px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', width: '100%', boxSizing: 'border-box' }} 
-                />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Batch Number</label>
+                  <input 
+                    type="text" 
+                    value={batchNo} 
+                    onChange={e => setBatchNo(e.target.value)}
+                    placeholder="Enter Batch Number"
+                    onKeyDown={e => { if (e.key === 'Enter') handleBatchSearch(); }}
+                    style={{ padding: '10px 14px', fontSize: '0.85rem', border: '1.5px solid var(--border-medium)', borderRadius: '6px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', width: '100%', boxSizing: 'border-box', outline: 'none' }} 
+                  />
+                </div>
                 
-                <input 
-                  type="text" 
-                  value={initialObservation} 
-                  onChange={e => setInitialObservation(e.target.value)}
-                  placeholder="Initial Observation"
-                  style={{ padding: '10px 14px', fontSize: '0.85rem', border: '1px solid var(--border-medium)', borderRadius: '6px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', width: '100%', boxSizing: 'border-box' }} 
-                />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Initial Observation</label>
+                  <input 
+                    type="text" 
+                    value={initialObservation} 
+                    onChange={e => setInitialObservation(e.target.value)}
+                    placeholder="Enter Initial Observation"
+                    style={{ padding: '10px 14px', fontSize: '0.85rem', border: '1.5px solid var(--border-medium)', borderRadius: '6px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', width: '100%', boxSizing: 'border-box', outline: 'none' }} 
+                  />
+                </div>
               </div>
 
               {/* Right Column: Complaint Details TextArea */}
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Complaint Details</label>
                 <textarea 
                   value={complaintDetails} 
                   onChange={e => setComplaintDetails(e.target.value)}
-                  placeholder="Complaint Details"
-                  style={{ width: '100%', padding: '12px 14px', fontSize: '0.85rem', border: '1px solid var(--border-medium)', borderRadius: '8px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', resize: 'none', flex: 1, boxSizing: 'border-box', minHeight: '180px' }}
+                  placeholder="Enter Complaint Details"
+                  style={{ width: '100%', padding: '12px 14px', fontSize: '0.85rem', border: '1.5px solid var(--border-medium)', borderRadius: '8px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', resize: 'none', flex: 1, boxSizing: 'border-box', minHeight: '235px', outline: 'none' }}
                 />
               </div>
             </div>

@@ -783,3 +783,28 @@ html {
   animation: skeleton-shimmer 1.5s infinite ease-in-out;
 }
 
+/* Complaints Bell Blinking Animation */
+@keyframes complaints-blink {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #ef4444;
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+    background: rgba(239, 68, 68, 0.4);
+    border-color: #ef4444;
+    color: #fca5a5;
+  }
+}
+
+.complaints-bell-blinking {
+  animation: complaints-blink 1.5s infinite;
+  color: #ef4444 !important;
+  border-color: rgba(239, 68, 68, 0.6) !important;
+}
+
+

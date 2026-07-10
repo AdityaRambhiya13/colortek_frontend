@@ -95,18 +95,23 @@ const ObservationRow = React.memo<ObservationRowProps>(({ row, idx, onChange, on
     border: '1px solid transparent',
     borderRadius: '4px',
     backgroundColor: 'transparent',
-    color: '#000000',
+    color: 'var(--text-primary)',
     textAlign: 'center',
     outline: 'none'
   };
 
+  const cellStyle: React.CSSProperties = {
+    padding: '4px 6px',
+    borderRight: '1px solid var(--border-color)'
+  };
+
   return (
     <tr style={{ 
-      borderBottom: '1px solid #334155', 
-      backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc' 
+      borderBottom: '1px solid var(--border-color)', 
+      backgroundColor: idx % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-app)' 
     }}>
       {/* Time */}
-      <td style={{ padding: '4px 6px', borderRight: '1px solid #334155' }}>
+      <td style={cellStyle}>
         <input 
           type="text"
           ref={el => { obsRefs.current[`obs-${idx}-0`] = el; }}
@@ -118,7 +123,7 @@ const ObservationRow = React.memo<ObservationRowProps>(({ row, idx, onChange, on
       </td>
 
       {/* Temp of V.T. */}
-      <td style={{ padding: '4px 6px', borderRight: '1px solid #334155' }}>
+      <td style={cellStyle}>
         <input 
           type="text"
           ref={el => { obsRefs.current[`obs-${idx}-1`] = el; }}
@@ -130,7 +135,7 @@ const ObservationRow = React.memo<ObservationRowProps>(({ row, idx, onChange, on
       </td>
 
       {/* Temp of F.T. */}
-      <td style={{ padding: '4px 6px', borderRight: '1px solid #334155' }}>
+      <td style={cellStyle}>
         <input 
           type="text"
           ref={el => { obsRefs.current[`obs-${idx}-2`] = el; }}
@@ -142,7 +147,7 @@ const ObservationRow = React.memo<ObservationRowProps>(({ row, idx, onChange, on
       </td>
 
       {/* H2O */}
-      <td style={{ padding: '4px 6px', borderRight: '1px solid #334155' }}>
+      <td style={cellStyle}>
         <input 
           type="text"
           ref={el => { obsRefs.current[`obs-${idx}-3`] = el; }}
@@ -154,7 +159,7 @@ const ObservationRow = React.memo<ObservationRowProps>(({ row, idx, onChange, on
       </td>
 
       {/* AV / AM.V / Nc.V / EEW */}
-      <td style={{ padding: '4px 6px', borderRight: '1px solid #334155' }}>
+      <td style={cellStyle}>
         <input 
           type="text"
           ref={el => { obsRefs.current[`obs-${idx}-4`] = el; }}

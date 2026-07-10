@@ -802,11 +802,11 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
           <div className="glass-card animated-scale" style={{
             width: '100%',
             maxWidth: '480px',
-            background: 'rgba(30, 27, 75, 0.95)',
+            background: 'var(--bg-card)',
             border: '1px solid rgba(239, 68, 68, 0.3)',
             borderRadius: '16px',
             padding: '28px',
-            color: '#ffffff',
+            color: 'var(--text-primary)',
             boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 30px rgba(239, 68, 68, 0.1)'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#f87171', marginBottom: '16px' }}>
@@ -814,12 +814,12 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
               <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>Confirm Account Revocation</h3>
             </div>
             
-            <p style={{ fontSize: '0.875rem', color: '#cbd5e1', lineHeight: '1.5', marginBottom: '20px' }}>
-              This action is <strong>irreversible</strong>. This will permanently delete the user profile for <strong style={{ color: '#fca5a5' }}>"{deleteUsername}"</strong> and revoke all associated access rule permissions across all product workspaces.
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: '1.5', marginBottom: '20px' }}>
+              This action is <strong>irreversible</strong>. This will permanently delete the user profile for <strong style={{ color: '#ef4444' }}>"{deleteUsername}"</strong> and revoke all associated access rule permissions across all product workspaces.
             </p>
 
             <div className="form-input-container" style={{ marginBottom: '24px' }}>
-              <span className="form-label" style={{ color: '#cbd5e1', fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: '8px' }}>
+              <span className="form-label" style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: '8px' }}>
                 To confirm deletion, type the username below:
               </span>
               <input

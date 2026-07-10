@@ -1601,9 +1601,19 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
             borderRadius: '6px',
             marginTop: '8px',
             padding: '24px',
-            backgroundColor: '#f8fafc'
+            backgroundColor: 'var(--bg-app)'
           }}>
-            <Building size={32} color="#94a3b8" />
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '64px',
+              height: '64px',
+              borderRadius: '8px',
+              backgroundColor: 'var(--bg-app)'
+            }}>
+              <Building size={32} color="#94a3b8" />
+            </div>
             <span style={{ fontSize: '12px', fontWeight: 500, textAlign: 'center' }}>
               Select a batch number button from the options above to check and load its details.
             </span>
@@ -1651,10 +1661,10 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
               display: 'grid',
               gridTemplateColumns: 'repeat(3, 1fr)',
               gap: '8px',
-              backgroundColor: '#f8fafc',
+              backgroundColor: 'var(--bg-app)',
               padding: '10px',
               borderRadius: '4px',
-              border: '1px solid #e2e8f0',
+              border: '1px solid var(--border-color)',
               fontSize: '12px',
               color: '#334155'
             }}>
@@ -1736,8 +1746,8 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                     borderRadius: '4px',
                     border: '1px solid #cbd5e1',
                     resize: 'none',
-                    backgroundColor: '#f8fafc',
-                    color: '#334155'
+                    backgroundColor: 'var(--bg-app)',
+                    color: 'var(--text-secondary)'
                   }}
                 />
               </div>
@@ -2122,7 +2132,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                       </thead>
                       <tbody>
                         {leftRows.map((row, idx) => (
-                          <tr key={row.sr} style={{ backgroundColor: row.selected ? 'rgba(59, 130, 246, 0.08)' : (idx % 2 === 0 ? '#f8fafc' : '#ffffff') }}>
+                          <tr key={row.sr} style={{ backgroundColor: row.selected ? 'rgba(59, 130, 246, 0.08)' : (idx % 2 === 0 ? 'var(--bg-app)' : 'var(--bg-card)') }}>
                             <td style={{ textAlign: 'center', width: '30px' }}>
                               <input 
                                 type="checkbox" 
@@ -2251,7 +2261,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                       </thead>
                       <tbody>
                         {leftTestRows.map((t, idx) => (
-                          <tr key={idx} style={{ backgroundColor: t.selected ? 'rgba(59, 130, 246, 0.08)' : (idx % 2 === 0 ? '#ffffff' : '#f8fafc') }}>
+                          <tr key={idx} style={{ backgroundColor: t.selected ? 'rgba(59, 130, 246, 0.08)' : (idx % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-app)') }}>
                             <td style={{ textAlign: 'center', width: '30px' }}>
                               <input 
                                 type="checkbox" 
@@ -2458,7 +2468,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                       </thead>
                       <tbody>
                         {rightRows.map((row, idx) => (
-                          <tr key={row.sr} style={{ backgroundColor: row.selected ? 'rgba(59, 130, 246, 0.08)' : (idx % 2 === 0 ? '#f8fafc' : '#ffffff') }}>
+                          <tr key={row.sr} style={{ backgroundColor: row.selected ? 'rgba(59, 130, 246, 0.08)' : (idx % 2 === 0 ? 'var(--bg-app)' : 'var(--bg-card)') }}>
                             <td style={{ textAlign: 'center', width: '30px' }}>
                               <input 
                                 type="checkbox" 
@@ -2593,7 +2603,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                       </thead>
                       <tbody>
                         {rightTestRows.map((t, idx) => (
-                          <tr key={idx} style={{ backgroundColor: t.selected ? 'rgba(59, 130, 246, 0.08)' : (idx % 2 === 0 ? '#ffffff' : '#f8fafc') }}>
+                          <tr key={idx} style={{ backgroundColor: t.selected ? 'rgba(59, 130, 246, 0.08)' : (idx % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-app)') }}>
                             <td style={{ textAlign: 'center', width: '30px' }}>
                               <input 
                                 type="checkbox" 
@@ -2948,7 +2958,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
                       {/* Remarks */}
                       {b.remarks && (
-                        <div style={{ padding: '6px 8px', backgroundColor: '#f8fafc', border: '1px solid #cbd5e1', fontSize: '11px', fontStyle: 'italic', marginBottom: '8px' }}>
+                        <div style={{ padding: '6px 8px', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)', fontSize: '11px', fontStyle: 'italic', marginBottom: '8px', color: 'var(--text-secondary)' }}>
                           Remarks: {b.remarks}
                         </div>
                       )}

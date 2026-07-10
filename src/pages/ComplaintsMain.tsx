@@ -593,7 +593,7 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
                     value={productNameUi} 
                     onChange={e => setProductNameUi(e.target.value)}
                     placeholder="Enter Product Name"
-                    style={{ padding: '10px 14px', fontSize: '0.85rem', border: '1.5px solid var(--border-medium)', borderRadius: '6px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', width: '100%', boxSizing: 'border-box', outline: 'none' }} 
+                    style={{ padding: '10px 14px', fontSize: '0.85rem', border: '1.5px solid var(--border-color, #cbd5e1)', borderRadius: '6px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', width: '100%', boxSizing: 'border-box', outline: 'none' }} 
                   />
                 </div>
                 
@@ -604,7 +604,7 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
                     value={customerName} 
                     onChange={e => setCustomerName(e.target.value)}
                     placeholder="Enter Customer Name"
-                    style={{ padding: '10px 14px', fontSize: '0.85rem', border: '1.5px solid var(--border-medium)', borderRadius: '6px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', width: '100%', boxSizing: 'border-box', outline: 'none' }} 
+                    style={{ padding: '10px 14px', fontSize: '0.85rem', border: '1.5px solid var(--border-color, #cbd5e1)', borderRadius: '6px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', width: '100%', boxSizing: 'border-box', outline: 'none' }} 
                   />
                 </div>
                 
@@ -616,7 +616,7 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
                     onChange={e => setBatchNo(e.target.value)}
                     placeholder="Enter Batch Number"
                     onKeyDown={e => { if (e.key === 'Enter') handleBatchSearch(); }}
-                    style={{ padding: '10px 14px', fontSize: '0.85rem', border: '1.5px solid var(--border-medium)', borderRadius: '6px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', width: '100%', boxSizing: 'border-box', outline: 'none' }} 
+                    style={{ padding: '10px 14px', fontSize: '0.85rem', border: '1.5px solid var(--border-color, #cbd5e1)', borderRadius: '6px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', width: '100%', boxSizing: 'border-box', outline: 'none' }} 
                   />
                 </div>
                 
@@ -627,7 +627,7 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
                     value={initialObservation} 
                     onChange={e => setInitialObservation(e.target.value)}
                     placeholder="Enter Initial Observation"
-                    style={{ padding: '10px 14px', fontSize: '0.85rem', border: '1.5px solid var(--border-medium)', borderRadius: '6px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', width: '100%', boxSizing: 'border-box', outline: 'none' }} 
+                    style={{ padding: '10px 14px', fontSize: '0.85rem', border: '1.5px solid var(--border-color, #cbd5e1)', borderRadius: '6px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', width: '100%', boxSizing: 'border-box', outline: 'none' }} 
                   />
                 </div>
               </div>
@@ -639,7 +639,7 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
                   value={complaintDetails} 
                   onChange={e => setComplaintDetails(e.target.value)}
                   placeholder="Enter Complaint Details"
-                  style={{ width: '100%', padding: '12px 14px', fontSize: '0.85rem', border: '1.5px solid var(--border-medium)', borderRadius: '8px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', resize: 'none', flex: 1, boxSizing: 'border-box', minHeight: '235px', outline: 'none' }}
+                  style={{ width: '100%', padding: '12px 14px', fontSize: '0.85rem', border: '1.5px solid var(--border-color, #cbd5e1)', borderRadius: '8px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', resize: 'none', flex: 1, boxSizing: 'border-box', minHeight: '235px', outline: 'none' }}
                 />
               </div>
             </div>

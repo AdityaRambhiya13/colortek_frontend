@@ -79,9 +79,18 @@ export const Header: React.FC<HeaderProps> = ({
 
   useEffect(() => {
     fetchNotifications();
-    // Poll notifications every 45 seconds
-    const interval = setInterval(fetchNotifications, 45000);
-    return () => clearInterval(interval);
+    // Poll notifications every 15 seconds
+    const interval = setInterval(fetchNotifications, 15000);
+
+    const handleRefresh = () => {
+      fetchNotifications();
+    };
+    window.addEventListener('refresh-notifications', handleRefresh);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('refresh-notifications', handleRefresh);
+    };
   }, []);
 
   // Close dropdowns on outside click

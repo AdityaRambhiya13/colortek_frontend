@@ -199,12 +199,13 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
     setSaving(false);
     if (success) {
       onShowToast(`Complaint for Batch '${batchNo}' registered!`, 'success');
-      NotificationsAPI.createNotification(
+      await NotificationsAPI.createNotification(
         "📌 Complaint Registered",
         `Batch ${batchNo} has been successfully registered.`,
         "success",
         ["production", "qc", "lab", "mf", "complaints", "cms"]
       );
+      window.dispatchEvent(new CustomEvent('refresh-notifications'));
     } else {
       onShowToast(`Failed to register: ${data}`, 'error');
     }
@@ -363,12 +364,13 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
     setSolving(false);
     if (success) {
       onShowToast('Complaint resolved! Batch removed from lab queue.', 'success');
-      NotificationsAPI.createNotification(
+      await NotificationsAPI.createNotification(
         "[SUCCESS] Complaint Solved",
         `Batch ${selectedLabComplaint.batch_no} marked as solved.`,
         "success",
         ["complaints", "lab"]
       );
+      window.dispatchEvent(new CustomEvent('refresh-notifications'));
       setSelectedLabComplaint(null); setLabComplaintDetails(null); setShowModalImages(false);
       loadLabComplaints();
     } else { onShowToast(`Failed to resolve: ${data}`, 'error'); }

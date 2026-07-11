@@ -521,7 +521,7 @@ export const RMPastFormulationsAPI = {
 // ============================================================================
 export const MasterFormulationAPI = {
   getBatchList: async (productName: string, fromDate?: string, toDate?: string, batchNoFilter?: string) => {
-    return handleResponse<any>(apiClient.get(`/lab_formulations/lmf/list/${productName}`, {
+    return handleResponse<any>(apiClient.get(`/mf/list/${productName}`, {
       params: {
         ...(fromDate && { from_date: fromDate }),
         ...(toDate && { to_date: toDate }),
@@ -531,11 +531,11 @@ export const MasterFormulationAPI = {
   },
 
   getBatchDetail: async (productName: string, batchNo: string) => {
-    return handleResponse<any>(apiClient.get(`/lab_formulations/lmf/detail/${productName}/${batchNo}`));
+    return handleResponse<any>(apiClient.get(`/mf/detail/${productName}/${batchNo}`));
   },
 
   updateBatch: async (productName: string, batchNo: string, updatedData: any) => {
-    return handleResponse<any>(apiClient.post('/lab_formulations/lmf/update', {
+    return handleResponse<any>(apiClient.post('/mf/update', {
       product_name: productName,
       batch_no: batchNo,
       updated_data: updatedData,
@@ -543,7 +543,7 @@ export const MasterFormulationAPI = {
   },
 
   getBatchCount: async (productName: string) => {
-    return handleResponse<any>(apiClient.get(`/lab_formulations/lmf/count/${productName}`));
+    return handleResponse<any>(apiClient.get(`/mf/count/${productName}`));
   },
 
   findByBatch: async (batchNo: string) => {

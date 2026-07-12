@@ -188,26 +188,32 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
       onShowToast('Please load a valid batch first.', 'warning'); return;
     }
     setSaving(true);
-    const payload = {
-      batch_no: batchNo.trim(), customer_name: customerName.trim(),
-      product_name_ui: productNameUi.trim(), complaint_text: complaintDetails.trim(),
-      observation_text: initialObservation.trim(),
-      raw_materials: batchRefData?.production_sheet_data || {},
-      test_results: batchRefData?.master_test_results || []
-    };
-    const [success, data] = await ComplaintRegistrationAPI.registerComplaintWithImage(foundProductDb, payload, imageFiles);
-    setSaving(false);
-    if (success) {
-      onShowToast(`Complaint for Batch '${batchNo}' registered!`, 'success');
-      await NotificationsAPI.createNotification(
-        "📌 Complaint Registered",
-        `Batch ${batchNo} has been successfully registered.`,
-        "success",
-        ["production", "qc", "lab", "mf", "complaints", "cms"]
-      );
-      window.dispatchEvent(new CustomEvent('refresh-notifications'));
-    } else {
-      onShowToast(`Failed to register: ${data}`, 'error');
+    try {
+      const payload = {
+        batch_no: batchNo.trim(), customer_name: customerName.trim(),
+        product_name_ui: productNameUi.trim(), complaint_text: complaintDetails.trim(),
+        observation_text: initialObservation.trim(),
+        raw_materials: batchRefData?.production_sheet_data || {},
+        test_results: batchRefData?.master_test_results || []
+      };
+      const [success, data] = await ComplaintRegistrationAPI.registerComplaintWithImage(foundProductDb, payload, imageFiles);
+      if (success) {
+        onShowToast(`Complaint for Batch '${batchNo}' registered!`, 'success');
+        await NotificationsAPI.createNotification(
+          "📌 Complaint Registered",
+          `Batch ${batchNo} has been successfully registered.`,
+          "success",
+          ["production", "qc", "lab", "mf", "complaints", "cms"]
+        );
+        window.dispatchEvent(new CustomEvent('refresh-notifications'));
+      } else {
+        onShowToast(`Failed to register: ${data}`, 'error');
+      }
+    } catch (err: any) {
+      console.error(err);
+      onShowToast(`Failed to save complaint: ${err.message || err}`, 'error');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -216,17 +222,23 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
       onShowToast('Please load batch details first.', 'warning'); return;
     }
     setMoving(true);
-    const [success, data] = await ComplaintRegistrationAPI.moveToLab(foundProductDb, batchNo.trim());
-    setMoving(false);
-    if (success) {
-      onShowToast(`Batch '${batchNo}' pushed to Lab queue!`, 'success');
-      // Clear form fields after successfully pushing to the lab
-      setProductNameUi(''); setCustomerName(''); setBatchNo('');
-      setInitialObservation(''); setComplaintDetails('');
-      setImageFiles([]); setImagePreviews([]);
-      setBatchRefData(null); setFoundProductDb('');
-    } else {
-      onShowToast(`Move to Lab failed: ${data}`, 'error');
+    try {
+      const [success, data] = await ComplaintRegistrationAPI.moveToLab(foundProductDb, batchNo.trim());
+      if (success) {
+        onShowToast(`Batch '${batchNo}' pushed to Lab queue!`, 'success');
+        // Clear form fields after successfully pushing to the lab
+        setProductNameUi(''); setCustomerName(''); setBatchNo('');
+        setInitialObservation(''); setComplaintDetails('');
+        setImageFiles([]); setImagePreviews([]);
+        setBatchRefData(null); setFoundProductDb('');
+      } else {
+        onShowToast(`Move to Lab failed: ${data}`, 'error');
+      }
+    } catch (err: any) {
+      console.error(err);
+      onShowToast(`Failed to move batch to lab: ${err.message || err}`, 'error');
+    } finally {
+      setMoving(false);
     }
   };
 
@@ -360,20 +372,28 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
     if (!selectedLabComplaint) return;
     if (!window.confirm(`Mark batch '${selectedLabComplaint.batch_no}' as solved?`)) return;
     setSolving(true);
-    const [success, data] = await ComplaintLabAPI.solveComplaint(selectedLabComplaint.product_name, selectedLabComplaint.batch_no);
-    setSolving(false);
-    if (success) {
-      onShowToast('Complaint resolved! Batch removed from lab queue.', 'success');
-      await NotificationsAPI.createNotification(
-        "[SUCCESS] Complaint Solved",
-        `Batch ${selectedLabComplaint.batch_no} marked as solved.`,
-        "success",
-        ["complaints", "lab"]
-      );
-      window.dispatchEvent(new CustomEvent('refresh-notifications'));
-      setSelectedLabComplaint(null); setLabComplaintDetails(null); setShowModalImages(false);
-      loadLabComplaints();
-    } else { onShowToast(`Failed to resolve: ${data}`, 'error'); }
+    try {
+      const [success, data] = await ComplaintLabAPI.solveComplaint(selectedLabComplaint.product_name, selectedLabComplaint.batch_no);
+      if (success) {
+        onShowToast('Complaint resolved! Batch removed from lab queue.', 'success');
+        await NotificationsAPI.createNotification(
+          "[SUCCESS] Complaint Solved",
+          `Batch ${selectedLabComplaint.batch_no} marked as solved.`,
+          "success",
+          ["complaints", "lab"]
+        );
+        window.dispatchEvent(new CustomEvent('refresh-notifications'));
+        setSelectedLabComplaint(null); setLabComplaintDetails(null); setShowModalImages(false);
+        loadLabComplaints();
+      } else { 
+        onShowToast(`Failed to resolve: ${data}`, 'error'); 
+      }
+    } catch (err: any) {
+      console.error(err);
+      onShowToast(`Failed to solve complaint: ${err.message || err}`, 'error');
+    } finally {
+      setSolving(false);
+    }
   };
 
   const handleModifyComplaint = async () => {

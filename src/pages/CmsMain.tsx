@@ -1944,10 +1944,10 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
       const remarks = data.remarks || '';
 
-      let estimatedHeight = 8 + 12 + (11 + inventory.length * 4.5);
-      if (tests.length > 0) estimatedHeight += 10.5 + (tests.length * 4.5);
-      if (remarks) estimatedHeight += 18;
-      estimatedHeight += 4;
+      let estimatedHeight = 6 + 12 + (15 + inventory.length * 4);
+      if (tests.length > 0) estimatedHeight += 8 + (tests.length * 4);
+      if (remarks) estimatedHeight += 14;
+      estimatedHeight += 3;
 
       if (idx > 0 && currentY + estimatedHeight > pageHeightLimit) {
         doc.addPage();
@@ -1960,60 +1960,60 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       doc.setFont('Helvetica', 'bold');
       doc.setFontSize(9.5);
       doc.setTextColor(29, 78, 216); // Blue-700
-      doc.text(`Batch: ${batchNo}`, startX + 4, startY + 6);
+      doc.text(`Batch: ${batchNo}`, startX + 4, startY + 5);
       
       doc.setFont('Helvetica', 'normal');
       doc.setFontSize(8.5);
       doc.setTextColor(107, 114, 128);
-      doc.text(`Ref: ${refNo !== 'N/A' ? refNo : '-'}`, startX + cardWidth - 4, startY + 6, { align: 'right' });
+      doc.text(`Ref: ${refNo !== 'N/A' ? refNo : '-'}`, startX + cardWidth - 4, startY + 5, { align: 'right' });
 
       doc.setDrawColor(229, 231, 235);
-      doc.line(startX + 4, startY + 8, startX + cardWidth - 4, startY + 8);
+      doc.line(startX + 4, startY + 6, startX + cardWidth - 4, startY + 6);
 
       // BATCH DETAILS Table
       doc.setFont('Helvetica', 'bold');
       doc.setFontSize(7.5);
       doc.setTextColor(29, 78, 216);
-      doc.text('BATCH DETAILS', startX + 4, startY + 12);
+      doc.text('BATCH DETAILS', startX + 4, startY + 9);
 
       doc.setDrawColor(209, 213, 219);
       doc.setFillColor(249, 250, 251);
-      doc.rect(startX + 4, startY + 14, cardWidth - 8, 10);
-      doc.line(startX + 4, startY + 19, startX + cardWidth - 4, startY + 19); // Horizontal Divider
-      doc.line(startX + 4 + (cardWidth - 8) / 2, startY + 14, startX + 4 + (cardWidth - 8) / 2, startY + 24); // Vertical Divider
+      doc.rect(startX + 4, startY + 10, cardWidth - 8, 8);
+      doc.line(startX + 4, startY + 14, startX + cardWidth - 4, startY + 14); // Horizontal Divider
+      doc.line(startX + 4 + (cardWidth - 8) / 2, startY + 10, startX + 4 + (cardWidth - 8) / 2, startY + 18); // Vertical Divider
 
       doc.setFontSize(7);
       doc.setTextColor(0, 0, 0);
-      doc.setFont('Helvetica', 'bold'); doc.text('Product Name:', startX + 6, startY + 17.5);
-      doc.setFont('Helvetica', 'normal'); doc.text(productNameField, startX + 28, startY + 17.5);
+      doc.setFont('Helvetica', 'bold'); doc.text('Product Name:', startX + 6, startY + 13);
+      doc.setFont('Helvetica', 'normal'); doc.text(productNameField, startX + 28, startY + 13);
       
-      doc.setFont('Helvetica', 'bold'); doc.text('Formula Date:', startX + 4 + (cardWidth - 8) / 2 + 2, startY + 17.5);
-      doc.setFont('Helvetica', 'normal'); doc.text(formulaDate !== 'N/A' ? formulaDate : '-', startX + 4 + (cardWidth - 8) / 2 + 22, startY + 17.5);
+      doc.setFont('Helvetica', 'bold'); doc.text('Formula Date:', startX + 4 + (cardWidth - 8) / 2 + 2, startY + 13);
+      doc.setFont('Helvetica', 'normal'); doc.text(formulaDate !== 'N/A' ? formulaDate : '-', startX + 4 + (cardWidth - 8) / 2 + 22, startY + 13);
 
-      doc.setFont('Helvetica', 'bold'); doc.text('Test Date:', startX + 6, startY + 22.5);
-      doc.setFont('Helvetica', 'normal'); doc.text(testDate !== 'N/A' ? testDate : '-', startX + 28, startY + 22.5);
+      doc.setFont('Helvetica', 'bold'); doc.text('Test Date:', startX + 6, startY + 17);
+      doc.setFont('Helvetica', 'normal'); doc.text(testDate !== 'N/A' ? testDate : '-', startX + 28, startY + 17);
       
-      doc.setFont('Helvetica', 'bold'); doc.text('Report Date:', startX + 4 + (cardWidth - 8) / 2 + 2, startY + 22.5);
-      doc.setFont('Helvetica', 'normal'); doc.text(reportDate !== 'N/A' ? reportDate : '-', startX + 4 + (cardWidth - 8) / 2 + 22, startY + 22.5);
+      doc.setFont('Helvetica', 'bold'); doc.text('Report Date:', startX + 4 + (cardWidth - 8) / 2 + 2, startY + 17);
+      doc.setFont('Helvetica', 'normal'); doc.text(reportDate !== 'N/A' ? reportDate : '-', startX + 4 + (cardWidth - 8) / 2 + 22, startY + 17);
 
       // RAW MATERIALS Table
       doc.setFont('Helvetica', 'bold');
       doc.setFontSize(7.5);
       doc.setTextColor(29, 78, 216);
-      doc.text('RAW MATERIALS', startX + 4, startY + 28);
+      doc.text('RAW MATERIALS', startX + 4, startY + 21);
 
-      let tableY = startY + 30;
+      let tableY = startY + 23;
       doc.setFillColor(245, 248, 250);
-      doc.rect(startX + 4, tableY, cardWidth - 8, 4.5, 'F');
-      doc.rect(startX + 4, tableY, cardWidth - 8, 4.5, 'S');
+      doc.rect(startX + 4, tableY, cardWidth - 8, 4, 'F');
+      doc.rect(startX + 4, tableY, cardWidth - 8, 4, 'S');
 
       doc.setFontSize(7.5);
       doc.setTextColor(0, 0, 0);
-      doc.text('Sr', startX + 6, tableY + 3.2);
-      doc.text('Material Description', startX + 16, tableY + 3.2);
-      doc.text('Qty (g)', startX + cardWidth - 6, tableY + 3.2, { align: 'right' });
+      doc.text('Sr', startX + 6, tableY + 2.8);
+      doc.text('Material Description', startX + 16, tableY + 2.8);
+      doc.text('Qty (g)', startX + cardWidth - 6, tableY + 2.8, { align: 'right' });
 
-      tableY += 4.5;
+      tableY += 4;
       doc.setFont('Helvetica', 'normal');
       doc.setFontSize(7);
 
@@ -2021,66 +2021,66 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       inventory.forEach((item: any, index: number) => {
         if (index % 2 === 0) {
           doc.setFillColor(250, 250, 250);
-          doc.rect(startX + 4, tableY, cardWidth - 8, 4.5, 'F');
+          doc.rect(startX + 4, tableY, cardWidth - 8, 4, 'F');
         }
-        doc.rect(startX + 4, tableY, cardWidth - 8, 4.5, 'S');
+        doc.rect(startX + 4, tableY, cardWidth - 8, 4, 'S');
 
-        doc.text(item.sr || String(index + 1), startX + 6, tableY + 3.2);
-        doc.text(item.material, startX + 16, tableY + 3.2);
+        doc.text(item.sr || String(index + 1), startX + 6, tableY + 2.8);
+        doc.text(item.material, startX + 16, tableY + 2.8);
         
         const qtyVal = parseFloat(item.qty);
         if (!isNaN(qtyVal)) {
           totalQty += qtyVal;
-          doc.text(qtyVal.toFixed(2), startX + cardWidth - 6, tableY + 3.2, { align: 'right' });
+          doc.text(qtyVal.toFixed(2), startX + cardWidth - 6, tableY + 2.8, { align: 'right' });
         } else {
-          doc.text(item.qty || '0.00', startX + cardWidth - 6, tableY + 3.2, { align: 'right' });
+          doc.text(item.qty || '0.00', startX + cardWidth - 6, tableY + 2.8, { align: 'right' });
         }
-        tableY += 4.5;
+        tableY += 4;
       });
 
       // Total Row
       doc.setFillColor(243, 244, 246);
-      doc.rect(startX + 4, tableY, cardWidth - 8, 4.5, 'F');
-      doc.rect(startX + 4, tableY, cardWidth - 8, 4.5, 'S');
+      doc.rect(startX + 4, tableY, cardWidth - 8, 4, 'F');
+      doc.rect(startX + 4, tableY, cardWidth - 8, 4, 'S');
       doc.setFont('Helvetica', 'bold');
-      doc.text('Total Qty:', startX + 16, tableY + 3.2);
-      doc.text(`${totalQty.toFixed(2)} g`, startX + cardWidth - 6, tableY + 3.2, { align: 'right' });
+      doc.text('Total Qty:', startX + 16, tableY + 2.8);
+      doc.text(`${totalQty.toFixed(2)} g`, startX + cardWidth - 6, tableY + 2.8, { align: 'right' });
 
-      let nextY = tableY + 4.5;
+      let nextY = tableY + 4;
 
       // TEST RESULTS (if exist)
       if (tests.length > 0) {
         doc.setFont('Helvetica', 'bold');
         doc.setFontSize(7.5);
         doc.setTextColor(29, 78, 216);
-        doc.text('TEST RESULTS', startX + 4, nextY + 4);
+        doc.text('TEST RESULTS', startX + 4, nextY + 3);
 
-        let testTableY = nextY + 6;
+        let testTableY = nextY + 5;
         doc.setFillColor(245, 248, 250);
-        doc.rect(startX + 4, testTableY, cardWidth - 8, 4.5, 'F');
-        doc.rect(startX + 4, testTableY, cardWidth - 8, 4.5, 'S');
+        doc.rect(startX + 4, testTableY, cardWidth - 8, 4, 'F');
+        doc.rect(startX + 4, testTableY, cardWidth - 8, 4, 'S');
 
         doc.setFontSize(7.5);
         doc.setTextColor(0, 0, 0);
-        doc.text('Test Method', startX + 6, testTableY + 3.2);
-        doc.text('Standard Spec', startX + 96, testTableY + 3.2);
-        doc.text('Result', startX + cardWidth - 6, testTableY + 3.2, { align: 'right' });
+        doc.text('Test Method', startX + 6, testTableY + 2.8);
+        doc.text('Standard Spec', startX + 96, testTableY + 2.8);
+        doc.text('Result', startX + cardWidth - 6, testTableY + 2.8, { align: 'right' });
 
-        testTableY += 4.5;
+        testTableY += 4;
         doc.setFont('Helvetica', 'normal');
         doc.setFontSize(7);
 
         tests.forEach((t: any, index: number) => {
           if (index % 2 === 0) {
             doc.setFillColor(250, 250, 250);
-            doc.rect(startX + 4, testTableY, cardWidth - 8, 4.5, 'F');
+            doc.rect(startX + 4, testTableY, cardWidth - 8, 4, 'F');
           }
-          doc.rect(startX + 4, testTableY, cardWidth - 8, 4.5, 'S');
+          doc.rect(startX + 4, testTableY, cardWidth - 8, 4, 'S');
 
-          doc.text(t.method, startX + 6, testTableY + 3.2);
-          doc.text(t.standard || '-', startX + 96, testTableY + 3.2);
-          doc.text(t.result || '-', startX + cardWidth - 6, testTableY + 3.2, { align: 'right' });
-          testTableY += 4.5;
+          doc.text(t.method, startX + 6, testTableY + 2.8);
+          doc.text(t.standard || '-', startX + 96, testTableY + 2.8);
+          doc.text(t.result || '-', startX + cardWidth - 6, testTableY + 2.8, { align: 'right' });
+          testTableY += 4;
         });
 
         nextY = testTableY;
@@ -2091,10 +2091,10 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
         doc.setFont('Helvetica', 'bold');
         doc.setFontSize(7.5);
         doc.setTextColor(29, 78, 216);
-        doc.text('Remarks & Comments:', startX + 4, nextY + 4);
+        doc.text('Remarks & Comments:', startX + 4, nextY + 3);
 
-        const remarksBoxY = nextY + 6;
-        const remarksBoxHeight = 12;
+        const remarksBoxY = nextY + 5;
+        const remarksBoxHeight = 10;
         doc.setDrawColor(209, 213, 219);
         doc.rect(startX + 4, remarksBoxY, cardWidth - 8, remarksBoxHeight);
 
@@ -2102,18 +2102,18 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
         doc.setFontSize(7);
         doc.setTextColor(0, 0, 0);
         const splitRem = doc.splitTextToSize(remarks, cardWidth - 16);
-        doc.text(splitRem, startX + 6, remarksBoxY + 4.5);
+        doc.text(splitRem, startX + 6, remarksBoxY + 3.5);
 
         nextY = remarksBoxY + remarksBoxHeight;
       }
 
       // Draw Card Border exactly around the final content bottom
-      const finalCardHeight = (nextY + 4) - startY;
+      const finalCardHeight = (nextY + 3) - startY;
       doc.setDrawColor(200, 200, 200);
       doc.setLineWidth(0.3);
       doc.rect(startX, startY, cardWidth, finalCardHeight, 'S');
 
-      currentY = startY + finalCardHeight + 5; // Add gap between cards
+      currentY = startY + finalCardHeight + 4; // Add gap between cards
     });
 
     doc.save(`Lab_Complete_Cards_${Date.now()}.pdf`);

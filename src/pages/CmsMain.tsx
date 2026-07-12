@@ -1864,25 +1864,12 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
   const generateMultiFormulationsPrintPDF = (fetchedData: any[]) => {
     const doc = new jsPDF('p', 'mm', 'a4');
-    const itemsPerPage = 3;
-    const bandHeight = 90;
-    const verticalGap = 3.5;
-    const startMarginY = 8;
-
-    const totalFrontPages = Math.ceil(fetchedData.length / itemsPerPage);
-    const totalPages = totalFrontPages * 2;
-
-    // Pre-create all pages in the PDF
-    for (let p = 1; p < totalPages; p++) {
-      doc.addPage();
-    }
+    let currentY = 8;
+    const pageHeightLimit = 280;
+    const cardWidth = 194;
+    const startX = 8;
 
     fetchedData.forEach((data, idx) => {
-      const frontPageNum = Math.floor(idx / itemsPerPage) + 1;
-      const backPageNum = totalFrontPages + Math.floor(idx / itemsPerPage) + 1;
-      const bandIndex = idx % itemsPerPage;
-      const startY = startMarginY + bandIndex * (bandHeight + verticalGap);
-
       const fd = data.form_data || [];
       const refNo = data.ref_no || fd[0] || 'N/A';
       const batchNo = data.batch_no || fd[1] || 'N/A';
@@ -1940,185 +1927,187 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
       const remarks = data.remarks || '';
 
-      // --- 1. DRAW FRONT SIDE (Ingredients & Details) ON frontPageNum ---
-      doc.setPage(frontPageNum);
+      // Estimate the height of this formulation card
+      // Header: 8
+      // Batch Details Title + Grid: 16
+      // Raw Materials Title + Header + Rows + Total: 6 + 4.5 + (inventory.length * 4.5) + 4.5 = 15 + inventory.length * 4.5
+      // Test Results Title + Header + Rows (if exist): 6 + 4.5 + (tests.length * 4.5) = 15 + tests.length * 4.5
+      // Remarks Title + Box (if exist): 6 + 12 = 18
+      // Margin bottom padding: 4
+      let estimatedHeight = 8 + 16 + (15 + inventory.length * 4.5);
+      if (tests.length > 0) estimatedHeight += 15 + (tests.length * 4.5);
+      if (remarks) estimatedHeight += 18;
+      estimatedHeight += 4;
 
-      // Card Border
-      doc.setDrawColor(128, 128, 128);
-      doc.setLineWidth(0.4);
-      doc.rect(8, startY, 194, bandHeight, 'S');
+      if (idx > 0 && currentY + estimatedHeight > pageHeightLimit) {
+        doc.addPage();
+        currentY = 8;
+      }
+
+      const startY = currentY;
 
       // Card Header
       doc.setFont('Helvetica', 'bold');
       doc.setFontSize(9.5);
       doc.setTextColor(29, 78, 216); // Blue-700
-      doc.text(`Batch: ${batchNo}`, 12, startY + 6);
+      doc.text(`Batch: ${batchNo}`, startX + 4, startY + 6);
       
       doc.setFont('Helvetica', 'normal');
       doc.setFontSize(8.5);
       doc.setTextColor(107, 114, 128);
-      doc.text(`Ref: ${refNo !== 'N/A' ? refNo : '-'}   |   Product: ${productNameField} (Ingredients)`, 48, startY + 6);
+      doc.text(`Ref: ${refNo !== 'N/A' ? refNo : '-'}`, startX + cardWidth - 4, startY + 6, { align: 'right' });
 
-      doc.setDrawColor(200, 200, 200);
-      doc.line(10, startY + 9, 200, startY + 9);
+      doc.setDrawColor(229, 231, 235);
+      doc.line(startX + 4, startY + 8, startX + cardWidth - 4, startY + 8);
 
-      // BATCH DETAILS Title & Table
+      // BATCH DETAILS Table
       doc.setFont('Helvetica', 'bold');
       doc.setFontSize(7.5);
       doc.setTextColor(29, 78, 216);
-      doc.text('BATCH DETAILS', 12, startY + 13);
+      doc.text('BATCH DETAILS', startX + 4, startY + 12);
 
       doc.setDrawColor(209, 213, 219);
       doc.setFillColor(249, 250, 251);
-      doc.rect(12, startY + 15, 186, 10);
-      doc.line(12, startY + 20, 198, startY + 20); // Horizontal Divider
-      doc.line(12 + 186 / 2, startY + 15, 12 + 186 / 2, startY + 25); // Vertical Divider
+      doc.rect(startX + 4, startY + 14, cardWidth - 8, 10);
+      doc.line(startX + 4, startY + 19, startX + cardWidth - 4, startY + 19); // Horizontal Divider
+      doc.line(startX + 4 + (cardWidth - 8) / 2, startY + 14, startX + 4 + (cardWidth - 8) / 2, startY + 24); // Vertical Divider
 
       doc.setFontSize(7);
       doc.setTextColor(0, 0, 0);
+      doc.setFont('Helvetica', 'bold'); doc.text('Product Name:', startX + 6, startY + 17.5);
+      doc.setFont('Helvetica', 'normal'); doc.text(productNameField, startX + 28, startY + 17.5);
       
-      doc.setFont('Helvetica', 'bold'); doc.text('Product Name:', 14, startY + 18.5);
-      doc.setFont('Helvetica', 'normal'); doc.text(productNameField, 36, startY + 18.5);
-      
-      doc.setFont('Helvetica', 'bold'); doc.text('Formula Date:', 12 + 186 / 2 + 2, startY + 18.5);
-      doc.setFont('Helvetica', 'normal'); doc.text(formulaDate !== 'N/A' ? formulaDate : '-', 12 + 186 / 2 + 22, startY + 18.5);
+      doc.setFont('Helvetica', 'bold'); doc.text('Formula Date:', startX + 4 + (cardWidth - 8) / 2 + 2, startY + 17.5);
+      doc.setFont('Helvetica', 'normal'); doc.text(formulaDate !== 'N/A' ? formulaDate : '-', startX + 4 + (cardWidth - 8) / 2 + 22, startY + 17.5);
 
-      doc.setFont('Helvetica', 'bold'); doc.text('Test Date:', 14, startY + 23.5);
-      doc.setFont('Helvetica', 'normal'); doc.text(testDate !== 'N/A' ? testDate : '-', 36, startY + 23.5);
+      doc.setFont('Helvetica', 'bold'); doc.text('Test Date:', startX + 6, startY + 22.5);
+      doc.setFont('Helvetica', 'normal'); doc.text(testDate !== 'N/A' ? testDate : '-', startX + 28, startY + 22.5);
       
-      doc.setFont('Helvetica', 'bold'); doc.text('Report Date:', 12 + 186 / 2 + 2, startY + 23.5);
-      doc.setFont('Helvetica', 'normal'); doc.text(reportDate !== 'N/A' ? reportDate : '-', 12 + 186 / 2 + 22, startY + 23.5);
+      doc.setFont('Helvetica', 'bold'); doc.text('Report Date:', startX + 4 + (cardWidth - 8) / 2 + 2, startY + 22.5);
+      doc.setFont('Helvetica', 'normal'); doc.text(reportDate !== 'N/A' ? reportDate : '-', startX + 4 + (cardWidth - 8) / 2 + 22, startY + 22.5);
 
-      // RAW MATERIALS Title & Table
+      // RAW MATERIALS Table
       doc.setFont('Helvetica', 'bold');
       doc.setFontSize(7.5);
       doc.setTextColor(29, 78, 216);
-      doc.text('RAW MATERIALS', 12, startY + 29);
+      doc.text('RAW MATERIALS', startX + 4, startY + 28);
 
-      let tableY = startY + 31;
+      let tableY = startY + 30;
       doc.setFillColor(245, 248, 250);
-      doc.rect(12, tableY, 186, 4.5, 'F');
-      doc.rect(12, tableY, 186, 4.5, 'S');
+      doc.rect(startX + 4, tableY, cardWidth - 8, 4.5, 'F');
+      doc.rect(startX + 4, tableY, cardWidth - 8, 4.5, 'S');
 
       doc.setFontSize(7.5);
       doc.setTextColor(0, 0, 0);
-      doc.text('Sr', 14, tableY + 3.2);
-      doc.text('Material Description', 26, tableY + 3.2);
-      doc.text('Qty (g)', 196, tableY + 3.2, { align: 'right' });
+      doc.text('Sr', startX + 6, tableY + 3.2);
+      doc.text('Material Description', startX + 16, tableY + 3.2);
+      doc.text('Qty (g)', startX + cardWidth - 6, tableY + 3.2, { align: 'right' });
 
       tableY += 4.5;
       doc.setFont('Helvetica', 'normal');
       doc.setFontSize(7);
 
       let totalQty = 0;
-      const visibleInventory = inventory.slice(0, 10);
-      visibleInventory.forEach((item: any, index: number) => {
+      inventory.forEach((item: any, index: number) => {
         if (index % 2 === 0) {
           doc.setFillColor(250, 250, 250);
-          doc.rect(12, tableY, 186, 4.5, 'F');
+          doc.rect(startX + 4, tableY, cardWidth - 8, 4.5, 'F');
         }
-        doc.rect(12, tableY, 186, 4.5, 'S');
+        doc.rect(startX + 4, tableY, cardWidth - 8, 4.5, 'S');
 
-        doc.text(item.sr || String(index + 1), 14, tableY + 3.2);
-        doc.text(item.material, 26, tableY + 3.2);
+        doc.text(item.sr || String(index + 1), startX + 6, tableY + 3.2);
+        doc.text(item.material, startX + 16, tableY + 3.2);
         
         const qtyVal = parseFloat(item.qty);
         if (!isNaN(qtyVal)) {
           totalQty += qtyVal;
-          doc.text(qtyVal.toFixed(2), 196, tableY + 3.2, { align: 'right' });
+          doc.text(qtyVal.toFixed(2), startX + cardWidth - 6, tableY + 3.2, { align: 'right' });
         } else {
-          doc.text(item.qty || '0.00', 196, tableY + 3.2, { align: 'right' });
+          doc.text(item.qty || '0.00', startX + cardWidth - 6, tableY + 3.2, { align: 'right' });
         }
         tableY += 4.5;
       });
 
       // Total Row
       doc.setFillColor(243, 244, 246);
-      doc.rect(12, tableY, 186, 4.5, 'F');
-      doc.rect(12, tableY, 186, 4.5, 'S');
+      doc.rect(startX + 4, tableY, cardWidth - 8, 4.5, 'F');
+      doc.rect(startX + 4, tableY, cardWidth - 8, 4.5, 'S');
       doc.setFont('Helvetica', 'bold');
-      doc.text('Total Qty:', 26, tableY + 3.2);
-      doc.text(`${totalQty.toFixed(2)} g`, 196, tableY + 3.2, { align: 'right' });
+      doc.text('Total Qty:', startX + 16, tableY + 3.2);
+      doc.text(`${totalQty.toFixed(2)} g`, startX + cardWidth - 6, tableY + 3.2, { align: 'right' });
 
+      let nextY = tableY + 4.5;
 
-      // --- 2. DRAW BACK SIDE (Test Results & Remarks) ON backPageNum ---
-      doc.setPage(backPageNum);
-
-      // Card Border
-      doc.setDrawColor(128, 128, 128);
-      doc.setLineWidth(0.4);
-      doc.rect(8, startY, 194, bandHeight, 'S');
-
-      // Card Header
-      doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(9.5);
-      doc.setTextColor(29, 78, 216); // Blue-700
-      doc.text(`Batch: ${batchNo}`, 12, startY + 6);
-      
-      doc.setFont('Helvetica', 'normal');
-      doc.setFontSize(8.5);
-      doc.setTextColor(107, 114, 128);
-      doc.text(`Ref: ${refNo !== 'N/A' ? refNo : '-'}   |   Product: ${productNameField} (Test Results & Specs)`, 48, startY + 6);
-
-      doc.setDrawColor(200, 200, 200);
-      doc.line(10, startY + 9, 200, startY + 9);
-
-      // TEST RESULTS Section
-      doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(7.5);
-      doc.setTextColor(29, 78, 216);
-      doc.text('TEST RESULTS', 12, startY + 13);
-
-      let testY = startY + 15;
-      doc.setFillColor(245, 248, 250);
-      doc.rect(12, testY, 186, 4.5, 'F');
-      doc.rect(12, testY, 186, 4.5, 'S');
-
-      doc.setFontSize(7.5);
-      doc.setTextColor(0, 0, 0);
-      doc.text('Test Method', 14, testY + 3.2);
-      doc.text('Standard Spec', 96, testY + 3.2);
-      doc.text('Result', 196, testY + 3.2, { align: 'right' });
-
-      testY += 4.5;
-      doc.setFont('Helvetica', 'normal');
-      doc.setFontSize(7);
-
+      // TEST RESULTS (if exist)
       if (tests.length > 0) {
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(7.5);
+        doc.setTextColor(29, 78, 216);
+        doc.text('TEST RESULTS', startX + 4, nextY + 4);
+
+        let testTableY = nextY + 6;
+        doc.setFillColor(245, 248, 250);
+        doc.rect(startX + 4, testTableY, cardWidth - 8, 4.5, 'F');
+        doc.rect(startX + 4, testTableY, cardWidth - 8, 4.5, 'S');
+
+        doc.setFontSize(7.5);
+        doc.setTextColor(0, 0, 0);
+        doc.text('Test Method', startX + 6, testTableY + 3.2);
+        doc.text('Standard Spec', startX + 96, testTableY + 3.2);
+        doc.text('Result', startX + cardWidth - 6, testTableY + 3.2, { align: 'right' });
+
+        testTableY += 4.5;
+        doc.setFont('Helvetica', 'normal');
+        doc.setFontSize(7);
+
         tests.forEach((t: any, index: number) => {
           if (index % 2 === 0) {
             doc.setFillColor(250, 250, 250);
-            doc.rect(12, testY, 186, 4.5, 'F');
+            doc.rect(startX + 4, testTableY, cardWidth - 8, 4.5, 'F');
           }
-          doc.rect(12, testY, 186, 4.5, 'S');
+          doc.rect(startX + 4, testTableY, cardWidth - 8, 4.5, 'S');
 
-          doc.text(t.method, 14, testY + 3.2);
-          doc.text(t.standard || '-', 96, testY + 3.2);
-          doc.text(t.result || '-', 196, testY + 3.2, { align: 'right' });
-          testY += 4.5;
+          doc.text(t.method, startX + 6, testTableY + 3.2);
+          doc.text(t.standard || '-', startX + 96, testTableY + 3.2);
+          doc.text(t.result || '-', startX + cardWidth - 6, testTableY + 3.2, { align: 'right' });
+          testTableY += 4.5;
         });
-      } else {
-        doc.rect(12, testY, 186, 6, 'S');
-        doc.text('No test specifications recorded.', 14, testY + 4.2);
-        testY += 6;
+
+        nextY = testTableY;
       }
 
-      // Remarks Section
-      const remarksStartY = Math.max(startY + 58, testY + 4);
-      doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(7.5);
-      doc.setTextColor(29, 78, 216);
-      doc.text('Remarks & Comments:', 12, remarksStartY);
+      // Remarks & Comments (if exist)
+      if (remarks) {
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(7.5);
+        doc.setTextColor(29, 78, 216);
+        doc.text('Remarks & Comments:', startX + 4, nextY + 4);
 
-      doc.setFont('Helvetica', 'normal');
-      doc.setFontSize(7.5);
-      doc.setTextColor(0, 0, 0);
-      const splitRem = doc.splitTextToSize(remarks || 'No additional remarks.', 182);
-      doc.text(splitRem, 12, remarksStartY + 4);
+        const remarksBoxY = nextY + 6;
+        const remarksBoxHeight = 12;
+        doc.setDrawColor(209, 213, 219);
+        doc.rect(startX + 4, remarksBoxY, cardWidth - 8, remarksBoxHeight);
+
+        doc.setFont('Helvetica', 'normal');
+        doc.setFontSize(7);
+        doc.setTextColor(0, 0, 0);
+        const splitRem = doc.splitTextToSize(remarks, cardWidth - 16);
+        doc.text(splitRem, startX + 6, remarksBoxY + 4.5);
+
+        nextY = remarksBoxY + remarksBoxHeight;
+      }
+
+      // Draw Card Border exactly around the final content bottom
+      const finalCardHeight = (nextY + 4) - startY;
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.3);
+      doc.rect(startX, startY, cardWidth, finalCardHeight, 'S');
+
+      currentY = startY + finalCardHeight + 5; // Add gap between cards
     });
 
-    doc.save(`Lab_Formulations_Batch_Print_${Date.now()}.pdf`);
-    onShowToast(`Downloaded! Pages 1 to ${totalFrontPages} are Fronts. Pages ${totalFrontPages+1} to ${totalPages} are Backs. Flip and print accordingly!`, 'info');
+    doc.save(`Lab_Complete_Cards_${Date.now()}.pdf`);
+    onShowToast(`Printable Complete Cards downloaded successfully!`, 'success');
     setSelectedPastBatches([]); // Reset selection after printing
   };
 

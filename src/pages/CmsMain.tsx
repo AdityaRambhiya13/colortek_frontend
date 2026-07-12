@@ -1927,15 +1927,8 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
       const remarks = data.remarks || '';
 
-      // Estimate the height of this formulation card
-      // Header: 8
-      // Batch Details Title + Grid: 16
-      // Raw Materials Title + Header + Rows + Total: 6 + 4.5 + (inventory.length * 4.5) + 4.5 = 15 + inventory.length * 4.5
-      // Test Results Title + Header + Rows (if exist): 6 + 4.5 + (tests.length * 4.5) = 15 + tests.length * 4.5
-      // Remarks Title + Box (if exist): 6 + 12 = 18
-      // Margin bottom padding: 4
-      let estimatedHeight = 8 + 16 + (15 + inventory.length * 4.5);
-      if (tests.length > 0) estimatedHeight += 15 + (tests.length * 4.5);
+      let estimatedHeight = 8 + 12 + (11 + inventory.length * 4.5);
+      if (tests.length > 0) estimatedHeight += 10.5 + (tests.length * 4.5);
       if (remarks) estimatedHeight += 18;
       estimatedHeight += 4;
 

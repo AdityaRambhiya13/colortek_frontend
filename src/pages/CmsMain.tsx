@@ -1449,11 +1449,12 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     const fd = data.form_data || [];
     const refNo = data.ref_no || fd[0] || 'N/A';
     const batchNo = data.batch_no || fd[1] || 'N/A';
+    
+    const isLab = fd.length === 6;
     const productNameField = fd[2] || data.product_name_field || data.product || 'N/A';
-    const rmLotNoValue = fd[3] || data.rm_name_lot_no || data.rm_lot || 'N/A';
-    const testDate = fd[4] || data.test_date || 'N/A';
-    const reportDate = fd[5] || data.report_date || 'N/A';
-    const formulaDate = fd[6] || data.formula_date || 'N/A';
+    const testDate = isLab ? (fd[3] || 'N/A') : (fd[4] || 'N/A');
+    const reportDate = isLab ? (fd[4] || 'N/A') : (fd[5] || 'N/A');
+    const formulaDate = isLab ? (fd[5] || 'N/A') : (fd[6] || 'N/A');
 
     const inventory = (data.inventory || []).map((i: any) => {
       if (Array.isArray(i)) {
@@ -1491,78 +1492,70 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
     const remarks = data.remarks || '';
 
-    // Create A4 PDF (Portrait: 210mm x 297mm)
     const doc = new jsPDF('p', 'mm', 'a4');
 
-    // Page 1: Outer Border for card feel
-    doc.setDrawColor(75, 85, 99);
+    // PAGE 1: Front Side
+    doc.setDrawColor(128, 128, 128);
     doc.setLineWidth(0.5);
     doc.rect(8, 8, 194, 281);
 
-    // Decorative Header Band
-    doc.setFillColor(31, 41, 55);
-    doc.rect(8, 8, 194, 18, 'F');
-
-    // Title
-    doc.setTextColor(255, 255, 255);
+    // Header Title (Clean, no solid fills)
     doc.setFont('Helvetica', 'bold');
     doc.setFontSize(14);
-    doc.text('COLORTEK CMS - LABORATORY FORMULATION CARD', 105, 20, { align: 'center' });
+    doc.setTextColor(31, 41, 55);
+    doc.text('COLORTEK CMS - LABORATORY FORMULATION CARD', 105, 18, { align: 'center' });
+    doc.line(12, 22, 198, 22);
 
-    // Metadata Header Block (2 columns)
-    doc.setTextColor(0, 0, 0);
+    // Metadata details block
     doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
     
     // Column 1
-    doc.setFont('Helvetica', 'bold'); doc.text('Product Name:', 15, 36);
-    doc.setFont('Helvetica', 'normal'); doc.text(productNameField, 45, 36);
+    doc.setFont('Helvetica', 'bold'); doc.text('Product Name:', 15, 30);
+    doc.setFont('Helvetica', 'normal'); doc.text(productNameField, 45, 30);
     
-    doc.setFont('Helvetica', 'bold'); doc.text('Batch No:', 15, 43);
-    doc.setFont('Helvetica', 'normal'); doc.text(batchNo, 45, 43);
+    doc.setFont('Helvetica', 'bold'); doc.text('Batch No:', 15, 37);
+    doc.setFont('Helvetica', 'normal'); doc.text(batchNo, 45, 37);
     
-    doc.setFont('Helvetica', 'bold'); doc.text('Formula Date:', 15, 50);
-    doc.setFont('Helvetica', 'normal'); doc.text(formulaDate, 45, 50);
+    doc.setFont('Helvetica', 'bold'); doc.text('Formula Date:', 15, 44);
+    doc.setFont('Helvetica', 'normal'); doc.text(formulaDate !== 'N/A' ? formulaDate : '-', 45, 44);
 
     // Column 2
-    doc.setFont('Helvetica', 'bold'); doc.text('Ref No:', 115, 36);
-    doc.setFont('Helvetica', 'normal'); doc.text(refNo, 135, 36);
+    doc.setFont('Helvetica', 'bold'); doc.text('Ref No:', 115, 30);
+    doc.setFont('Helvetica', 'normal'); doc.text(refNo !== 'N/A' ? refNo : '-', 135, 30);
     
-    doc.setFont('Helvetica', 'bold'); doc.text('Test Date:', 115, 43);
-    doc.setFont('Helvetica', 'normal'); doc.text(testDate, 135, 43);
+    doc.setFont('Helvetica', 'bold'); doc.text('Test Date:', 115, 37);
+    doc.setFont('Helvetica', 'normal'); doc.text(testDate !== 'N/A' ? testDate : '-', 135, 37);
     
-    doc.setFont('Helvetica', 'bold'); doc.text('Report Date:', 115, 50);
-    doc.setFont('Helvetica', 'normal'); doc.text(reportDate, 135, 50);
+    doc.setFont('Helvetica', 'bold'); doc.text('Report Date:', 115, 44);
+    doc.setFont('Helvetica', 'normal'); doc.text(reportDate !== 'N/A' ? reportDate : '-', 135, 44);
 
-    // Line separator
     doc.setDrawColor(209, 213, 219);
-    doc.line(12, 56, 198, 56);
+    doc.line(12, 50, 198, 50);
 
-    // Section Title: Ingredients List
+    // Ingredients Section
     doc.setFont('Helvetica', 'bold');
     doc.setFontSize(11);
-    doc.text('INGREDIENTS FORMULA (FRONT SIDE)', 15, 63);
+    doc.text('INGREDIENTS FORMULA', 15, 57);
 
-    // Draw Ingredients Table
-    let y = 70;
+    let y = 64;
     doc.setFontSize(9.5);
-    doc.setFillColor(243, 244, 246);
+    doc.setFillColor(245, 245, 245);
     doc.rect(12, y, 186, 7, 'F');
     doc.rect(12, y, 186, 7, 'S');
 
-    doc.setFont('Helvetica', 'bold');
     doc.text('Sr', 16, y + 5);
     doc.text('MR No', 28, y + 5);
     doc.text('Raw Material Description', 62, y + 5);
-    doc.text('Quantity (Grams)', 162, y + 5);
+    doc.text('Quantity (Grams)', 194, y + 5, { align: 'right' });
 
     y += 7;
     doc.setFont('Helvetica', 'normal');
-    
-    let totalQty = 0;
 
+    let totalQty = 0;
     inventory.forEach((item: any, index: number) => {
       if (index % 2 === 0) {
-        doc.setFillColor(249, 250, 251);
+        doc.setFillColor(250, 250, 250);
         doc.rect(12, y, 186, 7, 'F');
       }
       doc.rect(12, y, 186, 7, 'S');
@@ -1574,100 +1567,88 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       const qtyVal = parseFloat(item.qty);
       if (!isNaN(qtyVal)) {
         totalQty += qtyVal;
-        doc.text(qtyVal.toFixed(2), 162, y + 5);
+        doc.text(qtyVal.toFixed(2), 194, y + 5, { align: 'right' });
       } else {
-        doc.text(item.qty || '0.00', 162, y + 5);
+        doc.text(item.qty || '0.00', 194, y + 5, { align: 'right' });
       }
-
       y += 7;
     });
 
     // Total Row
-    doc.setFillColor(243, 244, 246);
+    doc.setFillColor(245, 245, 245);
     doc.rect(12, y, 186, 8, 'F');
     doc.rect(12, y, 186, 8, 'S');
     doc.setFont('Helvetica', 'bold');
     doc.text('TOTAL FORMULATION WEIGHT:', 62, y + 5.5);
-    doc.text(`${totalQty.toFixed(2)} g`, 162, y + 5.5);
+    doc.text(`${totalQty.toFixed(2)} g`, 194, y + 5.5, { align: 'right' });
 
-    // Page 2: Back side
-    doc.addPage();
-    
-    doc.setDrawColor(75, 85, 99);
-    doc.setLineWidth(0.5);
-    doc.rect(8, 8, 194, 281);
+    y += 15;
 
-    // Decorative Header Band for Back Side
-    doc.setFillColor(55, 65, 81);
-    doc.rect(8, 8, 194, 18, 'F');
+    if (tests.length === 0) {
+      doc.setFont('Helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.text('Remarks & Comments:', 15, y);
 
-    // Title
-    doc.setTextColor(255, 255, 255);
-    doc.setFont('Helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.text('TEST PARAMETERS & SIGN-OFF (BACK SIDE)', 105, 20, { align: 'center' });
+      y += 5;
+      doc.setFont('Helvetica', 'normal');
+      doc.setFontSize(9.5);
+      
+      doc.rect(12, y, 186, 40);
+      const splitRemarks = doc.splitTextToSize(remarks || 'No additional remarks.', 178);
+      doc.text(splitRemarks, 16, y + 6);
+    } else {
+      // PAGE 2: Back Side
+      doc.addPage();
+      doc.setDrawColor(128, 128, 128);
+      doc.setLineWidth(0.5);
+      doc.rect(8, 8, 194, 281);
 
-    // Metadata Summary
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(9);
-    doc.setFont('Helvetica', 'normal');
-    doc.text(`Product: ${productNameField}   |   Batch No: ${batchNo}   |   Ref No: ${refNo}`, 12, 34);
-    doc.line(12, 38, 198, 38);
+      doc.setFont('Helvetica', 'bold');
+      doc.setFontSize(14);
+      doc.setTextColor(31, 41, 55);
+      doc.text('QUALITY CONTROL TEST SPECIFICATIONS', 105, 18, { align: 'center' });
+      doc.line(12, 22, 198, 22);
 
-    // Section: Test Results
-    y = 45;
-    doc.setFont('Helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.text('QUALITY CONTROL TEST SPECIFICATIONS', 15, y);
+      y = 30;
+      doc.setFontSize(9.5);
+      doc.setFillColor(245, 245, 245);
+      doc.rect(12, y, 186, 7, 'F');
+      doc.rect(12, y, 186, 7, 'S');
 
-    y += 6;
-    doc.setFontSize(9.5);
-    doc.setFillColor(243, 244, 246);
-    doc.rect(12, y, 186, 7, 'F');
-    doc.rect(12, y, 186, 7, 'S');
+      doc.setTextColor(0, 0, 0);
+      doc.text('Test Method / Parameter', 16, y + 5);
+      doc.text('Standard Range / Spec', 96, y + 5);
+      doc.text('Observed Result', 194, y + 5, { align: 'right' });
 
-    doc.text('Test Method / Parameter', 16, y + 5);
-    doc.text('Standard Range / Spec', 96, y + 5);
-    doc.text('Observed Result', 156, y + 5);
+      y += 7;
+      doc.setFont('Helvetica', 'normal');
 
-    y += 7;
-    doc.setFont('Helvetica', 'normal');
-
-    if (tests.length > 0) {
       tests.forEach((t: any, index: number) => {
         if (index % 2 === 0) {
-          doc.setFillColor(249, 250, 251);
+          doc.setFillColor(250, 250, 250);
           doc.rect(12, y, 186, 7, 'F');
         }
         doc.rect(12, y, 186, 7, 'S');
 
         doc.text(t.method, 16, y + 5);
         doc.text(t.standard || '-', 96, y + 5);
-        doc.text(t.result || '-', 156, y + 5);
-
+        doc.text(t.result || '-', 194, y + 5, { align: 'right' });
         y += 7;
       });
-    } else {
-      doc.rect(12, y, 186, 8, 'S');
-      doc.text('No standard laboratory tests registered for this batch.', 16, y + 5.5);
-      y += 8;
+
+      y += 12;
+      doc.setFont('Helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.text('Remarks & Comments:', 15, y);
+
+      y += 5;
+      doc.setFont('Helvetica', 'normal');
+      doc.setFontSize(9.5);
+      
+      doc.rect(12, y, 186, 45);
+      const splitRemarks = doc.splitTextToSize(remarks || 'No additional remarks.', 178);
+      doc.text(splitRemarks, 16, y + 6);
     }
-
-    // Section: Remarks
-    y += 10;
-    doc.setFont('Helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.text('LABORATORY REMARKS & INSTRUCTIONS', 15, y);
-
-    y += 5;
-    doc.setFont('Helvetica', 'normal');
-    doc.setFontSize(9);
-    
-    const remarksBoxHeight = 45;
-    doc.rect(12, y, 186, remarksBoxHeight);
-    
-    const splitRemarks = doc.splitTextToSize(remarks || 'No additional remarks.', 178);
-    doc.text(splitRemarks, 16, y + 6);
 
 
 
@@ -1718,11 +1699,12 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       const fd = data.form_data || [];
       const refNo = data.ref_no || fd[0] || 'N/A';
       const batchNo = data.batch_no || fd[1] || 'N/A';
+      
+      const isLab = fd.length === 6;
       const productNameField = fd[2] || data.product_name_field || data.product || 'N/A';
-      const rmLotNoValue = fd[3] || data.rm_name_lot_no || data.rm_lot || 'N/A';
-      const testDate = fd[4] || data.test_date || 'N/A';
-      const reportDate = fd[5] || data.report_date || 'N/A';
-      const formulaDate = fd[6] || data.formula_date || 'N/A';
+      const testDate = isLab ? (fd[3] || 'N/A') : (fd[4] || 'N/A');
+      const reportDate = isLab ? (fd[4] || 'N/A') : (fd[5] || 'N/A');
+      const formulaDate = isLab ? (fd[5] || 'N/A') : (fd[6] || 'N/A');
 
       const inventory = (data.inventory || []).map((i: any) => {
         if (Array.isArray(i)) {
@@ -1761,113 +1743,182 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       const remarks = data.remarks || '';
 
       // Draw border around the entire band
-      doc.setDrawColor(156, 163, 175);
+      doc.setDrawColor(128, 128, 128);
       doc.setLineWidth(0.4);
       doc.rect(8, startY, 194, bandHeight, 'S');
 
-      // Title Banner inside the band
-      doc.setFillColor(31, 41, 55);
-      doc.rect(8, startY, 194, 8, 'F');
-      
-      doc.setTextColor(255, 255, 255);
+      // Title Banner inside the band (Clean text, no heavy dark fills)
       doc.setFont('Helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(31, 41, 55);
+      doc.text(`Batch: ${batchNo}`, 12, startY + 6);
+      
+      doc.setFont('Helvetica', 'normal');
       doc.setFontSize(8.5);
-      doc.text(`Batch: ${batchNo}   |   Product: ${productNameField}   |   Ref: ${refNo}   |   Date: ${formulaDate || testDate}`, 12, startY + 5.5);
-
-      // LEFT COLUMN: Ingredients
-      doc.setTextColor(0, 0, 0);
+      doc.setTextColor(75, 85, 99);
       
-      doc.setFillColor(243, 244, 246);
-      doc.rect(10, startY + 11, 98, 5, 'F');
-      doc.rect(10, startY + 11, 98, 5, 'S');
+      let headerParts = [];
+      if (productNameField && productNameField !== 'N/A') headerParts.push(`Product: ${productNameField}`);
+      if (refNo && refNo !== 'N/A') headerParts.push(`Ref: ${refNo}`);
+      if (formulaDate && formulaDate !== 'N/A') headerParts.push(`Formula Date: ${formulaDate}`);
+      if (testDate && testDate !== 'N/A') headerParts.push(`Test Date: ${testDate}`);
+      if (reportDate && reportDate !== 'N/A') headerParts.push(`Report Date: ${reportDate}`);
       
-      doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(7.5);
-      doc.text('Sr', 12, startY + 14.5);
-      doc.text('MR No', 19, startY + 14.5);
-      doc.text('Material Description', 38, startY + 14.5);
-      doc.text('Qty (g)', 106, startY + 14.5, { align: 'right' });
+      doc.text(headerParts.join('   |   '), 48, startY + 6);
 
-      let rowY = startY + 16;
-      let totalQty = 0;
-      doc.setFont('Helvetica', 'normal');
-      doc.setFontSize(7);
+      // Separator line
+      doc.setDrawColor(200, 200, 200);
+      doc.line(10, startY + 9, 200, startY + 9);
 
-      const visibleInventory = inventory.slice(0, 12);
-      visibleInventory.forEach((item: any, index: number) => {
-        if (index % 2 === 0) {
-          doc.setFillColor(249, 250, 251);
-          doc.rect(10, rowY, 98, 4.5, 'F');
-        }
-        doc.rect(10, rowY, 98, 4.5, 'S');
+      const hasTests = tests.length > 0;
 
-        doc.text(item.sr || String(index + 1), 12, rowY + 3.2);
-        doc.text(item.mr || '-', 19, rowY + 3.2);
-        doc.text(item.material.substring(0, 26), 38, rowY + 3.2);
+      if (hasTests) {
+        // --- 1. SIDE-BY-SIDE LAYOUT (When tests exist) ---
+        // LEFT COLUMN: Ingredients
+        doc.setTextColor(0, 0, 0);
+        doc.setFillColor(245, 245, 245);
+        doc.rect(10, startY + 12, 98, 5, 'F');
+        doc.rect(10, startY + 12, 98, 5, 'S');
         
-        const qtyVal = parseFloat(item.qty);
-        if (!isNaN(qtyVal)) {
-          totalQty += qtyVal;
-          doc.text(qtyVal.toFixed(2), 106, rowY + 3.2, { align: 'right' });
-        } else {
-          doc.text(item.qty || '0.00', 106, rowY + 3.2, { align: 'right' });
-        }
-        rowY += 4.5;
-      });
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(7.5);
+        doc.text('Sr', 12, startY + 15.5);
+        doc.text('MR No', 19, startY + 15.5);
+        doc.text('Material Description', 38, startY + 15.5);
+        doc.text('Qty (g)', 106, startY + 15.5, { align: 'right' });
 
-      doc.setFillColor(243, 244, 246);
-      doc.rect(10, rowY, 98, 5, 'F');
-      doc.rect(10, rowY, 98, 5, 'S');
-      doc.setFont('Helvetica', 'bold');
-      doc.text('Total Formulation Weight:', 38, rowY + 3.5);
-      doc.text(`${totalQty.toFixed(2)} g`, 106, rowY + 3.5, { align: 'right' });
+        let rowY = startY + 17;
+        let totalQty = 0;
+        doc.setFont('Helvetica', 'normal');
+        doc.setFontSize(7);
 
-      // RIGHT COLUMN: QC Tests & Remarks & Signature
-      doc.setFillColor(243, 244, 246);
-      doc.rect(112, startY + 11, 86, 5, 'F');
-      doc.rect(112, startY + 11, 86, 5, 'S');
-      
-      doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(7.5);
-      doc.text('Test Parameter', 114, startY + 14.5);
-      doc.text('Standard Spec', 152, startY + 14.5);
-      doc.text('Result', 184, startY + 14.5);
+        const visibleInventory = inventory.slice(0, 11);
+        visibleInventory.forEach((item: any, index: number) => {
+          if (index % 2 === 0) {
+            doc.setFillColor(250, 250, 250);
+            doc.rect(10, rowY, 98, 4.5, 'F');
+          }
+          doc.rect(10, rowY, 98, 4.5, 'S');
 
-      let testY = startY + 16;
-      doc.setFont('Helvetica', 'normal');
-      doc.setFontSize(7);
+          doc.text(item.sr || String(index + 1), 12, rowY + 3.2);
+          doc.text(item.mr || '-', 19, rowY + 3.2);
+          doc.text(item.material.substring(0, 26), 38, rowY + 3.2);
+          
+          const qtyVal = parseFloat(item.qty);
+          if (!isNaN(qtyVal)) {
+            totalQty += qtyVal;
+            doc.text(qtyVal.toFixed(2), 106, rowY + 3.2, { align: 'right' });
+          } else {
+            doc.text(item.qty || '0.00', 106, rowY + 3.2, { align: 'right' });
+          }
+          rowY += 4.5;
+        });
 
-      const visibleTests = tests.slice(0, 6);
-      if (visibleTests.length > 0) {
+        doc.setFillColor(245, 245, 245);
+        doc.rect(10, rowY, 98, 5, 'F');
+        doc.rect(10, rowY, 98, 5, 'S');
+        doc.setFont('Helvetica', 'bold');
+        doc.text('Total Formulation Weight:', 38, rowY + 3.5);
+        doc.text(`${totalQty.toFixed(2)} g`, 106, rowY + 3.5, { align: 'right' });
+
+        // RIGHT COLUMN: QC Tests & Remarks
+        doc.setFillColor(245, 245, 245);
+        doc.rect(112, startY + 12, 86, 5, 'F');
+        doc.rect(112, startY + 12, 86, 5, 'S');
+        
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(7.5);
+        doc.text('Test Parameter', 114, startY + 15.5);
+        doc.text('Standard Spec', 152, startY + 15.5);
+        doc.text('Result', 196, startY + 15.5, { align: 'right' });
+
+        let testY = startY + 17;
+        doc.setFont('Helvetica', 'normal');
+        doc.setFontSize(7);
+
+        const visibleTests = tests.slice(0, 6);
         visibleTests.forEach((t: any, index: number) => {
           if (index % 2 === 0) {
-            doc.setFillColor(249, 250, 251);
+            doc.setFillColor(250, 250, 250);
             doc.rect(112, testY, 86, 4.5, 'F');
           }
           doc.rect(112, testY, 86, 4.5, 'S');
 
           doc.text(t.method.substring(0, 20), 114, testY + 3.2);
           doc.text((t.standard || '-').substring(0, 16), 152, testY + 3.2);
-          doc.text((t.result || '-').substring(0, 12), 184, testY + 3.2);
+          doc.text((t.result || '-').substring(0, 12), 196, testY + 3.2, { align: 'right' });
           testY += 4.5;
         });
+
+        // Remarks Box under tests
+        const remarksStartY = startY + 48;
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(7.5);
+        doc.text('Remarks & Comments:', 112, remarksStartY + 3);
+        
+        doc.setFont('Helvetica', 'normal');
+        doc.setFontSize(6.5);
+        const splitRem = doc.splitTextToSize(remarks || 'No additional remarks.', 84);
+        doc.text(splitRem, 112, remarksStartY + 7);
       } else {
-        doc.rect(112, testY, 86, 5, 'S');
-        doc.text('No test specifications recorded.', 114, testY + 3.5);
-        testY += 5;
+        // --- 2. FULL-WIDTH INGREDIENTS LAYOUT (When no tests entered) ---
+        doc.setTextColor(0, 0, 0);
+        doc.setFillColor(245, 245, 245);
+        doc.rect(10, startY + 12, 188, 5, 'F');
+        doc.rect(10, startY + 12, 188, 5, 'S');
+        
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(7.5);
+        doc.text('Sr', 12, startY + 15.5);
+        doc.text('MR No', 22, startY + 15.5);
+        doc.text('Material Description', 50, startY + 15.5);
+        doc.text('Qty (g)', 196, startY + 15.5, { align: 'right' });
+
+        let rowY = startY + 17;
+        let totalQty = 0;
+        doc.setFont('Helvetica', 'normal');
+        doc.setFontSize(7);
+
+        const visibleInventory = inventory.slice(0, 12);
+        visibleInventory.forEach((item: any, index: number) => {
+          if (index % 2 === 0) {
+            doc.setFillColor(250, 250, 250);
+            doc.rect(10, rowY, 188, 4.5, 'F');
+          }
+          doc.rect(10, rowY, 188, 4.5, 'S');
+
+          doc.text(item.sr || String(index + 1), 12, rowY + 3.2);
+          doc.text(item.mr || '-', 22, rowY + 3.2);
+          doc.text(item.material, 50, rowY + 3.2);
+          
+          const qtyVal = parseFloat(item.qty);
+          if (!isNaN(qtyVal)) {
+            totalQty += qtyVal;
+            doc.text(qtyVal.toFixed(2), 196, rowY + 3.2, { align: 'right' });
+          } else {
+            doc.text(item.qty || '0.00', 196, rowY + 3.2, { align: 'right' });
+          }
+          rowY += 4.5;
+        });
+
+        doc.setFillColor(245, 245, 245);
+        doc.rect(10, rowY, 188, 5, 'F');
+        doc.rect(10, rowY, 188, 5, 'S');
+        doc.setFont('Helvetica', 'bold');
+        doc.text('Total Formulation Weight:', 50, rowY + 3.5);
+        doc.text(`${totalQty.toFixed(2)} g`, 196, rowY + 3.5, { align: 'right' });
+
+        // Remarks at bottom spanning full width
+        const remarksStartY = Math.max(startY + 73, rowY + 6);
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(7.5);
+        doc.text('Remarks & Comments:', 12, remarksStartY);
+        
+        doc.setFont('Helvetica', 'normal');
+        doc.setFontSize(7);
+        const splitRem = doc.splitTextToSize(remarks || 'No additional remarks.', 184);
+        doc.text(splitRem, 12, remarksStartY + 4);
       }
-
-      const remarksStartY = startY + 48;
-      doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(7.5);
-      doc.text('Remarks & Comments:', 112, remarksStartY + 3);
-      
-      doc.setFont('Helvetica', 'normal');
-      doc.setFontSize(6.5);
-      const splitRem = doc.splitTextToSize(remarks || 'No additional remarks.', 84);
-      doc.text(splitRem, 112, remarksStartY + 7);
-
-
     });
 
     doc.save(`Lab_Formulations_Batch_Print_${Date.now()}.pdf`);

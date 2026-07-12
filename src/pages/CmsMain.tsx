@@ -3463,7 +3463,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                     disabled={selectedPastBatches.length === 0}
                     style={{ height: '32px', backgroundColor: selectedPastBatches.length > 0 ? '#2563eb' : '#e2e8f0', color: selectedPastBatches.length > 0 ? '#ffffff' : '#94a3b8', border: 'none', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px', cursor: selectedPastBatches.length > 0 ? 'pointer' : 'default' }}
                   >
-                    <Printer size={14} /> Print Ingredients Only ({selectedPastBatches.length})
+                    <Printer size={14} /> Print Raw Materials Only ({selectedPastBatches.length})
                   </button>
                   <button 
                     onClick={printSelectedCompleteCards} 

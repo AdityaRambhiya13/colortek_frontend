@@ -48,6 +48,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [selectedPastBatches, setSelectedPastBatches] = useState<string[]>([]);
   const notificationsRef = useRef<HTMLDivElement>(null);
   const skipDuplicateCheck = useRef<{ left: boolean; right: boolean }>({ left: false, right: false });
 
@@ -1128,6 +1129,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
   };
 
   useEffect(() => {
+    setSelectedPastBatches([]); // Reset selection when view, page, or search term changes
     if (activeSubView === 'past_lab_formulations' || activeSubView === 'past_rm_testing') {
       loadPastFormulations();
     }
@@ -1700,6 +1702,215 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     doc.save(`Lab_Formulation_${batchNo}_Card.pdf`);
     onShowToast(`Printable 2-page Card for Batch ${batchNo} downloaded!`, 'success');
   };
+
+  const printSelectedPastFormulations = async () => {
+    if (selectedPastBatches.length === 0) return;
+    setLoading(true);
+    const fetchedData: any[] = [];
+    
+    // Fetch details for all selected batches sequentially
+    for (const batchNo of selectedPastBatches) {
+      const [success, data] = await LabFormulationsAPI.getBatchDetail(batchNo, productName);
+      if (success && typeof data !== 'string') {
+        fetchedData.push(data);
+      }
+    }
+    
+    setLoading(false);
+    
+    if (fetchedData.length > 0) {
+      generateMultiFormulationsPrintPDF(fetchedData);
+    } else {
+      onShowToast('Failed to fetch details for selected formulations.', 'error');
+    }
+  };
+
+  const generateMultiFormulationsPrintPDF = (fetchedData: any[]) => {
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const itemsPerPage = 3;
+    const bandHeight = 90;
+    const verticalGap = 3.5;
+    const startMarginY = 8;
+
+    fetchedData.forEach((data, idx) => {
+      const pageIndex = Math.floor(idx / itemsPerPage);
+      const bandIndex = idx % itemsPerPage;
+
+      if (idx > 0 && bandIndex === 0) {
+        doc.addPage();
+      }
+
+      const startY = startMarginY + bandIndex * (bandHeight + verticalGap);
+
+      const fd = data.form_data || [];
+      const refNo = data.ref_no || fd[0] || 'N/A';
+      const batchNo = data.batch_no || fd[1] || 'N/A';
+      const productNameField = fd[2] || 'N/A';
+      const testDate = fd[3] || 'N/A';
+      const reportDate = fd[4] || 'N/A';
+      const formulaDate = fd[5] || 'N/A';
+
+      const inventory = (data.inventory || []).map((i: any) => {
+        if (Array.isArray(i)) {
+          return {
+            sr: i[0] ? i[0].toString() : '',
+            material: i[1] || '',
+            qty: i[2] !== undefined ? i[2].toString() : '',
+            mr: i[3] || '',
+          };
+        } else {
+          return {
+            sr: i.sr_no ? i.sr_no.toString() : (i.sr ? i.sr.toString() : ''),
+            material: i.raw_material || i.material || '',
+            qty: i.qty !== undefined ? i.qty.toString() : '',
+            mr: i.mr_no || i.mr || '',
+          };
+        }
+      }).filter((item: any) => item.material.trim() !== '');
+
+      const tests = (data.tests || []).map((t: any) => {
+        if (Array.isArray(t)) {
+          return {
+            method: t[0] || '',
+            standard: t[1] || '',
+            result: t[2] || '',
+          };
+        } else {
+          return {
+            method: t.method || '',
+            standard: t.standard || '',
+            result: t.result || '',
+          };
+        }
+      }).filter((t: any) => t.method.trim() !== '');
+
+      const remarks = data.remarks || '';
+
+      // Draw border around the entire band
+      doc.setDrawColor(156, 163, 175);
+      doc.setLineWidth(0.4);
+      doc.rect(8, startY, 194, bandHeight, 'S');
+
+      // Title Banner inside the band
+      doc.setFillColor(31, 41, 55);
+      doc.rect(8, startY, 194, 8, 'F');
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('Helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.text(`Batch: ${batchNo}   |   Product: ${productNameField}   |   Ref: ${refNo}   |   Date: ${formulaDate || testDate}`, 12, startY + 5.5);
+
+      // LEFT COLUMN: Ingredients
+      doc.setTextColor(0, 0, 0);
+      
+      doc.setFillColor(243, 244, 246);
+      doc.rect(10, startY + 11, 98, 5, 'F');
+      doc.rect(10, startY + 11, 98, 5, 'S');
+      
+      doc.setFont('Helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.text('Sr', 12, startY + 14.5);
+      doc.text('MR No', 19, startY + 14.5);
+      doc.text('Material Description', 38, startY + 14.5);
+      doc.text('Qty (g)', 106, startY + 14.5, { align: 'right' });
+
+      let rowY = startY + 16;
+      let totalQty = 0;
+      doc.setFont('Helvetica', 'normal');
+      doc.setFontSize(7);
+
+      const visibleInventory = inventory.slice(0, 12);
+      visibleInventory.forEach((item: any, index: number) => {
+        if (index % 2 === 0) {
+          doc.setFillColor(249, 250, 251);
+          doc.rect(10, rowY, 98, 4.5, 'F');
+        }
+        doc.rect(10, rowY, 98, 4.5, 'S');
+
+        doc.text(item.sr || String(index + 1), 12, rowY + 3.2);
+        doc.text(item.mr || '-', 19, rowY + 3.2);
+        doc.text(item.material.substring(0, 26), 38, rowY + 3.2);
+        
+        const qtyVal = parseFloat(item.qty);
+        if (!isNaN(qtyVal)) {
+          totalQty += qtyVal;
+          doc.text(qtyVal.toFixed(2), 106, rowY + 3.2, { align: 'right' });
+        } else {
+          doc.text(item.qty || '0.00', 106, rowY + 3.2, { align: 'right' });
+        }
+        rowY += 4.5;
+      });
+
+      doc.setFillColor(243, 244, 246);
+      doc.rect(10, rowY, 98, 5, 'F');
+      doc.rect(10, rowY, 98, 5, 'S');
+      doc.setFont('Helvetica', 'bold');
+      doc.text('Total Formulation Weight:', 38, rowY + 3.5);
+      doc.text(`${totalQty.toFixed(2)} g`, 106, rowY + 3.5, { align: 'right' });
+
+      // RIGHT COLUMN: QC Tests & Remarks & Signature
+      doc.setFillColor(243, 244, 246);
+      doc.rect(112, startY + 11, 86, 5, 'F');
+      doc.rect(112, startY + 11, 86, 5, 'S');
+      
+      doc.setFont('Helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.text('Test Parameter', 114, startY + 14.5);
+      doc.text('Standard Spec', 152, startY + 14.5);
+      doc.text('Result', 184, startY + 14.5);
+
+      let testY = startY + 16;
+      doc.setFont('Helvetica', 'normal');
+      doc.setFontSize(7);
+
+      const visibleTests = tests.slice(0, 6);
+      if (visibleTests.length > 0) {
+        visibleTests.forEach((t: any, index: number) => {
+          if (index % 2 === 0) {
+            doc.setFillColor(249, 250, 251);
+            doc.rect(112, testY, 86, 4.5, 'F');
+          }
+          doc.rect(112, testY, 86, 4.5, 'S');
+
+          doc.text(t.method.substring(0, 20), 114, testY + 3.2);
+          doc.text((t.standard || '-').substring(0, 16), 152, testY + 3.2);
+          doc.text((t.result || '-').substring(0, 12), 184, testY + 3.2);
+          testY += 4.5;
+        });
+      } else {
+        doc.rect(112, testY, 86, 5, 'S');
+        doc.text('No test specifications recorded.', 114, testY + 3.5);
+        testY += 5;
+      }
+
+      const remarksStartY = startY + 48;
+      doc.setFont('Helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.text('Remarks & Comments:', 112, remarksStartY + 3);
+      
+      doc.setFont('Helvetica', 'normal');
+      doc.setFontSize(6.5);
+      const splitRem = doc.splitTextToSize(remarks || 'No additional remarks.', 84);
+      doc.text(splitRem, 112, remarksStartY + 7);
+
+      doc.setDrawColor(229, 231, 235);
+      doc.line(112, startY + 78, 198, startY + 78);
+      
+      doc.setFont('Helvetica', 'bold');
+      doc.setFontSize(6.5);
+      doc.text('Prep By: ___________________', 112, startY + 84);
+      
+      const approvalStr = data.approval_status ? `Approval: ${data.approval_status}` : 'Approval: Approved';
+      doc.text(approvalStr, 156, startY + 82);
+      doc.text('Appr By: ___________________', 156, startY + 86);
+    });
+
+    doc.save(`Lab_Formulations_Batch_Print_${Date.now()}.pdf`);
+    onShowToast(`Printable sheets downloaded containing ${fetchedData.length} formulations!`, 'success');
+    setSelectedPastBatches([]); // Reset selection after printing
+  };
+
+
 
   const parseDuplicateDetails = (data: any) => {
     if (!data) return null;
@@ -3053,6 +3264,20 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
               </button>
               <button onClick={loadPastFormulations} className="flet-btn flet-btn-green" style={{ height: '32px' }}>Refresh</button>
 
+              {activeSubView === 'past_lab_formulations' && (
+                <>
+                  <div style={{ width: '1px', height: '24px', backgroundColor: '#cbd5e1', margin: '0 8px' }}></div>
+                  <button 
+                    onClick={printSelectedPastFormulations} 
+                    className="flet-btn" 
+                    disabled={selectedPastBatches.length === 0}
+                    style={{ height: '32px', backgroundColor: selectedPastBatches.length > 0 ? '#10b981' : '#e2e8f0', color: selectedPastBatches.length > 0 ? '#ffffff' : '#94a3b8', border: 'none', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px', cursor: selectedPastBatches.length > 0 ? 'pointer' : 'default' }}
+                  >
+                    <Printer size={14} /> Print Selected ({selectedPastBatches.length})
+                  </button>
+                </>
+              )}
+
               {/* Vertical divider */}
               <div style={{ width: '1px', height: '24px', backgroundColor: '#cbd5e1', margin: '0 8px' }}></div>
 
@@ -3113,9 +3338,25 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                     <div key={b.id || b.batch_no} className="flet-report-card">
                       {/* Card Header Title */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #cbd5e1', paddingBottom: '6px', marginBottom: '8px' }}>
-                        <span style={{ fontWeight: 'bold', fontSize: '15px', color: 'var(--primary-color)' }}>
-                          Batch: {batchNo}
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {isLabCard && (
+                            <input 
+                              type="checkbox" 
+                              checked={selectedPastBatches.includes(batchNo)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedPastBatches(prev => [...prev, batchNo]);
+                                } else {
+                                  setSelectedPastBatches(prev => prev.filter(id => id !== batchNo));
+                                }
+                              }}
+                              style={{ width: '15px', height: '15px', cursor: 'pointer' }}
+                            />
+                          )}
+                          <span style={{ fontWeight: 'bold', fontSize: '15px', color: 'var(--primary-color)' }}>
+                            Batch: {batchNo}
+                          </span>
+                        </div>
                         <span style={{ fontSize: '11px', padding: '2px 6px', backgroundColor: '#e2e8f0', borderRadius: '2px', fontWeight: 'bold' }}>
                           Ref: {refNo}
                         </span>

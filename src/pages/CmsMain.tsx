@@ -3454,38 +3454,27 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                       )}
 
                       {/* Actions Footer */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: 'auto', paddingTop: '8px', borderTop: '1px solid #cbd5e1' }}>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <button 
-                            onClick={() => {
-                              onChangeView(isLabCard ? 'lab_formulations' : 'rm_testing');
-                              setTimeout(() => loadBatchIntoPane(batchNo, 'left', isLabCard), 150);
-                            }}
-                            className="flet-btn"
-                            style={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', fontSize: '11px', height: '28px' }}
-                          >
-                            <ArrowLeft size={11} /> Load Left
-                          </button>
-                          <button 
-                            onClick={() => {
-                              onChangeView(isLabCard ? 'lab_formulations' : 'rm_testing');
-                              setTimeout(() => loadBatchIntoPane(batchNo, 'right', isLabCard), 150);
-                            }}
-                            className="flet-btn"
-                            style={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', fontSize: '11px', height: '28px' }}
-                          >
-                            Load Right <ArrowRight size={11} />
-                          </button>
-                        </div>
-                        {isLabCard && (
-                          <button 
-                            onClick={() => printPastLabFormulation(batchNo)}
-                            className="flet-btn"
-                            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', fontSize: '11px', height: '28px', backgroundColor: '#374151', color: '#ffffff', border: 'none' }}
-                          >
-                            <Printer size={11} /> Print Formulation Card (Front & Back)
-                          </button>
-                        )}
+                      <div style={{ display: 'flex', gap: '8px', marginTop: 'auto', paddingTop: '8px', borderTop: '1px solid #cbd5e1' }}>
+                        <button 
+                          onClick={() => {
+                            onChangeView(isLabCard ? 'lab_formulations' : 'rm_testing');
+                            setTimeout(() => loadBatchIntoPane(batchNo, 'left', isLabCard), 150);
+                          }}
+                          className="flet-btn"
+                          style={{ flexGrow: 1 }}
+                        >
+                          <ArrowLeft size={12} /> Load Left
+                        </button>
+                        <button 
+                          onClick={() => {
+                            onChangeView(isLabCard ? 'lab_formulations' : 'rm_testing');
+                            setTimeout(() => loadBatchIntoPane(batchNo, 'right', isLabCard), 150);
+                          }}
+                          className="flet-btn"
+                          style={{ flexGrow: 1 }}
+                        >
+                          Load Right <ArrowRight size={12} />
+                        </button>
                       </div>
 
                     </div>

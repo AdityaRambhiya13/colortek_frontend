@@ -118,6 +118,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
   
   const [leftRemarks, setLeftRemarks] = useState('');
   const [rightRemarks, setRightRemarks] = useState('');
+  const [printSlot, setPrintSlot] = useState<'top' | 'middle' | 'bottom'>('top');
 
   // Report status & Approved by for RM Testing
   const [leftStatus, setLeftStatus] = useState('Select');
@@ -1699,6 +1700,14 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     const cardWidth = 194;
     const startX = 8;
 
+    if (fetchedData.length === 1) {
+      if (printSlot === 'middle') {
+        currentY = 98;
+      } else if (printSlot === 'bottom') {
+        currentY = 188;
+      }
+    }
+
     fetchedData.forEach((data, idx) => {
       const fd = data.form_data || [];
       const refNo = data.ref_no || fd[0] || 'N/A';
@@ -1868,6 +1877,14 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     const pageHeightLimit = 280;
     const cardWidth = 194;
     const startX = 8;
+
+    if (fetchedData.length === 1) {
+      if (printSlot === 'middle') {
+        currentY = 98;
+      } else if (printSlot === 'bottom') {
+        currentY = 188;
+      }
+    }
 
     fetchedData.forEach((data, idx) => {
       const fd = data.form_data || [];
@@ -3477,6 +3494,18 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                   >
                     <Printer size={14} /> Print Complete Cards ({selectedPastBatches.length})
                   </button>
+
+                  {selectedPastBatches.length === 1 && (
+                    <select 
+                      value={printSlot} 
+                      onChange={(e) => setPrintSlot(e.target.value as 'top' | 'middle' | 'bottom')}
+                      style={{ height: '32px', borderRadius: '4px', border: '1px solid #cbd5e1', padding: '0 8px', fontSize: '13px', marginLeft: '6px', cursor: 'pointer', backgroundColor: '#ffffff', color: '#1e293b', fontWeight: '500' }}
+                    >
+                      <option value="top">Slot: Top</option>
+                      <option value="middle">Slot: Middle</option>
+                      <option value="bottom">Slot: Bottom</option>
+                    </select>
+                  )}
                 </>
               )}
 

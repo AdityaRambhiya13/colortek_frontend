@@ -1701,10 +1701,26 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     const startX = 8;
 
     if (fetchedData.length === 1) {
-      if (printSlot === 'middle') {
-        currentY = 98;
-      } else if (printSlot === 'bottom') {
-        currentY = 188;
+      const data = fetchedData[0];
+      const inventory = (data.inventory || []).map((i: any) => {
+        if (Array.isArray(i)) return i[1] || '';
+        return i.raw_material || i.material || '';
+      }).filter((m: string) => m.trim() !== '');
+      const cardHeight = 27 + (inventory.length * 4) + 4 + 3;
+
+      if (printSlot !== 'top' && cardHeight > 90) {
+        const proceed = window.confirm(
+          `This formulation has ${inventory.length} raw materials and is too large to fit in the ${printSlot} slot. It will overlap with other slots.\n\nClick OK to print anyway, or Cancel to print at the Top slot on a fresh page.`
+        );
+        if (!proceed) {
+          currentY = 8;
+        } else {
+          if (printSlot === 'middle') currentY = 98;
+          else if (printSlot === 'bottom') currentY = 188;
+        }
+      } else {
+        if (printSlot === 'middle') currentY = 98;
+        else if (printSlot === 'bottom') currentY = 188;
       }
     }
 
@@ -1879,10 +1895,37 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     const startX = 8;
 
     if (fetchedData.length === 1) {
-      if (printSlot === 'middle') {
-        currentY = 98;
-      } else if (printSlot === 'bottom') {
-        currentY = 188;
+      const data = fetchedData[0];
+      const inventory = (data.inventory || []).map((i: any) => {
+        if (Array.isArray(i)) return i[1] || '';
+        return i.raw_material || i.material || '';
+      }).filter((m: string) => m.trim() !== '');
+
+      const tests = (data.tests || []).map((t: any) => {
+        if (Array.isArray(t)) return t[0] || '';
+        return t.method || '';
+      }).filter((m: string) => m.trim() !== '');
+
+      const remarks = data.remarks || '';
+
+      let estimatedHeight = 6 + 12 + (15 + inventory.length * 4);
+      if (tests.length > 0) estimatedHeight += 8 + (tests.length * 4);
+      if (remarks) estimatedHeight += 14;
+      estimatedHeight += 3;
+
+      if (printSlot !== 'top' && estimatedHeight > 90) {
+        const proceed = window.confirm(
+          `This formulation has ${inventory.length} raw materials and is too large to fit in the ${printSlot} slot. It will overlap with other slots.\n\nClick OK to print anyway, or Cancel to print at the Top slot on a fresh page.`
+        );
+        if (!proceed) {
+          currentY = 8;
+        } else {
+          if (printSlot === 'middle') currentY = 98;
+          else if (printSlot === 'bottom') currentY = 188;
+        }
+      } else {
+        if (printSlot === 'middle') currentY = 98;
+        else if (printSlot === 'bottom') currentY = 188;
       }
     }
 

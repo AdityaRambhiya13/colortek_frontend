@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Beaker, Search, Filter, RefreshCw, FileSpreadsheet, ArrowLeft, ArrowRight,
   AlertTriangle, Copy, Trash2, CheckCircle2, ChevronLeft, ChevronRight, HelpCircle, Building,
-  Edit3, ZoomIn, Bell, Info
+  Edit3, ZoomIn, Bell, Info, Printer
 } from 'lucide-react';
 import { CMSAPI, LabPastFormulationsAPI, RMPastFormulationsAPI, LabFormulationsAPI, RMFormulationsAPI, RawMaterialAPI, RepairedFormulationsAPI, API_BASE_URL, NotificationsAPI } from '../services/api';
 import * as XLSX from 'xlsx';
@@ -1430,6 +1430,275 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
     doc.save(`Batch_${form.batchNo || 'Sheet'}_CMS.pdf`);
     onShowToast('PDF report downloaded successfully.', 'success');
+  };
+
+  const printPastLabFormulation = async (batchNo: string) => {
+    setLoading(true);
+    const [success, data] = await LabFormulationsAPI.getBatchDetail(batchNo, productName);
+    setLoading(false);
+    if (success && typeof data !== 'string') {
+      generateFormulationPrintPDF(data);
+    } else {
+      onShowToast('Failed to fetch formulation details for printing.', 'error');
+    }
+  };
+
+  const generateFormulationPrintPDF = (data: any) => {
+    const fd = data.form_data || [];
+    const refNo = data.ref_no || fd[0] || 'N/A';
+    const batchNo = data.batch_no || fd[1] || 'N/A';
+    const productNameField = fd[2] || 'N/A';
+    const testDate = fd[3] || 'N/A';
+    const reportDate = fd[4] || 'N/A';
+    const formulaDate = fd[5] || 'N/A';
+
+    const inventory = (data.inventory || []).map((i: any) => {
+      if (Array.isArray(i)) {
+        return {
+          sr: i[0] ? i[0].toString() : '',
+          material: i[1] || '',
+          qty: i[2] !== undefined ? i[2].toString() : '',
+          mr: i[3] || '',
+        };
+      } else {
+        return {
+          sr: i.sr_no ? i.sr_no.toString() : (i.sr ? i.sr.toString() : ''),
+          material: i.raw_material || i.material || '',
+          qty: i.qty !== undefined ? i.qty.toString() : '',
+          mr: i.mr_no || i.mr || '',
+        };
+      }
+    }).filter((item: any) => item.material.trim() !== '');
+
+    const tests = (data.tests || []).map((t: any) => {
+      if (Array.isArray(t)) {
+        return {
+          method: t[0] || '',
+          standard: t[1] || '',
+          result: t[2] || '',
+        };
+      } else {
+        return {
+          method: t.method || '',
+          standard: t.standard || '',
+          result: t.result || '',
+        };
+      }
+    }).filter((t: any) => t.method.trim() !== '');
+
+    const remarks = data.remarks || '';
+
+    // Create A4 PDF (Portrait: 210mm x 297mm)
+    const doc = new jsPDF('p', 'mm', 'a4');
+
+    // Page 1: Outer Border for card feel
+    doc.setDrawColor(75, 85, 99);
+    doc.setLineWidth(0.5);
+    doc.rect(8, 8, 194, 281);
+
+    // Decorative Header Band
+    doc.setFillColor(31, 41, 55);
+    doc.rect(8, 8, 194, 18, 'F');
+
+    // Title
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text('COLORTEK CMS - LABORATORY FORMULATION CARD', 105, 20, { align: 'center' });
+
+    // Metadata Header Block (2 columns)
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(10);
+    
+    // Column 1
+    doc.setFont('Helvetica', 'bold'); doc.text('Product Name:', 15, 36);
+    doc.setFont('Helvetica', 'normal'); doc.text(productNameField, 45, 36);
+    
+    doc.setFont('Helvetica', 'bold'); doc.text('Batch No:', 15, 43);
+    doc.setFont('Helvetica', 'normal'); doc.text(batchNo, 45, 43);
+    
+    doc.setFont('Helvetica', 'bold'); doc.text('Formula Date:', 15, 50);
+    doc.setFont('Helvetica', 'normal'); doc.text(formulaDate, 45, 50);
+
+    // Column 2
+    doc.setFont('Helvetica', 'bold'); doc.text('Ref No:', 115, 36);
+    doc.setFont('Helvetica', 'normal'); doc.text(refNo, 135, 36);
+    
+    doc.setFont('Helvetica', 'bold'); doc.text('Test Date:', 115, 43);
+    doc.setFont('Helvetica', 'normal'); doc.text(testDate, 135, 43);
+    
+    doc.setFont('Helvetica', 'bold'); doc.text('Report Date:', 115, 50);
+    doc.setFont('Helvetica', 'normal'); doc.text(reportDate, 135, 50);
+
+    // Line separator
+    doc.setDrawColor(209, 213, 219);
+    doc.line(12, 56, 198, 56);
+
+    // Section Title: Ingredients List
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('INGREDIENTS FORMULA (FRONT SIDE)', 15, 63);
+
+    // Draw Ingredients Table
+    let y = 70;
+    doc.setFontSize(9.5);
+    doc.setFillColor(243, 244, 246);
+    doc.rect(12, y, 186, 7, 'F');
+    doc.rect(12, y, 186, 7, 'S');
+
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Sr', 16, y + 5);
+    doc.text('MR No', 28, y + 5);
+    doc.text('Raw Material Description', 62, y + 5);
+    doc.text('Quantity (Grams)', 162, y + 5);
+
+    y += 7;
+    doc.setFont('Helvetica', 'normal');
+    
+    let totalQty = 0;
+
+    inventory.forEach((item: any, index: number) => {
+      if (index % 2 === 0) {
+        doc.setFillColor(249, 250, 251);
+        doc.rect(12, y, 186, 7, 'F');
+      }
+      doc.rect(12, y, 186, 7, 'S');
+
+      doc.text(item.sr || String(index + 1), 16, y + 5);
+      doc.text(item.mr || '-', 28, y + 5);
+      doc.text(item.material, 62, y + 5);
+      
+      const qtyVal = parseFloat(item.qty);
+      if (!isNaN(qtyVal)) {
+        totalQty += qtyVal;
+        doc.text(qtyVal.toFixed(2), 162, y + 5);
+      } else {
+        doc.text(item.qty || '0.00', 162, y + 5);
+      }
+
+      y += 7;
+    });
+
+    // Total Row
+    doc.setFillColor(243, 244, 246);
+    doc.rect(12, y, 186, 8, 'F');
+    doc.rect(12, y, 186, 8, 'S');
+    doc.setFont('Helvetica', 'bold');
+    doc.text('TOTAL FORMULATION WEIGHT:', 62, y + 5.5);
+    doc.text(`${totalQty.toFixed(2)} g`, 162, y + 5.5);
+
+    // Page 2: Back side
+    doc.addPage();
+    
+    doc.setDrawColor(75, 85, 99);
+    doc.setLineWidth(0.5);
+    doc.rect(8, 8, 194, 281);
+
+    // Decorative Header Band for Back Side
+    doc.setFillColor(55, 65, 81);
+    doc.rect(8, 8, 194, 18, 'F');
+
+    // Title
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text('TEST PARAMETERS & SIGN-OFF (BACK SIDE)', 105, 20, { align: 'center' });
+
+    // Metadata Summary
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(9);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(`Product: ${productNameField}   |   Batch No: ${batchNo}   |   Ref No: ${refNo}`, 12, 34);
+    doc.line(12, 38, 198, 38);
+
+    // Section: Test Results
+    y = 45;
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('QUALITY CONTROL TEST SPECIFICATIONS', 15, y);
+
+    y += 6;
+    doc.setFontSize(9.5);
+    doc.setFillColor(243, 244, 246);
+    doc.rect(12, y, 186, 7, 'F');
+    doc.rect(12, y, 186, 7, 'S');
+
+    doc.text('Test Method / Parameter', 16, y + 5);
+    doc.text('Standard Range / Spec', 96, y + 5);
+    doc.text('Observed Result', 156, y + 5);
+
+    y += 7;
+    doc.setFont('Helvetica', 'normal');
+
+    if (tests.length > 0) {
+      tests.forEach((t: any, index: number) => {
+        if (index % 2 === 0) {
+          doc.setFillColor(249, 250, 251);
+          doc.rect(12, y, 186, 7, 'F');
+        }
+        doc.rect(12, y, 186, 7, 'S');
+
+        doc.text(t.method, 16, y + 5);
+        doc.text(t.standard || '-', 96, y + 5);
+        doc.text(t.result || '-', 156, y + 5);
+
+        y += 7;
+      });
+    } else {
+      doc.rect(12, y, 186, 8, 'S');
+      doc.text('No standard laboratory tests registered for this batch.', 16, y + 5.5);
+      y += 8;
+    }
+
+    // Section: Remarks
+    y += 10;
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('LABORATORY REMARKS & INSTRUCTIONS', 15, y);
+
+    y += 5;
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(9);
+    
+    const remarksBoxHeight = 45;
+    doc.rect(12, y, 186, remarksBoxHeight);
+    
+    const splitRemarks = doc.splitTextToSize(remarks || 'No additional remarks.', 178);
+    doc.text(splitRemarks, 16, y + 6);
+
+    // Section: Approval & Verification Sign-Off
+    const bottomY = 240;
+    doc.line(12, bottomY - 5, 198, bottomY - 5);
+
+    // Box 1: Preparation / Checking
+    doc.rect(12, bottomY, 86, 38);
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.text('FORMULA PREPARED & CHECKED BY', 16, bottomY + 6);
+    
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.text('Signature: ________________________', 16, bottomY + 22);
+    doc.text('Date: ____________________________', 16, bottomY + 30);
+
+    // Box 2: Quality Approval
+    doc.rect(112, bottomY, 86, 38);
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.text('LABORATORY MASTER APPROVAL', 116, bottomY + 6);
+    
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(8.5);
+    const approvalStatusStr = data.approval_status ? `Status: ${data.approval_status}` : 'Status: Approved';
+    const approvedByStr = data.approval_comments ? `By: ${data.approval_comments}` : 'Approved By Laboratory Admin';
+    
+    doc.text(approvalStatusStr, 116, bottomY + 14);
+    doc.text(approvedByStr, 116, bottomY + 22);
+    doc.text('Sign: ____________________________', 116, bottomY + 30);
+
+    // Save
+    doc.save(`Lab_Formulation_${batchNo}_Card.pdf`);
+    onShowToast(`Printable 2-page Card for Batch ${batchNo} downloaded!`, 'success');
   };
 
   const parseDuplicateDetails = (data: any) => {
@@ -2979,27 +3248,38 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                       )}
 
                       {/* Actions Footer */}
-                      <div style={{ display: 'flex', gap: '8px', marginTop: 'auto', paddingTop: '8px', borderTop: '1px solid #cbd5e1' }}>
-                        <button 
-                          onClick={() => {
-                            onChangeView(isLabCard ? 'lab_formulations' : 'rm_testing');
-                            setTimeout(() => loadBatchIntoPane(batchNo, 'left', isLabCard), 150);
-                          }}
-                          className="flet-btn"
-                          style={{ flexGrow: 1 }}
-                        >
-                          <ArrowLeft size={12} /> Load to Left
-                        </button>
-                        <button 
-                          onClick={() => {
-                            onChangeView(isLabCard ? 'lab_formulations' : 'rm_testing');
-                            setTimeout(() => loadBatchIntoPane(batchNo, 'right', isLabCard), 150);
-                          }}
-                          className="flet-btn"
-                          style={{ flexGrow: 1 }}
-                        >
-                          Load to Right <ArrowRight size={12} />
-                        </button>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: 'auto', paddingTop: '8px', borderTop: '1px solid #cbd5e1' }}>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button 
+                            onClick={() => {
+                              onChangeView(isLabCard ? 'lab_formulations' : 'rm_testing');
+                              setTimeout(() => loadBatchIntoPane(batchNo, 'left', isLabCard), 150);
+                            }}
+                            className="flet-btn"
+                            style={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', fontSize: '11px', height: '28px' }}
+                          >
+                            <ArrowLeft size={11} /> Load Left
+                          </button>
+                          <button 
+                            onClick={() => {
+                              onChangeView(isLabCard ? 'lab_formulations' : 'rm_testing');
+                              setTimeout(() => loadBatchIntoPane(batchNo, 'right', isLabCard), 150);
+                            }}
+                            className="flet-btn"
+                            style={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', fontSize: '11px', height: '28px' }}
+                          >
+                            Load Right <ArrowRight size={11} />
+                          </button>
+                        </div>
+                        {isLabCard && (
+                          <button 
+                            onClick={() => printPastLabFormulation(batchNo)}
+                            className="flet-btn"
+                            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', fontSize: '11px', height: '28px', backgroundColor: '#374151', color: '#ffffff', border: 'none' }}
+                          >
+                            <Printer size={11} /> Print Formulation Card (Front & Back)
+                          </button>
+                        )}
                       </div>
 
                     </div>

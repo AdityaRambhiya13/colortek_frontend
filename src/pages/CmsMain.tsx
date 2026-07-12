@@ -1717,7 +1717,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
         }
       }).filter((item: any) => item.material.trim() !== '');
 
-      const cardHeight = 8 + 15 + 5 + (inventory.length * 4.5) + 5 + 4;
+      const cardHeight = 30 + 4.5 + (inventory.length * 4.5) + 4.5 + 4;
 
       if (idx > 0 && currentY + cardHeight > pageHeightLimit) {
         doc.addPage();

@@ -1836,8 +1836,8 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       currentY += cardHeight + 4;
     });
 
-    doc.save(`Lab_Ingredients_Only_${Date.now()}.pdf`);
-    onShowToast(`Printable Ingredients sheets downloaded!`, 'success');
+    doc.save(`Lab_Raw_Materials_Only_${Date.now()}.pdf`);
+    onShowToast(`Printable Raw Materials sheets downloaded!`, 'success');
     setSelectedPastBatches([]);
   };
 

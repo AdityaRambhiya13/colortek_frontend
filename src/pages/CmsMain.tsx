@@ -118,7 +118,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
   
   const [leftRemarks, setLeftRemarks] = useState('');
   const [rightRemarks, setRightRemarks] = useState('');
-  const [printSlot, setPrintSlot] = useState<'top' | 'middle' | 'bottom'>('top');
+  const [printSlot, setPrintSlot] = useState<'top-left' | 'top-right' | 'middle-left' | 'middle-right' | 'bottom-left' | 'bottom-right'>('top-left');
 
   // Report status & Approved by for RM Testing
   const [leftStatus, setLeftStatus] = useState('Select');
@@ -1695,34 +1695,19 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
   const generateIngredientsOnlyPDF = (fetchedData: any[]) => {
     const doc = new jsPDF('p', 'mm', 'a4');
-    let currentY = 8;
-    const pageHeightLimit = 280;
-    const cardWidth = 194;
-    const startX = 8;
+    const cardWidth = 94;
 
-    if (fetchedData.length === 1) {
-      const data = fetchedData[0];
-      const inventory = (data.inventory || []).map((i: any) => {
-        if (Array.isArray(i)) return i[1] || '';
-        return i.raw_material || i.material || '';
-      }).filter((m: string) => m.trim() !== '');
-      const cardHeight = 27 + (inventory.length * 4) + 4 + 3;
-
-      if (printSlot !== 'top' && cardHeight > 90) {
-        const proceed = window.confirm(
-          `This formulation has ${inventory.length} raw materials and is too large to fit in the ${printSlot} slot. It will overlap with other slots.\n\nClick OK to print anyway, or Cancel to print at the Top slot on a fresh page.`
-        );
-        if (!proceed) {
-          currentY = 8;
-        } else {
-          if (printSlot === 'middle') currentY = 98;
-          else if (printSlot === 'bottom') currentY = 188;
-        }
-      } else {
-        if (printSlot === 'middle') currentY = 98;
-        else if (printSlot === 'bottom') currentY = 188;
+    const getSlotCoords = (slotName: string) => {
+      switch (slotName) {
+        case 'top-left': return { x: 8, y: 8 };
+        case 'top-right': return { x: 108, y: 8 };
+        case 'middle-left': return { x: 8, y: 101 };
+        case 'middle-right': return { x: 108, y: 101 };
+        case 'bottom-left': return { x: 8, y: 194 };
+        case 'bottom-right': return { x: 108, y: 194 };
+        default: return { x: 8, y: 8 };
       }
-    }
+    };
 
     fetchedData.forEach((data, idx) => {
       const fd = data.form_data || [];
@@ -1753,116 +1738,151 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
         }
       }).filter((item: any) => item.material.trim() !== '');
 
-      const cardHeight = 30 + 4.5 + (inventory.length * 4.5) + 4.5 + 4;
-
-      if (idx > 0 && currentY + cardHeight > pageHeightLimit) {
-        doc.addPage();
-        currentY = 8;
+      // Determine slot coordinates
+      let slotX = 8;
+      let slotY = 8;
+      
+      if (fetchedData.length === 1) {
+        const coords = getSlotCoords(printSlot);
+        slotX = coords.x;
+        slotY = coords.y;
+      } else {
+        const pageIndex = idx % 6;
+        const pageNum = Math.floor(idx / 6);
+        if (pageNum > 0 && pageIndex === 0) {
+          doc.addPage();
+        }
+        if (pageIndex === 0) { slotX = 8; slotY = 8; }
+        else if (pageIndex === 1) { slotX = 108; slotY = 8; }
+        else if (pageIndex === 2) { slotX = 8; slotY = 101; }
+        else if (pageIndex === 3) { slotX = 108; slotY = 101; }
+        else if (pageIndex === 4) { slotX = 8; slotY = 194; }
+        else if (pageIndex === 5) { slotX = 108; slotY = 194; }
       }
 
-      const startY = currentY;
+      const startY = slotY;
+      const cardHeight = 88;
 
       // Card Border
       doc.setDrawColor(200, 200, 200);
       doc.setLineWidth(0.3);
-      doc.rect(startX, startY, cardWidth, cardHeight, 'S');
+      doc.rect(slotX, startY, cardWidth, cardHeight, 'S');
 
       // Card Header
       doc.setFont('Helvetica', 'bold');
       doc.setFontSize(9.5);
       doc.setTextColor(29, 78, 216); // Blue-700
-      doc.text(`Batch: ${batchNo}`, startX + 4, startY + 6);
+      doc.text(`Batch: ${batchNo.substring(0, 18)}`, slotX + 4, startY + 5);
       
       doc.setFont('Helvetica', 'normal');
-      doc.setFontSize(8.5);
-      doc.setTextColor(107, 114, 128); // Grey-500
-      doc.text(`Ref: ${refNo !== 'N/A' ? refNo : '-'}`, startX + cardWidth - 4, startY + 6, { align: 'right' });
+      doc.setFontSize(8);
+      doc.setTextColor(107, 114, 128);
+      doc.text(`Ref: ${refNo !== 'N/A' ? refNo.substring(0, 14) : '-'}`, slotX + cardWidth - 4, startY + 5, { align: 'right' });
 
       doc.setDrawColor(229, 231, 235);
-      doc.line(startX + 4, startY + 8, startX + cardWidth - 4, startY + 8);
+      doc.line(slotX + 4, startY + 6, slotX + cardWidth - 4, startY + 6);
 
       // BATCH DETAILS Table
       doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(7.5);
+      doc.setFontSize(7);
       doc.setTextColor(29, 78, 216);
-      doc.text('BATCH DETAILS', startX + 4, startY + 12);
+      doc.text('BATCH DETAILS', slotX + 4, startY + 9.5);
 
       doc.setDrawColor(209, 213, 219);
       doc.setFillColor(249, 250, 251);
-      doc.rect(startX + 4, startY + 14, cardWidth - 8, 10);
-      doc.line(startX + 4, startY + 19, startX + cardWidth - 4, startY + 19); // Horizontal Divider
-      doc.line(startX + 4 + (cardWidth - 8) / 2, startY + 14, startX + 4 + (cardWidth - 8) / 2, startY + 24); // Vertical Divider
+      doc.rect(slotX + 4, startY + 11, cardWidth - 8, 8);
+      doc.line(slotX + 4, startY + 15, slotX + cardWidth - 4, startY + 15); // Horizontal Divider
+      doc.line(slotX + 4 + (cardWidth - 8) / 2, startY + 11, slotX + 4 + (cardWidth - 8) / 2, startY + 19); // Vertical Divider
 
-      doc.setFontSize(7);
+      doc.setFontSize(6.5);
       doc.setTextColor(0, 0, 0);
       
-      doc.setFont('Helvetica', 'bold'); doc.text('Product Name:', startX + 6, startY + 17.5);
-      doc.setFont('Helvetica', 'normal'); doc.text(productNameField, startX + 28, startY + 17.5);
+      doc.setFont('Helvetica', 'bold'); doc.text('Product:', slotX + 6, startY + 14);
+      doc.setFont('Helvetica', 'normal'); doc.text(productNameField.substring(0, 16), slotX + 16, startY + 14);
       
-      doc.setFont('Helvetica', 'bold'); doc.text('Formula Date:', startX + 4 + (cardWidth - 8) / 2 + 2, startY + 17.5);
-      doc.setFont('Helvetica', 'normal'); doc.text(formulaDate !== 'N/A' ? formulaDate : '-', startX + 4 + (cardWidth - 8) / 2 + 22, startY + 17.5);
+      doc.setFont('Helvetica', 'bold'); doc.text('Formula Dt:', slotX + 4 + (cardWidth - 8) / 2 + 2, startY + 14);
+      doc.setFont('Helvetica', 'normal'); doc.text(formulaDate !== 'N/A' ? formulaDate : '-', slotX + 4 + (cardWidth - 8) / 2 + 18, startY + 14);
 
-      doc.setFont('Helvetica', 'bold'); doc.text('Test Date:', startX + 6, startY + 22.5);
-      doc.setFont('Helvetica', 'normal'); doc.text(testDate !== 'N/A' ? testDate : '-', startX + 28, startY + 22.5);
+      doc.setFont('Helvetica', 'bold'); doc.text('Test Dt:', slotX + 6, startY + 18);
+      doc.setFont('Helvetica', 'normal'); doc.text(testDate !== 'N/A' ? testDate : '-', slotX + 16, startY + 18);
       
-      doc.setFont('Helvetica', 'bold'); doc.text('Report Date:', startX + 4 + (cardWidth - 8) / 2 + 2, startY + 22.5);
-      doc.setFont('Helvetica', 'normal'); doc.text(reportDate !== 'N/A' ? reportDate : '-', startX + 4 + (cardWidth - 8) / 2 + 22, startY + 22.5);
+      doc.setFont('Helvetica', 'bold'); doc.text('Report Dt:', slotX + 4 + (cardWidth - 8) / 2 + 2, startY + 18);
+      doc.setFont('Helvetica', 'normal'); doc.text(reportDate !== 'N/A' ? reportDate : '-', slotX + 4 + (cardWidth - 8) / 2 + 18, startY + 18);
 
       // RAW MATERIALS Table
       doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(7.5);
-      doc.setTextColor(29, 78, 216);
-      doc.text('RAW MATERIALS', startX + 4, startY + 28);
-
-      let tableY = startY + 30;
-      doc.setFillColor(245, 248, 250);
-      doc.rect(startX + 4, tableY, cardWidth - 8, 4.5, 'F');
-      doc.rect(startX + 4, tableY, cardWidth - 8, 4.5, 'S');
-
-      doc.setFontSize(7.5);
-      doc.setTextColor(0, 0, 0);
-      doc.text('Sr', startX + 6, tableY + 3.2);
-      doc.text('Material Description', startX + 16, tableY + 3.2);
-      doc.text('Qty (g)', startX + cardWidth - 6, tableY + 3.2, { align: 'right' });
-
-      tableY += 4.5;
-      doc.setFont('Helvetica', 'normal');
       doc.setFontSize(7);
+      doc.setTextColor(29, 78, 216);
+      doc.text('RAW MATERIALS', slotX + 4, startY + 22.5);
+
+      let tableY = startY + 24;
+      doc.setFillColor(245, 248, 250);
+      doc.rect(slotX + 4, tableY, cardWidth - 8, 4, 'F');
+      doc.rect(slotX + 4, tableY, cardWidth - 8, 4, 'S');
+
+      doc.setFontSize(7);
+      doc.setTextColor(0, 0, 0);
+      doc.text('Sr', slotX + 6, tableY + 2.8);
+      doc.text('Material Description', slotX + 14, tableY + 2.8);
+      doc.text('Qty (g)', slotX + cardWidth - 6, tableY + 2.8, { align: 'right' });
+
+      tableY += 4;
+      doc.setFont('Helvetica', 'normal');
+      doc.setFontSize(6.5);
 
       let totalQty = 0;
-      inventory.forEach((item: any, index: number) => {
+      const maxRows = 12;
+      const displayInventory = inventory.slice(0, maxRows);
+      const remainingCount = inventory.length - maxRows;
+
+      displayInventory.forEach((item: any, index: number) => {
+        const isLastRow = index === maxRows - 1 && remainingCount > 0;
+        
         if (index % 2 === 0) {
           doc.setFillColor(250, 250, 250);
-          doc.rect(startX + 4, tableY, cardWidth - 8, 4.5, 'F');
+          doc.rect(slotX + 4, tableY, cardWidth - 8, 4, 'F');
         }
-        doc.rect(startX + 4, tableY, cardWidth - 8, 4.5, 'S');
+        doc.rect(slotX + 4, tableY, cardWidth - 8, 4, 'S');
 
-        doc.text(item.sr || String(index + 1), startX + 6, tableY + 3.2);
-        doc.text(item.material, startX + 16, tableY + 3.2);
-        
-        const qtyVal = parseFloat(item.qty);
-        if (!isNaN(qtyVal)) {
-          totalQty += qtyVal;
-          doc.text(qtyVal.toFixed(2), startX + cardWidth - 6, tableY + 3.2, { align: 'right' });
+        if (isLastRow) {
+          doc.setFont('Helvetica', 'bold');
+          doc.text('', slotX + 6, tableY + 2.8);
+          doc.text(`+ ${remainingCount + 1} more materials...`, slotX + 14, tableY + 2.8);
+          doc.text('-', slotX + cardWidth - 6, tableY + 2.8, { align: 'right' });
+          doc.setFont('Helvetica', 'normal');
         } else {
-          doc.text(item.qty || '0.00', startX + cardWidth - 6, tableY + 3.2, { align: 'right' });
+          doc.text(item.sr || String(index + 1), slotX + 6, tableY + 2.8);
+          doc.text(item.material.substring(0, 30), slotX + 14, tableY + 2.8);
+          
+          const qtyVal = parseFloat(item.qty);
+          if (!isNaN(qtyVal)) {
+            totalQty += qtyVal;
+            doc.text(qtyVal.toFixed(2), slotX + cardWidth - 6, tableY + 2.8, { align: 'right' });
+          } else {
+            doc.text(item.qty || '0.00', slotX + cardWidth - 6, tableY + 2.8, { align: 'right' });
+          }
         }
-        tableY += 4.5;
+        tableY += 4;
       });
+
+      if (remainingCount > 0) {
+        inventory.slice(maxRows - 1).forEach((item: any) => {
+          const qtyVal = parseFloat(item.qty);
+          if (!isNaN(qtyVal)) totalQty += qtyVal;
+        });
+      }
 
       // Total Row
       doc.setFillColor(243, 244, 246);
-      doc.rect(startX + 4, tableY, cardWidth - 8, 4.5, 'F');
-      doc.rect(startX + 4, tableY, cardWidth - 8, 4.5, 'S');
+      doc.rect(slotX + 4, tableY, cardWidth - 8, 4, 'F');
+      doc.rect(slotX + 4, tableY, cardWidth - 8, 4, 'S');
       doc.setFont('Helvetica', 'bold');
-      doc.text('Total Qty:', startX + 16, tableY + 3.2);
-      doc.text(`${totalQty.toFixed(2)} g`, startX + cardWidth - 6, tableY + 3.2, { align: 'right' });
-
-      currentY += cardHeight + 4;
+      doc.text('Total:', slotX + 14, tableY + 2.8);
+      doc.text(`${totalQty.toFixed(2)} g`, slotX + cardWidth - 6, tableY + 2.8, { align: 'right' });
     });
 
-    doc.save(`Lab_Raw_Materials_Only_${Date.now()}.pdf`);
-    onShowToast(`Printable Raw Materials sheets downloaded!`, 'success');
+    doc.save(`Lab_Raw_Materials_${Date.now()}.pdf`);
+    onShowToast(`Printable sheets downloaded successfully!`, 'success');
     setSelectedPastBatches([]);
   };
 
@@ -1889,45 +1909,19 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
   const generateMultiFormulationsPrintPDF = (fetchedData: any[]) => {
     const doc = new jsPDF('p', 'mm', 'a4');
-    let currentY = 8;
-    const pageHeightLimit = 280;
-    const cardWidth = 194;
-    const startX = 8;
+    const cardWidth = 94;
 
-    if (fetchedData.length === 1) {
-      const data = fetchedData[0];
-      const inventory = (data.inventory || []).map((i: any) => {
-        if (Array.isArray(i)) return i[1] || '';
-        return i.raw_material || i.material || '';
-      }).filter((m: string) => m.trim() !== '');
-
-      const tests = (data.tests || []).map((t: any) => {
-        if (Array.isArray(t)) return t[0] || '';
-        return t.method || '';
-      }).filter((m: string) => m.trim() !== '');
-
-      const remarks = data.remarks || '';
-
-      let estimatedHeight = 6 + 12 + (15 + inventory.length * 4);
-      if (tests.length > 0) estimatedHeight += 8 + (tests.length * 4);
-      if (remarks) estimatedHeight += 14;
-      estimatedHeight += 3;
-
-      if (printSlot !== 'top' && estimatedHeight > 90) {
-        const proceed = window.confirm(
-          `This formulation has ${inventory.length} raw materials and is too large to fit in the ${printSlot} slot. It will overlap with other slots.\n\nClick OK to print anyway, or Cancel to print at the Top slot on a fresh page.`
-        );
-        if (!proceed) {
-          currentY = 8;
-        } else {
-          if (printSlot === 'middle') currentY = 98;
-          else if (printSlot === 'bottom') currentY = 188;
-        }
-      } else {
-        if (printSlot === 'middle') currentY = 98;
-        else if (printSlot === 'bottom') currentY = 188;
+    const getSlotCoords = (slotName: string) => {
+      switch (slotName) {
+        case 'top-left': return { x: 8, y: 8 };
+        case 'top-right': return { x: 108, y: 8 };
+        case 'middle-left': return { x: 8, y: 101 };
+        case 'middle-right': return { x: 108, y: 101 };
+        case 'bottom-left': return { x: 8, y: 194 };
+        case 'bottom-right': return { x: 108, y: 194 };
+        default: return { x: 8, y: 8 };
       }
-    }
+    };
 
     fetchedData.forEach((data, idx) => {
       const fd = data.form_data || [];
@@ -1987,142 +1981,194 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
       const remarks = data.remarks || '';
 
-      let estimatedHeight = 6 + 12 + (15 + inventory.length * 4);
-      if (tests.length > 0) estimatedHeight += 8 + (tests.length * 4);
-      if (remarks) estimatedHeight += 14;
-      estimatedHeight += 3;
-
-      if (idx > 0 && currentY + estimatedHeight > pageHeightLimit) {
-        doc.addPage();
-        currentY = 8;
+      // Determine slot coordinates
+      let slotX = 8;
+      let slotY = 8;
+      
+      if (fetchedData.length === 1) {
+        const coords = getSlotCoords(printSlot);
+        slotX = coords.x;
+        slotY = coords.y;
+      } else {
+        const pageIndex = idx % 6;
+        const pageNum = Math.floor(idx / 6);
+        if (pageNum > 0 && pageIndex === 0) {
+          doc.addPage();
+        }
+        if (pageIndex === 0) { slotX = 8; slotY = 8; }
+        else if (pageIndex === 1) { slotX = 108; slotY = 8; }
+        else if (pageIndex === 2) { slotX = 8; slotY = 101; }
+        else if (pageIndex === 3) { slotX = 108; slotY = 101; }
+        else if (pageIndex === 4) { slotX = 8; slotY = 194; }
+        else if (pageIndex === 5) { slotX = 108; slotY = 194; }
       }
 
-      const startY = currentY;
+      const startY = slotY;
+      const cardHeight = 88;
+
+      // Card Border
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.3);
+      doc.rect(slotX, startY, cardWidth, cardHeight, 'S');
 
       // Card Header
       doc.setFont('Helvetica', 'bold');
       doc.setFontSize(9.5);
       doc.setTextColor(29, 78, 216); // Blue-700
-      doc.text(`Batch: ${batchNo}`, startX + 4, startY + 5);
+      doc.text(`Batch: ${batchNo.substring(0, 18)}`, slotX + 4, startY + 5);
       
       doc.setFont('Helvetica', 'normal');
-      doc.setFontSize(8.5);
+      doc.setFontSize(8);
       doc.setTextColor(107, 114, 128);
-      doc.text(`Ref: ${refNo !== 'N/A' ? refNo : '-'}`, startX + cardWidth - 4, startY + 5, { align: 'right' });
+      doc.text(`Ref: ${refNo !== 'N/A' ? refNo.substring(0, 14) : '-'}`, slotX + cardWidth - 4, startY + 5, { align: 'right' });
 
       doc.setDrawColor(229, 231, 235);
-      doc.line(startX + 4, startY + 6, startX + cardWidth - 4, startY + 6);
+      doc.line(slotX + 4, startY + 6, slotX + cardWidth - 4, startY + 6);
 
       // BATCH DETAILS Table
       doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(7.5);
+      doc.setFontSize(7);
       doc.setTextColor(29, 78, 216);
-      doc.text('BATCH DETAILS', startX + 4, startY + 9);
+      doc.text('BATCH DETAILS', slotX + 4, startY + 9.5);
 
       doc.setDrawColor(209, 213, 219);
       doc.setFillColor(249, 250, 251);
-      doc.rect(startX + 4, startY + 10, cardWidth - 8, 8);
-      doc.line(startX + 4, startY + 14, startX + cardWidth - 4, startY + 14); // Horizontal Divider
-      doc.line(startX + 4 + (cardWidth - 8) / 2, startY + 10, startX + 4 + (cardWidth - 8) / 2, startY + 18); // Vertical Divider
+      doc.rect(slotX + 4, startY + 11, cardWidth - 8, 8);
+      doc.line(slotX + 4, startY + 15, slotX + cardWidth - 4, startY + 15); // Horizontal Divider
+      doc.line(slotX + 4 + (cardWidth - 8) / 2, startY + 11, slotX + 4 + (cardWidth - 8) / 2, startY + 19); // Vertical Divider
 
-      doc.setFontSize(7);
+      doc.setFontSize(6.5);
       doc.setTextColor(0, 0, 0);
-      doc.setFont('Helvetica', 'bold'); doc.text('Product Name:', startX + 6, startY + 13);
-      doc.setFont('Helvetica', 'normal'); doc.text(productNameField, startX + 28, startY + 13);
       
-      doc.setFont('Helvetica', 'bold'); doc.text('Formula Date:', startX + 4 + (cardWidth - 8) / 2 + 2, startY + 13);
-      doc.setFont('Helvetica', 'normal'); doc.text(formulaDate !== 'N/A' ? formulaDate : '-', startX + 4 + (cardWidth - 8) / 2 + 22, startY + 13);
+      doc.setFont('Helvetica', 'bold'); doc.text('Product:', slotX + 6, startY + 14);
+      doc.setFont('Helvetica', 'normal'); doc.text(productNameField.substring(0, 16), slotX + 16, startY + 14);
+      
+      doc.setFont('Helvetica', 'bold'); doc.text('Formula Dt:', slotX + 4 + (cardWidth - 8) / 2 + 2, startY + 14);
+      doc.setFont('Helvetica', 'normal'); doc.text(formulaDate !== 'N/A' ? formulaDate : '-', slotX + 4 + (cardWidth - 8) / 2 + 18, startY + 14);
 
-      doc.setFont('Helvetica', 'bold'); doc.text('Test Date:', startX + 6, startY + 17);
-      doc.setFont('Helvetica', 'normal'); doc.text(testDate !== 'N/A' ? testDate : '-', startX + 28, startY + 17);
+      doc.setFont('Helvetica', 'bold'); doc.text('Test Dt:', slotX + 6, startY + 18);
+      doc.setFont('Helvetica', 'normal'); doc.text(testDate !== 'N/A' ? testDate : '-', slotX + 16, startY + 18);
       
-      doc.setFont('Helvetica', 'bold'); doc.text('Report Date:', startX + 4 + (cardWidth - 8) / 2 + 2, startY + 17);
-      doc.setFont('Helvetica', 'normal'); doc.text(reportDate !== 'N/A' ? reportDate : '-', startX + 4 + (cardWidth - 8) / 2 + 22, startY + 17);
+      doc.setFont('Helvetica', 'bold'); doc.text('Report Dt:', slotX + 4 + (cardWidth - 8) / 2 + 2, startY + 18);
+      doc.setFont('Helvetica', 'normal'); doc.text(reportDate !== 'N/A' ? reportDate : '-', slotX + 4 + (cardWidth - 8) / 2 + 18, startY + 18);
 
       // RAW MATERIALS Table
       doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(7.5);
+      doc.setFontSize(7);
       doc.setTextColor(29, 78, 216);
-      doc.text('RAW MATERIALS', startX + 4, startY + 21);
+      doc.text('RAW MATERIALS', slotX + 4, startY + 22.5);
 
-      let tableY = startY + 23;
+      let tableY = startY + 24;
       doc.setFillColor(245, 248, 250);
-      doc.rect(startX + 4, tableY, cardWidth - 8, 4, 'F');
-      doc.rect(startX + 4, tableY, cardWidth - 8, 4, 'S');
+      doc.rect(slotX + 4, tableY, cardWidth - 8, 4, 'F');
+      doc.rect(slotX + 4, tableY, cardWidth - 8, 4, 'S');
 
-      doc.setFontSize(7.5);
+      doc.setFontSize(7);
       doc.setTextColor(0, 0, 0);
-      doc.text('Sr', startX + 6, tableY + 2.8);
-      doc.text('Material Description', startX + 16, tableY + 2.8);
-      doc.text('Qty (g)', startX + cardWidth - 6, tableY + 2.8, { align: 'right' });
+      doc.text('Sr', slotX + 6, tableY + 2.8);
+      doc.text('Material Description', slotX + 14, tableY + 2.8);
+      doc.text('Qty (g)', slotX + cardWidth - 6, tableY + 2.8, { align: 'right' });
 
       tableY += 4;
       doc.setFont('Helvetica', 'normal');
-      doc.setFontSize(7);
+      doc.setFontSize(6.5);
 
       let totalQty = 0;
-      inventory.forEach((item: any, index: number) => {
+      const maxRawMaterials = 6;
+      const displayInventory = inventory.slice(0, maxRawMaterials);
+      const remainingRMCount = inventory.length - maxRawMaterials;
+
+      displayInventory.forEach((item: any, index: number) => {
+        const isLastRow = index === maxRawMaterials - 1 && remainingRMCount > 0;
+        
         if (index % 2 === 0) {
           doc.setFillColor(250, 250, 250);
-          doc.rect(startX + 4, tableY, cardWidth - 8, 4, 'F');
+          doc.rect(slotX + 4, tableY, cardWidth - 8, 4, 'F');
         }
-        doc.rect(startX + 4, tableY, cardWidth - 8, 4, 'S');
+        doc.rect(slotX + 4, tableY, cardWidth - 8, 4, 'S');
 
-        doc.text(item.sr || String(index + 1), startX + 6, tableY + 2.8);
-        doc.text(item.material, startX + 16, tableY + 2.8);
-        
-        const qtyVal = parseFloat(item.qty);
-        if (!isNaN(qtyVal)) {
-          totalQty += qtyVal;
-          doc.text(qtyVal.toFixed(2), startX + cardWidth - 6, tableY + 2.8, { align: 'right' });
+        if (isLastRow) {
+          doc.setFont('Helvetica', 'bold');
+          doc.text('', slotX + 6, tableY + 2.8);
+          doc.text(`+ ${remainingRMCount + 1} more materials...`, slotX + 14, tableY + 2.8);
+          doc.text('-', slotX + cardWidth - 6, tableY + 2.8, { align: 'right' });
+          doc.setFont('Helvetica', 'normal');
         } else {
-          doc.text(item.qty || '0.00', startX + cardWidth - 6, tableY + 2.8, { align: 'right' });
+          doc.text(item.sr || String(index + 1), slotX + 6, tableY + 2.8);
+          doc.text(item.material.substring(0, 28), slotX + 14, tableY + 2.8);
+          
+          const qtyVal = parseFloat(item.qty);
+          if (!isNaN(qtyVal)) {
+            totalQty += qtyVal;
+            doc.text(qtyVal.toFixed(2), slotX + cardWidth - 6, tableY + 2.8, { align: 'right' });
+          } else {
+            doc.text(item.qty || '0.00', slotX + cardWidth - 6, tableY + 2.8, { align: 'right' });
+          }
         }
         tableY += 4;
       });
 
+      if (remainingRMCount > 0) {
+        inventory.slice(maxRawMaterials - 1).forEach((item: any) => {
+          const qtyVal = parseFloat(item.qty);
+          if (!isNaN(qtyVal)) totalQty += qtyVal;
+        });
+      }
+
       // Total Row
       doc.setFillColor(243, 244, 246);
-      doc.rect(startX + 4, tableY, cardWidth - 8, 4, 'F');
-      doc.rect(startX + 4, tableY, cardWidth - 8, 4, 'S');
+      doc.rect(slotX + 4, tableY, cardWidth - 8, 4, 'F');
+      doc.rect(slotX + 4, tableY, cardWidth - 8, 4, 'S');
       doc.setFont('Helvetica', 'bold');
-      doc.text('Total Qty:', startX + 16, tableY + 2.8);
-      doc.text(`${totalQty.toFixed(2)} g`, startX + cardWidth - 6, tableY + 2.8, { align: 'right' });
+      doc.text('Total:', slotX + 14, tableY + 2.8);
+      doc.text(`${totalQty.toFixed(2)} g`, slotX + cardWidth - 6, tableY + 2.8, { align: 'right' });
 
       let nextY = tableY + 4;
 
       // TEST RESULTS (if exist)
       if (tests.length > 0) {
         doc.setFont('Helvetica', 'bold');
-        doc.setFontSize(7.5);
+        doc.setFontSize(7);
         doc.setTextColor(29, 78, 216);
-        doc.text('TEST RESULTS', startX + 4, nextY + 3);
+        doc.text('TEST RESULTS', slotX + 4, nextY + 2.5);
 
-        let testTableY = nextY + 5;
+        let testTableY = nextY + 4;
         doc.setFillColor(245, 248, 250);
-        doc.rect(startX + 4, testTableY, cardWidth - 8, 4, 'F');
-        doc.rect(startX + 4, testTableY, cardWidth - 8, 4, 'S');
+        doc.rect(slotX + 4, testTableY, cardWidth - 8, 4, 'F');
+        doc.rect(slotX + 4, testTableY, cardWidth - 8, 4, 'S');
 
-        doc.setFontSize(7.5);
+        doc.setFontSize(7);
         doc.setTextColor(0, 0, 0);
-        doc.text('Test Method', startX + 6, testTableY + 2.8);
-        doc.text('Standard Spec', startX + 96, testTableY + 2.8);
-        doc.text('Result', startX + cardWidth - 6, testTableY + 2.8, { align: 'right' });
+        doc.text('Test Method', slotX + 6, testTableY + 2.8);
+        doc.text('Std / Result', slotX + cardWidth - 6, testTableY + 2.8, { align: 'right' });
 
         testTableY += 4;
         doc.setFont('Helvetica', 'normal');
-        doc.setFontSize(7);
+        doc.setFontSize(6.5);
 
-        tests.forEach((t: any, index: number) => {
+        const maxTests = 3;
+        const displayTests = tests.slice(0, maxTests);
+        const remainingTestsCount = tests.length - maxTests;
+
+        displayTests.forEach((t: any, index: number) => {
+          const isLastRow = index === maxTests - 1 && remainingTestsCount > 0;
+          
           if (index % 2 === 0) {
             doc.setFillColor(250, 250, 250);
-            doc.rect(startX + 4, testTableY, cardWidth - 8, 4, 'F');
+            doc.rect(slotX + 4, testTableY, cardWidth - 8, 4, 'F');
           }
-          doc.rect(startX + 4, testTableY, cardWidth - 8, 4, 'S');
+          doc.rect(slotX + 4, testTableY, cardWidth - 8, 4, 'S');
 
-          doc.text(t.method, startX + 6, testTableY + 2.8);
-          doc.text(t.standard || '-', startX + 96, testTableY + 2.8);
-          doc.text(t.result || '-', startX + cardWidth - 6, testTableY + 2.8, { align: 'right' });
+          if (isLastRow) {
+            doc.setFont('Helvetica', 'bold');
+            doc.text(`+ ${remainingTestsCount + 1} more tests...`, slotX + 6, testTableY + 2.8);
+            doc.text('-', slotX + cardWidth - 6, testTableY + 2.8, { align: 'right' });
+            doc.setFont('Helvetica', 'normal');
+          } else {
+            doc.text(t.method.substring(0, 24), slotX + 6, testTableY + 2.8);
+            const resStr = `${t.standard || '-'} / ${t.result || '-'}`;
+            doc.text(resStr.substring(0, 24), slotX + cardWidth - 6, testTableY + 2.8, { align: 'right' });
+          }
           testTableY += 4;
         });
 
@@ -2132,39 +2178,29 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       // Remarks & Comments (if exist)
       if (remarks) {
         doc.setFont('Helvetica', 'bold');
-        doc.setFontSize(7.5);
+        doc.setFontSize(7);
         doc.setTextColor(29, 78, 216);
-        doc.text('Remarks & Comments:', startX + 4, nextY + 3);
+        doc.text('Remarks & Comments:', slotX + 4, nextY + 2.5);
 
-        const remarksBoxY = nextY + 5;
-        const remarksBoxHeight = 10;
+        const remarksBoxY = nextY + 4;
+        const remarksBoxHeight = 8;
         doc.setDrawColor(209, 213, 219);
-        doc.rect(startX + 4, remarksBoxY, cardWidth - 8, remarksBoxHeight);
+        doc.rect(slotX + 4, remarksBoxY, cardWidth - 8, remarksBoxHeight);
 
         doc.setFont('Helvetica', 'normal');
-        doc.setFontSize(7);
+        doc.setFontSize(6.5);
         doc.setTextColor(0, 0, 0);
-        const splitRem = doc.splitTextToSize(remarks, cardWidth - 16);
-        doc.text(splitRem, startX + 6, remarksBoxY + 3.5);
-
-        nextY = remarksBoxY + remarksBoxHeight;
+        doc.text(remarks.substring(0, 52), slotX + 6, remarksBoxY + 3.2);
+        if (remarks.length > 52) {
+          doc.text(remarks.substring(52, 104), slotX + 6, remarksBoxY + 6.2);
+        }
       }
-
-      // Draw Card Border exactly around the final content bottom
-      const finalCardHeight = (nextY + 3) - startY;
-      doc.setDrawColor(200, 200, 200);
-      doc.setLineWidth(0.3);
-      doc.rect(startX, startY, cardWidth, finalCardHeight, 'S');
-
-      currentY = startY + finalCardHeight + 4; // Add gap between cards
     });
 
     doc.save(`Lab_Complete_Cards_${Date.now()}.pdf`);
     onShowToast(`Printable Complete Cards downloaded successfully!`, 'success');
     setSelectedPastBatches([]); // Reset selection after printing
   };
-
-
 
   const parseDuplicateDetails = (data: any) => {
     if (!data) return null;
@@ -3541,12 +3577,15 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                   {selectedPastBatches.length === 1 && (
                     <select 
                       value={printSlot} 
-                      onChange={(e) => setPrintSlot(e.target.value as 'top' | 'middle' | 'bottom')}
+                      onChange={(e) => setPrintSlot(e.target.value as any)}
                       style={{ height: '32px', borderRadius: '4px', border: '1px solid #cbd5e1', padding: '0 8px', fontSize: '13px', marginLeft: '6px', cursor: 'pointer', backgroundColor: '#ffffff', color: '#1e293b', fontWeight: '500' }}
                     >
-                      <option value="top">Slot: Top</option>
-                      <option value="middle">Slot: Middle</option>
-                      <option value="bottom">Slot: Bottom</option>
+                      <option value="top-left">Slot: Top Left</option>
+                      <option value="top-right">Slot: Top Right</option>
+                      <option value="middle-left">Slot: Middle Left</option>
+                      <option value="middle-right">Slot: Middle Right</option>
+                      <option value="bottom-left">Slot: Bottom Left</option>
+                      <option value="bottom-right">Slot: Bottom Right</option>
                     </select>
                   )}
                 </>

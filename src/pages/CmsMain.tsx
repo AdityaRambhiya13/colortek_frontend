@@ -1491,7 +1491,18 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
           result: t.result || '',
         };
       }
-    }).filter((t: any) => t.method.trim() !== '');
+    }).filter((t: any) => {
+      const methodVal = (t.method || '').trim();
+      const stdVal = (t.standard || '').trim();
+      const resVal = (t.result || '').trim();
+      
+      if (methodVal === '') return false;
+      
+      const isStdEmpty = stdVal === '' || stdVal === '-' || stdVal.toLowerCase() === 'select';
+      const isResEmpty = resVal === '' || resVal === '-' || resVal.toLowerCase() === 'select';
+      
+      return !(isStdEmpty && isResEmpty);
+    });
 
     const remarks = data.remarks || '';
 
@@ -1914,7 +1925,18 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
             result: t.result || '',
           };
         }
-      }).filter((t: any) => t.method.trim() !== '');
+      }).filter((t: any) => {
+        const methodVal = (t.method || '').trim();
+        const stdVal = (t.standard || '').trim();
+        const resVal = (t.result || '').trim();
+        
+        if (methodVal === '') return false;
+        
+        const isStdEmpty = stdVal === '' || stdVal === '-' || stdVal.toLowerCase() === 'select';
+        const isResEmpty = resVal === '' || resVal === '-' || resVal.toLowerCase() === 'select';
+        
+        return !(isStdEmpty && isResEmpty);
+      });
 
       const remarks = data.remarks || '';
 

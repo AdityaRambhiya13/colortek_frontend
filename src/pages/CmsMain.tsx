@@ -1668,35 +1668,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     const splitRemarks = doc.splitTextToSize(remarks || 'No additional remarks.', 178);
     doc.text(splitRemarks, 16, y + 6);
 
-    // Section: Approval & Verification Sign-Off
-    const bottomY = 240;
-    doc.line(12, bottomY - 5, 198, bottomY - 5);
 
-    // Box 1: Preparation / Checking
-    doc.rect(12, bottomY, 86, 38);
-    doc.setFont('Helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.text('FORMULA PREPARED & CHECKED BY', 16, bottomY + 6);
-    
-    doc.setFont('Helvetica', 'normal');
-    doc.setFontSize(8.5);
-    doc.text('Signature: ________________________', 16, bottomY + 22);
-    doc.text('Date: ____________________________', 16, bottomY + 30);
-
-    // Box 2: Quality Approval
-    doc.rect(112, bottomY, 86, 38);
-    doc.setFont('Helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.text('LABORATORY MASTER APPROVAL', 116, bottomY + 6);
-    
-    doc.setFont('Helvetica', 'normal');
-    doc.setFontSize(8.5);
-    const approvalStatusStr = data.approval_status ? `Status: ${data.approval_status}` : 'Status: Approved';
-    const approvedByStr = data.approval_comments ? `By: ${data.approval_comments}` : 'Approved By Laboratory Admin';
-    
-    doc.text(approvalStatusStr, 116, bottomY + 14);
-    doc.text(approvedByStr, 116, bottomY + 22);
-    doc.text('Sign: ____________________________', 116, bottomY + 30);
 
     // Save
     doc.save(`Lab_Formulation_${batchNo}_Card.pdf`);
@@ -1893,16 +1865,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       const splitRem = doc.splitTextToSize(remarks || 'No additional remarks.', 84);
       doc.text(splitRem, 112, remarksStartY + 7);
 
-      doc.setDrawColor(229, 231, 235);
-      doc.line(112, startY + 78, 198, startY + 78);
-      
-      doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(6.5);
-      doc.text('Prep By: ___________________', 112, startY + 84);
-      
-      const approvalStr = data.approval_status ? `Approval: ${data.approval_status}` : 'Approval: Approved';
-      doc.text(approvalStr, 156, startY + 82);
-      doc.text('Appr By: ___________________', 156, startY + 86);
+
     });
 
     doc.save(`Lab_Formulations_Batch_Print_${Date.now()}.pdf`);

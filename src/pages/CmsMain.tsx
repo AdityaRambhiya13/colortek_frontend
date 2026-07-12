@@ -1449,10 +1449,11 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     const fd = data.form_data || [];
     const refNo = data.ref_no || fd[0] || 'N/A';
     const batchNo = data.batch_no || fd[1] || 'N/A';
-    const productNameField = fd[2] || 'N/A';
-    const testDate = fd[3] || 'N/A';
-    const reportDate = fd[4] || 'N/A';
-    const formulaDate = fd[5] || 'N/A';
+    const productNameField = fd[2] || data.product_name_field || data.product || 'N/A';
+    const rmLotNoValue = fd[3] || data.rm_name_lot_no || data.rm_lot || 'N/A';
+    const testDate = fd[4] || data.test_date || 'N/A';
+    const reportDate = fd[5] || data.report_date || 'N/A';
+    const formulaDate = fd[6] || data.formula_date || 'N/A';
 
     const inventory = (data.inventory || []).map((i: any) => {
       if (Array.isArray(i)) {
@@ -1717,10 +1718,11 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       const fd = data.form_data || [];
       const refNo = data.ref_no || fd[0] || 'N/A';
       const batchNo = data.batch_no || fd[1] || 'N/A';
-      const productNameField = fd[2] || 'N/A';
-      const testDate = fd[3] || 'N/A';
-      const reportDate = fd[4] || 'N/A';
-      const formulaDate = fd[5] || 'N/A';
+      const productNameField = fd[2] || data.product_name_field || data.product || 'N/A';
+      const rmLotNoValue = fd[3] || data.rm_name_lot_no || data.rm_lot || 'N/A';
+      const testDate = fd[4] || data.test_date || 'N/A';
+      const reportDate = fd[5] || data.report_date || 'N/A';
+      const formulaDate = fd[6] || data.formula_date || 'N/A';
 
       const inventory = (data.inventory || []).map((i: any) => {
         if (Array.isArray(i)) {

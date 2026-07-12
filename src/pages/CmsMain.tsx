@@ -49,6 +49,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const notificationsRef = useRef<HTMLDivElement>(null);
+  const skipDuplicateCheck = useRef<{ left: boolean; right: boolean }>({ left: false, right: false });
 
   const getTypeClass = (type: string) => {
     const t = (type || '').toLowerCase().trim();
@@ -646,6 +647,19 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
   // Real-time automatic duplicate checking from database (symmetrical)
   const autoCheckDuplicates = async (side: 'left' | 'right') => {
+    if (skipDuplicateCheck.current[side]) {
+      const setDuplicateMatches = side === 'left' ? setDuplicateMatchesLeft : setDuplicateMatchesRight;
+      setDuplicateMatches([]);
+      if (side === 'left') {
+        setDuplicateDetailsLeft(null);
+        setSelectedDuplicateBatchNoLeft(null);
+      } else {
+        setDuplicateDetailsRight(null);
+        setSelectedDuplicateBatchNoRight(null);
+      }
+      skipDuplicateCheck.current[side] = false;
+      return;
+    }
     if (isComplaintMode) {
       const setDuplicateMatches = side === 'left' ? setDuplicateMatchesLeft : setDuplicateMatchesRight;
       setDuplicateMatches([]);
@@ -1193,6 +1207,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
         paddedInventory.push({ sr: (paddedInventory.length + 1).toString(), mr: '', material: '', qty: '', selected: false });
       }
       setRows(paddedInventory);
+      skipDuplicateCheck.current[side] = true;
 
       // Duplicate check handles self-duplicates automatically now
 
@@ -2166,7 +2181,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                                 id={`left-mat-${idx}`}
                                 type="text" 
                                 className="cell-input" 
-                                list="common-raw-materials"
+                                list={['lab_formulations', 'rm_testing'].includes(activeSubView) ? undefined : "common-raw-materials"}
                                 value={row.material} 
                                 onChange={e => {
                                   const updated = [...leftRows];
@@ -2502,7 +2517,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                                 id={`right-mat-${idx}`}
                                 type="text" 
                                 className="cell-input" 
-                                list="common-raw-materials"
+                                list={['lab_formulations', 'rm_testing'].includes(activeSubView) ? undefined : "common-raw-materials"}
                                 value={row.material} 
                                 onChange={e => {
                                   const updated = [...rightRows];

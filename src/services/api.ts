@@ -63,6 +63,39 @@ apiClient.interceptors.request.use(
     }
     if (csrfToken && config.method && ['post', 'put', 'delete', 'patch'].includes(config.method)) {
       config.headers['X-CSRF-Token'] = csrfToken;
+
+      // Update CSRF token in payload body if it exists
+      if (config.data) {
+        if (typeof config.data === 'string') {
+          try {
+            const parsed = JSON.parse(config.data);
+            if (parsed && typeof parsed === 'object') {
+              let changed = false;
+              if ('csrf_token' in parsed) {
+                parsed.csrf_token = csrfToken;
+                changed = true;
+              }
+              if ('csrfToken' in parsed) {
+                parsed.csrfToken = csrfToken;
+                changed = true;
+              }
+              if (changed) {
+                config.data = JSON.stringify(parsed);
+              }
+            }
+          } catch (e) {}
+        } else if (config.data instanceof FormData) {
+          if (config.data.has('csrf_token')) {
+            config.data.set('csrf_token', csrfToken);
+          }
+          if (config.data.has('csrfToken')) {
+            config.data.set('csrfToken', csrfToken);
+          }
+        } else if (typeof config.data === 'object') {
+          if ('csrf_token' in config.data) config.data.csrf_token = csrfToken;
+          if ('csrfToken' in config.data) config.data.csrfToken = csrfToken;
+        }
+      }
     }
 
     return config;

@@ -30,6 +30,11 @@ const DARK_HEADER: React.CSSProperties = {
 
 const PAGE_SIZE = 20;
 
+const normalizeBatchNo = (val: string): string => {
+  if (!val) return '';
+  return val.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+};
+
 export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, onShowToast, onChangeView }) => {
   const currentProduct = sessionStorage.getItem('product_name') || '';
 
@@ -506,15 +511,21 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
   // --------------------------------------------------------------------------
   // PAGINATION HELPERS
   // --------------------------------------------------------------------------
-  const filteredLabBatches = labBatches.filter(b => b.batch_no?.toLowerCase().includes(labSearchTerm.toLowerCase()));
+  const filteredLabBatches = labBatches.filter(b => 
+    normalizeBatchNo(b.batch_no).includes(normalizeBatchNo(labSearchTerm))
+  );
   const labTotalPages = Math.max(1, Math.ceil(filteredLabBatches.length / PAGE_SIZE));
   const paginatedLabBatches = filteredLabBatches.slice((labCurrentPage - 1) * PAGE_SIZE, labCurrentPage * PAGE_SIZE);
 
-  const filteredRepairedBatches = repairedBatches.filter(b => b.batch_no?.toLowerCase().includes(repairedSearchTerm.toLowerCase()));
+  const filteredRepairedBatches = repairedBatches.filter(b => 
+    normalizeBatchNo(b.batch_no).includes(normalizeBatchNo(repairedSearchTerm))
+  );
   const repairedTotalPages = Math.max(1, Math.ceil(filteredRepairedBatches.length / PAGE_SIZE));
   const paginatedRepairedBatches = filteredRepairedBatches.slice((repairedCurrentPage - 1) * PAGE_SIZE, repairedCurrentPage * PAGE_SIZE);
 
-  const filteredResolvedBatches = resolvedBatches.filter(b => b.toLowerCase().includes(resolvedSearchTerm.toLowerCase()));
+  const filteredResolvedBatches = resolvedBatches.filter(b => 
+    normalizeBatchNo(b).includes(normalizeBatchNo(resolvedSearchTerm))
+  );
   const resolvedTotalPages = Math.max(1, Math.ceil(filteredResolvedBatches.length / PAGE_SIZE));
   const paginatedResolvedBatches = filteredResolvedBatches.slice((resolvedCurrentPage - 1) * PAGE_SIZE, resolvedCurrentPage * PAGE_SIZE);
 

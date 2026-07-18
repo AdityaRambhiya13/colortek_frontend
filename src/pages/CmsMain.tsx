@@ -1723,17 +1723,14 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       return dateStr;
     };
 
-    // Stretch the card all the way down to the bottom margin so everything fits cleanly inside the box range
-    // 297mm total height - 16mm (top/bottom margins) = 281mm
+    // Card height spans top margin to bottom margin
     const fixedCardHeight = 281; 
 
     fetchedData.forEach((data, idx) => {
-      // Create a new page every 2 items
       if (idx > 0 && idx % 2 === 0) {
         doc.addPage();
       }
 
-      // 0 for left side, 1 for right side
       const positionOnPage = idx % 2; 
       const startY = margin;
       const slotX = margin + (positionOnPage * (cardWidth + gapX));
@@ -1767,14 +1764,14 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
         }
       }).filter((item: any) => item.material.trim() !== '');
 
-      // --- 1. CARD HEADER (ENHANCED SIZE) ---
+      // --- 1. CARD HEADER (FONT INCREASED) ---
       doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(13); 
+      doc.setFontSize(15); // Increased from 13
       doc.setTextColor(29, 78, 216);
       doc.text(`Batch: ${batchNo.substring(0, 16)}`, slotX + 4, startY + 8);
       
       doc.setFont('Helvetica', 'normal');
-      doc.setFontSize(10.5); 
+      doc.setFontSize(11.5); // Increased from 10.5
       doc.setTextColor(107, 114, 128);
       doc.text(`Ref: ${refNo !== 'N/A' ? refNo.substring(0, 12) : '-'}`, slotX + cardWidth - 4, startY + 8, { align: 'right' });
 
@@ -1782,78 +1779,78 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       doc.setLineWidth(0.4);
       doc.line(slotX + 4, startY + 10, slotX + cardWidth - 4, startY + 10);
 
-      // --- 2. BATCH DETAILS SECTION ---
+      // --- 2. BATCH DETAILS SECTION (FONT INCREASED) ---
       doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(10.5); 
+      doc.setFontSize(12); // Increased from 10.5
       doc.setTextColor(29, 78, 216);
-      doc.text('BATCH DETAILS', slotX + 4, startY + 15);
+      doc.text('BATCH DETAILS', slotX + 4, startY + 16);
 
-      // Setup dynamic text wrapping for product inside side-by-side grid width
       doc.setFont('Helvetica', 'normal');
-      doc.setFontSize(9.5);
+      doc.setFontSize(11); // Increased from 9.5
       const containerInnerWidth = cardWidth - 8;
-      const labelWidth = 16;
+      const labelWidth = 18;
       const allowedTextWidth = containerInnerWidth - labelWidth - 2;
 
       const wrappedProductLines = doc.splitTextToSize(productNameField, allowedTextWidth);
       
-      const productRowHeight = wrappedProductLines.length > 1 ? 6 + (wrappedProductLines.length - 1) * 4.5 : 6;
-      const datesRowHeight = 6;
+      const productRowHeight = wrappedProductLines.length > 1 ? 7 + (wrappedProductLines.length - 1) * 5 : 7;
+      // Increased height to allow a two-tier layout for the dates section
+      const datesRowHeight = 11; 
       const batchDetailsContainerHeight = productRowHeight + datesRowHeight;
 
       // Inner container box
       doc.setDrawColor(209, 213, 219);
       doc.setFillColor(249, 250, 251);
-      doc.rect(slotX + 4, startY + 17, containerInnerWidth, batchDetailsContainerHeight, 'DF');
+      doc.rect(slotX + 4, startY + 18, containerInnerWidth, batchDetailsContainerHeight, 'DF');
       
-      // Horizontal inside row divider
-      doc.line(slotX + 4, startY + 17 + productRowHeight, slotX + cardWidth - 4, startY + 17 + productRowHeight);
+      // Horizontal row divider below product name
+      doc.line(slotX + 4, startY + 18 + productRowHeight, slotX + cardWidth - 4, startY + 18 + productRowHeight);
 
-      // Render Product Label & Field
+      // Render Product
       doc.setFont('Helvetica', 'bold');
-      doc.text('Product:', slotX + 6, startY + 22);
+      doc.text('Product:', slotX + 6, startY + 23);
       doc.setFont('Helvetica', 'normal');
-      doc.text(wrappedProductLines, slotX + 21, startY + 22);
+      doc.text(wrappedProductLines, slotX + 24, startY + 23);
 
-      // Render 3 Columns dynamically for the dates row
-      const columnWidth = containerInnerWidth / 3;
-      const bottomRowStartY = startY + 17 + productRowHeight;
-      const datesTextY = bottomRowStartY + 4.2;
+      // 2-Column Split for Dates to prevent clipping at larger font size
+      const halfWidth = containerInnerWidth / 2;
+      const bottomRowStartY = startY + 18 + productRowHeight;
+      
+      // Vertical internal middle divider
+      doc.line(slotX + 4 + halfWidth, bottomRowStartY, slotX + 4 + halfWidth, bottomRowStartY + datesRowHeight);
 
-      // Inside column divider lines
-      doc.line(slotX + 4 + columnWidth, bottomRowStartY, slotX + 4 + columnWidth, bottomRowStartY + datesRowHeight);
-      doc.line(slotX + 4 + (columnWidth * 2), bottomRowStartY, slotX + 4 + (columnWidth * 2), bottomRowStartY + datesRowHeight);
+      doc.setFontSize(9.5); // Increased from 8
+      
+      // Left Side: Formula Date (Centered vertically in its box)
+      doc.setFont('Helvetica', 'bold'); doc.text('Form Dt:', slotX + 6, bottomRowStartY + 6.5);
+      doc.setFont('Helvetica', 'normal'); doc.text(formulaDate, slotX + 24, bottomRowStartY + 6.5);
 
-      // Compact but readable text font for columns to avoid overlap bounds
-      doc.setFontSize(8); 
-      doc.setFont('Helvetica', 'bold'); doc.text('Form Dt:', slotX + 5, datesTextY);
-      doc.setFont('Helvetica', 'normal'); doc.text(formulaDate, slotX + 17, datesTextY);
+      // Right Side: Stacked Test and Report Dates
+      doc.setFont('Helvetica', 'bold'); doc.text('Test Dt:', slotX + 6 + halfWidth, bottomRowStartY + 4.5);
+      doc.setFont('Helvetica', 'normal'); doc.text(testDate, slotX + 22 + halfWidth, bottomRowStartY + 4.5);
 
-      doc.setFont('Helvetica', 'bold'); doc.text('Test Dt:', slotX + 5 + columnWidth, datesTextY);
-      doc.setFont('Helvetica', 'normal'); doc.text(testDate, slotX + 15 + columnWidth, datesTextY);
+      doc.setFont('Helvetica', 'bold'); doc.text('Rep Dt:', slotX + 6 + halfWidth, bottomRowStartY + 9);
+      doc.setFont('Helvetica', 'normal'); doc.text(reportDate, slotX + 22 + halfWidth, bottomRowStartY + 9);
 
-      doc.setFont('Helvetica', 'bold'); doc.text('Rep Dt:', slotX + 5 + (columnWidth * 2), datesTextY);
-      doc.setFont('Helvetica', 'normal'); doc.text(reportDate, slotX + 15 + (columnWidth * 2), datesTextY);
-
-      // --- 3. RAW MATERIALS TABLE ---
-      const rawMaterialsHeaderY = startY + 17 + batchDetailsContainerHeight + 6;
+      // --- 3. RAW MATERIALS TABLE (FONT INCREASED) ---
+      const rawMaterialsHeaderY = startY + 18 + batchDetailsContainerHeight + 6;
       doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(10.5);
+      doc.setFontSize(12); // Increased from 10.5
       doc.setTextColor(29, 78, 216);
       doc.text('RAW MATERIALS', slotX + 4, rawMaterialsHeaderY);
 
       let tableY = rawMaterialsHeaderY + 2;
-      const tableRowHeight = 6; 
+      const tableRowHeight = 7; // Expanded height padding
 
       // Header row
       doc.setFillColor(245, 248, 250);
       doc.rect(slotX + 4, tableY, containerInnerWidth, tableRowHeight, 'DF');
 
-      doc.setFontSize(9); 
+      doc.setFontSize(10); // Increased from 9
       doc.setTextColor(0, 0, 0);
-      doc.text('Sr', slotX + 6, tableY + 4.2);
-      doc.text('Material Description', slotX + 14, tableY + 4.2);
-      doc.text('Qty (g)', slotX + cardWidth - 6, tableY + 4.2, { align: 'right' });
+      doc.text('Sr', slotX + 6, tableY + 4.8);
+      doc.text('Material Description', slotX + 14, tableY + 4.8);
+      doc.text('Qty (g)', slotX + cardWidth - 6, tableY + 4.8, { align: 'right' });
 
       tableY += tableRowHeight;
       doc.setFont('Helvetica', 'normal');
@@ -1866,15 +1863,15 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
         }
         doc.rect(slotX + 4, tableY, containerInnerWidth, tableRowHeight, 'S');
 
-        doc.text(item.sr || String(index + 1), slotX + 6, tableY + 4.2);
-        doc.text(item.material.substring(0, 24), slotX + 14, tableY + 4.2); 
+        doc.text(item.sr || String(index + 1), slotX + 6, tableY + 4.8);
+        doc.text(item.material.substring(0, 22), slotX + 14, tableY + 4.8); 
         
         const qtyVal = parseFloat(item.qty);
         if (!isNaN(qtyVal)) {
           totalQty += qtyVal;
-          doc.text(qtyVal.toFixed(2), slotX + cardWidth - 6, tableY + 4.2, { align: 'right' });
+          doc.text(qtyVal.toFixed(2), slotX + cardWidth - 6, tableY + 4.8, { align: 'right' });
         } else {
-          doc.text(item.qty || '0.00', slotX + cardWidth - 6, tableY + 4.2, { align: 'right' });
+          doc.text(item.qty || '0.00', slotX + cardWidth - 6, tableY + 4.8, { align: 'right' });
         }
         tableY += tableRowHeight;
       });
@@ -1883,18 +1880,18 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       doc.setFillColor(243, 244, 246);
       doc.rect(slotX + 4, tableY, containerInnerWidth, tableRowHeight, 'DF');
       doc.setFont('Helvetica', 'bold');
-      doc.text('Total:', slotX + 14, tableY + 4.2);
-      doc.text(`${totalQty.toFixed(2)} g`, slotX + cardWidth - 6, tableY + 4.2, { align: 'right' });
+      doc.text('Total:', slotX + 14, tableY + 4.8);
+      doc.text(`${totalQty.toFixed(2)} g`, slotX + cardWidth - 6, tableY + 4.8, { align: 'right' });
 
       tableY += tableRowHeight;
 
-      // --- 4. SECURE REPORT WRITING NOTES AREA (Inside the Box Range) ---
+      // --- 4. SECURE REPORT WRITING NOTES AREA ---
       const remainingSpaceHeaderY = tableY + 6;
       const absoluteCardBottomBoundary = startY + fixedCardHeight - 4; 
 
       if (remainingSpaceHeaderY < absoluteCardBottomBoundary - 6) {
         doc.setFont('Helvetica', 'bold');
-        doc.setFontSize(10);
+        doc.setFontSize(11); // Increased from 10
         doc.setTextColor(29, 78, 216);
         doc.text('REPORT NOTES', slotX + 4, remainingSpaceHeaderY);
 
@@ -1902,14 +1899,13 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
         doc.setLineWidth(0.2);
 
         let noteLineY = remainingSpaceHeaderY + 6;
-        // Pushes notebook lines strictly down until hitting the bottom border limit inside the card range
         while (noteLineY < absoluteCardBottomBoundary) {
           doc.line(slotX + 4, noteLineY, slotX + cardWidth - 4, noteLineY);
-          noteLineY += 6.5; 
+          noteLineY += 7; // Wider space between lines for easy writing
         }
       }
 
-      // Draw the Outer Border Layout Frame (Locks both boxes symmetrically side by side)
+      // Draw the Outer Border Layout Frame
       doc.setDrawColor(180, 185, 190);
       doc.setLineWidth(0.4);
       doc.rect(slotX, startY, cardWidth, fixedCardHeight, 'S');

@@ -1714,6 +1714,17 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     const gapX = 6; 
     const gapY = 6; 
 
+    // Helper to format YYYY-MM-DD string into DD-MM-YYYY
+    const formatDateDMY = (dateStr: string) => {
+      if (!dateStr || dateStr === 'N/A' || dateStr.trim() === '-' || dateStr.trim() === '') return '-';
+      // If it matches YYYY-MM-DD format
+      const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (match) {
+        return `${match[3]}-${match[2]}-${match[1]}`;
+      }
+      return dateStr; // Fallback if already formatted or different
+    };
+
     // Dynamic coordinates tracker
     let currentX = margin;
     let currentY = margin;
@@ -1726,9 +1737,11 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       
       const isLab = fd.length === 6;
       const productNameField = fd[2] || data.product_name_field || data.product || 'N/A';
-      const testDate = isLab ? (fd[3] || 'N/A') : (fd[4] || 'N/A');
-      const reportDate = isLab ? (fd[4] || 'N/A') : (fd[5] || 'N/A');
-      const formulaDate = isLab ? (fd[5] || 'N/A') : (fd[6] || 'N/A');
+      
+      // Extract and format dates directly to DD-MM-YYYY
+      const testDate = formatDateDMY(isLab ? (fd[3] || 'N/A') : (fd[4] || 'N/A'));
+      const reportDate = formatDateDMY(isLab ? (fd[4] || 'N/A') : (fd[5] || 'N/A'));
+      const formulaDate = formatDateDMY(isLab ? (fd[5] || 'N/A') : (fd[6] || 'N/A'));
 
       const inventory = (data.inventory || []).map((i: any) => {
         if (Array.isArray(i)) {
@@ -1748,23 +1761,22 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
         }
       }).filter((item: any) => item.material.trim() !== '');
 
-      // 1. DYNAMIC TEXT WRAPPING FOR PRODUCT NAME (Takes full inner container width)
+      // DYNAMIC TEXT WRAPPING FOR PRODUCT NAME
       doc.setFont('Helvetica', 'normal');
       doc.setFontSize(9);
       
       const containerInnerWidth = cardWidth - 8; 
-      const labelWidth = 15; // Width of "Product:" bold prefix label
+      const labelWidth = 15; 
       const allowedTextWidth = containerInnerWidth - labelWidth - 2; 
 
       const wrappedProductLines = doc.splitTextToSize(productNameField, allowedTextWidth);
       const lineCount = wrappedProductLines.length;
 
-      // Calculate container row heights dynamically
       const productRowHeight = lineCount > 1 ? 5.5 + (lineCount - 1) * 4 : 5.5; 
       const datesRowHeight = 5.5; 
       const batchDetailsContainerHeight = productRowHeight + datesRowHeight; 
 
-      // 2. PRE-CALCULATE ESTIMATED HEIGHT TO CHECK PAGE BOUNDARY PREEMPTIVELY
+      // PRE-CALCULATE ESTIMATED HEIGHT
       const rowStep = 5.5;
       const estimatedCardHeight = 13.5 + batchDetailsContainerHeight + 6.5 + (inventory.length * rowStep) + 5.5 + 2;
 
@@ -1828,7 +1840,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       doc.setFillColor(249, 250, 251);
       doc.rect(slotX + 4, startY + 13.5, containerInnerWidth, batchDetailsContainerHeight);
       
-      // Dynamic Horizontal separation line between Product Row and the Dates Row
+      // Separation line between Product Row and the Dates Row
       doc.line(slotX + 4, startY + 13.5 + productRowHeight, slotX + cardWidth - 4, startY + 13.5 + productRowHeight); 
       
       // Vertical internal dividers for the 3 dates fields in the bottom row
@@ -1846,20 +1858,20 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       doc.setFont('Helvetica', 'normal'); 
       doc.text(wrappedProductLines, slotX + 21, startY + 17.5, { charSpace: 0.08 });
       
-      // Render Row 2: Formula Dt | Test Dt | Report Dt side by side in one single line
-      const secondRowTextY = bottomRowStartY + 4;
+      // Render Row 2: Form Dt | Test Dt | Rep Dt cleanly aligned inside their columns
+      const secondRowTextY = bottomRowStartY + 3.8;
       
-      // Column 1: Formula Date
-      doc.setFont('Helvetica', 'bold'); doc.text('Form Dt:', slotX + 6, secondRowTextY, { charSpace: 0.05 });
-      doc.setFont('Helvetica', 'normal'); doc.text(formulaDate !== 'N/A' ? formulaDate : '-', slotX + 20, secondRowTextY, { charSpace: 0.05 });
+      // Column 1
+      doc.setFont('Helvetica', 'bold'); doc.text('Form Dt:', slotX + 5, secondRowTextY);
+      doc.setFont('Helvetica', 'normal'); doc.text(formulaDate, slotX + 19, secondRowTextY);
       
-      // Column 2: Test Date
-      doc.setFont('Helvetica', 'bold'); doc.text('Test Dt:', slotX + 6 + columnWidth, secondRowTextY, { charSpace: 0.05 });
-      doc.setFont('Helvetica', 'normal'); doc.text(testDate !== 'N/A' ? testDate : '-', slotX + 20 + columnWidth, secondRowTextY, { charSpace: 0.05 });
+      // Column 2
+      doc.setFont('Helvetica', 'bold'); doc.text('Test Dt:', slotX + 5 + columnWidth, secondRowTextY);
+      doc.setFont('Helvetica', 'normal'); doc.text(testDate, slotX + 18 + columnWidth, secondRowTextY);
       
-      // Column 3: Report Date
-      doc.setFont('Helvetica', 'bold'); doc.text('Rep Dt:', slotX + 6 + (columnWidth * 2), secondRowTextY, { charSpace: 0.05 });
-      doc.setFont('Helvetica', 'normal'); doc.text(reportDate !== 'N/A' ? reportDate : '-', slotX + 19 + (columnWidth * 2), secondRowTextY, { charSpace: 0.05 });
+      // Column 3
+      doc.setFont('Helvetica', 'bold'); doc.text('Rep Dt:', slotX + 5 + (columnWidth * 2), secondRowTextY);
+      doc.setFont('Helvetica', 'normal'); doc.text(reportDate, slotX + 17 + (columnWidth * 2), secondRowTextY);
 
       // RAW MATERIALS Section Header
       const rawMaterialsHeaderY = startY + 13.5 + batchDetailsContainerHeight + 4.5;

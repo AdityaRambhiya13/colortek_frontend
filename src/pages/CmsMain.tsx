@@ -1336,46 +1336,49 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     const doc = new jsPDF();
     
     doc.setFont('Helvetica', 'bold');
-    doc.setFontSize(18);
-    doc.text('Colortek CMS - Formulation Report', 14, 20);
+    doc.setFontSize(20);
+    doc.text('Colortek CMS - Formulation Report', 14, 20, { charSpace: 0.3 });
     
-    doc.setFontSize(10);
+    doc.setFontSize(11);
     doc.setFont('Helvetica', 'normal');
-    doc.text(`Active Product Workspace: ${productName}`, 14, 28);
-    doc.text(`Ref No: ${form.refNo}`, 14, 34);
-    doc.text(`Batch No: ${form.batchNo}`, 14, 40);
-    doc.text(`Product Name: ${form.product}`, 14, 46);
-    doc.text(`Total Weight: ${total} grams`, 14, 52);
+    doc.text(`Active Product Workspace: ${productName}`, 14, 28, { charSpace: 0.15 });
+    doc.text(`Ref No: ${form.refNo}`, 14, 35, { charSpace: 0.15 });
+    doc.text(`Batch No: ${form.batchNo}`, 14, 42, { charSpace: 0.15 });
+    doc.text(`Product Name: ${form.product}`, 14, 49, { charSpace: 0.15 });
+    doc.text(`Total Weight: ${total} grams`, 14, 56, { charSpace: 0.15 });
 
-    let y = 60;
+    let y = 66;
     doc.setFont('Helvetica', 'bold');
-    doc.text('Ingredients List:', 14, y);
+    doc.setFontSize(12);
+    doc.text('Ingredients List:', 14, y, { charSpace: 0.2 });
     
-    y += 6;
-    doc.setFontSize(9);
-    // Draw columns manually
-    doc.text('Sr', 14, y);
-    doc.text('MR No', 24, y);
-    doc.text('Raw Material', 54, y);
-    doc.text('Quantity (g)', 124, y);
-    doc.line(14, y + 2, 180, y + 2);
-
     y += 8;
+    doc.setFontSize(11);
+    // Draw columns manually
+    doc.text('Sr', 14, y, { charSpace: 0.2 });
+    doc.text('MR No', 24, y, { charSpace: 0.2 });
+    doc.text('Raw Material', 54, y, { charSpace: 0.2 });
+    doc.text('Quantity (g)', 124, y, { charSpace: 0.2 });
+    doc.line(14, y + 2.5, 180, y + 2.5);
+
+    y += 10;
     doc.setFont('Helvetica', 'normal');
     rows.filter(r => r.material !== '').forEach(r => {
-      if (y > 275) {
+      if (y > 270) {
         doc.addPage();
         y = 20;
         doc.setFont('Helvetica', 'bold');
-        doc.text('Ingredients List (Continued):', 14, y);
-        y += 8;
+        doc.setFontSize(12);
+        doc.text('Ingredients List (Continued):', 14, y, { charSpace: 0.2 });
+        y += 10;
         doc.setFont('Helvetica', 'normal');
+        doc.setFontSize(11);
       }
-      doc.text(r.sr, 14, y);
-      doc.text(r.mr || '-', 24, y);
-      doc.text(r.material, 54, y);
-      doc.text(r.qty || '0', 124, y);
-      y += 6;
+      doc.text(r.sr, 14, y, { charSpace: 0.1 });
+      doc.text(r.mr || '-', 24, y, { charSpace: 0.1 });
+      doc.text(r.material, 54, y, { charSpace: 0.1 });
+      doc.text(r.qty || '0', 124, y, { charSpace: 0.1 });
+      y += 8;
     });
 
     if (y > 250) {
@@ -1386,37 +1389,40 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     doc.line(14, y, 180, y);
     y += 8;
     doc.setFont('Helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.text('Test Specifications:', 14, y);
-
-    y += 6;
-    doc.setFontSize(9);
-    doc.text('Test Method', 14, y);
-    doc.text('Standard', 84, y);
-    doc.text('Result', 144, y);
-    doc.line(14, y + 2, 180, y + 2);
+    doc.setFontSize(12);
+    doc.text('Test Specifications:', 14, y, { charSpace: 0.2 });
 
     y += 8;
+    doc.setFontSize(11);
+    doc.text('Test Method', 14, y, { charSpace: 0.2 });
+    doc.text('Standard', 84, y, { charSpace: 0.2 });
+    doc.text('Result', 144, y, { charSpace: 0.2 });
+    doc.line(14, y + 2.5, 180, y + 2.5);
+
+    y += 10;
     doc.setFont('Helvetica', 'normal');
     const activeTests = tests.filter(t => t.method.trim() !== '');
     if (activeTests.length > 0) {
       activeTests.forEach(t => {
-        if (y > 275) {
+        if (y > 270) {
           doc.addPage();
           y = 20;
           doc.setFont('Helvetica', 'bold');
-          doc.text('Test Specifications (Continued):', 14, y);
-          y += 8;
+          doc.setFontSize(12);
+          doc.text('Test Specifications (Continued):', 14, y, { charSpace: 0.2 });
+          y += 10;
           doc.setFont('Helvetica', 'normal');
+          doc.setFontSize(11);
         }
-        doc.text(t.method, 14, y);
-        doc.text(t.standard || '-', 84, y);
-        doc.text(t.result || '-', 144, y);
-        y += 6;
+        doc.text(t.method, 14, y, { charSpace: 0.1 });
+        doc.text(t.standard || '-', 84, y, { charSpace: 0.1 });
+        doc.text(t.result || '-', 144, y, { charSpace: 0.1 });
+        y += 8;
       });
     } else {
-      doc.text('No test specifications recorded.', 14, y);
-      y += 6;
+      doc.setFontSize(11);
+      doc.text('No test specifications recorded.', 14, y, { charSpace: 0.1 });
+      y += 8;
     }
 
     if (remarks) {
@@ -1428,10 +1434,12 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       doc.line(14, y, 180, y);
       y += 8;
       doc.setFont('Helvetica', 'bold');
-      doc.text('Remarks:', 14, y);
-      y += 6;
+      doc.setFontSize(12);
+      doc.text('Remarks:', 14, y, { charSpace: 0.2 });
+      y += 8;
       doc.setFont('Helvetica', 'normal');
-      doc.text(remarks, 14, y);
+      doc.setFontSize(11);
+      doc.text(remarks, 14, y, { charSpace: 0.1 });
     }
 
     doc.save(`Batch_${form.batchNo || 'Sheet'}_CMS.pdf`);
@@ -1516,101 +1524,103 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
     // Header Title (Clean, no solid fills)
     doc.setFont('Helvetica', 'bold');
-    doc.setFontSize(14);
+    doc.setFontSize(16);
     doc.setTextColor(31, 41, 55);
-    doc.text('COLORTEK CMS - LABORATORY FORMULATION CARD', 105, 18, { align: 'center' });
+    doc.text('COLORTEK CMS - LABORATORY FORMULATION CARD', 105, 18, { align: 'center', charSpace: 0.4 });
     doc.line(12, 22, 198, 22);
 
     // Metadata details block
-    doc.setFontSize(10);
+    doc.setFontSize(12);
     doc.setTextColor(0, 0, 0);
     
     // Column 1
-    doc.setFont('Helvetica', 'bold'); doc.text('Product Name:', 15, 30);
-    doc.setFont('Helvetica', 'normal'); doc.text(productNameField, 45, 30);
+    doc.setFont('Helvetica', 'bold'); doc.text('Product Name:', 15, 32, { charSpace: 0.15 });
+    doc.setFont('Helvetica', 'normal'); doc.text(productNameField, 48, 32, { charSpace: 0.15 });
     
-    doc.setFont('Helvetica', 'bold'); doc.text('Batch No:', 15, 37);
-    doc.setFont('Helvetica', 'normal'); doc.text(batchNo, 45, 37);
+    doc.setFont('Helvetica', 'bold'); doc.text('Batch No:', 15, 41, { charSpace: 0.15 });
+    doc.setFont('Helvetica', 'normal'); doc.text(batchNo, 48, 41, { charSpace: 0.15 });
     
-    doc.setFont('Helvetica', 'bold'); doc.text('Formula Date:', 15, 44);
-    doc.setFont('Helvetica', 'normal'); doc.text(formulaDate !== 'N/A' ? formulaDate : '-', 45, 44);
+    doc.setFont('Helvetica', 'bold'); doc.text('Formula Date:', 15, 50, { charSpace: 0.15 });
+    doc.setFont('Helvetica', 'normal'); doc.text(formulaDate !== 'N/A' ? formulaDate : '-', 48, 50, { charSpace: 0.15 });
 
     // Column 2
-    doc.setFont('Helvetica', 'bold'); doc.text('Ref No:', 115, 30);
-    doc.setFont('Helvetica', 'normal'); doc.text(refNo !== 'N/A' ? refNo : '-', 135, 30);
+    doc.setFont('Helvetica', 'bold'); doc.text('Ref No:', 115, 32, { charSpace: 0.15 });
+    doc.setFont('Helvetica', 'normal'); doc.text(refNo !== 'N/A' ? refNo : '-', 145, 32, { charSpace: 0.15 });
     
-    doc.setFont('Helvetica', 'bold'); doc.text('Test Date:', 115, 37);
-    doc.setFont('Helvetica', 'normal'); doc.text(testDate !== 'N/A' ? testDate : '-', 135, 37);
+    doc.setFont('Helvetica', 'bold'); doc.text('Test Date:', 115, 41, { charSpace: 0.15 });
+    doc.setFont('Helvetica', 'normal'); doc.text(testDate !== 'N/A' ? testDate : '-', 145, 41, { charSpace: 0.15 });
     
-    doc.setFont('Helvetica', 'bold'); doc.text('Report Date:', 115, 44);
-    doc.setFont('Helvetica', 'normal'); doc.text(reportDate !== 'N/A' ? reportDate : '-', 135, 44);
+    doc.setFont('Helvetica', 'bold'); doc.text('Report Date:', 115, 50, { charSpace: 0.15 });
+    doc.setFont('Helvetica', 'normal'); doc.text(reportDate !== 'N/A' ? reportDate : '-', 145, 50, { charSpace: 0.15 });
 
     doc.setDrawColor(209, 213, 219);
-    doc.line(12, 50, 198, 50);
+    doc.line(12, 56, 198, 56);
 
     // Ingredients Section
     doc.setFont('Helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.text('INGREDIENTS FORMULA', 15, 57);
+    doc.setFontSize(13);
+    doc.text('INGREDIENTS FORMULA', 15, 63, { charSpace: 0.3 });
 
-    let y = 64;
-    doc.setFontSize(9.5);
+    let y = 70;
+    doc.setFontSize(11.5);
     doc.setFillColor(245, 245, 245);
-    doc.rect(12, y, 186, 7, 'F');
-    doc.rect(12, y, 186, 7, 'S');
+    doc.rect(12, y, 186, 9, 'F');
+    doc.rect(12, y, 186, 9, 'S');
 
-    doc.text('Sr', 16, y + 5);
-    doc.text('MR No', 28, y + 5);
-    doc.text('Raw Material Description', 62, y + 5);
-    doc.text('Quantity (Grams)', 194, y + 5, { align: 'right' });
+    doc.text('Sr', 16, y + 6, { charSpace: 0.2 });
+    doc.text('MR No', 28, y + 6, { charSpace: 0.2 });
+    doc.text('Raw Material Description', 62, y + 6, { charSpace: 0.2 });
+    doc.text('Quantity (Grams)', 194, y + 6, { align: 'right', charSpace: 0.2 });
 
-    y += 7;
+    y += 9;
     doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(11);
 
     let totalQty = 0;
     inventory.forEach((item: any, index: number) => {
       if (index % 2 === 0) {
         doc.setFillColor(250, 250, 250);
-        doc.rect(12, y, 186, 7, 'F');
+        doc.rect(12, y, 186, 9, 'F');
       }
-      doc.rect(12, y, 186, 7, 'S');
+      doc.rect(12, y, 186, 9, 'S');
 
-      doc.text(item.sr || String(index + 1), 16, y + 5);
-      doc.text(item.mr || '-', 28, y + 5);
-      doc.text(item.material, 62, y + 5);
+      doc.text(item.sr || String(index + 1), 16, y + 6, { charSpace: 0.15 });
+      doc.text(item.mr || '-', 28, y + 6, { charSpace: 0.15 });
+      doc.text(item.material, 62, y + 6, { charSpace: 0.15 });
       
       const qtyVal = parseFloat(item.qty);
       if (!isNaN(qtyVal)) {
         totalQty += qtyVal;
-        doc.text(qtyVal.toFixed(2), 194, y + 5, { align: 'right' });
+        doc.text(qtyVal.toFixed(2), 194, y + 6, { align: 'right', charSpace: 0.15 });
       } else {
-        doc.text(item.qty || '0.00', 194, y + 5, { align: 'right' });
+        doc.text(item.qty || '0.00', 194, y + 6, { align: 'right', charSpace: 0.15 });
       }
-      y += 7;
+      y += 9;
     });
 
     // Total Row
     doc.setFillColor(245, 245, 245);
-    doc.rect(12, y, 186, 8, 'F');
-    doc.rect(12, y, 186, 8, 'S');
+    doc.rect(12, y, 186, 10, 'F');
+    doc.rect(12, y, 186, 10, 'S');
     doc.setFont('Helvetica', 'bold');
-    doc.text('TOTAL FORMULATION WEIGHT:', 62, y + 5.5);
-    doc.text(`${totalQty.toFixed(2)} g`, 194, y + 5.5, { align: 'right' });
+    doc.setFontSize(12);
+    doc.text('TOTAL FORMULATION WEIGHT:', 62, y + 6.5, { charSpace: 0.2 });
+    doc.text(`${totalQty.toFixed(2)} g`, 194, y + 6.5, { align: 'right', charSpace: 0.2 });
 
     y += 15;
 
     if (tests.length === 0) {
       doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(11);
-      doc.text('Remarks & Comments:', 15, y);
+      doc.setFontSize(13);
+      doc.text('Remarks & Comments:', 15, y, { charSpace: 0.3 });
 
-      y += 5;
+      y += 6;
       doc.setFont('Helvetica', 'normal');
-      doc.setFontSize(9.5);
+      doc.setFontSize(11);
       
-      doc.rect(12, y, 186, 40);
+      doc.rect(12, y, 186, 45);
       const splitRemarks = doc.splitTextToSize(remarks || 'No additional remarks.', 178);
-      doc.text(splitRemarks, 16, y + 6);
+      doc.text(splitRemarks, 16, y + 7, { charSpace: 0.1 });
     } else {
       // PAGE 2: Back Side
       doc.addPage();
@@ -1619,50 +1629,51 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       doc.rect(8, 8, 194, 281);
 
       doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(14);
+      doc.setFontSize(16);
       doc.setTextColor(31, 41, 55);
-      doc.text('QUALITY CONTROL TEST SPECIFICATIONS', 105, 18, { align: 'center' });
+      doc.text('QUALITY CONTROL TEST SPECIFICATIONS', 105, 18, { align: 'center', charSpace: 0.4 });
       doc.line(12, 22, 198, 22);
 
       y = 30;
-      doc.setFontSize(9.5);
+      doc.setFontSize(11.5);
       doc.setFillColor(245, 245, 245);
-      doc.rect(12, y, 186, 7, 'F');
-      doc.rect(12, y, 186, 7, 'S');
+      doc.rect(12, y, 186, 9, 'F');
+      doc.rect(12, y, 186, 9, 'S');
 
       doc.setTextColor(0, 0, 0);
-      doc.text('Test Method / Parameter', 16, y + 5);
-      doc.text('Standard Range / Spec', 96, y + 5);
-      doc.text('Observed Result', 194, y + 5, { align: 'right' });
+      doc.text('Test Method / Parameter', 16, y + 6, { charSpace: 0.2 });
+      doc.text('Standard Range / Spec', 96, y + 6, { charSpace: 0.2 });
+      doc.text('Observed Result', 194, y + 6, { align: 'right', charSpace: 0.2 });
 
-      y += 7;
+      y += 9;
       doc.setFont('Helvetica', 'normal');
+      doc.setFontSize(11);
 
       tests.forEach((t: any, index: number) => {
         if (index % 2 === 0) {
           doc.setFillColor(250, 250, 250);
-          doc.rect(12, y, 186, 7, 'F');
+          doc.rect(12, y, 186, 9, 'F');
         }
-        doc.rect(12, y, 186, 7, 'S');
+        doc.rect(12, y, 186, 9, 'S');
 
-        doc.text(t.method, 16, y + 5);
-        doc.text(t.standard || '-', 96, y + 5);
-        doc.text(t.result || '-', 194, y + 5, { align: 'right' });
-        y += 7;
+        doc.text(t.method, 16, y + 6, { charSpace: 0.15 });
+        doc.text(t.standard || '-', 96, y + 6, { charSpace: 0.15 });
+        doc.text(t.result || '-', 194, y + 6, { align: 'right', charSpace: 0.15 });
+        y += 9;
       });
 
       y += 12;
       doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(11);
-      doc.text('Remarks & Comments:', 15, y);
+      doc.setFontSize(13);
+      doc.text('Remarks & Comments:', 15, y, { charSpace: 0.3 });
 
-      y += 5;
+      y += 6;
       doc.setFont('Helvetica', 'normal');
-      doc.setFontSize(9.5);
+      doc.setFontSize(11);
       
-      doc.rect(12, y, 186, 45);
+      doc.rect(12, y, 186, 50);
       const splitRemarks = doc.splitTextToSize(remarks || 'No additional remarks.', 178);
-      doc.text(splitRemarks, 16, y + 6);
+      doc.text(splitRemarks, 16, y + 7, { charSpace: 0.1 });
     }
 
 
@@ -1770,68 +1781,67 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
       // Card Header
       doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(9.5);
+      doc.setFontSize(11);
       doc.setTextColor(29, 78, 216); // Blue-700
-      doc.text(`Batch: ${batchNo.substring(0, 18)}`, slotX + 4, startY + 5);
+      doc.text(`Batch: ${batchNo.substring(0, 18)}`, slotX + 4, startY + 5.5, { charSpace: 0.2 });
       
       doc.setFont('Helvetica', 'normal');
-      doc.setFontSize(8);
+      doc.setFontSize(9.5);
       doc.setTextColor(107, 114, 128);
-      doc.text(`Ref: ${refNo !== 'N/A' ? refNo.substring(0, 14) : '-'}`, slotX + cardWidth - 4, startY + 5, { align: 'right' });
+      doc.text(`Ref: ${refNo !== 'N/A' ? refNo.substring(0, 14) : '-'}`, slotX + cardWidth - 4, startY + 5.5, { align: 'right', charSpace: 0.1 });
 
       doc.setDrawColor(229, 231, 235);
-      doc.line(slotX + 4, startY + 6, slotX + cardWidth - 4, startY + 6);
+      doc.line(slotX + 4, startY + 6.5, slotX + cardWidth - 4, startY + 6.5);
 
       // BATCH DETAILS Table
       doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(7);
+      doc.setFontSize(8.5);
       doc.setTextColor(29, 78, 216);
-      doc.text('BATCH DETAILS', slotX + 4, startY + 9.5);
+      doc.text('BATCH DETAILS', slotX + 4, startY + 10.5, { charSpace: 0.2 });
 
       doc.setDrawColor(209, 213, 219);
       doc.setFillColor(249, 250, 251);
-      doc.rect(slotX + 4, startY + 11, cardWidth - 8, 8);
-      doc.line(slotX + 4, startY + 15, slotX + cardWidth - 4, startY + 15); // Horizontal Divider
-      doc.line(slotX + 4 + (cardWidth - 8) / 2, startY + 11, slotX + 4 + (cardWidth - 8) / 2, startY + 19); // Vertical Divider
+      doc.rect(slotX + 4, startY + 12, cardWidth - 8, 9);
+      doc.line(slotX + 4, startY + 16.5, slotX + cardWidth - 4, startY + 16.5); // Horizontal Divider
+      doc.line(slotX + 4 + (cardWidth - 8) / 2, startY + 12, slotX + 4 + (cardWidth - 8) / 2, startY + 21); // Vertical Divider
 
-      doc.setFontSize(6.5);
+      doc.setFontSize(8);
       doc.setTextColor(0, 0, 0);
       
-      doc.setFont('Helvetica', 'bold'); doc.text('Product:', slotX + 6, startY + 14);
-      doc.setFont('Helvetica', 'normal'); doc.text(productNameField.substring(0, 16), slotX + 16, startY + 14);
+      doc.setFont('Helvetica', 'bold'); doc.text('Product:', slotX + 6, startY + 15.5, { charSpace: 0.1 });
+      doc.setFont('Helvetica', 'normal'); doc.text(productNameField.substring(0, 15), slotX + 17, startY + 15.5, { charSpace: 0.08 });
       
-      doc.setFont('Helvetica', 'bold'); doc.text('Formula Dt:', slotX + 4 + (cardWidth - 8) / 2 + 2, startY + 14);
-      doc.setFont('Helvetica', 'normal'); doc.text(formulaDate !== 'N/A' ? formulaDate : '-', slotX + 4 + (cardWidth - 8) / 2 + 18, startY + 14);
+      doc.setFont('Helvetica', 'bold'); doc.text('Formula Dt:', slotX + 4 + (cardWidth - 8) / 2 + 2, startY + 15.5, { charSpace: 0.1 });
+      doc.setFont('Helvetica', 'normal'); doc.text(formulaDate !== 'N/A' ? formulaDate : '-', slotX + 4 + (cardWidth - 8) / 2 + 20, startY + 15.5, { charSpace: 0.08 });
 
-      doc.setFont('Helvetica', 'bold'); doc.text('Test Dt:', slotX + 6, startY + 18);
-      doc.setFont('Helvetica', 'normal'); doc.text(testDate !== 'N/A' ? testDate : '-', slotX + 16, startY + 18);
+      doc.setFont('Helvetica', 'bold'); doc.text('Test Dt:', slotX + 6, startY + 20, { charSpace: 0.1 });
+      doc.setFont('Helvetica', 'normal'); doc.text(testDate !== 'N/A' ? testDate : '-', slotX + 17, startY + 20, { charSpace: 0.08 });
       
-      doc.setFont('Helvetica', 'bold'); doc.text('Report Dt:', slotX + 4 + (cardWidth - 8) / 2 + 2, startY + 18);
-      doc.setFont('Helvetica', 'normal'); doc.text(reportDate !== 'N/A' ? reportDate : '-', slotX + 4 + (cardWidth - 8) / 2 + 18, startY + 18);
+      doc.setFont('Helvetica', 'bold'); doc.text('Report Dt:', slotX + 4 + (cardWidth - 8) / 2 + 2, startY + 20, { charSpace: 0.1 });
+      doc.setFont('Helvetica', 'normal'); doc.text(reportDate !== 'N/A' ? reportDate : '-', slotX + 4 + (cardWidth - 8) / 2 + 20, startY + 20, { charSpace: 0.08 });
 
       // RAW MATERIALS Table
       doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(7);
+      doc.setFontSize(8.5);
       doc.setTextColor(29, 78, 216);
-      doc.text('RAW MATERIALS', slotX + 4, startY + 22.5);
+      doc.text('RAW MATERIALS', slotX + 4, startY + 24.5, { charSpace: 0.2 });
 
-      let tableY = startY + 24;
+      let tableY = startY + 26;
       doc.setFillColor(245, 248, 250);
-      doc.rect(slotX + 4, tableY, cardWidth - 8, 4, 'F');
-      doc.rect(slotX + 4, tableY, cardWidth - 8, 4, 'S');
+      doc.rect(slotX + 4, tableY, cardWidth - 8, 4.5, 'F');
+      doc.rect(slotX + 4, tableY, cardWidth - 8, 4.5, 'S');
 
-      doc.setFontSize(7);
+      doc.setFontSize(8);
       doc.setTextColor(0, 0, 0);
-      doc.text('Sr', slotX + 6, tableY + 2.8);
-      doc.text('Material Description', slotX + 14, tableY + 2.8);
-      doc.text('Qty (g)', slotX + cardWidth - 6, tableY + 2.8, { align: 'right' });
+      doc.text('Sr', slotX + 6, tableY + 3.2, { charSpace: 0.1 });
+      doc.text('Material Description', slotX + 14, tableY + 3.2, { charSpace: 0.1 });
+      doc.text('Qty (g)', slotX + cardWidth - 6, tableY + 3.2, { align: 'right', charSpace: 0.1 });
 
-      tableY += 4;
+      tableY += 4.5;
       doc.setFont('Helvetica', 'normal');
-      doc.setFontSize(6.5);
 
       let totalQty = 0;
-      const maxRows = 12;
+      const maxRows = 11;
       const displayInventory = inventory.slice(0, maxRows);
       const remainingCount = inventory.length - maxRows;
 
@@ -1840,29 +1850,29 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
         
         if (index % 2 === 0) {
           doc.setFillColor(250, 250, 250);
-          doc.rect(slotX + 4, tableY, cardWidth - 8, 4, 'F');
+          doc.rect(slotX + 4, tableY, cardWidth - 8, 4.5, 'F');
         }
-        doc.rect(slotX + 4, tableY, cardWidth - 8, 4, 'S');
+        doc.rect(slotX + 4, tableY, cardWidth - 8, 4.5, 'S');
 
         if (isLastRow) {
           doc.setFont('Helvetica', 'bold');
-          doc.text('', slotX + 6, tableY + 2.8);
-          doc.text(`+ ${remainingCount + 1} more materials...`, slotX + 14, tableY + 2.8);
-          doc.text('-', slotX + cardWidth - 6, tableY + 2.8, { align: 'right' });
+          doc.text('', slotX + 6, tableY + 3.2);
+          doc.text(`+ ${remainingCount + 1} more materials...`, slotX + 14, tableY + 3.2, { charSpace: 0.08 });
+          doc.text('-', slotX + cardWidth - 6, tableY + 3.2, { align: 'right', charSpace: 0.08 });
           doc.setFont('Helvetica', 'normal');
         } else {
-          doc.text(item.sr || String(index + 1), slotX + 6, tableY + 2.8);
-          doc.text(item.material.substring(0, 30), slotX + 14, tableY + 2.8);
+          doc.text(item.sr || String(index + 1), slotX + 6, tableY + 3.2, { charSpace: 0.08 });
+          doc.text(item.material.substring(0, 26), slotX + 14, tableY + 3.2, { charSpace: 0.08 });
           
           const qtyVal = parseFloat(item.qty);
           if (!isNaN(qtyVal)) {
             totalQty += qtyVal;
-            doc.text(qtyVal.toFixed(2), slotX + cardWidth - 6, tableY + 2.8, { align: 'right' });
+            doc.text(qtyVal.toFixed(2), slotX + cardWidth - 6, tableY + 3.2, { align: 'right', charSpace: 0.08 });
           } else {
-            doc.text(item.qty || '0.00', slotX + cardWidth - 6, tableY + 2.8, { align: 'right' });
+            doc.text(item.qty || '0.00', slotX + cardWidth - 6, tableY + 3.2, { align: 'right', charSpace: 0.08 });
           }
         }
-        tableY += 4;
+        tableY += 4.5;
       });
 
       if (remainingCount > 0) {
@@ -1874,11 +1884,11 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
       // Total Row
       doc.setFillColor(243, 244, 246);
-      doc.rect(slotX + 4, tableY, cardWidth - 8, 4, 'F');
-      doc.rect(slotX + 4, tableY, cardWidth - 8, 4, 'S');
+      doc.rect(slotX + 4, tableY, cardWidth - 8, 4.5, 'F');
+      doc.rect(slotX + 4, tableY, cardWidth - 8, 4.5, 'S');
       doc.setFont('Helvetica', 'bold');
-      doc.text('Total:', slotX + 14, tableY + 2.8);
-      doc.text(`${totalQty.toFixed(2)} g`, slotX + cardWidth - 6, tableY + 2.8, { align: 'right' });
+      doc.text('Total:', slotX + 14, tableY + 3.2, { charSpace: 0.1 });
+      doc.text(`${totalQty.toFixed(2)} g`, slotX + cardWidth - 6, tableY + 3.2, { align: 'right', charSpace: 0.1 });
     });
 
     doc.save(`Lab_Raw_Materials_${Date.now()}.pdf`);
@@ -2013,68 +2023,67 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
       // Card Header
       doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(9.5);
+      doc.setFontSize(11);
       doc.setTextColor(29, 78, 216); // Blue-700
-      doc.text(`Batch: ${batchNo.substring(0, 18)}`, slotX + 4, startY + 5);
+      doc.text(`Batch: ${batchNo.substring(0, 18)}`, slotX + 4, startY + 5.5, { charSpace: 0.2 });
       
       doc.setFont('Helvetica', 'normal');
-      doc.setFontSize(8);
+      doc.setFontSize(9.5);
       doc.setTextColor(107, 114, 128);
-      doc.text(`Ref: ${refNo !== 'N/A' ? refNo.substring(0, 14) : '-'}`, slotX + cardWidth - 4, startY + 5, { align: 'right' });
+      doc.text(`Ref: ${refNo !== 'N/A' ? refNo.substring(0, 14) : '-'}`, slotX + cardWidth - 4, startY + 5.5, { align: 'right', charSpace: 0.1 });
 
       doc.setDrawColor(229, 231, 235);
-      doc.line(slotX + 4, startY + 6, slotX + cardWidth - 4, startY + 6);
+      doc.line(slotX + 4, startY + 6.5, slotX + cardWidth - 4, startY + 6.5);
 
       // BATCH DETAILS Table
       doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(7);
+      doc.setFontSize(8.5);
       doc.setTextColor(29, 78, 216);
-      doc.text('BATCH DETAILS', slotX + 4, startY + 9.5);
+      doc.text('BATCH DETAILS', slotX + 4, startY + 10.5, { charSpace: 0.2 });
 
       doc.setDrawColor(209, 213, 219);
       doc.setFillColor(249, 250, 251);
-      doc.rect(slotX + 4, startY + 11, cardWidth - 8, 8);
-      doc.line(slotX + 4, startY + 15, slotX + cardWidth - 4, startY + 15); // Horizontal Divider
-      doc.line(slotX + 4 + (cardWidth - 8) / 2, startY + 11, slotX + 4 + (cardWidth - 8) / 2, startY + 19); // Vertical Divider
+      doc.rect(slotX + 4, startY + 12, cardWidth - 8, 9);
+      doc.line(slotX + 4, startY + 16.5, slotX + cardWidth - 4, startY + 16.5); // Horizontal Divider
+      doc.line(slotX + 4 + (cardWidth - 8) / 2, startY + 12, slotX + 4 + (cardWidth - 8) / 2, startY + 21); // Vertical Divider
 
-      doc.setFontSize(6.5);
+      doc.setFontSize(8);
       doc.setTextColor(0, 0, 0);
       
-      doc.setFont('Helvetica', 'bold'); doc.text('Product:', slotX + 6, startY + 14);
-      doc.setFont('Helvetica', 'normal'); doc.text(productNameField.substring(0, 16), slotX + 16, startY + 14);
+      doc.setFont('Helvetica', 'bold'); doc.text('Product:', slotX + 6, startY + 15.5, { charSpace: 0.1 });
+      doc.setFont('Helvetica', 'normal'); doc.text(productNameField.substring(0, 15), slotX + 17, startY + 15.5, { charSpace: 0.08 });
       
-      doc.setFont('Helvetica', 'bold'); doc.text('Formula Dt:', slotX + 4 + (cardWidth - 8) / 2 + 2, startY + 14);
-      doc.setFont('Helvetica', 'normal'); doc.text(formulaDate !== 'N/A' ? formulaDate : '-', slotX + 4 + (cardWidth - 8) / 2 + 18, startY + 14);
+      doc.setFont('Helvetica', 'bold'); doc.text('Formula Dt:', slotX + 4 + (cardWidth - 8) / 2 + 2, startY + 15.5, { charSpace: 0.1 });
+      doc.setFont('Helvetica', 'normal'); doc.text(formulaDate !== 'N/A' ? formulaDate : '-', slotX + 4 + (cardWidth - 8) / 2 + 20, startY + 15.5, { charSpace: 0.08 });
 
-      doc.setFont('Helvetica', 'bold'); doc.text('Test Dt:', slotX + 6, startY + 18);
-      doc.setFont('Helvetica', 'normal'); doc.text(testDate !== 'N/A' ? testDate : '-', slotX + 16, startY + 18);
+      doc.setFont('Helvetica', 'bold'); doc.text('Test Dt:', slotX + 6, startY + 20, { charSpace: 0.1 });
+      doc.setFont('Helvetica', 'normal'); doc.text(testDate !== 'N/A' ? testDate : '-', slotX + 17, startY + 20, { charSpace: 0.08 });
       
-      doc.setFont('Helvetica', 'bold'); doc.text('Report Dt:', slotX + 4 + (cardWidth - 8) / 2 + 2, startY + 18);
-      doc.setFont('Helvetica', 'normal'); doc.text(reportDate !== 'N/A' ? reportDate : '-', slotX + 4 + (cardWidth - 8) / 2 + 18, startY + 18);
+      doc.setFont('Helvetica', 'bold'); doc.text('Report Dt:', slotX + 4 + (cardWidth - 8) / 2 + 2, startY + 20, { charSpace: 0.1 });
+      doc.setFont('Helvetica', 'normal'); doc.text(reportDate !== 'N/A' ? reportDate : '-', slotX + 4 + (cardWidth - 8) / 2 + 20, startY + 20, { charSpace: 0.08 });
 
       // RAW MATERIALS Table
       doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(7);
+      doc.setFontSize(8.5);
       doc.setTextColor(29, 78, 216);
-      doc.text('RAW MATERIALS', slotX + 4, startY + 22.5);
+      doc.text('RAW MATERIALS', slotX + 4, startY + 24.5, { charSpace: 0.2 });
 
-      let tableY = startY + 24;
+      let tableY = startY + 26;
       doc.setFillColor(245, 248, 250);
-      doc.rect(slotX + 4, tableY, cardWidth - 8, 4, 'F');
-      doc.rect(slotX + 4, tableY, cardWidth - 8, 4, 'S');
+      doc.rect(slotX + 4, tableY, cardWidth - 8, 4.5, 'F');
+      doc.rect(slotX + 4, tableY, cardWidth - 8, 4.5, 'S');
 
-      doc.setFontSize(7);
+      doc.setFontSize(8);
       doc.setTextColor(0, 0, 0);
-      doc.text('Sr', slotX + 6, tableY + 2.8);
-      doc.text('Material Description', slotX + 14, tableY + 2.8);
-      doc.text('Qty (g)', slotX + cardWidth - 6, tableY + 2.8, { align: 'right' });
+      doc.text('Sr', slotX + 6, tableY + 3.2, { charSpace: 0.1 });
+      doc.text('Material Description', slotX + 14, tableY + 3.2, { charSpace: 0.1 });
+      doc.text('Qty (g)', slotX + cardWidth - 6, tableY + 3.2, { align: 'right', charSpace: 0.1 });
 
-      tableY += 4;
+      tableY += 4.5;
       doc.setFont('Helvetica', 'normal');
-      doc.setFontSize(6.5);
 
       let totalQty = 0;
-      const maxRawMaterials = 6;
+      const maxRawMaterials = 5;
       const displayInventory = inventory.slice(0, maxRawMaterials);
       const remainingRMCount = inventory.length - maxRawMaterials;
 
@@ -2083,29 +2092,29 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
         
         if (index % 2 === 0) {
           doc.setFillColor(250, 250, 250);
-          doc.rect(slotX + 4, tableY, cardWidth - 8, 4, 'F');
+          doc.rect(slotX + 4, tableY, cardWidth - 8, 4.5, 'F');
         }
-        doc.rect(slotX + 4, tableY, cardWidth - 8, 4, 'S');
+        doc.rect(slotX + 4, tableY, cardWidth - 8, 4.5, 'S');
 
         if (isLastRow) {
           doc.setFont('Helvetica', 'bold');
-          doc.text('', slotX + 6, tableY + 2.8);
-          doc.text(`+ ${remainingRMCount + 1} more materials...`, slotX + 14, tableY + 2.8);
-          doc.text('-', slotX + cardWidth - 6, tableY + 2.8, { align: 'right' });
+          doc.text('', slotX + 6, tableY + 3.2);
+          doc.text(`+ ${remainingRMCount + 1} more materials...`, slotX + 14, tableY + 3.2, { charSpace: 0.08 });
+          doc.text('-', slotX + cardWidth - 6, tableY + 3.2, { align: 'right', charSpace: 0.08 });
           doc.setFont('Helvetica', 'normal');
         } else {
-          doc.text(item.sr || String(index + 1), slotX + 6, tableY + 2.8);
-          doc.text(item.material.substring(0, 28), slotX + 14, tableY + 2.8);
+          doc.text(item.sr || String(index + 1), slotX + 6, tableY + 3.2, { charSpace: 0.08 });
+          doc.text(item.material.substring(0, 24), slotX + 14, tableY + 3.2, { charSpace: 0.08 });
           
           const qtyVal = parseFloat(item.qty);
           if (!isNaN(qtyVal)) {
             totalQty += qtyVal;
-            doc.text(qtyVal.toFixed(2), slotX + cardWidth - 6, tableY + 2.8, { align: 'right' });
+            doc.text(qtyVal.toFixed(2), slotX + cardWidth - 6, tableY + 3.2, { align: 'right', charSpace: 0.08 });
           } else {
-            doc.text(item.qty || '0.00', slotX + cardWidth - 6, tableY + 2.8, { align: 'right' });
+            doc.text(item.qty || '0.00', slotX + cardWidth - 6, tableY + 3.2, { align: 'right', charSpace: 0.08 });
           }
         }
-        tableY += 4;
+        tableY += 4.5;
       });
 
       if (remainingRMCount > 0) {
@@ -2117,36 +2126,35 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
       // Total Row
       doc.setFillColor(243, 244, 246);
-      doc.rect(slotX + 4, tableY, cardWidth - 8, 4, 'F');
-      doc.rect(slotX + 4, tableY, cardWidth - 8, 4, 'S');
+      doc.rect(slotX + 4, tableY, cardWidth - 8, 4.5, 'F');
+      doc.rect(slotX + 4, tableY, cardWidth - 8, 4.5, 'S');
       doc.setFont('Helvetica', 'bold');
-      doc.text('Total:', slotX + 14, tableY + 2.8);
-      doc.text(`${totalQty.toFixed(2)} g`, slotX + cardWidth - 6, tableY + 2.8, { align: 'right' });
+      doc.text('Total:', slotX + 14, tableY + 3.2, { charSpace: 0.1 });
+      doc.text(`${totalQty.toFixed(2)} g`, slotX + cardWidth - 6, tableY + 3.2, { align: 'right', charSpace: 0.1 });
 
-      let nextY = tableY + 4;
+      let nextY = tableY + 4.5;
 
       // TEST RESULTS (if exist)
       if (tests.length > 0) {
         doc.setFont('Helvetica', 'bold');
-        doc.setFontSize(7);
+        doc.setFontSize(8.5);
         doc.setTextColor(29, 78, 216);
-        doc.text('TEST RESULTS', slotX + 4, nextY + 2.5);
+        doc.text('TEST RESULTS', slotX + 4, nextY + 2.5, { charSpace: 0.2 });
 
         let testTableY = nextY + 4;
         doc.setFillColor(245, 248, 250);
-        doc.rect(slotX + 4, testTableY, cardWidth - 8, 4, 'F');
-        doc.rect(slotX + 4, testTableY, cardWidth - 8, 4, 'S');
+        doc.rect(slotX + 4, testTableY, cardWidth - 8, 4.5, 'F');
+        doc.rect(slotX + 4, testTableY, cardWidth - 8, 4.5, 'S');
 
-        doc.setFontSize(7);
+        doc.setFontSize(8);
         doc.setTextColor(0, 0, 0);
-        doc.text('Test Method', slotX + 6, testTableY + 2.8);
-        doc.text('Std / Result', slotX + cardWidth - 6, testTableY + 2.8, { align: 'right' });
+        doc.text('Test Method', slotX + 6, testTableY + 3.2, { charSpace: 0.1 });
+        doc.text('Std / Result', slotX + cardWidth - 6, testTableY + 3.2, { align: 'right', charSpace: 0.1 });
 
-        testTableY += 4;
+        testTableY += 4.5;
         doc.setFont('Helvetica', 'normal');
-        doc.setFontSize(6.5);
 
-        const maxTests = 3;
+        const maxTests = 2;
         const displayTests = tests.slice(0, maxTests);
         const remainingTestsCount = tests.length - maxTests;
 
@@ -2155,21 +2163,21 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
           
           if (index % 2 === 0) {
             doc.setFillColor(250, 250, 250);
-            doc.rect(slotX + 4, testTableY, cardWidth - 8, 4, 'F');
+            doc.rect(slotX + 4, testTableY, cardWidth - 8, 4.5, 'F');
           }
-          doc.rect(slotX + 4, testTableY, cardWidth - 8, 4, 'S');
+          doc.rect(slotX + 4, testTableY, cardWidth - 8, 4.5, 'S');
 
           if (isLastRow) {
             doc.setFont('Helvetica', 'bold');
-            doc.text(`+ ${remainingTestsCount + 1} more tests...`, slotX + 6, testTableY + 2.8);
-            doc.text('-', slotX + cardWidth - 6, testTableY + 2.8, { align: 'right' });
+            doc.text(`+ ${remainingTestsCount + 1} more tests...`, slotX + 6, testTableY + 3.2, { charSpace: 0.08 });
+            doc.text('-', slotX + cardWidth - 6, testTableY + 3.2, { align: 'right', charSpace: 0.08 });
             doc.setFont('Helvetica', 'normal');
           } else {
-            doc.text(t.method.substring(0, 24), slotX + 6, testTableY + 2.8);
+            doc.text(t.method.substring(0, 20), slotX + 6, testTableY + 3.2, { charSpace: 0.08 });
             const resStr = `${t.standard || '-'} / ${t.result || '-'}`;
-            doc.text(resStr.substring(0, 24), slotX + cardWidth - 6, testTableY + 2.8, { align: 'right' });
+            doc.text(resStr.substring(0, 20), slotX + cardWidth - 6, testTableY + 3.2, { align: 'right', charSpace: 0.08 });
           }
-          testTableY += 4;
+          testTableY += 4.5;
         });
 
         nextY = testTableY;
@@ -2178,22 +2186,19 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       // Remarks & Comments (if exist)
       if (remarks) {
         doc.setFont('Helvetica', 'bold');
-        doc.setFontSize(7);
+        doc.setFontSize(8.5);
         doc.setTextColor(29, 78, 216);
-        doc.text('Remarks & Comments:', slotX + 4, nextY + 2.5);
+        doc.text('Remarks & Comments:', slotX + 4, nextY + 2.5, { charSpace: 0.2 });
 
         const remarksBoxY = nextY + 4;
-        const remarksBoxHeight = 8;
+        const remarksBoxHeight = 6;
         doc.setDrawColor(209, 213, 219);
         doc.rect(slotX + 4, remarksBoxY, cardWidth - 8, remarksBoxHeight);
 
         doc.setFont('Helvetica', 'normal');
-        doc.setFontSize(6.5);
+        doc.setFontSize(8);
         doc.setTextColor(0, 0, 0);
-        doc.text(remarks.substring(0, 52), slotX + 6, remarksBoxY + 3.2);
-        if (remarks.length > 52) {
-          doc.text(remarks.substring(52, 104), slotX + 6, remarksBoxY + 6.2);
-        }
+        doc.text(remarks.substring(0, 52), slotX + 6, remarksBoxY + 4.2, { charSpace: 0.05 });
       }
     });
 

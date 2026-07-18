@@ -1717,6 +1717,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     // Dynamic coordinates tracker
     let currentX = margin;
     let currentY = margin;
+    let maxYInRow = margin; // Tracks the baseline of the tallest card in the current row
 
     fetchedData.forEach((data, idx) => {
       const fd = data.form_data || [];
@@ -1747,36 +1748,29 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
         }
       }).filter((item: any) => item.material.trim() !== '');
 
-      // 1. PRE-CALCULATE EXACT CARD HEIGHT
-      const headerHeight = 7.5;
-      const batchDetailsHeight = 17; 
-      const tableHeaderHeight = 6.5;
+      // 1. PRE-CALCULATE ESTIMATED HEIGHT TO CHECK PAGE BOUNDARY PREEMPTIVELY
       const rowStep = 5.5;
-      const rowsHeight = inventory.length * rowStep;
-      const totalRowHeight = 5.5;
-      const bottomPadding = 2;
-
-      const calculatedCardHeight = headerHeight + batchDetailsHeight + tableHeaderHeight + rowsHeight + totalRowHeight + bottomPadding;
+      const estimatedCardHeight = 31 + 5.5 + (inventory.length * rowStep) + 5.5 + 2;
 
       // 2. MULTI-COLUMN & MULTI-PAGE FLOW LOGIC
       if (fetchedData.length > 1 && idx > 0) {
-        // Try shifting to the right column first
         if (currentX === margin) {
+          // Move to right column
           currentX = margin + cardWidth + gapX;
         } else {
-          // Move back to the left column, move down by the height of the card slot row
+          // Move to next row down (use the tallest card from previous row)
           currentX = margin;
-          currentY += gapY;
+          currentY = maxYInRow + gapY;
         }
 
-        // Check if the current card will overflow the page bottom boundary
-        if (currentY + calculatedCardHeight > pageHeight - margin) {
+        // Check if the current card overflows the page boundary
+        if (currentY + estimatedCardHeight > pageHeight - margin) {
           doc.addPage();
           currentX = margin;
           currentY = margin;
+          maxYInRow = margin;
         }
       } else if (fetchedData.length === 1) {
-        // Support fallback alignment defaults if printing only one specific card
         const getSlotCoords = (slotName: string) => {
           switch (slotName) {
             case 'top-left': return { x: 8, y: 8 };
@@ -1888,15 +1882,18 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       doc.text('Total:', slotX + 14, tableY + 3.8, { charSpace: 0.1 });
       doc.text(`${totalQty.toFixed(2)} g`, slotX + cardWidth - 6, tableY + 3.8, { align: 'right', charSpace: 0.1 });
 
-      // Draw Outer Box Border using exact dynamic height calculation
+      // Calculate final card baseline position including bottom padding
+      const cardEndPosition = tableY + 5.5 + 2;
+      const actualCardHeight = cardEndPosition - startY;
+
+      // Draw Outer Box Border matching the calculated baseline perfectly
       doc.setDrawColor(200, 200, 200);
       doc.setLineWidth(0.3);
-      doc.rect(slotX, startY, cardWidth, calculatedCardHeight, 'S');
+      doc.rect(slotX, startY, cardWidth, actualCardHeight, 'S');
 
-      // Track height of maximum element in current horizontal block row 
-      if (currentX !== margin) {
-        // If we just finished a right-side card, advance currentY down past the tallest content bounds
-        currentY = tableY + 5.5 + bottomPadding;
+      // Keep track of the maximum Y height reached across the row block
+      if (cardEndPosition > maxYInRow) {
+        maxYInRow = cardEndPosition;
       }
     });
 

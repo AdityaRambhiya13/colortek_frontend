@@ -1717,12 +1717,11 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     // Helper to format YYYY-MM-DD string into DD-MM-YYYY
     const formatDateDMY = (dateStr: string) => {
       if (!dateStr || dateStr === 'N/A' || dateStr.trim() === '-' || dateStr.trim() === '') return '-';
-      // If it matches YYYY-MM-DD format
       const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
       if (match) {
         return `${match[3]}-${match[2]}-${match[1]}`;
       }
-      return dateStr; // Fallback if already formatted or different
+      return dateStr;
     };
 
     // Dynamic coordinates tracker
@@ -1738,7 +1737,6 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       const isLab = fd.length === 6;
       const productNameField = fd[2] || data.product_name_field || data.product || 'N/A';
       
-      // Extract and format dates directly to DD-MM-YYYY
       const testDate = formatDateDMY(isLab ? (fd[3] || 'N/A') : (fd[4] || 'N/A'));
       const reportDate = formatDateDMY(isLab ? (fd[4] || 'N/A') : (fd[5] || 'N/A'));
       const formulaDate = formatDateDMY(isLab ? (fd[5] || 'N/A') : (fd[6] || 'N/A'));
@@ -1848,35 +1846,35 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       const bottomRowStartY = startY + 13.5 + productRowHeight;
       doc.line(slotX + 4 + columnWidth, bottomRowStartY, slotX + 4 + columnWidth, bottomRowStartY + datesRowHeight);
       doc.line(slotX + 4 + (columnWidth * 2), bottomRowStartY, slotX + 4 + (columnWidth * 2), bottomRowStartY + datesRowHeight);
-
-      doc.setFontSize(9);
-      doc.setTextColor(0, 0, 0);
       
       // Render Row 1: Full-Width Product Name
       doc.setFont('Helvetica', 'bold'); 
+      doc.setFontSize(9);
+      doc.setTextColor(0, 0, 0);
       doc.text('Product:', slotX + 6, startY + 17.5, { charSpace: 0.1 });
       doc.setFont('Helvetica', 'normal'); 
       doc.text(wrappedProductLines, slotX + 21, startY + 17.5, { charSpace: 0.08 });
       
-      // Render Row 2: Form Dt | Test Dt | Rep Dt cleanly aligned inside their columns
+      // Render Row 2: Form Dt | Test Dt | Rep Dt (Reduced font size to 7.5 to prevent overlapping)
+      doc.setFontSize(7.5);
       const secondRowTextY = bottomRowStartY + 3.8;
       
       // Column 1
       doc.setFont('Helvetica', 'bold'); doc.text('Form Dt:', slotX + 5, secondRowTextY);
-      doc.setFont('Helvetica', 'normal'); doc.text(formulaDate, slotX + 19, secondRowTextY);
+      doc.setFont('Helvetica', 'normal'); doc.text(formulaDate, slotX + 16, secondRowTextY);
       
       // Column 2
       doc.setFont('Helvetica', 'bold'); doc.text('Test Dt:', slotX + 5 + columnWidth, secondRowTextY);
-      doc.setFont('Helvetica', 'normal'); doc.text(testDate, slotX + 18 + columnWidth, secondRowTextY);
+      doc.setFont('Helvetica', 'normal'); doc.text(testDate, slotX + 15 + columnWidth, secondRowTextY);
       
       // Column 3
       doc.setFont('Helvetica', 'bold'); doc.text('Rep Dt:', slotX + 5 + (columnWidth * 2), secondRowTextY);
-      doc.setFont('Helvetica', 'normal'); doc.text(reportDate, slotX + 17 + (columnWidth * 2), secondRowTextY);
+      doc.setFont('Helvetica', 'normal'); doc.text(reportDate, slotX + 15 + (columnWidth * 2), secondRowTextY);
 
       // RAW MATERIALS Section Header
+      doc.setFontSize(9.5);
       const rawMaterialsHeaderY = startY + 13.5 + batchDetailsContainerHeight + 4.5;
       doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(9.5);
       doc.setTextColor(29, 78, 216);
       doc.text('RAW MATERIALS', slotX + 4, rawMaterialsHeaderY, { charSpace: 0.2 });
 

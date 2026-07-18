@@ -1748,24 +1748,29 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
         }
       }).filter((item: any) => item.material.trim() !== '');
 
-      // Prepare wrapped text for the Product field
+      // 1. DYNAMIC TEXT WRAPPING FOR PRODUCT NAME
       doc.setFont('Helvetica', 'normal');
       doc.setFontSize(9);
-      // Available width for product text inside its half of the container: 
-      // ((cardWidth - 8) / 2) - label space offset (~16mm)
-      const allowedTextWidth = ((cardWidth - 8) / 2) - 16;
-      const wrappedProductLines = doc.splitTextToSize(productNameField, allowedTextWidth);
       
-      // Calculate dynamic top box heights based on product name text wrapping length
-      const lineCount = wrappedProductLines.length;
-      const topRowHeight = lineCount > 1 ? 5.5 + (lineCount - 1) * 4 : 5.5; 
-      const batchDetailsContainerHeight = topRowHeight + 5.5; 
+      // Calculate remaining horizontal room inside the left half of the box container
+      const leftHalfWidth = (cardWidth - 8) / 2; 
+      const labelWidth = 15; // Width of "Product:" bold prefix string label
+      const allowedTextWidth = leftHalfWidth - labelWidth - 2; 
 
-      // 1. PRE-CALCULATE ESTIMATED HEIGHT TO CHECK PAGE BOUNDARY PREEMPTIVELY
+      const wrappedProductLines = doc.splitTextToSize(productNameField, allowedTextWidth);
+      const lineCount = wrappedProductLines.length;
+
+      // Calculate heights based on line count dynamically
+      // Each extra text line adds roughly 4mm of height
+      const productRowHeight = lineCount > 1 ? 5.5 + (lineCount - 1) * 4 : 5.5; 
+      const datesRowHeight = 5.5; 
+      const batchDetailsContainerHeight = productRowHeight + datesRowHeight; 
+
+      // 2. PRE-CALCULATE ESTIMATED HEIGHT TO CHECK PAGE BOUNDARY PREEMPTIVELY
       const rowStep = 5.5;
       const estimatedCardHeight = 13.5 + batchDetailsContainerHeight + 6.5 + (inventory.length * rowStep) + 5.5 + 2;
 
-      // 2. MULTI-COLUMN & MULTI-PAGE FLOW LOGIC
+      // MULTI-COLUMN & MULTI-PAGE FLOW LOGIC
       if (fetchedData.length > 1 && idx > 0) {
         if (currentX === margin) {
           currentX = margin + cardWidth + gapX;
@@ -1820,40 +1825,39 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       doc.setTextColor(29, 78, 216);
       doc.text('BATCH DETAILS', slotX + 4, startY + 12, { charSpace: 0.2 });
 
-      // Batch Details Container (Dynamic height based on wrapped product length)
+      // Batch Details Outer Container Box (Grows dynamically with your text)
       doc.setDrawColor(209, 213, 219);
       doc.setFillColor(249, 250, 251);
       doc.rect(slotX + 4, startY + 13.5, cardWidth - 8, batchDetailsContainerHeight);
       
-      // Horizontal separation line adjusts dynamically down based on product lines
-      doc.line(slotX + 4, startY + 13.5 + topRowHeight, slotX + cardWidth - 4, startY + 13.5 + topRowHeight); 
-      // Vertical separation line
-      doc.line(slotX + 4 + (cardWidth - 8) / 2, startY + 13.5, slotX + 4 + (cardWidth - 8) / 2, startY + 13.5 + batchDetailsContainerHeight);
+      // Dynamic Horizontal separation line between Product Row and Test Date Row
+      doc.line(slotX + 4, startY + 13.5 + productRowHeight, slotX + cardWidth - 4, startY + 13.5 + productRowHeight); 
+      // Vertical inner divider line spanning the full dynamic container height
+      doc.line(slotX + 4 + leftHalfWidth, startY + 13.5, slotX + 4 + leftHalfWidth, startY + 13.5 + batchDetailsContainerHeight);
 
       doc.setFontSize(9);
       doc.setTextColor(0, 0, 0);
       
-      // Product field with multi-line text mapping support
+      // Render text elements inside Row 1 (Product details row)
       doc.setFont('Helvetica', 'bold'); 
       doc.text('Product:', slotX + 6, startY + 17.5, { charSpace: 0.1 });
       doc.setFont('Helvetica', 'normal'); 
       doc.text(wrappedProductLines, slotX + 21, startY + 17.5, { charSpace: 0.08 });
       
-      // Formula Date field aligned next to Product field
       doc.setFont('Helvetica', 'bold'); 
-      doc.text('Formula Dt:', slotX + 4 + (cardWidth - 8) / 2 + 2, startY + 17.5, { charSpace: 0.1 });
+      doc.text('Formula Dt:', slotX + 4 + leftHalfWidth + 2, startY + 17.5, { charSpace: 0.1 });
       doc.setFont('Helvetica', 'normal'); 
-      doc.text(formulaDate !== 'N/A' ? formulaDate : '-', slotX + 4 + (cardWidth - 8) / 2 + 22, startY + 17.5, { charSpace: 0.08 });
+      doc.text(formulaDate !== 'N/A' ? formulaDate : '-', slotX + 4 + leftHalfWidth + 22, startY + 17.5, { charSpace: 0.08 });
 
-      // Second row positioning dynamically computed below the product row layout height bounds
-      const secondRowY = startY + 13.5 + topRowHeight + 4;
+      // Render text elements inside Row 2 (Dynamically lowered below the wrapped text boundary)
+      const secondRowY = startY + 13.5 + productRowHeight + 4;
       doc.setFont('Helvetica', 'bold'); doc.text('Test Dt:', slotX + 6, secondRowY, { charSpace: 0.1 });
       doc.setFont('Helvetica', 'normal'); doc.text(testDate !== 'N/A' ? testDate : '-', slotX + 21, secondRowY, { charSpace: 0.08 });
       
-      doc.setFont('Helvetica', 'bold'); doc.text('Report Dt:', slotX + 4 + (cardWidth - 8) / 2 + 2, secondRowY, { charSpace: 0.1 });
-      doc.setFont('Helvetica', 'normal'); doc.text(reportDate !== 'N/A' ? reportDate : '-', slotX + 4 + (cardWidth - 8) / 2 + 22, secondRowY, { charSpace: 0.08 });
+      doc.setFont('Helvetica', 'bold'); doc.text('Report Dt:', slotX + 4 + leftHalfWidth + 2, secondRowY, { charSpace: 0.1 });
+      doc.setFont('Helvetica', 'normal'); doc.text(reportDate !== 'N/A' ? reportDate : '-', slotX + 4 + leftHalfWidth + 22, secondRowY, { charSpace: 0.08 });
 
-      // RAW MATERIALS Section dynamically adjusted layout start pointer
+      // RAW MATERIALS Section Header position shifts smoothly downward
       const rawMaterialsHeaderY = startY + 13.5 + batchDetailsContainerHeight + 4.5;
       doc.setFont('Helvetica', 'bold');
       doc.setFontSize(9.5);
@@ -1904,11 +1908,11 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       doc.text('Total:', slotX + 14, tableY + 3.8, { charSpace: 0.1 });
       doc.text(`${totalQty.toFixed(2)} g`, slotX + cardWidth - 6, tableY + 3.8, { align: 'right', charSpace: 0.1 });
 
-      // Boundary alignment bounds
+      // Clean boundary calculation
       const cardEndPosition = tableY + 5.5 + 2;
       const actualCardHeight = cardEndPosition - startY;
 
-      // Draw Outer Card Border Matching dynamic bounds perfectly
+      // Draw Outer Box Outline Border
       doc.setDrawColor(200, 200, 200);
       doc.setLineWidth(0.3);
       doc.rect(slotX, startY, cardWidth, actualCardHeight, 'S');

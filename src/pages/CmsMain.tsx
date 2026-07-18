@@ -1706,19 +1706,17 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
   const generateIngredientsOnlyPDF = (fetchedData: any[]) => {
     const doc = new jsPDF('p', 'mm', 'a4');
+    
+    // Page constraints
+    const pageHeight = 297; 
+    const margin = 8;
     const cardWidth = 94;
+    const gapX = 6; // Space between left and right columns
+    const gapY = 6; // Space between vertical cards
 
-    const getSlotCoords = (slotName: string) => {
-      switch (slotName) {
-        case 'top-left': return { x: 8, y: 8 };
-        case 'top-right': return { x: 108, y: 8 };
-        case 'middle-left': return { x: 8, y: 101 };
-        case 'middle-right': return { x: 108, y: 101 };
-        case 'bottom-left': return { x: 8, y: 194 };
-        case 'bottom-right': return { x: 108, y: 194 };
-        default: return { x: 8, y: 8 };
-      }
-    };
+    // Dynamic coordinates tracker
+    let currentX = margin;
+    let currentY = margin;
 
     fetchedData.forEach((data, idx) => {
       const fd = data.form_data || [];
@@ -1749,61 +1747,85 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
         }
       }).filter((item: any) => item.material.trim() !== '');
 
-      // Determine slot coordinates
-      let slotX = 8;
-      let slotY = 8;
-      
-      if (fetchedData.length === 1) {
-        const coords = getSlotCoords(printSlot);
-        slotX = coords.x;
-        slotY = coords.y;
-      } else {
-        const pageIndex = idx % 6;
-        const pageNum = Math.floor(idx / 6);
-        if (pageNum > 0 && pageIndex === 0) {
-          doc.addPage();
+      // 1. PRE-CALCULATE EXACT CARD HEIGHT
+      const headerHeight = 7.5;
+      const batchDetailsHeight = 17; 
+      const tableHeaderHeight = 6.5;
+      const rowStep = 5.5;
+      const rowsHeight = inventory.length * rowStep;
+      const totalRowHeight = 5.5;
+      const bottomPadding = 2;
+
+      const calculatedCardHeight = headerHeight + batchDetailsHeight + tableHeaderHeight + rowsHeight + totalRowHeight + bottomPadding;
+
+      // 2. MULTI-COLUMN & MULTI-PAGE FLOW LOGIC
+      if (fetchedData.length > 1 && idx > 0) {
+        // Try shifting to the right column first
+        if (currentX === margin) {
+          currentX = margin + cardWidth + gapX;
+        } else {
+          // Move back to the left column, move down by the height of the card slot row
+          currentX = margin;
+          currentY += gapY;
         }
-        if (pageIndex === 0) { slotX = 8; slotY = 8; }
-        else if (pageIndex === 1) { slotX = 108; slotY = 8; }
-        else if (pageIndex === 2) { slotX = 8; slotY = 101; }
-        else if (pageIndex === 3) { slotX = 108; slotY = 101; }
-        else if (pageIndex === 4) { slotX = 8; slotY = 194; }
-        else if (pageIndex === 5) { slotX = 108; slotY = 194; }
+
+        // Check if the current card will overflow the page bottom boundary
+        if (currentY + calculatedCardHeight > pageHeight - margin) {
+          doc.addPage();
+          currentX = margin;
+          currentY = margin;
+        }
+      } else if (fetchedData.length === 1) {
+        // Support fallback alignment defaults if printing only one specific card
+        const getSlotCoords = (slotName: string) => {
+          switch (slotName) {
+            case 'top-left': return { x: 8, y: 8 };
+            case 'top-right': return { x: 108, y: 8 };
+            case 'middle-left': return { x: 8, y: 101 };
+            case 'middle-right': return { x: 108, y: 101 };
+            case 'bottom-left': return { x: 8, y: 194 };
+            case 'bottom-right': return { x: 108, y: 194 };
+            default: return { x: 8, y: 8 };
+          }
+        };
+        const coords = getSlotCoords(printSlot);
+        currentX = coords.x;
+        currentY = coords.y;
       }
 
-      const startY = slotY;
+      const startY = currentY;
+      const slotX = currentX;
 
-      // Card Header (Increased Font sizes)
+      // Card Header
       doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(12.5); // Up from 11
-      doc.setTextColor(29, 78, 216); // Blue-700
+      doc.setFontSize(12.5);
+      doc.setTextColor(29, 78, 216);
       doc.text(`Batch: ${batchNo.substring(0, 18)}`, slotX + 4, startY + 6, { charSpace: 0.2 });
       
       doc.setFont('Helvetica', 'normal');
-      doc.setFontSize(10.5); // Up from 9.5
+      doc.setFontSize(10.5);
       doc.setTextColor(107, 114, 128);
       doc.text(`Ref: ${refNo !== 'N/A' ? refNo.substring(0, 14) : '-'}`, slotX + cardWidth - 4, startY + 6, { align: 'right', charSpace: 0.1 });
 
       doc.setDrawColor(229, 231, 235);
       doc.line(slotX + 4, startY + 7.5, slotX + cardWidth - 4, startY + 7.5);
 
-      // BATCH DETAILS Section Header
+      // BATCH DETAILS Header
       doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(9.5); // Up from 8.5
+      doc.setFontSize(9.5);
       doc.setTextColor(29, 78, 216);
       doc.text('BATCH DETAILS', slotX + 4, startY + 12, { charSpace: 0.2 });
 
-      // Batch details layout table (Expanded row heights for padding)
+      // Batch Details Container
       doc.setDrawColor(209, 213, 219);
       doc.setFillColor(249, 250, 251);
-      doc.rect(slotX + 4, startY + 13.5, cardWidth - 8, 11); // Increased height from 9 to 11
+      doc.rect(slotX + 4, startY + 13.5, cardWidth - 8, 11);
       doc.line(slotX + 4, startY + 19, slotX + cardWidth - 4, startY + 19); 
       doc.line(slotX + 4 + (cardWidth - 8) / 2, startY + 13.5, slotX + 4 + (cardWidth - 8) / 2, startY + 24.5);
 
-      doc.setFontSize(9); // Up from 8
+      doc.setFontSize(9);
       doc.setTextColor(0, 0, 0);
       
-      // Increased x alignment offset to completely prevent labels and dynamic data colliding
       doc.setFont('Helvetica', 'bold'); doc.text('Product:', slotX + 6, startY + 17.5, { charSpace: 0.1 });
       doc.setFont('Helvetica', 'normal'); doc.text(productNameField.substring(0, 13), slotX + 21, startY + 17.5, { charSpace: 0.08 });
       
@@ -1816,19 +1838,18 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       doc.setFont('Helvetica', 'bold'); doc.text('Report Dt:', slotX + 4 + (cardWidth - 8) / 2 + 2, startY + 23, { charSpace: 0.1 });
       doc.setFont('Helvetica', 'normal'); doc.text(reportDate !== 'N/A' ? reportDate : '-', slotX + 4 + (cardWidth - 8) / 2 + 22, startY + 23, { charSpace: 0.08 });
 
-      // RAW MATERIALS Section Header
+      // RAW MATERIALS Header
       doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(9.5); // Up from 8.5
+      doc.setFontSize(9.5);
       doc.setTextColor(29, 78, 216);
       doc.text('RAW MATERIALS', slotX + 4, startY + 29, { charSpace: 0.2 });
 
       let tableY = startY + 31;
-      // Header Row height expanded from 4.5 to 5.5
       doc.setFillColor(245, 248, 250);
       doc.rect(slotX + 4, tableY, cardWidth - 8, 5.5, 'F');
       doc.rect(slotX + 4, tableY, cardWidth - 8, 5.5, 'S');
 
-      doc.setFontSize(9); // Up from 8
+      doc.setFontSize(9);
       doc.setTextColor(0, 0, 0);
       doc.text('Sr', slotX + 6, tableY + 3.8, { charSpace: 0.1 });
       doc.text('Material Description', slotX + 14, tableY + 3.8, { charSpace: 0.1 });
@@ -1839,7 +1860,6 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
       let totalQty = 0;
 
-      // Table row step increased to 5.5 for extra spacing and clean font scaling
       inventory.forEach((item: any, index: number) => {
         if (index % 2 === 0) {
           doc.setFillColor(250, 250, 250);
@@ -1860,7 +1880,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
         tableY += 5.5;
       });
 
-      // Total Row (Increased row spacing from 4.5 to 5.5)
+      // Total Row
       doc.setFillColor(243, 244, 246);
       doc.rect(slotX + 4, tableY, cardWidth - 8, 5.5, 'F');
       doc.rect(slotX + 4, tableY, cardWidth - 8, 5.5, 'S');
@@ -1868,11 +1888,16 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       doc.text('Total:', slotX + 14, tableY + 3.8, { charSpace: 0.1 });
       doc.text(`${totalQty.toFixed(2)} g`, slotX + cardWidth - 6, tableY + 3.8, { align: 'right', charSpace: 0.1 });
 
-      // Outer bounding box calculation handles the expanded element padding completely
-      const cardHeight = (tableY + 5.5) - startY;
+      // Draw Outer Box Border using exact dynamic height calculation
       doc.setDrawColor(200, 200, 200);
       doc.setLineWidth(0.3);
-      doc.rect(slotX, startY, cardWidth, cardHeight, 'S');
+      doc.rect(slotX, startY, cardWidth, calculatedCardHeight, 'S');
+
+      // Track height of maximum element in current horizontal block row 
+      if (currentX !== margin) {
+        // If we just finished a right-side card, advance currentY down past the tallest content bounds
+        currentY = tableY + 5.5 + bottomPadding;
+      }
     });
 
     doc.save(`Lab_Raw_Materials_${Date.now()}.pdf`);

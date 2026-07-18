@@ -1748,20 +1748,18 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
         }
       }).filter((item: any) => item.material.trim() !== '');
 
-      // 1. DYNAMIC TEXT WRAPPING FOR PRODUCT NAME
+      // 1. DYNAMIC TEXT WRAPPING FOR PRODUCT NAME (Takes full inner container width)
       doc.setFont('Helvetica', 'normal');
       doc.setFontSize(9);
       
-      // Calculate remaining horizontal room inside the left half of the box container
-      const leftHalfWidth = (cardWidth - 8) / 2; 
-      const labelWidth = 15; // Width of "Product:" bold prefix string label
-      const allowedTextWidth = leftHalfWidth - labelWidth - 2; 
+      const containerInnerWidth = cardWidth - 8; 
+      const labelWidth = 15; // Width of "Product:" bold prefix label
+      const allowedTextWidth = containerInnerWidth - labelWidth - 2; 
 
       const wrappedProductLines = doc.splitTextToSize(productNameField, allowedTextWidth);
       const lineCount = wrappedProductLines.length;
 
-      // Calculate heights based on line count dynamically
-      // Each extra text line adds roughly 4mm of height
+      // Calculate container row heights dynamically
       const productRowHeight = lineCount > 1 ? 5.5 + (lineCount - 1) * 4 : 5.5; 
       const datesRowHeight = 5.5; 
       const batchDetailsContainerHeight = productRowHeight + datesRowHeight; 
@@ -1825,39 +1823,45 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       doc.setTextColor(29, 78, 216);
       doc.text('BATCH DETAILS', slotX + 4, startY + 12, { charSpace: 0.2 });
 
-      // Batch Details Outer Container Box (Grows dynamically with your text)
+      // Batch Details Outer Container Box
       doc.setDrawColor(209, 213, 219);
       doc.setFillColor(249, 250, 251);
-      doc.rect(slotX + 4, startY + 13.5, cardWidth - 8, batchDetailsContainerHeight);
+      doc.rect(slotX + 4, startY + 13.5, containerInnerWidth, batchDetailsContainerHeight);
       
-      // Dynamic Horizontal separation line between Product Row and Test Date Row
+      // Dynamic Horizontal separation line between Product Row and the Dates Row
       doc.line(slotX + 4, startY + 13.5 + productRowHeight, slotX + cardWidth - 4, startY + 13.5 + productRowHeight); 
-      // Vertical inner divider line spanning the full dynamic container height
-      doc.line(slotX + 4 + leftHalfWidth, startY + 13.5, slotX + 4 + leftHalfWidth, startY + 13.5 + batchDetailsContainerHeight);
+      
+      // Vertical internal dividers for the 3 dates fields in the bottom row
+      const columnWidth = containerInnerWidth / 3;
+      const bottomRowStartY = startY + 13.5 + productRowHeight;
+      doc.line(slotX + 4 + columnWidth, bottomRowStartY, slotX + 4 + columnWidth, bottomRowStartY + datesRowHeight);
+      doc.line(slotX + 4 + (columnWidth * 2), bottomRowStartY, slotX + 4 + (columnWidth * 2), bottomRowStartY + datesRowHeight);
 
       doc.setFontSize(9);
       doc.setTextColor(0, 0, 0);
       
-      // Render text elements inside Row 1 (Product details row)
+      // Render Row 1: Full-Width Product Name
       doc.setFont('Helvetica', 'bold'); 
       doc.text('Product:', slotX + 6, startY + 17.5, { charSpace: 0.1 });
       doc.setFont('Helvetica', 'normal'); 
       doc.text(wrappedProductLines, slotX + 21, startY + 17.5, { charSpace: 0.08 });
       
-      doc.setFont('Helvetica', 'bold'); 
-      doc.text('Formula Dt:', slotX + 4 + leftHalfWidth + 2, startY + 17.5, { charSpace: 0.1 });
-      doc.setFont('Helvetica', 'normal'); 
-      doc.text(formulaDate !== 'N/A' ? formulaDate : '-', slotX + 4 + leftHalfWidth + 22, startY + 17.5, { charSpace: 0.08 });
-
-      // Render text elements inside Row 2 (Dynamically lowered below the wrapped text boundary)
-      const secondRowY = startY + 13.5 + productRowHeight + 4;
-      doc.setFont('Helvetica', 'bold'); doc.text('Test Dt:', slotX + 6, secondRowY, { charSpace: 0.1 });
-      doc.setFont('Helvetica', 'normal'); doc.text(testDate !== 'N/A' ? testDate : '-', slotX + 21, secondRowY, { charSpace: 0.08 });
+      // Render Row 2: Formula Dt | Test Dt | Report Dt side by side in one single line
+      const secondRowTextY = bottomRowStartY + 4;
       
-      doc.setFont('Helvetica', 'bold'); doc.text('Report Dt:', slotX + 4 + leftHalfWidth + 2, secondRowY, { charSpace: 0.1 });
-      doc.setFont('Helvetica', 'normal'); doc.text(reportDate !== 'N/A' ? reportDate : '-', slotX + 4 + leftHalfWidth + 22, secondRowY, { charSpace: 0.08 });
+      // Column 1: Formula Date
+      doc.setFont('Helvetica', 'bold'); doc.text('Form Dt:', slotX + 6, secondRowTextY, { charSpace: 0.05 });
+      doc.setFont('Helvetica', 'normal'); doc.text(formulaDate !== 'N/A' ? formulaDate : '-', slotX + 20, secondRowTextY, { charSpace: 0.05 });
+      
+      // Column 2: Test Date
+      doc.setFont('Helvetica', 'bold'); doc.text('Test Dt:', slotX + 6 + columnWidth, secondRowTextY, { charSpace: 0.05 });
+      doc.setFont('Helvetica', 'normal'); doc.text(testDate !== 'N/A' ? testDate : '-', slotX + 20 + columnWidth, secondRowTextY, { charSpace: 0.05 });
+      
+      // Column 3: Report Date
+      doc.setFont('Helvetica', 'bold'); doc.text('Rep Dt:', slotX + 6 + (columnWidth * 2), secondRowTextY, { charSpace: 0.05 });
+      doc.setFont('Helvetica', 'normal'); doc.text(reportDate !== 'N/A' ? reportDate : '-', slotX + 19 + (columnWidth * 2), secondRowTextY, { charSpace: 0.05 });
 
-      // RAW MATERIALS Section Header position shifts smoothly downward
+      // RAW MATERIALS Section Header
       const rawMaterialsHeaderY = startY + 13.5 + batchDetailsContainerHeight + 4.5;
       doc.setFont('Helvetica', 'bold');
       doc.setFontSize(9.5);

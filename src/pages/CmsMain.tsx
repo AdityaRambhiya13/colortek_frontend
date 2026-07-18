@@ -1773,101 +1773,103 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
       const startY = slotY;
 
-      // Card Header
+      // Card Header (Increased Font sizes)
       doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(11);
+      doc.setFontSize(12.5); // Up from 11
       doc.setTextColor(29, 78, 216); // Blue-700
-      doc.text(`Batch: ${batchNo.substring(0, 18)}`, slotX + 4, startY + 5.5, { charSpace: 0.2 });
+      doc.text(`Batch: ${batchNo.substring(0, 18)}`, slotX + 4, startY + 6, { charSpace: 0.2 });
       
       doc.setFont('Helvetica', 'normal');
-      doc.setFontSize(9.5);
+      doc.setFontSize(10.5); // Up from 9.5
       doc.setTextColor(107, 114, 128);
-      doc.text(`Ref: ${refNo !== 'N/A' ? refNo.substring(0, 14) : '-'}`, slotX + cardWidth - 4, startY + 5.5, { align: 'right', charSpace: 0.1 });
+      doc.text(`Ref: ${refNo !== 'N/A' ? refNo.substring(0, 14) : '-'}`, slotX + cardWidth - 4, startY + 6, { align: 'right', charSpace: 0.1 });
 
       doc.setDrawColor(229, 231, 235);
-      doc.line(slotX + 4, startY + 6.5, slotX + cardWidth - 4, startY + 6.5);
+      doc.line(slotX + 4, startY + 7.5, slotX + cardWidth - 4, startY + 7.5);
 
-      // BATCH DETAILS Table
+      // BATCH DETAILS Section Header
       doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(8.5);
+      doc.setFontSize(9.5); // Up from 8.5
       doc.setTextColor(29, 78, 216);
-      doc.text('BATCH DETAILS', slotX + 4, startY + 10.5, { charSpace: 0.2 });
+      doc.text('BATCH DETAILS', slotX + 4, startY + 12, { charSpace: 0.2 });
 
+      // Batch details layout table (Expanded row heights for padding)
       doc.setDrawColor(209, 213, 219);
       doc.setFillColor(249, 250, 251);
-      doc.rect(slotX + 4, startY + 12, cardWidth - 8, 9);
-      doc.line(slotX + 4, startY + 16.5, slotX + cardWidth - 4, startY + 16.5); // Horizontal Divider
-      doc.line(slotX + 4 + (cardWidth - 8) / 2, startY + 12, slotX + 4 + (cardWidth - 8) / 2, startY + 21); // Vertical Divider
+      doc.rect(slotX + 4, startY + 13.5, cardWidth - 8, 11); // Increased height from 9 to 11
+      doc.line(slotX + 4, startY + 19, slotX + cardWidth - 4, startY + 19); 
+      doc.line(slotX + 4 + (cardWidth - 8) / 2, startY + 13.5, slotX + 4 + (cardWidth - 8) / 2, startY + 24.5);
 
-      doc.setFontSize(8);
+      doc.setFontSize(9); // Up from 8
       doc.setTextColor(0, 0, 0);
       
-      // FIXED: Shifted product name coordinate from slotX + 17 to slotX + 18.5 to prevent overlapping text
-      doc.setFont('Helvetica', 'bold'); doc.text('Product:', slotX + 6, startY + 15.5, { charSpace: 0.1 });
-      doc.setFont('Helvetica', 'normal'); doc.text(productNameField.substring(0, 15), slotX + 18.5, startY + 15.5, { charSpace: 0.08 });
+      // Increased x alignment offset to completely prevent labels and dynamic data colliding
+      doc.setFont('Helvetica', 'bold'); doc.text('Product:', slotX + 6, startY + 17.5, { charSpace: 0.1 });
+      doc.setFont('Helvetica', 'normal'); doc.text(productNameField.substring(0, 13), slotX + 21, startY + 17.5, { charSpace: 0.08 });
       
-      doc.setFont('Helvetica', 'bold'); doc.text('Formula Dt:', slotX + 4 + (cardWidth - 8) / 2 + 2, startY + 15.5, { charSpace: 0.1 });
-      doc.setFont('Helvetica', 'normal'); doc.text(formulaDate !== 'N/A' ? formulaDate : '-', slotX + 4 + (cardWidth - 8) / 2 + 20, startY + 15.5, { charSpace: 0.08 });
+      doc.setFont('Helvetica', 'bold'); doc.text('Formula Dt:', slotX + 4 + (cardWidth - 8) / 2 + 2, startY + 17.5, { charSpace: 0.1 });
+      doc.setFont('Helvetica', 'normal'); doc.text(formulaDate !== 'N/A' ? formulaDate : '-', slotX + 4 + (cardWidth - 8) / 2 + 22, startY + 17.5, { charSpace: 0.08 });
 
-      // FIXED: Shifted test date coordinate similarly to line up beautifully
-      doc.setFont('Helvetica', 'bold'); doc.text('Test Dt:', slotX + 6, startY + 20, { charSpace: 0.1 });
-      doc.setFont('Helvetica', 'normal'); doc.text(testDate !== 'N/A' ? testDate : '-', slotX + 18.5, startY + 20, { charSpace: 0.08 });
+      doc.setFont('Helvetica', 'bold'); doc.text('Test Dt:', slotX + 6, startY + 23, { charSpace: 0.1 });
+      doc.setFont('Helvetica', 'normal'); doc.text(testDate !== 'N/A' ? testDate : '-', slotX + 21, startY + 23, { charSpace: 0.08 });
       
-      doc.setFont('Helvetica', 'bold'); doc.text('Report Dt:', slotX + 4 + (cardWidth - 8) / 2 + 2, startY + 20, { charSpace: 0.1 });
-      doc.setFont('Helvetica', 'normal'); doc.text(reportDate !== 'N/A' ? reportDate : '-', slotX + 4 + (cardWidth - 8) / 2 + 20, startY + 20, { charSpace: 0.08 });
+      doc.setFont('Helvetica', 'bold'); doc.text('Report Dt:', slotX + 4 + (cardWidth - 8) / 2 + 2, startY + 23, { charSpace: 0.1 });
+      doc.setFont('Helvetica', 'normal'); doc.text(reportDate !== 'N/A' ? reportDate : '-', slotX + 4 + (cardWidth - 8) / 2 + 22, startY + 23, { charSpace: 0.08 });
 
-      // RAW MATERIALS Table
+      // RAW MATERIALS Section Header
       doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(8.5);
+      doc.setFontSize(9.5); // Up from 8.5
       doc.setTextColor(29, 78, 216);
-      doc.text('RAW MATERIALS', slotX + 4, startY + 24.5, { charSpace: 0.2 });
+      doc.text('RAW MATERIALS', slotX + 4, startY + 29, { charSpace: 0.2 });
 
-      let tableY = startY + 26;
+      let tableY = startY + 31;
+      // Header Row height expanded from 4.5 to 5.5
       doc.setFillColor(245, 248, 250);
-      doc.rect(slotX + 4, tableY, cardWidth - 8, 4.5, 'F');
-      doc.rect(slotX + 4, tableY, cardWidth - 8, 4.5, 'S');
+      doc.rect(slotX + 4, tableY, cardWidth - 8, 5.5, 'F');
+      doc.rect(slotX + 4, tableY, cardWidth - 8, 5.5, 'S');
 
-      doc.setFontSize(8);
+      doc.setFontSize(9); // Up from 8
       doc.setTextColor(0, 0, 0);
-      doc.text('Sr', slotX + 6, tableY + 3.2, { charSpace: 0.1 });
-      doc.text('Material Description', slotX + 14, tableY + 3.2, { charSpace: 0.1 });
-      doc.text('Qty (g)', slotX + cardWidth - 6, tableY + 3.2, { align: 'right', charSpace: 0.1 });
+      doc.text('Sr', slotX + 6, tableY + 3.8, { charSpace: 0.1 });
+      doc.text('Material Description', slotX + 14, tableY + 3.8, { charSpace: 0.1 });
+      doc.text('Qty (g)', slotX + cardWidth - 6, tableY + 3.8, { align: 'right', charSpace: 0.1 });
 
-      tableY += 4.5;
+      tableY += 5.5;
       doc.setFont('Helvetica', 'normal');
 
       let totalQty = 0;
 
+      // Table row step increased to 5.5 for extra spacing and clean font scaling
       inventory.forEach((item: any, index: number) => {
         if (index % 2 === 0) {
           doc.setFillColor(250, 250, 250);
-          doc.rect(slotX + 4, tableY, cardWidth - 8, 4.5, 'F');
+          doc.rect(slotX + 4, tableY, cardWidth - 8, 5.5, 'F');
         }
-        doc.rect(slotX + 4, tableY, cardWidth - 8, 4.5, 'S');
+        doc.rect(slotX + 4, tableY, cardWidth - 8, 5.5, 'S');
 
-        doc.text(item.sr || String(index + 1), slotX + 6, tableY + 3.2, { charSpace: 0.08 });
-        doc.text(item.material.substring(0, 26), slotX + 14, tableY + 3.2, { charSpace: 0.08 });
+        doc.text(item.sr || String(index + 1), slotX + 6, tableY + 3.8, { charSpace: 0.08 });
+        doc.text(item.material.substring(0, 26), slotX + 14, tableY + 3.8, { charSpace: 0.08 });
         
         const qtyVal = parseFloat(item.qty);
         if (!isNaN(qtyVal)) {
           totalQty += qtyVal;
-          doc.text(qtyVal.toFixed(2), slotX + cardWidth - 6, tableY + 3.2, { align: 'right', charSpace: 0.08 });
+          doc.text(qtyVal.toFixed(2), slotX + cardWidth - 6, tableY + 3.8, { align: 'right', charSpace: 0.08 });
         } else {
-          doc.text(item.qty || '0.00', slotX + cardWidth - 6, tableY + 3.2, { align: 'right', charSpace: 0.08 });
+          doc.text(item.qty || '0.00', slotX + cardWidth - 6, tableY + 3.8, { align: 'right', charSpace: 0.08 });
         }
-        tableY += 4.5;
+        tableY += 5.5;
       });
 
-      // Total Row
+      // Total Row (Increased row spacing from 4.5 to 5.5)
       doc.setFillColor(243, 244, 246);
-      doc.rect(slotX + 4, tableY, cardWidth - 8, 4.5, 'F');
-      doc.rect(slotX + 4, tableY, cardWidth - 8, 4.5, 'S');
+      doc.rect(slotX + 4, tableY, cardWidth - 8, 5.5, 'F');
+      doc.rect(slotX + 4, tableY, cardWidth - 8, 5.5, 'S');
       doc.setFont('Helvetica', 'bold');
-      doc.text('Total:', slotX + 14, tableY + 3.2, { charSpace: 0.1 });
-      doc.text(`${totalQty.toFixed(2)} g`, slotX + cardWidth - 6, tableY + 3.2, { align: 'right', charSpace: 0.1 });
+      doc.text('Total:', slotX + 14, tableY + 3.8, { charSpace: 0.1 });
+      doc.text(`${totalQty.toFixed(2)} g`, slotX + cardWidth - 6, tableY + 3.8, { align: 'right', charSpace: 0.1 });
 
-      // FIXED: Draw outer Card Border last using a dynamically computed height so it wraps everything cleanly
-      const cardHeight = (tableY + 4.5) - startY;
+      // Outer bounding box calculation handles the expanded element padding completely
+      const cardHeight = (tableY + 5.5) - startY;
       doc.setDrawColor(200, 200, 200);
       doc.setLineWidth(0.3);
       doc.rect(slotX, startY, cardWidth, cardHeight, 'S');

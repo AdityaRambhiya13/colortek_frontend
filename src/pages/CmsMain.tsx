@@ -1841,46 +1841,26 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       doc.setFont('Helvetica', 'normal');
 
       let totalQty = 0;
-      const maxRows = 11;
-      const displayInventory = inventory.slice(0, maxRows);
-      const remainingCount = inventory.length - maxRows;
 
-      displayInventory.forEach((item: any, index: number) => {
-        const isLastRow = index === maxRows - 1 && remainingCount > 0;
-        
+      inventory.forEach((item: any, index: number) => {
         if (index % 2 === 0) {
           doc.setFillColor(250, 250, 250);
           doc.rect(slotX + 4, tableY, cardWidth - 8, 4.5, 'F');
         }
         doc.rect(slotX + 4, tableY, cardWidth - 8, 4.5, 'S');
 
-        if (isLastRow) {
-          doc.setFont('Helvetica', 'bold');
-          doc.text('', slotX + 6, tableY + 3.2);
-          doc.text(`+ ${remainingCount + 1} more materials...`, slotX + 14, tableY + 3.2, { charSpace: 0.08 });
-          doc.text('-', slotX + cardWidth - 6, tableY + 3.2, { align: 'right', charSpace: 0.08 });
-          doc.setFont('Helvetica', 'normal');
+        doc.text(item.sr || String(index + 1), slotX + 6, tableY + 3.2, { charSpace: 0.08 });
+        doc.text(item.material.substring(0, 26), slotX + 14, tableY + 3.2, { charSpace: 0.08 });
+        
+        const qtyVal = parseFloat(item.qty);
+        if (!isNaN(qtyVal)) {
+          totalQty += qtyVal;
+          doc.text(qtyVal.toFixed(2), slotX + cardWidth - 6, tableY + 3.2, { align: 'right', charSpace: 0.08 });
         } else {
-          doc.text(item.sr || String(index + 1), slotX + 6, tableY + 3.2, { charSpace: 0.08 });
-          doc.text(item.material.substring(0, 26), slotX + 14, tableY + 3.2, { charSpace: 0.08 });
-          
-          const qtyVal = parseFloat(item.qty);
-          if (!isNaN(qtyVal)) {
-            totalQty += qtyVal;
-            doc.text(qtyVal.toFixed(2), slotX + cardWidth - 6, tableY + 3.2, { align: 'right', charSpace: 0.08 });
-          } else {
-            doc.text(item.qty || '0.00', slotX + cardWidth - 6, tableY + 3.2, { align: 'right', charSpace: 0.08 });
-          }
+          doc.text(item.qty || '0.00', slotX + cardWidth - 6, tableY + 3.2, { align: 'right', charSpace: 0.08 });
         }
         tableY += 4.5;
       });
-
-      if (remainingCount > 0) {
-        inventory.slice(maxRows - 1).forEach((item: any) => {
-          const qtyVal = parseFloat(item.qty);
-          if (!isNaN(qtyVal)) totalQty += qtyVal;
-        });
-      }
 
       // Total Row
       doc.setFillColor(243, 244, 246);

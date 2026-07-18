@@ -1772,12 +1772,6 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       }
 
       const startY = slotY;
-      const cardHeight = 88;
-
-      // Card Border
-      doc.setDrawColor(200, 200, 200);
-      doc.setLineWidth(0.3);
-      doc.rect(slotX, startY, cardWidth, cardHeight, 'S');
 
       // Card Header
       doc.setFont('Helvetica', 'bold');
@@ -1808,14 +1802,16 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       doc.setFontSize(8);
       doc.setTextColor(0, 0, 0);
       
+      // FIXED: Shifted product name coordinate from slotX + 17 to slotX + 18.5 to prevent overlapping text
       doc.setFont('Helvetica', 'bold'); doc.text('Product:', slotX + 6, startY + 15.5, { charSpace: 0.1 });
-      doc.setFont('Helvetica', 'normal'); doc.text(productNameField.substring(0, 15), slotX + 17, startY + 15.5, { charSpace: 0.08 });
+      doc.setFont('Helvetica', 'normal'); doc.text(productNameField.substring(0, 15), slotX + 18.5, startY + 15.5, { charSpace: 0.08 });
       
       doc.setFont('Helvetica', 'bold'); doc.text('Formula Dt:', slotX + 4 + (cardWidth - 8) / 2 + 2, startY + 15.5, { charSpace: 0.1 });
       doc.setFont('Helvetica', 'normal'); doc.text(formulaDate !== 'N/A' ? formulaDate : '-', slotX + 4 + (cardWidth - 8) / 2 + 20, startY + 15.5, { charSpace: 0.08 });
 
+      // FIXED: Shifted test date coordinate similarly to line up beautifully
       doc.setFont('Helvetica', 'bold'); doc.text('Test Dt:', slotX + 6, startY + 20, { charSpace: 0.1 });
-      doc.setFont('Helvetica', 'normal'); doc.text(testDate !== 'N/A' ? testDate : '-', slotX + 17, startY + 20, { charSpace: 0.08 });
+      doc.setFont('Helvetica', 'normal'); doc.text(testDate !== 'N/A' ? testDate : '-', slotX + 18.5, startY + 20, { charSpace: 0.08 });
       
       doc.setFont('Helvetica', 'bold'); doc.text('Report Dt:', slotX + 4 + (cardWidth - 8) / 2 + 2, startY + 20, { charSpace: 0.1 });
       doc.setFont('Helvetica', 'normal'); doc.text(reportDate !== 'N/A' ? reportDate : '-', slotX + 4 + (cardWidth - 8) / 2 + 20, startY + 20, { charSpace: 0.08 });
@@ -1869,6 +1865,12 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       doc.setFont('Helvetica', 'bold');
       doc.text('Total:', slotX + 14, tableY + 3.2, { charSpace: 0.1 });
       doc.text(`${totalQty.toFixed(2)} g`, slotX + cardWidth - 6, tableY + 3.2, { align: 'right', charSpace: 0.1 });
+
+      // FIXED: Draw outer Card Border last using a dynamically computed height so it wraps everything cleanly
+      const cardHeight = (tableY + 4.5) - startY;
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.3);
+      doc.rect(slotX, startY, cardWidth, cardHeight, 'S');
     });
 
     doc.save(`Lab_Raw_Materials_${Date.now()}.pdf`);

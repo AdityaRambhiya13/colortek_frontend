@@ -137,12 +137,12 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   if (showProductSelect) {
     return (
       <div style={{
-        minHeight: '100vh',
+        minHeight: '200vh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         background: 'radial-gradient(circle at center, #18181b 0%, #09090b 100%)',
-        padding: '24px',
+        padding: '48px',
         color: '#ffffff',
         fontFamily: 'system-ui, -apple-system, sans-serif'
       }}>

@@ -147,7 +147,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         fontFamily: 'system-ui, -apple-system, sans-serif'
       }}>
         <div className="glass-card animated-scale" style={{
-          width: '100%',
+          width: '200%',
           maxWidth: '850px',
           background: 'rgba(18, 18, 18, 0.75)',
           backdropFilter: 'blur(20px)',
@@ -175,19 +175,19 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           </div>
 
           <div style={{ textAlign: 'center' }}>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '8px' }}>Select Product Workspace</h2>
+            <h2 style={{ fontSize: '3.0rem', fontWeight: 700, marginBottom: '8px' }}>Select Product Workspace</h2>
             <p style={{ color: '#94a3b8', fontSize: '0.85rem' }}>
               Your account has access to multiple product scopes. Select one to proceed.
             </p>
           </div>
 
-          <hr style={{ width: '100%', border: 'none', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }} />
+          <hr style={{ width: '200%', border: 'none', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }} />
 
           {loading ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', padding: '32px' }}>
               <div className="loader-ring" style={{
-                width: '40px',
-                height: '40px',
+                width: '80px',
+                height: '80px',
                 border: '4px solid rgba(255,255,255,0.1)',
                 borderTopColor: 'var(--primary-color)',
                 borderRadius: '50%',
@@ -200,7 +200,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               display: 'grid',
               gridTemplateColumns: 'repeat(4, 1fr)',
               gap: '16px',
-              width: '100%',
+              width: '200%',
               marginTop: '8px',
               maxHeight: '380px',
               overflowY: 'auto',

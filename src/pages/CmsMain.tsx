@@ -1710,10 +1710,9 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     // Page constraints for exactly 2 side-by-side items per page
     const pageHeight = 297; 
     const margin = 8;
-    const cardWidth = 94; // Left and Right cards side-by-side
+    const cardWidth = 94; 
     const gapX = 6; 
 
-    // Helper to format YYYY-MM-DD string into DD-MM-YYYY
     const formatDateDMY = (dateStr: string) => {
       if (!dateStr || dateStr === 'N/A' || dateStr.trim() === '-' || dateStr.trim() === '') return '-';
       const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
@@ -1723,7 +1722,6 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       return dateStr;
     };
 
-    // Card height spans top margin to bottom margin
     const fixedCardHeight = 281; 
 
     fetchedData.forEach((data, idx) => {
@@ -1797,97 +1795,119 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       const datesRowHeight = 11; 
       const batchDetailsContainerHeight = productRowHeight + datesRowHeight;
 
-      // Inner container box
       doc.setDrawColor(209, 213, 219);
       doc.setFillColor(249, 250, 251);
       doc.rect(slotX + 4, startY + 18, containerInnerWidth, batchDetailsContainerHeight, 'DF');
       
-      // Horizontal row divider below product name
       doc.line(slotX + 4, startY + 18 + productRowHeight, slotX + cardWidth - 4, startY + 18 + productRowHeight);
 
-      // Render Product
       doc.setFont('Helvetica', 'bold');
       doc.text('Product:', slotX + 6, startY + 23);
       doc.setFont('Helvetica', 'normal');
       doc.text(wrappedProductLines, slotX + 24, startY + 23);
 
-      // 2-Column Split for Dates
       const halfWidth = containerInnerWidth / 2;
       const bottomRowStartY = startY + 18 + productRowHeight;
       
-      // Vertical internal middle divider
       doc.line(slotX + 4 + halfWidth, bottomRowStartY, slotX + 4 + halfWidth, bottomRowStartY + datesRowHeight);
 
       doc.setFontSize(9.5); 
       
-      // Left Side: Formula Date
       doc.setFont('Helvetica', 'bold'); doc.text('Form Dt:', slotX + 6, bottomRowStartY + 6.5);
       doc.setFont('Helvetica', 'normal'); doc.text(formulaDate, slotX + 24, bottomRowStartY + 6.5);
 
-      // Right Side: Stacked Test and Report Dates
       doc.setFont('Helvetica', 'bold'); doc.text('Test Dt:', slotX + 6 + halfWidth, bottomRowStartY + 4.5);
       doc.setFont('Helvetica', 'normal'); doc.text(testDate, slotX + 22 + halfWidth, bottomRowStartY + 4.5);
 
       doc.setFont('Helvetica', 'bold'); doc.text('Rep Dt:', slotX + 6 + halfWidth, bottomRowStartY + 9);
       doc.setFont('Helvetica', 'normal'); doc.text(reportDate, slotX + 22 + halfWidth, bottomRowStartY + 9);
 
-      // --- 3. RAW MATERIALS TABLE (BOOSTED TO SIZE 13) ---
+      // --- 3. RAW MATERIALS SECTION (SPLIT LOGIC) ---
       const rawMaterialsHeaderY = startY + 18 + batchDetailsContainerHeight + 6;
       doc.setFont('Helvetica', 'bold');
       doc.setFontSize(12); 
       doc.setTextColor(29, 78, 216);
       doc.text('RAW MATERIALS', slotX + 4, rawMaterialsHeaderY);
 
-      let tableY = rawMaterialsHeaderY + 2;
-      const tableRowHeight = 8.5; // Expanded height to hold size 13 text cleanly
+      let initialTableY = rawMaterialsHeaderY + 2;
+      const tableRowHeight = 8.5; 
+      
+      // Determine if we need to split into 2 columns based on size
+      const useSplitLayout = inventory.length > 18;
+      const itemsPerColumn = useSplitLayout ? Math.ceil(inventory.length / 2) : inventory.length;
+      const miniTableWidth = useSplitLayout ? (containerInnerWidth - 4) / 2 : containerInnerWidth;
 
-      // Header row
+      // Render Table Headers
       doc.setFillColor(245, 248, 250);
-      doc.rect(slotX + 4, tableY, containerInnerWidth, tableRowHeight, 'DF');
-
-      doc.setFontSize(11); 
+      doc.setFontSize(10); 
       doc.setTextColor(0, 0, 0);
-      doc.text('Sr', slotX + 6, tableY + 5.8);
-      doc.text('Material Description', slotX + 14, tableY + 5.8);
-      doc.text('Qty (g)', slotX + cardWidth - 6, tableY + 5.8, { align: 'right' });
+      
+      // Left Column Header
+      doc.rect(slotX + 4, initialTableY, miniTableWidth, tableRowHeight, 'DF');
+      doc.text('Sr', slotX + 5, initialTableY + 5.8);
+      doc.text('Material', slotX + 11, initialTableY + 5.8);
+      doc.text('Qty', slotX + 4 + miniTableWidth - 2, initialTableY + 5.8, { align: 'right' });
 
-      tableY += tableRowHeight;
-      doc.setFont('Helvetica', 'normal');
-      doc.setFontSize(13); // Upgraded from 11.5 to 13
+      // Right Column Header (If using split layout)
+      if (useSplitLayout) {
+        const rightTableX = slotX + 4 + miniTableWidth + 4;
+        doc.rect(rightTableX, initialTableY, miniTableWidth, tableRowHeight, 'DF');
+        doc.text('Sr', rightTableX + 1, initialTableY + 5.8);
+        doc.text('Material', rightTableX + 7, initialTableY + 5.8);
+        doc.text('Qty', rightTableX + miniTableWidth - 2, initialTableY + 5.8, { align: 'right' });
+      }
 
       let totalQty = 0;
-      inventory.forEach((item: any, index: number) => {
-        if (index % 2 === 0) {
-          doc.setFillColor(250, 250, 250);
-          doc.rect(slotX + 4, tableY, containerInnerWidth, tableRowHeight, 'F');
-        }
-        doc.rect(slotX + 4, tableY, containerInnerWidth, tableRowHeight, 'S');
+      let highestTableY = initialTableY + tableRowHeight;
 
-        doc.text(item.sr || String(index + 1), slotX + 6, tableY + 5.8);
-        doc.text(item.material.substring(0, 18), slotX + 14, tableY + 5.8); // Adjusted substring to fit the larger characters safely
-        
+      // Render Table Rows
+      inventory.forEach((item: any, index: number) => {
         const qtyVal = parseFloat(item.qty);
-        if (!isNaN(qtyVal)) {
-          totalQty += qtyVal;
-          doc.text(qtyVal.toFixed(2), slotX + cardWidth - 6, tableY + 5.8, { align: 'right' });
-        } else {
-          doc.text(item.qty || '0.00', slotX + cardWidth - 6, tableY + 5.8, { align: 'right' });
+        if (!isNaN(qtyVal)) totalQty += qtyVal;
+
+        // Determine column placement coordinates
+        let currentItemX = slotX + 4;
+        let relativeRowIndex = index;
+
+        if (useSplitLayout && index >= itemsPerColumn) {
+          currentItemX = slotX + 4 + miniTableWidth + 4; // Shift to right column
+          relativeRowIndex = index - itemsPerColumn;
         }
-        tableY += tableRowHeight;
+
+        const currentItemY = initialTableY + tableRowHeight + (relativeRowIndex * tableRowHeight);
+
+        if (relativeRowIndex % 2 === 0) {
+          doc.setFillColor(250, 250, 250);
+          doc.rect(currentItemX, currentItemY, miniTableWidth, tableRowHeight, 'F');
+        }
+        doc.rect(currentItemX, currentItemY, miniTableWidth, tableRowHeight, 'S');
+
+        doc.setFont('Helvetica', 'normal');
+        doc.setFontSize(13); // Large text target
+        
+        doc.text(item.sr || String(index + 1), currentItemX + 1, currentItemY + 5.8);
+        // Shortened text limit for side-by-side printing blocks
+        doc.text(item.material.substring(0, useSplitLayout ? 8 : 18), currentItemX + 7, currentItemY + 5.8); 
+        doc.text(!isNaN(qtyVal) ? qtyVal.toFixed(2) : (item.qty || '0.00'), currentItemX + miniTableWidth - 2, currentItemY + 5.8, { align: 'right' });
+
+        const endOfRowY = currentItemY + tableRowHeight;
+        if (endOfRowY > highestTableY) {
+          highestTableY = endOfRowY;
+        }
       });
 
-      // Total data row
+      // Total Row spans across the bottom of the active table footprint
       doc.setFillColor(243, 244, 246);
-      doc.rect(slotX + 4, tableY, containerInnerWidth, tableRowHeight, 'DF');
+      doc.rect(slotX + 4, highestTableY, containerInnerWidth, tableRowHeight, 'DF');
       doc.setFont('Helvetica', 'bold');
       doc.setFontSize(13);
-      doc.text('Total:', slotX + 14, tableY + 5.8);
-      doc.text(`${totalQty.toFixed(2)} g`, slotX + cardWidth - 6, tableY + 5.8, { align: 'right' });
+      doc.text('Total:', slotX + 14, highestTableY + 5.8);
+      doc.text(`${totalQty.toFixed(2)} g`, slotX + cardWidth - 6, highestTableY + 5.8, { align: 'right' });
 
-      tableY += tableRowHeight;
+      let postTableY = highestTableY + tableRowHeight;
 
       // --- 4. SECURE REPORT WRITING NOTES AREA ---
-      const remainingSpaceHeaderY = tableY + 6;
+      const remainingSpaceHeaderY = postTableY + 6;
       const absoluteCardBottomBoundary = startY + fixedCardHeight - 4; 
 
       if (remainingSpaceHeaderY < absoluteCardBottomBoundary - 6) {

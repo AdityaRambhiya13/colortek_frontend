@@ -152,10 +152,9 @@ export const App: React.FC = () => {
   // View Router
   const handleViewChange = (viewName: string) => {
     if (viewName === 'product_select') {
-      setIsAuthenticated(false);
-      sessionStorage.removeItem('product_name');
-      sessionStorage.removeItem('user_roles');
+      // Product switcher is embedded in the dashboard (welcome view) — just go there
       setCurrentView('welcome');
+      sessionStorage.setItem('active_view', 'welcome');
       const url = new URL(window.location.href);
       url.searchParams.delete('view');
       window.history.pushState({}, '', url.toString());
@@ -323,19 +322,19 @@ export const App: React.FC = () => {
             {availableProducts.length > 1 && (
               <div style={{ width: '100%', maxWidth: '1100px' }}>
                 <p style={{
-                  fontSize: '0.75rem',
+                  fontSize: '0.85rem',
                   fontWeight: 700,
                   letterSpacing: '0.1em',
                   textTransform: 'uppercase',
                   color: 'var(--text-secondary)',
-                  marginBottom: '16px'
+                  marginBottom: '20px'
                 }}>
                   Switch Product Workspace
                 </p>
                 <div style={{
                   display: 'flex',
                   flexWrap: 'wrap',
-                  gap: '10px',
+                  gap: '14px',
                   justifyContent: 'center',
                 }}>
                   {availableProducts.map((product) => {
@@ -347,29 +346,29 @@ export const App: React.FC = () => {
                         onClick={() => handleProductSwitch(product)}
                         title={formatProduct(product)}
                         style={{
-                          padding: '8px 18px',
+                          padding: '14px 28px',
                           borderRadius: '999px',
                           border: isActive
-                            ? '2px solid var(--primary-color)'
+                            ? '2.5px solid var(--primary-color)'
                             : '2px solid transparent',
                           background: isActive
                             ? 'var(--primary-light)'
                             : 'var(--card-bg, #f1f5f9)',
                           color: isActive ? 'var(--primary-color)' : 'var(--text-secondary)',
-                          fontWeight: isActive ? 700 : 500,
-                          fontSize: '0.8rem',
+                          fontWeight: isActive ? 700 : 600,
+                          fontSize: '1rem',
                           cursor: isActive ? 'default' : 'pointer',
                           boxShadow: isActive ? 'var(--shadow-glow)' : 'none',
                           whiteSpace: 'nowrap',
                           transition: 'all 0.2s ease',
                           outline: 'none',
-                          letterSpacing: '0.02em'
+                          letterSpacing: '0.03em'
                         }}
                         onMouseEnter={e => {
                           if (!isActive) {
                             (e.currentTarget as HTMLButtonElement).style.background = 'var(--primary-light)';
                             (e.currentTarget as HTMLButtonElement).style.color = 'var(--primary-color)';
-                            (e.currentTarget as HTMLButtonElement).style.border = '2px solid var(--primary-color)';
+                            (e.currentTarget as HTMLButtonElement).style.border = '2.5px solid var(--primary-color)';
                           }
                         }}
                         onMouseLeave={e => {

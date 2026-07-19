@@ -1764,14 +1764,14 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
         }
       }).filter((item: any) => item.material.trim() !== '');
 
-      // --- 1. CARD HEADER (FONT INCREASED) ---
+      // --- 1. CARD HEADER ---
       doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(15); // Increased from 13
+      doc.setFontSize(15); 
       doc.setTextColor(29, 78, 216);
       doc.text(`Batch: ${batchNo.substring(0, 16)}`, slotX + 4, startY + 8);
       
       doc.setFont('Helvetica', 'normal');
-      doc.setFontSize(11.5); // Increased from 10.5
+      doc.setFontSize(11.5); 
       doc.setTextColor(107, 114, 128);
       doc.text(`Ref: ${refNo !== 'N/A' ? refNo.substring(0, 12) : '-'}`, slotX + cardWidth - 4, startY + 8, { align: 'right' });
 
@@ -1779,14 +1779,14 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       doc.setLineWidth(0.4);
       doc.line(slotX + 4, startY + 10, slotX + cardWidth - 4, startY + 10);
 
-      // --- 2. BATCH DETAILS SECTION (FONT INCREASED) ---
+      // --- 2. BATCH DETAILS SECTION ---
       doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(12); // Increased from 10.5
+      doc.setFontSize(12); 
       doc.setTextColor(29, 78, 216);
       doc.text('BATCH DETAILS', slotX + 4, startY + 16);
 
       doc.setFont('Helvetica', 'normal');
-      doc.setFontSize(11); // Increased from 9.5
+      doc.setFontSize(11); 
       const containerInnerWidth = cardWidth - 8;
       const labelWidth = 18;
       const allowedTextWidth = containerInnerWidth - labelWidth - 2;
@@ -1794,7 +1794,6 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       const wrappedProductLines = doc.splitTextToSize(productNameField, allowedTextWidth);
       
       const productRowHeight = wrappedProductLines.length > 1 ? 7 + (wrappedProductLines.length - 1) * 5 : 7;
-      // Increased height to allow a two-tier layout for the dates section
       const datesRowHeight = 11; 
       const batchDetailsContainerHeight = productRowHeight + datesRowHeight;
 
@@ -1812,16 +1811,16 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       doc.setFont('Helvetica', 'normal');
       doc.text(wrappedProductLines, slotX + 24, startY + 23);
 
-      // 2-Column Split for Dates to prevent clipping at larger font size
+      // 2-Column Split for Dates
       const halfWidth = containerInnerWidth / 2;
       const bottomRowStartY = startY + 18 + productRowHeight;
       
       // Vertical internal middle divider
       doc.line(slotX + 4 + halfWidth, bottomRowStartY, slotX + 4 + halfWidth, bottomRowStartY + datesRowHeight);
 
-      doc.setFontSize(9.5); // Increased from 8
+      doc.setFontSize(9.5); 
       
-      // Left Side: Formula Date (Centered vertically in its box)
+      // Left Side: Formula Date
       doc.setFont('Helvetica', 'bold'); doc.text('Form Dt:', slotX + 6, bottomRowStartY + 6.5);
       doc.setFont('Helvetica', 'normal'); doc.text(formulaDate, slotX + 24, bottomRowStartY + 6.5);
 
@@ -1832,28 +1831,29 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       doc.setFont('Helvetica', 'bold'); doc.text('Rep Dt:', slotX + 6 + halfWidth, bottomRowStartY + 9);
       doc.setFont('Helvetica', 'normal'); doc.text(reportDate, slotX + 22 + halfWidth, bottomRowStartY + 9);
 
-      // --- 3. RAW MATERIALS TABLE (FONT INCREASED) ---
+      // --- 3. RAW MATERIALS TABLE (BOOSTED TO SIZE 13) ---
       const rawMaterialsHeaderY = startY + 18 + batchDetailsContainerHeight + 6;
       doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(12); // Increased from 10.5
+      doc.setFontSize(12); 
       doc.setTextColor(29, 78, 216);
       doc.text('RAW MATERIALS', slotX + 4, rawMaterialsHeaderY);
 
       let tableY = rawMaterialsHeaderY + 2;
-      const tableRowHeight = 7; // Expanded height padding
+      const tableRowHeight = 8.5; // Expanded height to hold size 13 text cleanly
 
       // Header row
       doc.setFillColor(245, 248, 250);
       doc.rect(slotX + 4, tableY, containerInnerWidth, tableRowHeight, 'DF');
 
-      doc.setFontSize(10); // Increased from 9
+      doc.setFontSize(11); 
       doc.setTextColor(0, 0, 0);
-      doc.text('Sr', slotX + 6, tableY + 4.8);
-      doc.text('Material Description', slotX + 14, tableY + 4.8);
-      doc.text('Qty (g)', slotX + cardWidth - 6, tableY + 4.8, { align: 'right' });
+      doc.text('Sr', slotX + 6, tableY + 5.8);
+      doc.text('Material Description', slotX + 14, tableY + 5.8);
+      doc.text('Qty (g)', slotX + cardWidth - 6, tableY + 5.8, { align: 'right' });
 
       tableY += tableRowHeight;
       doc.setFont('Helvetica', 'normal');
+      doc.setFontSize(13); // Upgraded from 11.5 to 13
 
       let totalQty = 0;
       inventory.forEach((item: any, index: number) => {
@@ -1863,15 +1863,15 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
         }
         doc.rect(slotX + 4, tableY, containerInnerWidth, tableRowHeight, 'S');
 
-        doc.text(item.sr || String(index + 1), slotX + 6, tableY + 4.8);
-        doc.text(item.material.substring(0, 22), slotX + 14, tableY + 4.8); 
+        doc.text(item.sr || String(index + 1), slotX + 6, tableY + 5.8);
+        doc.text(item.material.substring(0, 18), slotX + 14, tableY + 5.8); // Adjusted substring to fit the larger characters safely
         
         const qtyVal = parseFloat(item.qty);
         if (!isNaN(qtyVal)) {
           totalQty += qtyVal;
-          doc.text(qtyVal.toFixed(2), slotX + cardWidth - 6, tableY + 4.8, { align: 'right' });
+          doc.text(qtyVal.toFixed(2), slotX + cardWidth - 6, tableY + 5.8, { align: 'right' });
         } else {
-          doc.text(item.qty || '0.00', slotX + cardWidth - 6, tableY + 4.8, { align: 'right' });
+          doc.text(item.qty || '0.00', slotX + cardWidth - 6, tableY + 5.8, { align: 'right' });
         }
         tableY += tableRowHeight;
       });
@@ -1880,8 +1880,9 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       doc.setFillColor(243, 244, 246);
       doc.rect(slotX + 4, tableY, containerInnerWidth, tableRowHeight, 'DF');
       doc.setFont('Helvetica', 'bold');
-      doc.text('Total:', slotX + 14, tableY + 4.8);
-      doc.text(`${totalQty.toFixed(2)} g`, slotX + cardWidth - 6, tableY + 4.8, { align: 'right' });
+      doc.setFontSize(13);
+      doc.text('Total:', slotX + 14, tableY + 5.8);
+      doc.text(`${totalQty.toFixed(2)} g`, slotX + cardWidth - 6, tableY + 5.8, { align: 'right' });
 
       tableY += tableRowHeight;
 
@@ -1891,7 +1892,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
       if (remainingSpaceHeaderY < absoluteCardBottomBoundary - 6) {
         doc.setFont('Helvetica', 'bold');
-        doc.setFontSize(11); // Increased from 10
+        doc.setFontSize(11); 
         doc.setTextColor(29, 78, 216);
         doc.text('REPORT NOTES', slotX + 4, remainingSpaceHeaderY);
 
@@ -1901,7 +1902,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
         let noteLineY = remainingSpaceHeaderY + 6;
         while (noteLineY < absoluteCardBottomBoundary) {
           doc.line(slotX + 4, noteLineY, slotX + cardWidth - 4, noteLineY);
-          noteLineY += 7; // Wider space between lines for easy writing
+          noteLineY += 7.5; 
         }
       }
 

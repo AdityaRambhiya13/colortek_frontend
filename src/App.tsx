@@ -322,19 +322,19 @@ export const App: React.FC = () => {
             {availableProducts.length > 1 && (
               <div style={{ width: '100%', maxWidth: '1100px' }}>
                 <p style={{
-                  fontSize: '0.85rem',
+                  fontSize: '1rem',
                   fontWeight: 700,
-                  letterSpacing: '0.1em',
+                  letterSpacing: '0.12em',
                   textTransform: 'uppercase',
                   color: 'var(--text-secondary)',
-                  marginBottom: '20px'
+                  marginBottom: '24px'
                 }}>
                   Switch Product Workspace
                 </p>
                 <div style={{
                   display: 'flex',
                   flexWrap: 'wrap',
-                  gap: '14px',
+                  gap: '18px',
                   justifyContent: 'center',
                 }}>
                   {availableProducts.map((product) => {
@@ -346,36 +346,39 @@ export const App: React.FC = () => {
                         onClick={() => handleProductSwitch(product)}
                         title={formatProduct(product)}
                         style={{
-                          padding: '14px 28px',
+                          padding: '18px 40px',
                           borderRadius: '999px',
                           border: isActive
-                            ? '2.5px solid var(--primary-color)'
-                            : '2px solid transparent',
+                            ? '3px solid var(--primary-color)'
+                            : '2px solid #d1d5db',
                           background: isActive
                             ? 'var(--primary-light)'
                             : 'var(--card-bg, #f1f5f9)',
                           color: isActive ? 'var(--primary-color)' : 'var(--text-secondary)',
-                          fontWeight: isActive ? 700 : 600,
-                          fontSize: '1rem',
+                          fontWeight: isActive ? 800 : 600,
+                          fontSize: '1.25rem',
                           cursor: isActive ? 'default' : 'pointer',
-                          boxShadow: isActive ? 'var(--shadow-glow)' : 'none',
+                          boxShadow: isActive ? 'var(--shadow-glow)' : '0 1px 4px rgba(0,0,0,0.07)',
                           whiteSpace: 'nowrap',
                           transition: 'all 0.2s ease',
                           outline: 'none',
-                          letterSpacing: '0.03em'
+                          letterSpacing: '0.02em',
+                          minHeight: '56px'
                         }}
                         onMouseEnter={e => {
                           if (!isActive) {
                             (e.currentTarget as HTMLButtonElement).style.background = 'var(--primary-light)';
                             (e.currentTarget as HTMLButtonElement).style.color = 'var(--primary-color)';
-                            (e.currentTarget as HTMLButtonElement).style.border = '2.5px solid var(--primary-color)';
+                            (e.currentTarget as HTMLButtonElement).style.border = '3px solid var(--primary-color)';
+                            (e.currentTarget as HTMLButtonElement).style.boxShadow = 'var(--shadow-glow)';
                           }
                         }}
                         onMouseLeave={e => {
                           if (!isActive) {
                             (e.currentTarget as HTMLButtonElement).style.background = 'var(--card-bg, #f1f5f9)';
                             (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)';
-                            (e.currentTarget as HTMLButtonElement).style.border = '2px solid transparent';
+                            (e.currentTarget as HTMLButtonElement).style.border = '2px solid #d1d5db';
+                            (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 1px 4px rgba(0,0,0,0.07)';
                           }
                         }}
                       >

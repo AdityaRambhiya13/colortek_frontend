@@ -67,9 +67,8 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         // Cache available products list in sessionStorage for dashboard switcher
         sessionStorage.setItem('available_products', JSON.stringify(products));
 
-        // Switch layout to workspace selection view
-        setShowProductSelect(true);
-        setLoading(false);
+        // Automatically log into the first workspace context instantly
+        completeWorkspaceLogin(products[0], data.pre_auth_token);
       } else {
         setErrorMsg(typeof data === 'string' ? data : 'Invalid username or password.');
         setLoading(false);
@@ -138,7 +137,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   if (showProductSelect) {
     return (
       <div style={{
-        minHeight: '100vh',
+        minHeight: '200vh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -149,7 +148,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       }}>
         <div className="glass-card animated-scale" style={{
           width: '100%',
-          maxWidth: '1000px', // Increased container width from 850px to accommodate larger cards
+          maxWidth: '850px',
           background: 'rgba(18, 18, 18, 0.75)',
           backdropFilter: 'blur(20px)',
           border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -176,8 +175,8 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           </div>
 
           <div style={{ textAlign: 'center' }}>
-            <h2 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '8px' }}>Select Product Workspace</h2>
-            <p style={{ color: '#94a3b8', fontSize: '0.95rem' }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '8px' }}>Select Product Workspace</h2>
+            <p style={{ color: '#94a3b8', fontSize: '0.85rem' }}>
               Your account has access to multiple product scopes. Select one to proceed.
             </p>
           </div>
@@ -190,21 +189,20 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 width: '40px',
                 height: '40px',
                 border: '4px solid rgba(255,255,255,0.1)',
-                borderTopColor: '#6366f1',
+                borderTopColor: 'var(--primary-color)',
                 borderRadius: '50%',
                 animation: 'spin 1s linear infinite'
               }}></div>
-              <span style={{ fontSize: '0.95rem', color: '#cbd5e1' }}>Loading selected environment...</span>
+              <span style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>Loading selected environment...</span>
             </div>
           ) : (
             <div className="workspace-cards" style={{
               display: 'grid',
-              // Shifted from 4 static columns to auto-fill grid with a minimum card width of 220px
-              gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', 
-              gap: '20px', // Slightly increased gap
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: '16px',
               width: '100%',
               marginTop: '8px',
-              maxHeight: '480px', // Expanded scroll viewport capacity
+              maxHeight: '380px',
               overflowY: 'auto',
               padding: '8px',
               boxSizing: 'border-box'
@@ -225,48 +223,40 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
-                      gap: '14px',
-                      borderRadius: '14px',
-                      padding: '28px 20px', // Expanded card size using deeper paddings
+                      gap: '12px',
+                      borderRadius: '12px',
+                      padding: '20px 12px',
                       cursor: 'pointer',
                       transform: isHovered ? 'translateY(-4px)' : 'translateY(0)',
-                      boxShadow: isHovered ? '0 12px 24px rgba(0,0,0,0.3)' : 'none',
+                      boxShadow: isHovered ? '0 10px 20px rgba(0,0,0,0.3)' : 'none',
                       transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
                     }}
                   >
                     <div style={{
                       backgroundColor: isHovered ? 'rgba(99, 102, 241, 0.25)' : 'rgba(99, 102, 241, 0.12)',
-                      padding: '14px', // Expanded icon bubble padding
+                      padding: '12px',
                       borderRadius: '50%',
                       color: '#818cf8',
                       transform: isHovered ? 'scale(1.1)' : 'scale(1)',
                       transition: 'all 0.2s ease'
                     }}>
-                      <Building size={32} /> {/* Increased icon scale from 24 to 32 */}
+                      <Building size={24} />
                     </div>
-                    
-                    {/* Increased product text from 0.9rem to 1.1rem */}
-                    <span style={{ fontWeight: 600, fontSize: '1.1rem', textAlign: 'center', wordBreak: 'break-word' }}>
-                      {product}
-                    </span>
-                    
-                    {/* Scaled description subtitle up from 0.7rem to 0.8rem */}
-                    <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Authorized Profile</span>
-                    
-                    {/* Enlarged "Open Scope" action block */}
+                    <span style={{ fontWeight: 600, fontSize: '0.9rem', textAlign: 'center', wordBreak: 'break-word' }}>{product}</span>
+                    <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Authorized Profile</span>
                     <div style={{
-                      marginTop: '6px',
-                      fontSize: '0.85rem', // Up from 0.75rem
+                      marginTop: '4px',
+                      fontSize: '0.75rem',
                       fontWeight: 'bold',
                       color: isHovered ? '#818cf8' : '#6366f1',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '6px',
+                      gap: '4px',
                       opacity: isHovered ? 1 : 0.8,
                       transition: 'all 0.2s ease'
                     }}>
                       <span>Open Scope</span>
-                      <Sparkles size={12} /> {/* Up from 10 */}
+                      <Sparkles size={10} />
                     </div>
                   </div>
                 );
@@ -282,9 +272,9 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 background: 'transparent',
                 border: '1px solid rgba(255,255,255,0.15)',
                 borderRadius: '8px',
-                padding: '10px 20px', // More padding for balance
+                padding: '8px 16px',
                 color: '#cbd5e1',
-                fontSize: '0.9rem', // Slightly larger button font
+                fontSize: '0.85rem',
                 fontWeight: 500,
                 cursor: 'pointer',
                 marginTop: '16px',
@@ -333,7 +323,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         gap: '24px',
         boxShadow: isAdminLogin ? '0 20px 50px rgba(168, 85, 247, 0.15)' : '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
         transition: 'all 0.3s ease',
-        margin: 'auto'
+        margin: 'auto' // Center horizontally and vertically within the scrollable container
       }}>
         {/* Logo and Titles */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>

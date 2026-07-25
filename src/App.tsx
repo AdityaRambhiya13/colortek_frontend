@@ -288,7 +288,7 @@ export const App: React.FC = () => {
         const username = sessionStorage.getItem('username') || '';
 
         // Format product name for display: convert product names to UPPERCASE
-        const formatProduct = (name: string) => (name || '').toUpperCase();
+        const formatProduct = (name: string) => (name || '').replace(/_/g, ' ').toUpperCase();
 
         return (
           <div className="animated-fade" style={{

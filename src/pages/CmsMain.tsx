@@ -3122,8 +3122,8 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                                 type="text" 
                                 className="cell-input" 
                                 value={t.method} 
-                                readOnly={t.isDefault !== false}
-                                style={t.isDefault !== false ? { backgroundColor: 'var(--bg-app)', cursor: 'not-allowed', opacity: 0.85 } : {}}
+                                readOnly={!!t.isDefault}
+                                style={!!t.isDefault ? { backgroundColor: 'var(--bg-app)', cursor: 'not-allowed', opacity: 0.85 } : {}}
                                 onChange={e => {
                                   const updated = [...leftTestRows];
                                   updated[idx].method = e.target.value;
@@ -3138,8 +3138,8 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                                 type="text" 
                                 className="cell-input" 
                                 value={t.standard} 
-                                readOnly={t.isDefault !== false}
-                                style={t.isDefault !== false ? { backgroundColor: 'var(--bg-app)', cursor: 'not-allowed', opacity: 0.85 } : {}}
+                                readOnly={!!t.isDefault}
+                                style={!!t.isDefault ? { backgroundColor: 'var(--bg-app)', cursor: 'not-allowed', opacity: 0.85 } : {}}
                                 onChange={e => {
                                   const updated = [...leftTestRows];
                                   updated[idx].standard = e.target.value;
@@ -3468,8 +3468,8 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                                 type="text" 
                                 className="cell-input" 
                                 value={t.method} 
-                                readOnly={t.isDefault !== false}
-                                style={t.isDefault !== false ? { backgroundColor: 'var(--bg-app)', cursor: 'not-allowed', opacity: 0.85 } : {}}
+                                readOnly={!!t.isDefault}
+                                style={!!t.isDefault ? { backgroundColor: 'var(--bg-app)', cursor: 'not-allowed', opacity: 0.85 } : {}}
                                 onChange={e => {
                                   const updated = [...rightTestRows];
                                   updated[idx].method = e.target.value;
@@ -3484,8 +3484,8 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                                 type="text" 
                                 className="cell-input" 
                                 value={t.standard} 
-                                readOnly={t.isDefault !== false}
-                                style={t.isDefault !== false ? { backgroundColor: 'var(--bg-app)', cursor: 'not-allowed', opacity: 0.85 } : {}}
+                                readOnly={!!t.isDefault}
+                                style={!!t.isDefault ? { backgroundColor: 'var(--bg-app)', cursor: 'not-allowed', opacity: 0.85 } : {}}
                                 onChange={e => {
                                   const updated = [...rightTestRows];
                                   updated[idx].standard = e.target.value;

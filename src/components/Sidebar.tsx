@@ -32,7 +32,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   // Read user roles from session
   const roleString = sessionStorage.getItem('user_roles') || '';
-  const roles = roleString.split(',');
+  const roles = roleString.split(',').map(r => r.trim().toLowerCase()).filter(Boolean);
 
   // Keep track of folder expansion states
   const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({

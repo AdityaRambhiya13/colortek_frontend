@@ -3519,7 +3519,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                         <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>Complaint Image References</span>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                           {imageReferences.map((filename: string, idx: number) => {
-                            const fileUrl = `${API_BASE_URL}/complaint-lab/image/${productName}/${filename}`;
+                            const fileUrl = filename.startsWith('http') ? filename : `https://clrwxqngtwshynvsbjac.supabase.co/storage/v1/object/public/complaint-images/${filename}`;
                             return (
                               <div key={idx} onClick={() => setLightboxImage(fileUrl)}
                                 style={{ width: '60px', height: '60px', borderRadius: '4px', overflow: 'hidden', border: '1px solid var(--border-color)', cursor: 'pointer', position: 'relative' }}>

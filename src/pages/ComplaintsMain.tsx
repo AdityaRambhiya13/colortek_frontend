@@ -1509,7 +1509,7 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
                     {labComplaintDetails.image_references && labComplaintDetails.image_references.length > 0 ? (
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                         {labComplaintDetails.image_references.map((filename: string, idx: number) => {
-                          const fileUrl = `${API_BASE_URL}/complaint-lab/image/${selectedLabComplaint.product_name}/${filename}`;
+                          const fileUrl = filename.startsWith('http') ? filename : `https://clrwxqngtwshynvsbjac.supabase.co/storage/v1/object/public/complaint-images/${filename}`;
                           return (
                             <div key={idx} onClick={() => setLightboxImage(fileUrl)}
                               style={{ width: '80px', height: '80px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #cbd5e1', cursor: 'pointer', position: 'relative' }}>

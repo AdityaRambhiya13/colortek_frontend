@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Folder, FolderOpen, Database, FolderPlus, RefreshCw, Trash2, 
-  Copy, Play, Settings, AlertOctagon, Terminal, Layers
+  FolderOpen, Database, FolderPlus, RefreshCw, Trash2, 
+  Copy, Terminal, Layers, Search, X
 } from 'lucide-react';
 import { DatabaseAPI } from '../services/api';
 
@@ -11,36 +11,13 @@ interface DatabaseManagementProps {
 
 export const DatabaseManagement: React.FC<DatabaseManagementProps> = ({ onShowToast }) => {
   const [loading, setLoading] = useState(false);
-  const [bulkProgress, setBulkProgress] = useState<{ current: number, total: number, product: string, status: string } | null>(null);
-  
-  // Lists
   const [existingProducts, setExistingProducts] = useState<string[]>([]);
   const [customProductName, setCustomProductName] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   
   // Terminal activity logs
   const [logs, setLogs] = useState<string[]>([]);
   const terminalEndRef = useRef<HTMLDivElement | null>(null);
-
-  const PREDEFINED_PRODUCTS = [
-    "METACOAT_CLEAR_GLOSS", "METACOAT_CLEAR_MATT", "METACOAT_WHITE_GLOSS",
-    "METACOAT_WHITE_MATT", "METACOAT_BLACK_GLOSS", "METACOAT_BLACK_MATT",
-    "SILKAN_ULTRA_S1K", "SILKAN_ULTRA_S2K_ML", "ACRO_WHITE_GLOSS",
-    "ACRO_BLACK_GLOSS", "ACRO_CLEAR_GLOSS", "PU_CRYSTAL_WHITE_GLOSS",
-    "PU_CRYSTAL_BLACK_GLOSS", "PU_CRYSTAL_CLEAR_GLOSS", "PU_CRYSTAL_WHITE_MATT",
-    "PU_CRYSTAL_BLACK_MATT", "PU_CRYSTAL_CLEAR_MATT", "EPOCOAT_WHITE_GLOSS",
-    "EPOCOAT_CLEAR_GLOSS", "EPOCOAT_WHITE_MATT", "EPOCOAT_CLEAR_MATT",
-    "EPOCOAT_RAL", "EPOCOAT_R1U", "ACRO_R1U", "THERMOLAT_R1U",
-    "PU_CRYSTAL_R1U", "METACOAT_R1U", "ISOTRAP_R1U", "SB_PASTE",
-    "ACRO_BLACK_PASTE", "ACRO_WHITE_PASTE", "FLOURESCENT_PASTE",
-    "FLOURESCENT_DYE", "PU_DYE", "TMK_WHITE_PASTE", "POLY_WHITE_PASTE",
-    "8620_WHITE_PASTE", "AQUATRAP_XL_3", "AQUATRAP_XL_4_BASE",
-    "AQUATRAP_XL_4_TOP", "AQUATRAP_XL_8", "AQUAMATTE_9", "OPIG_XTR_PASTE",
-    "AQUATRAP_XL_7", "AQUATRAP_XL_3_UV_PRO", "INK_2K",
-    "ISOFIX_UV_PRO_BLACK_GLOSS", "ISOFIX_UV_PRO_BLACK_MATT",
-    "OPIG_66_BLUE_PASTE", "TMK_44L_PINK_PASTE", "TMK__38_ORANGE_PASTE",
-    "BRC_ALL_PASTE", "SILKAN_ULTRA_S2k", "HYDRO_RIPING",
-    "PRODUCTION_HYDRO_DIP_TESTING", "PRODUCTION_TPIG_XTP_TESTING", "Test"
-  ];
 
   const logMessage = (msg: string) => {
     const time = new Date().toLocaleTimeString();
@@ -102,72 +79,6 @@ export const DatabaseManagement: React.FC<DatabaseManagementProps> = ({ onShowTo
     setCustomProductName('');
   };
 
-  const handleCreateAllBulk = async () => {
-    if (!window.confirm(`Are you sure you want to trigger bulk partition creation?\nThis will initialize database entries and storage structures for all ${PREDEFINED_PRODUCTS.length} predefined brands in the background.`)) {
-      return;
-    }
-
-    logMessage(`[BULK] Initiating bulk predefined database setup in background...`);
-    setLoading(true);
-    setBulkProgress({ current: 0, total: PREDEFINED_PRODUCTS.length, product: 'Starting...', status: 'queued' });
-
-    // 1. Trigger backend task
-    const [success, data] = await DatabaseAPI.bulkPredefined(PREDEFINED_PRODUCTS);
-    if (!success) {
-      logMessage(`[ERROR] Failed to start bulk setup: ${data}`);
-      setLoading(false);
-      setBulkProgress(null);
-      return;
-    }
-
-    // 2. Open WebSocket to track progress
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    // derive backend host dynamically
-    const backendHost = window.location.hostname === 'localhost' ? 'localhost:8000' : window.location.host;
-    const wsUrl = `${protocol}//${backendHost}/ws/db-progress`;
-    
-    logMessage(`[SOCKET] Connecting to websocket log server: ${wsUrl}`);
-    const socket = new WebSocket(wsUrl);
-
-    socket.onopen = () => {
-      logMessage(`[SOCKET] Connected. Monitoring background progress...`);
-    };
-
-    socket.onmessage = (event) => {
-      try {
-        const payload = JSON.parse(event.data);
-        if (payload.event === 'progress') {
-          setBulkProgress({
-            current: payload.current,
-            total: payload.total,
-            product: payload.product,
-            status: payload.status
-          });
-          logMessage(`[PROGRESS] (${payload.current}/${payload.total}) ${payload.product}: ${payload.status}`);
-        } else if (payload.event === 'finished') {
-          logMessage(`[FINISHED] Bulk generation finished. Created ${payload.total_created} scopes.`);
-          setLoading(false);
-          setBulkProgress(null);
-          onShowToast(`Bulk database setups completed!`, 'success');
-          loadExistingProducts();
-          socket.close();
-        }
-      } catch (err) {
-        console.error('Failed to parse WebSocket message:', err);
-      }
-    };
-
-    socket.onerror = (err) => {
-      logMessage(`[ERROR] WebSocket connection encountered an error.`);
-      console.error(err);
-    };
-
-    socket.onclose = () => {
-      logMessage(`[SOCKET] Connection closed.`);
-      setLoading(false);
-    };
-  };
-
   const handleDeleteProduct = async (productName: string) => {
     if (!window.confirm(`🔥 CRITICAL ACTION REQUIRED 🔥\n\nAre you absolutely sure you want to delete the product scope "${productName}"?\nThis will PERMANENTLY ERASE all formulation records, QC approvals, dispatch ledgers, and local filesystem folders for this product!\n\nTHIS ACTION CANNOT BE UNDONE.`)) {
       return;
@@ -199,6 +110,10 @@ export const DatabaseManagement: React.FC<DatabaseManagementProps> = ({ onShowTo
     }
   };
 
+  const filteredProducts = existingProducts.filter(product =>
+    product.toLowerCase().includes(searchTerm.toLowerCase().trim())
+  );
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       
@@ -211,7 +126,7 @@ export const DatabaseManagement: React.FC<DatabaseManagementProps> = ({ onShowTo
           <div>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }}>Central Database Management Console</h2>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              Initialize isolated product database scopes, manage physical folder assets, and run bulk installations.
+              Initialize isolated product database scopes and manage active partition storage.
             </p>
           </div>
         </div>
@@ -233,7 +148,7 @@ export const DatabaseManagement: React.FC<DatabaseManagementProps> = ({ onShowTo
 
           <form onSubmit={handleCreateCustomProduct} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div className="form-input-container">
-              <span className="form-label">Custom Database Name</span>
+              <span className="form-label">Database Scope Name</span>
               <div style={{ display: 'flex', gap: '12px' }}>
                 <input 
                   type="text" 
@@ -244,85 +159,58 @@ export const DatabaseManagement: React.FC<DatabaseManagementProps> = ({ onShowTo
                   disabled={loading}
                 />
                 <button type="submit" className="btn-primary" style={{ padding: '0 20px', backgroundColor: '#9333ea', flexShrink: 0 }} disabled={loading || !customProductName.trim()}>
-                  <span>Create Custom</span>
+                  <span>Create Scope</span>
                 </button>
               </div>
             </div>
           </form>
 
-          <hr style={{ border: 'none', borderBottom: '1px solid var(--border-light)' }} />
-
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-              <span style={{ fontSize: '0.9rem', fontWeight: 700 }}>Bulk Standard Predefined Generation</span>
-              <span style={{ fontSize: '0.75rem', backgroundColor: 'var(--color-warning-light)', color: 'var(--color-warning)', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>Bulk Actions</span>
-            </div>
-            
-            <button 
-              onClick={handleCreateAllBulk} 
-              className="btn-primary" 
-              style={{ width: '100%', height: '42px', backgroundColor: '#ea580c', gap: '8px' }} 
-              disabled={loading}
-            >
-              <Terminal size={16} />
-              <span>Bulk Create Predefined Products ({PREDEFINED_PRODUCTS.length})</span>
-            </button>
-
-            {bulkProgress && (
-              <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', fontWeight: 600 }}>
-                  <span>Creating: <strong style={{ color: '#fb923c' }}>{bulkProgress.product}</strong></span>
-                  <span>{bulkProgress.current} / {bulkProgress.total}</span>
-                </div>
-                <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
-                  <div style={{ 
-                    width: `${(bulkProgress.current / bulkProgress.total) * 100}%`, 
-                    height: '100%', 
-                    backgroundColor: '#ea580c', 
-                    borderRadius: '4px',
-                    transition: 'width 0.3s ease'
-                  }}></div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <hr style={{ border: 'none', borderBottom: '1px solid var(--border-light)' }} />
-
-          <div>
-            <span style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '8px' }}>Create Predefined Brands Individually:</span>
-            <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px', height: '220px', overflowY: 'auto', backgroundColor: 'var(--bg-app)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {PREDEFINED_PRODUCTS.map(product => (
-                <div key={product} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-card)', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
-                  <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>{product}</span>
-                  <button 
-                    onClick={() => handleCreateProduct(product)}
-                    className="btn-secondary"
-                    style={{ padding: '4px 10px', fontSize: '0.7rem', color: 'var(--color-success)', borderColor: 'var(--color-success)' }}
-                    disabled={loading}
-                  >
-                    <span>Create</span>
-                  </button>
-                </div>
-              ))}
-            </div>
+          <div style={{ backgroundColor: 'var(--bg-app)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)', marginTop: '8px' }}>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Note:</span>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-light)', margin: 0, lineHeight: 1.5 }}>
+              Creating a product scope initializes isolated table partitions and folder structures for formulation ledgers, QC data, and stock records.
+            </p>
           </div>
         </div>
 
         {/* MANAGE EXISTING PRODUCTS */}
         <div className="glass-card animated-fade" style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px' }}>
-            <Layers size={18} color="var(--primary-color)" />
-            <span>Manage Active Database Partitions</span>
-          </h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px' }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+              <Layers size={18} color="var(--primary-color)" />
+              <span>Active Database Partitions ({filteredProducts.length})</span>
+            </h3>
+          </div>
 
-          <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px', height: '425px', overflowY: 'auto', backgroundColor: 'var(--input-bg)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {existingProducts.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-light)', fontStyle: 'italic' }}>
-                No active partitions initialized.
+          {/* SEARCH BAR */}
+          <div style={{ position: 'relative' }}>
+            <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+            <input 
+              type="text" 
+              className="field-input" 
+              style={{ paddingLeft: '36px', paddingRight: searchTerm ? '36px' : '12px' }} 
+              placeholder="Search product databases..." 
+              value={searchTerm} 
+              onChange={e => setSearchTerm(e.target.value)} 
+            />
+            {searchTerm && (
+              <button 
+                onClick={() => setSearchTerm('')} 
+                style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                title="Clear search"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px', minHeight: '220px', maxHeight: '350px', overflowY: 'auto', backgroundColor: 'var(--input-bg)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {filteredProducts.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-light)', fontStyle: 'italic', fontSize: '0.85rem' }}>
+                {existingProducts.length === 0 ? 'No active partitions initialized.' : 'No database partitions match your search.'}
               </div>
             ) : (
-              existingProducts.map(product => (
+              filteredProducts.map(product => (
                 <div key={product} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-card)', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <Database size={16} color="var(--primary-color)" />

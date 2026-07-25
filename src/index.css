@@ -199,7 +199,9 @@ html {
 /* Flet Style Fixed Top Toolbar Header (Height 70-80px) */
 .flet-fixed-toolbar {
   height: 70px;
-  background: rgba(15, 23, 42, 0.8);
+  position: relative;
+  z-index: 9999 !important;
+  background: rgba(15, 23, 42, 0.85);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;

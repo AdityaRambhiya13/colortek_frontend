@@ -2687,7 +2687,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
                 {/* Notifications Panel */}
                 {showNotifications && (
-                  <div className="notification-panel" style={{ top: '30px', right: '0' }}>
+                  <div className="notification-panel" style={{ top: '45px', right: '0', zIndex: 99999 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <h4 style={{ fontWeight: 700, fontSize: '0.95rem', margin: 0, color: '#1e293b' }}>
                         Notifications

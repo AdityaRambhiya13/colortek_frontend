@@ -64,9 +64,13 @@ export const App: React.FC = () => {
     const verifyUserSession = async () => {
       const storedUser = sessionStorage.getItem('username');
       if (storedUser) {
-        const [success] = await AuthAPI.verifySession();
-        if (success) {
+        const [success, data] = await AuthAPI.verifySession();
+        if (success && typeof data !== 'string' && data) {
           setIsAuthenticated(true);
+          if (data.role) {
+            sessionStorage.setItem('user_roles', data.role);
+            setActiveRoles(data.role.split(',').map((s: string) => s.trim().toLowerCase()).filter(Boolean));
+          }
           const cachedView = sessionStorage.getItem('active_view');
           if (cachedView) {
             setCurrentView(cachedView);

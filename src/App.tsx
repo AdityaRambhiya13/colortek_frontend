@@ -319,22 +319,22 @@ export const App: React.FC = () => {
 
             {/* Product Switcher — only shown when user has multiple products */}
             {availableProducts.length > 1 && (
-              <div style={{ width: '100%', maxWidth: '1100px' }}>
+              <div style={{ width: '100%', maxWidth: '1320px', padding: '0 12px', boxSizing: 'border-box' }}>
                 <p style={{
-                  fontSize: '1rem',
+                  fontSize: '0.9rem',
                   fontWeight: 700,
                   letterSpacing: '0.12em',
                   textTransform: 'uppercase',
                   color: 'var(--text-secondary)',
-                  marginBottom: '24px'
+                  marginBottom: '20px'
                 }}>
-                  Switch Product Workspace
+                  Switch Product Workspace ({availableProducts.length})
                 </p>
                 <div style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: '18px',
-                  justifyContent: 'center',
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(6, minmax(0, 1fr))',
+                  gap: '12px',
+                  width: '100%'
                 }}>
                   {availableProducts.map((product) => {
                     const isActive = product === activeProduct;
@@ -345,43 +345,51 @@ export const App: React.FC = () => {
                         onClick={() => handleProductSwitch(product)}
                         title={formatProduct(product)}
                         style={{
-                          padding: '18px 40px',
+                          padding: '12px 10px',
                           borderRadius: '999px',
                           border: isActive
-                            ? '3px solid var(--primary-color)'
-                            : '2px solid #d1d5db',
+                            ? '2px solid var(--primary-color)'
+                            : '1px solid var(--border-color, #cbd5e1)',
                           background: isActive
                             ? 'var(--primary-light)'
-                            : 'var(--card-bg, #f1f5f9)',
+                            : 'var(--card-bg, #f8fafc)',
                           color: isActive ? 'var(--primary-color)' : 'var(--text-secondary)',
                           fontWeight: isActive ? 800 : 600,
-                          fontSize: '1.25rem',
+                          fontSize: '0.8rem',
                           cursor: isActive ? 'default' : 'pointer',
-                          boxShadow: isActive ? 'var(--shadow-glow)' : '0 1px 4px rgba(0,0,0,0.07)',
+                          boxShadow: isActive ? 'var(--shadow-glow)' : '0 1px 3px rgba(0,0,0,0.05)',
                           whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
                           transition: 'all 0.2s ease',
                           outline: 'none',
                           letterSpacing: '0.02em',
-                          minHeight: '56px'
+                          minHeight: '48px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '100%'
                         }}
                         onMouseEnter={e => {
                           if (!isActive) {
                             (e.currentTarget as HTMLButtonElement).style.background = 'var(--primary-light)';
                             (e.currentTarget as HTMLButtonElement).style.color = 'var(--primary-color)';
-                            (e.currentTarget as HTMLButtonElement).style.border = '3px solid var(--primary-color)';
+                            (e.currentTarget as HTMLButtonElement).style.border = '2px solid var(--primary-color)';
                             (e.currentTarget as HTMLButtonElement).style.boxShadow = 'var(--shadow-glow)';
                           }
                         }}
                         onMouseLeave={e => {
                           if (!isActive) {
-                            (e.currentTarget as HTMLButtonElement).style.background = 'var(--card-bg, #f1f5f9)';
+                            (e.currentTarget as HTMLButtonElement).style.background = 'var(--card-bg, #f8fafc)';
                             (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)';
-                            (e.currentTarget as HTMLButtonElement).style.border = '2px solid #d1d5db';
-                            (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 1px 4px rgba(0,0,0,0.07)';
+                            (e.currentTarget as HTMLButtonElement).style.border = '1px solid var(--border-color, #cbd5e1)';
+                            (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)';
                           }
                         }}
                       >
-                        {formatProduct(product)}
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {formatProduct(product)}
+                        </span>
                       </button>
                     );
                   })}

@@ -52,7 +52,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
   const [confirmInput, setConfirmInput] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  const MODULES = ['cms', 'mf', 'qc', 'complaints', 'production', 'lab', 'rd'];
+  const MODULES = ['admin', 'cms', 'mf', 'qc', 'complaints', 'production', 'lab', 'rd'];
 
   const fetchAuditLogs = async () => {
     setLoadingAudit(true);

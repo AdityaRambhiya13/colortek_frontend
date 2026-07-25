@@ -37,6 +37,7 @@ interface TestRow {
   standard: string;
   result: string;
   selected?: boolean;
+  isDefault?: boolean;
 }
 
 export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, onChangeView }) => {
@@ -113,6 +114,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
   // --------------------------------------------------------------------------
   // STATE DEFINITIONS FOR THE DUAL FORMULATION PANELS
   // --------------------------------------------------------------------------
+  const activeProductFormatted = (sessionStorage.getItem('product_name') || '').replace(/_/g, ' ').toUpperCase();
   const [leftForm, setLeftForm] = useState<FormFields>({ refNo: '', batchNo: '', product: activeProductFormatted, rmLot: '', testDate: '', reportDate: '', formulaDate: '' });
   const [rightForm, setRightForm] = useState<FormFields>({ refNo: '', batchNo: '', product: activeProductFormatted, rmLot: '', testDate: '', reportDate: '', formulaDate: '' });
   

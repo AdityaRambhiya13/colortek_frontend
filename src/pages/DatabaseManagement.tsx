@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   FolderOpen, Database, FolderPlus, RefreshCw, Trash2, 
-  Copy, Terminal, Layers, Search, X
+  Copy, Terminal, Layers, Search, X, Pencil, Check
 } from 'lucide-react';
 import { DatabaseAPI } from '../services/api';
 
@@ -14,6 +14,10 @@ export const DatabaseManagement: React.FC<DatabaseManagementProps> = ({ onShowTo
   const [existingProducts, setExistingProducts] = useState<string[]>([]);
   const [customProductName, setCustomProductName] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Inline Rename State
+  const [editingProduct, setEditingProduct] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
   
   // Terminal activity logs
   const [logs, setLogs] = useState<string[]>([]);
@@ -79,6 +83,44 @@ export const DatabaseManagement: React.FC<DatabaseManagementProps> = ({ onShowTo
     setCustomProductName('');
   };
 
+  const handleStartRename = (productName: string) => {
+    setEditingProduct(productName);
+    setRenameValue(productName);
+  };
+
+  const handleCancelRename = () => {
+    setEditingProduct(null);
+    setRenameValue('');
+  };
+
+  const handleSaveRename = async (oldName: string) => {
+    const newName = renameValue.trim().toLowerCase();
+    if (!newName) {
+      onShowToast('New product name cannot be empty.', 'warning');
+      return;
+    }
+
+    if (newName === oldName.toLowerCase()) {
+      handleCancelRename();
+      return;
+    }
+
+    logMessage(`[RENAME] Renaming database partition "${oldName}" -> "${newName}"`);
+    setLoading(true);
+    const [success, data] = await DatabaseAPI.renameProduct(oldName, newName);
+    setLoading(false);
+
+    if (success) {
+      logMessage(`[SUCCESS] Partition "${oldName}" renamed to "${newName}".`);
+      onShowToast(`Product scope renamed: ${oldName} -> ${newName}`, 'success');
+      handleCancelRename();
+      loadExistingProducts();
+    } else {
+      logMessage(`[ERROR] Rename failed: ${data}`);
+      onShowToast(typeof data === 'string' ? data : 'Rename failed.', 'error');
+    }
+  };
+
   const handleDeleteProduct = async (productName: string) => {
     if (!window.confirm(`🔥 CRITICAL ACTION REQUIRED 🔥\n\nAre you absolutely sure you want to delete the product scope "${productName}"?\nThis will PERMANENTLY ERASE all formulation records, QC approvals, dispatch ledgers, and local filesystem folders for this product!\n\nTHIS ACTION CANNOT BE UNDONE.`)) {
       return;
@@ -126,7 +168,7 @@ export const DatabaseManagement: React.FC<DatabaseManagementProps> = ({ onShowTo
           <div>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }}>Central Database Management Console</h2>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              Initialize isolated product database scopes and manage active partition storage.
+              Initialize isolated product database scopes, rename partitions, and manage active storage.
             </p>
           </div>
         </div>
@@ -210,44 +252,101 @@ export const DatabaseManagement: React.FC<DatabaseManagementProps> = ({ onShowTo
                 {existingProducts.length === 0 ? 'No active partitions initialized.' : 'No database partitions match your search.'}
               </div>
             ) : (
-              filteredProducts.map(product => (
-                <div key={product} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-card)', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Database size={16} color="var(--primary-color)" />
-                    <span style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>{product}</span>
+              filteredProducts.map(product => {
+                const isEditing = editingProduct === product;
+                return (
+                  <div key={product} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-card)', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)' }}>
+                    {isEditing ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, marginRight: '10px' }}>
+                        <Database size={16} color="var(--primary-color)" />
+                        <input 
+                          type="text"
+                          className="field-input"
+                          style={{ padding: '4px 8px', fontSize: '0.85rem', flex: 1 }}
+                          value={renameValue}
+                          onChange={e => setRenameValue(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') handleSaveRename(product);
+                            if (e.key === 'Escape') handleCancelRename();
+                          }}
+                          autoFocus
+                          disabled={loading}
+                        />
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Database size={16} color="var(--primary-color)" />
+                        <span style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>{product}</span>
+                      </div>
+                    )}
+
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      {isEditing ? (
+                        <>
+                          <button 
+                            onClick={() => handleSaveRename(product)}
+                            className="btn-secondary"
+                            style={{ border: 'none', backgroundColor: 'var(--color-success-light)', color: 'var(--color-success)', padding: '6px' }}
+                            title="Save Rename"
+                            disabled={loading || !renameValue.trim()}
+                          >
+                            <Check size={14} />
+                          </button>
+                          <button 
+                            onClick={handleCancelRename}
+                            className="btn-secondary"
+                            style={{ border: 'none', backgroundColor: 'var(--border-light)', padding: '6px' }}
+                            title="Cancel"
+                            disabled={loading}
+                          >
+                            <X size={14} />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button 
+                            onClick={() => handleStartRename(product)}
+                            className="btn-secondary"
+                            style={{ border: 'none', backgroundColor: 'var(--primary-light)', color: 'var(--primary-color)', padding: '6px' }}
+                            title="Rename Partition"
+                            disabled={loading}
+                          >
+                            <Pencil size={14} />
+                          </button>
+                          <button 
+                            onClick={() => handleOpenProductFolder(product)}
+                            className="btn-secondary"
+                            style={{ border: 'none', backgroundColor: 'var(--color-info-light)', color: 'var(--color-info)', padding: '6px' }}
+                            title="Open Product Directory"
+                          >
+                            <FolderOpen size={14} />
+                          </button>
+                          <button 
+                            onClick={() => {
+                              navigator.clipboard.writeText(product);
+                              onShowToast(`Copied "${product}" to clipboard.`, 'info');
+                            }}
+                            className="btn-secondary"
+                            style={{ border: 'none', backgroundColor: 'var(--border-light)', padding: '6px' }}
+                            title="Copy Partition Name"
+                          >
+                            <Copy size={14} />
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteProduct(product)}
+                            className="btn-secondary"
+                            style={{ border: 'none', backgroundColor: 'var(--color-error-light)', color: 'var(--color-error)', padding: '6px' }}
+                            title="Wipe Partition Data"
+                            disabled={loading}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    <button 
-                      onClick={() => handleOpenProductFolder(product)}
-                      className="btn-secondary"
-                      style={{ border: 'none', backgroundColor: 'var(--color-info-light)', color: 'var(--color-info)', padding: '6px' }}
-                      title="Open Product Directory"
-                    >
-                      <FolderOpen size={14} />
-                    </button>
-                    <button 
-                      onClick={() => {
-                        navigator.clipboard.writeText(product);
-                        onShowToast(`Copied "${product}" to clipboard.`, 'info');
-                      }}
-                      className="btn-secondary"
-                      style={{ border: 'none', backgroundColor: 'var(--border-light)', padding: '6px' }}
-                      title="Copy Partition Name"
-                    >
-                      <Copy size={14} />
-                    </button>
-                    <button 
-                      onClick={() => handleDeleteProduct(product)}
-                      className="btn-secondary"
-                      style={{ border: 'none', backgroundColor: 'var(--color-error-light)', color: 'var(--color-error)', padding: '6px' }}
-                      title="Wipe Partition Data"
-                      disabled={loading}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>

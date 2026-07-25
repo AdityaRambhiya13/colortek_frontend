@@ -332,6 +332,13 @@ export const DatabaseAPI = {
     return handleResponse<any>(apiClient.delete(`/admin/db/products/${productName}`));
   },
 
+  renameProduct: async (oldProductName: string, newProductName: string) => {
+    return handleResponse<any>(apiClient.put('/admin/db/products/rename', {
+      old_product_name: oldProductName,
+      new_product_name: newProductName,
+    }));
+  },
+
   createAndAssignProduct: async (productName: string) => {
     return handleResponse<any>(apiClient.post('/admin/db/create-and-assign-product', { product_name: productName }));
   },

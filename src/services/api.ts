@@ -333,7 +333,7 @@ export const DatabaseAPI = {
   },
 
   renameProduct: async (oldProductName: string, newProductName: string) => {
-    return handleResponse<any>(apiClient.put('/admin/db/products/rename', {
+    return handleResponse<any>(apiClient.post('/admin/db/products/rename', {
       old_product_name: oldProductName,
       new_product_name: newProductName,
     }));

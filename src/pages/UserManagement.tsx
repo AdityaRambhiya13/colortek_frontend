@@ -435,7 +435,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
                         checked={createProducts[p] || false} 
                         onChange={e => setCreateProducts({ ...createProducts, [p]: e.target.checked })}
                       />
-                      <span>{p}</span>
+                      <span>{p.toUpperCase()}</span>
                     </label>
                   ))
                 )}
@@ -521,7 +521,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
                       onChange={e => setUpdateProducts({ ...updateProducts, [p]: e.target.checked })}
                       disabled={!selectedUser}
                     />
-                    <span>{p}</span>
+                    <span>{p.toUpperCase()}</span>
                   </label>
                 ))}
               </div>
@@ -602,7 +602,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                         {user.products.map(p => (
                           <span key={p} style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary-color)', fontSize: '0.75rem', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
-                            {p}
+                            {p.toUpperCase()}
                           </span>
                         ))}
                       </div>

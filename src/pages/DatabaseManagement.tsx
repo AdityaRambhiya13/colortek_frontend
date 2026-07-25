@@ -276,7 +276,7 @@ export const DatabaseManagement: React.FC<DatabaseManagementProps> = ({ onShowTo
                     ) : (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Database size={16} color="var(--primary-color)" />
-                        <span style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>{product}</span>
+                        <span style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>{product.toUpperCase()}</span>
                       </div>
                     )}
 

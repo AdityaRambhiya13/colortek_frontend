@@ -113,8 +113,8 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
   // --------------------------------------------------------------------------
   // STATE DEFINITIONS FOR THE DUAL FORMULATION PANELS
   // --------------------------------------------------------------------------
-  const [leftForm, setLeftForm] = useState<FormFields>({ refNo: '', batchNo: '', product: '', rmLot: '', testDate: '', reportDate: '', formulaDate: '' });
-  const [rightForm, setRightForm] = useState<FormFields>({ refNo: '', batchNo: '', product: '', rmLot: '', testDate: '', reportDate: '', formulaDate: '' });
+  const [leftForm, setLeftForm] = useState<FormFields>({ refNo: '', batchNo: '', product: activeProductFormatted, rmLot: '', testDate: '', reportDate: '', formulaDate: '' });
+  const [rightForm, setRightForm] = useState<FormFields>({ refNo: '', batchNo: '', product: activeProductFormatted, rmLot: '', testDate: '', reportDate: '', formulaDate: '' });
   
   const [leftRemarks, setLeftRemarks] = useState('');
   const [rightRemarks, setRightRemarks] = useState('');
@@ -142,26 +142,26 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
   // Test Parameter Rows — exactly matching lab_formulations_cms.py test_methods list
   const initializeTestRows = (): TestRow[] => [
-    { method: 'RM VISCOSITY',    standard: 'GTP-06',       result: '', selected: false },
-    { method: 'RM SOLID',        standard: 'IR',            result: '', selected: false },
-    { method: 'LACQUER VISC.',   standard: 'GTP-06',       result: '', selected: false },
-    { method: 'PH VALUE',        standard: 'WI-QC-03',     result: '', selected: false },
-    { method: 'ACID VALUE',      standard: 'WI-R&D-01',    result: '', selected: false },
-    { method: 'AMINE VALUE',     standard: 'WI-R&D-02',    result: '', selected: false },
-    { method: 'LACQUER CLARITY', standard: 'STP-01',       result: '', selected: false },
-    { method: 'LEVEL',           standard: 'STP-08',       result: '', selected: false },
-    { method: 'COVERAGE',        standard: 'STP-04',       result: '', selected: false },
-    { method: 'WETTING',         standard: 'STP-17',       result: '', selected: false },
-    { method: 'ADHESION',        standard: 'GTP-01',       result: '', selected: false },
-    { method: 'MEK',             standard: 'STP-09',       result: '', selected: false },
-    { method: 'HARDNESS',        standard: 'GTP-04',       result: '', selected: false },
-    { method: 'GLASS EFFECT',    standard: 'GTP-02',       result: '', selected: false },
-    { method: 'YELLOWING TEST',  standard: 'STP-18',       result: '', selected: false },
-    { method: 'HAZINESS',        standard: 'STP-01',       result: '', selected: false },
-    { method: 'RECOATING',       standard: 'STP-15',       result: '', selected: false },
-    { method: 'PERFUME/ALCOHOL', standard: 'STP-05/STP-02',result: '', selected: false },
-    { method: 'COLORBLEEDING',   standard: 'STP-03',       result: '', selected: false },
-    { method: 'WATER TEST',      standard: 'GTP-03',       result: '', selected: false },
+    { method: 'RM VISCOSITY',    standard: 'GTP-06',       result: '', selected: false, isDefault: true },
+    { method: 'RM SOLID',        standard: 'IR',           result: '', selected: false, isDefault: true },
+    { method: 'LACQUER VISC.',   standard: 'GTP-06',       result: '', selected: false, isDefault: true },
+    { method: 'PH VALUE',        standard: 'WI-QC-03',     result: '', selected: false, isDefault: true },
+    { method: 'ACID VALUE',      standard: 'WI-R&D-01',    result: '', selected: false, isDefault: true },
+    { method: 'AMINE VALUE',     standard: 'WI-R&D-02',    result: '', selected: false, isDefault: true },
+    { method: 'LACQUER CLARITY', standard: 'STP-01',       result: '', selected: false, isDefault: true },
+    { method: 'LEVEL',           standard: 'STP-08',       result: '', selected: false, isDefault: true },
+    { method: 'COVERAGE',        standard: 'STP-04',       result: '', selected: false, isDefault: true },
+    { method: 'WETTING',         standard: 'STP-17',       result: '', selected: false, isDefault: true },
+    { method: 'ADHESION',        standard: 'GTP-01',       result: '', selected: false, isDefault: true },
+    { method: 'MEK',             standard: 'STP-09',       result: '', selected: false, isDefault: true },
+    { method: 'HARDNESS',        standard: 'GTP-04',       result: '', selected: false, isDefault: true },
+    { method: 'GLASS EFFECT',    standard: 'GTP-02',       result: '', selected: false, isDefault: true },
+    { method: 'YELLOWING TEST',  standard: 'STP-18',       result: '', selected: false, isDefault: true },
+    { method: 'HAZINESS',        standard: 'STP-01',       result: '', selected: false, isDefault: true },
+    { method: 'RECOATING',       standard: 'STP-15',       result: '', selected: false, isDefault: true },
+    { method: 'PERFUME/ALCOHOL', standard: 'STP-05/STP-02',result: '', selected: false, isDefault: true },
+    { method: 'COLORBLEEDING',   standard: 'STP-03',       result: '', selected: false, isDefault: true },
+    { method: 'WATER TEST',      standard: 'GTP-03',       result: '', selected: false, isDefault: true },
   ];
 
   const [leftTestRows, setLeftTestRows] = useState<TestRow[]>(initializeTestRows());
@@ -219,7 +219,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     setBpbsData(null);
     setImageReferences([]);
     setComplaintOriginInfo(null);
-    setLeftForm({ refNo: '', batchNo: '', product: '', rmLot: '', testDate: '', reportDate: '', formulaDate: '' });
+    setLeftForm({ refNo: '', batchNo: '', product: (sessionStorage.getItem('product_name') || '').replace(/_/g, ' ').toUpperCase(), rmLot: '', testDate: '', reportDate: '', formulaDate: '' });
     setLeftRows(initializeRows());
     setLeftTestRows(initializeTestRows());
     setLeftRemarks('');
@@ -423,14 +423,15 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     setDismissedDuplicatesRight(new Set());
 
     // Reset spreadsheet states to prevent data bleeding between tabs (Lab Formulations vs RM Testing)
-    setLeftForm({ refNo: '', batchNo: '', product: '', rmLot: '', testDate: '', reportDate: '', formulaDate: '' });
+    const activeProd = (sessionStorage.getItem('product_name') || '').replace(/_/g, ' ').toUpperCase();
+    setLeftForm({ refNo: '', batchNo: '', product: activeProd, rmLot: '', testDate: '', reportDate: '', formulaDate: '' });
     setLeftRows(initializeRows());
     setLeftTestRows(initializeTestRows());
     setLeftRemarks('');
     setLeftStatus('Select');
     setLeftApprovedBy('');
 
-    setRightForm({ refNo: '', batchNo: '', product: '', rmLot: '', testDate: '', reportDate: '', formulaDate: '' });
+    setRightForm({ refNo: '', batchNo: '', product: activeProd, rmLot: '', testDate: '', reportDate: '', formulaDate: '' });
     setRightRows(initializeRows());
     setRightTestRows(initializeTestRows());
     setRightRemarks('');
@@ -851,8 +852,9 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     const setRemarks = side === 'left' ? setLeftRemarks : setRightRemarks;
     const setStatus = side === 'left' ? setLeftStatus : setRightStatus;
     const setApprovedBy = side === 'left' ? setLeftApprovedBy : setRightApprovedBy;
+    const activeProdFormatted = (sessionStorage.getItem('product_name') || '').replace(/_/g, ' ').toUpperCase();
 
-    setForm({ refNo: '', batchNo: '', product: '', rmLot: '', testDate: '', reportDate: '', formulaDate: '' });
+    setForm({ refNo: '', batchNo: '', product: activeProdFormatted, rmLot: '', testDate: '', reportDate: '', formulaDate: '' });
     setRows(initializeRows());
     setTestRows(initializeTestRows());
     setRemarks('');
@@ -2901,7 +2903,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                     </div>
                     <div className="form-input-container">
                       <span className="form-label">Product Name</span>
-                      <input type="text" className="field-input" value={leftForm.product} onChange={e => setLeftForm({...leftForm, product: e.target.value})} />
+                      <input type="text" className="field-input" value={leftForm.product} readOnly style={{ backgroundColor: 'var(--bg-app)', cursor: 'not-allowed', opacity: 0.85 }} onChange={e => setLeftForm({...leftForm, product: e.target.value})} />
                     </div>
                     {activeSubView === 'rm_testing' && (
                       <div className="form-input-container">
@@ -3118,6 +3120,8 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                                 type="text" 
                                 className="cell-input" 
                                 value={t.method} 
+                                readOnly={t.isDefault !== false}
+                                style={t.isDefault !== false ? { backgroundColor: 'var(--bg-app)', cursor: 'not-allowed', opacity: 0.85 } : {}}
                                 onChange={e => {
                                   const updated = [...leftTestRows];
                                   updated[idx].method = e.target.value;
@@ -3132,6 +3136,8 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                                 type="text" 
                                 className="cell-input" 
                                 value={t.standard} 
+                                readOnly={t.isDefault !== false}
+                                style={t.isDefault !== false ? { backgroundColor: 'var(--bg-app)', cursor: 'not-allowed', opacity: 0.85 } : {}}
                                 onChange={e => {
                                   const updated = [...leftTestRows];
                                   updated[idx].standard = e.target.value;
@@ -3237,7 +3243,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                     </div>
                     <div className="form-input-container">
                       <span className="form-label">Product Name</span>
-                      <input type="text" className="field-input" value={rightForm.product} onChange={e => setRightForm({...rightForm, product: e.target.value})} />
+                      <input type="text" className="field-input" value={rightForm.product} readOnly style={{ backgroundColor: 'var(--bg-app)', cursor: 'not-allowed', opacity: 0.85 }} onChange={e => setRightForm({...rightForm, product: e.target.value})} />
                     </div>
                     {activeSubView === 'rm_testing' && (
                       <div className="form-input-container">
@@ -3460,6 +3466,8 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                                 type="text" 
                                 className="cell-input" 
                                 value={t.method} 
+                                readOnly={t.isDefault !== false}
+                                style={t.isDefault !== false ? { backgroundColor: 'var(--bg-app)', cursor: 'not-allowed', opacity: 0.85 } : {}}
                                 onChange={e => {
                                   const updated = [...rightTestRows];
                                   updated[idx].method = e.target.value;
@@ -3474,6 +3482,8 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                                 type="text" 
                                 className="cell-input" 
                                 value={t.standard} 
+                                readOnly={t.isDefault !== false}
+                                style={t.isDefault !== false ? { backgroundColor: 'var(--bg-app)', cursor: 'not-allowed', opacity: 0.85 } : {}}
                                 onChange={e => {
                                   const updated = [...rightTestRows];
                                   updated[idx].standard = e.target.value;

@@ -52,6 +52,26 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
   const [localInventory, setLocalInventory] = useState<any[]>([]);
   const autosaveTimer = useRef<number | null>(null);
 
+  const roleString = sessionStorage.getItem('user_roles') || '';
+  const roles = roleString.split(',').map(r => r.trim().toLowerCase()).filter(Boolean);
+  const isAdmin = roles.includes('admin') || roles.includes('all');
+  const [approving, setApproving] = useState(false);
+
+  const handleApproveFormulation = async () => {
+    if (!selectedBatch) return;
+    setApproving(true);
+    const [success, resDataOrMsg] = await MasterFormulationAPI.approveBatch(productName, selectedBatch);
+    setApproving(false);
+    if (success) {
+      onShowToast(`Master formulation ${selectedBatch} successfully approved by Admin and released to Production!`, 'success');
+      loadBatchDetails(selectedBatch);
+      loadMasterList();
+    } else {
+      const msg = typeof resDataOrMsg === 'string' ? resDataOrMsg : 'Failed to approve master formulation.';
+      onShowToast(msg, 'error');
+    }
+  };
+
   const getRecordValue = (key: string, defaultVal = '') => {
     if (!detailData) return defaultVal;
     const form = detailData.form || {};
@@ -81,7 +101,8 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
 
   const loadMasterList = async () => {
     setLoading(true);
-    const [success, data] = await MasterFormulationAPI.getBatchList(productName, fromDate, toDate, searchTerm);
+    const onlyApproved = viewMode === 'mf_production';
+    const [success, data] = await MasterFormulationAPI.getBatchList(productName, fromDate, toDate, searchTerm, onlyApproved);
     setLoading(false);
 
     if (success && typeof data !== 'string') {
@@ -587,28 +608,48 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
           </div>
         ) : (
           <div className="mf-batch-grid">
-            {displayedBatches.map((row) => (
-              <div 
-                key={row.batch_no} 
-                onClick={() => {
-                  if (viewMode === 'mf_production') {
-                    sessionStorage.setItem('bpbs_preloaded_batch', row.batch_no);
-                    if (onChangeView) {
-                      onChangeView('formulation_sheet');
+            {displayedBatches.map((row) => {
+              const isApproved = Boolean(row.is_approved || row.approval_status === 'approved');
+              return (
+                <div 
+                  key={row.batch_no} 
+                  onClick={() => {
+                    if (viewMode === 'mf_production') {
+                      sessionStorage.setItem('bpbs_preloaded_batch', row.batch_no);
+                      if (onChangeView) {
+                        onChangeView('formulation_sheet');
+                      }
+                    } else {
+                      loadBatchDetails(row.batch_no);
                     }
-                  } else {
-                    loadBatchDetails(row.batch_no);
-                  }
-                }}
-                className="mf-batch-card"
-              >
-                <span className="batch-label">BATCH NO</span>
-                <span className="batch-value">{row.batch_no}</span>
-                <span className="batch-view-chip">
-                  {viewMode === 'mf_production' ? 'Load Sheet' : 'View Details'}
-                </span>
-              </div>
-            ))}
+                  }}
+                  className="mf-batch-card"
+                  style={{
+                    borderLeft: isApproved ? '4px solid #10b981' : '4px solid #f59e0b',
+                    position: 'relative'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <span className="batch-label">BATCH NO</span>
+                    <span style={{
+                      fontSize: '0.7rem',
+                      fontWeight: 700,
+                      padding: '2px 8px',
+                      borderRadius: '12px',
+                      background: isApproved ? '#dcfce7' : '#fef9c3',
+                      color: isApproved ? '#166534' : '#854d0e',
+                      border: isApproved ? '1px solid #86efac' : '1px solid #fde047'
+                    }}>
+                      {isApproved ? '🟢 Approved' : '🟡 Pending Admin Approval'}
+                    </span>
+                  </div>
+                  <span className="batch-value">{row.batch_no}</span>
+                  <span className="batch-view-chip">
+                    {viewMode === 'mf_production' ? 'Load Sheet' : 'View Details'}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -635,6 +676,49 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
  
             {/* Scrollable Content Area */}
             <div style={{ flexGrow: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', backgroundColor: '#f8fafc' }}>
+              
+              {/* Approval Status Banner */}
+              {Boolean(detailData.is_approved || detailData.approval_status === 'approved') ? (
+                <div style={{ padding: '12px 20px', borderRadius: '10px', background: '#f0fdf4', border: '1px solid #bbf7d0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#15803d', fontWeight: 700, fontSize: '0.9rem' }}>
+                    <CheckCircle size={20} color="#16a34a" />
+                    <span>Formulation Approved by Admin {detailData.approved_by ? `(${detailData.approved_by})` : ''}</span>
+                  </div>
+                  {detailData.approved_at && (
+                    <span style={{ fontSize: '0.8rem', color: '#166534', fontWeight: 500 }}>Approved on {detailData.approved_at}</span>
+                  )}
+                </div>
+              ) : (
+                <div style={{ padding: '12px 20px', borderRadius: '10px', background: '#fffbeb', border: '1px solid #fde68a', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#b45309', fontWeight: 700, fontSize: '0.9rem' }}>
+                    <Info size={20} color="#d97706" />
+                    <span>Waiting for Admin Approval (Pending Release to Production)</span>
+                  </div>
+                  {isAdmin && (
+                    <button
+                      onClick={handleApproveFormulation}
+                      disabled={approving}
+                      style={{
+                        padding: '6px 16px',
+                        borderRadius: '6px',
+                        background: 'linear-gradient(135deg, #10b981, #059669)',
+                        color: '#ffffff',
+                        fontWeight: 700,
+                        fontSize: '0.85rem',
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)'
+                      }}
+                    >
+                      <CheckCircle size={16} />
+                      {approving ? 'Approving...' : 'Approve Formulation'}
+                    </button>
+                  )}
+                </div>
+              )}
               
               {/* Row: Formulation Details (Left Card) & Recalculator Inputs (Right Card) */}
               <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px', flexShrink: 0 }}>
@@ -888,6 +972,17 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                 <Download size={14} /> Download Excel
               </button>
  
+              {isAdmin && !Boolean(detailData.is_approved || detailData.approval_status === 'approved') && (
+                <button 
+                  onClick={handleApproveFormulation}
+                  disabled={approving}
+                  className="flet-btn flet-btn-green"
+                  style={{ padding: '0 20px', height: '38px', display: 'flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none', borderRadius: '8px', color: '#ffffff', fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 10px rgba(16, 185, 129, 0.2)', transition: 'all 0.2s' }}
+                >
+                  <CheckCircle size={14} /> {approving ? 'Approving...' : 'Approve Formulation'}
+                </button>
+              )}
+
               {viewMode === 'master_formulation' && (
                 isEditing ? (
                   <>

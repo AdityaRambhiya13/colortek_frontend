@@ -560,12 +560,13 @@ export const RMPastFormulationsAPI = {
 // MASTER FORMULATION SERVICES
 // ============================================================================
 export const MasterFormulationAPI = {
-  getBatchList: async (productName: string, fromDate?: string, toDate?: string, batchNoFilter?: string) => {
+  getBatchList: async (productName: string, fromDate?: string, toDate?: string, batchNoFilter?: string, onlyApproved?: boolean) => {
     return handleResponse<any>(apiClient.get(`/mf/list/${productName}`, {
       params: {
         ...(fromDate && { from_date: fromDate }),
         ...(toDate && { to_date: toDate }),
         ...(batchNoFilter && { batch_no_filter: batchNoFilter }),
+        ...(onlyApproved !== undefined && { only_approved: onlyApproved }),
       },
     }));
   },
@@ -579,6 +580,13 @@ export const MasterFormulationAPI = {
       product_name: productName,
       batch_no: batchNo,
       updated_data: updatedData,
+    }));
+  },
+
+  approveBatch: async (productName: string, batchNo: string) => {
+    return handleResponse<any>(apiClient.post('/mf/approve', {
+      product_name: productName,
+      batch_no: batchNo,
     }));
   },
 

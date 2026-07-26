@@ -69,7 +69,7 @@ export const App: React.FC = () => {
 
     const interval = setInterval(() => {
       if (Date.now() - lastActivity > IDLE_TIMEOUT) {
-        AuthAPI.logout().catch(() => {});
+        AuthAPI.logout();
         sessionStorage.clear();
         window.location.href = '/login';
       }

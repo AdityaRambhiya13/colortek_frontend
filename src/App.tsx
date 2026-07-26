@@ -14,7 +14,7 @@ const UserManagement = React.lazy(() => import('./pages/UserManagement').then(m 
 const DatabaseManagement = React.lazy(() => import('./pages/DatabaseManagement').then(m => ({ default: m.DatabaseManagement })));
 const ProductsMaster = React.lazy(() => import('./pages/ProductsMaster').then(m => ({ default: m.ProductsMaster })));
 import { AuthAPI } from './services/api';
-import { LogOut, Info as InfoIcon, Beaker, FileText, Lightbulb, ShieldAlert, Factory, Settings, Layers, ChevronRight } from 'lucide-react';
+import { LogOut, Info as InfoIcon } from 'lucide-react';
 
 
 export const App: React.FC = () => {
@@ -298,77 +298,8 @@ export const App: React.FC = () => {
         const activeProduct = sessionStorage.getItem('product_name') || '';
         const username = sessionStorage.getItem('username') || '';
 
-        const roleString = sessionStorage.getItem('user_roles') || '';
-        const roles = roleString.split(',').map(r => r.trim().toLowerCase()).filter(Boolean);
-
         // Format product name for display: convert product names to UPPERCASE
         const formatProduct = (name: string) => (name || '').replace(/_/g, ' ').toUpperCase();
-
-        // Build assigned sections list based on roles
-        const assignedSections = [];
-        if (roles.includes('cms') || roles.includes('lab') || roles.includes('all')) {
-          assignedSections.push({
-            id: 'lab_formulations',
-            title: 'Laboratory (CMS)',
-            desc: 'Lab Formulations & RM Testing',
-            icon: <Beaker size={24} style={{ color: '#6366f1' }} />,
-            color: '#6366f1',
-          });
-        }
-        if (roles.includes('mf') || roles.includes('all')) {
-          assignedSections.push({
-            id: 'master_formulation',
-            title: 'Master Formulation',
-            desc: 'Master Formulas & Standard Recipes',
-            icon: <FileText size={24} style={{ color: '#ec4899' }} />,
-            color: '#ec4899',
-          });
-        }
-        if (roles.includes('qc') || roles.includes('all')) {
-          assignedSections.push({
-            id: 'lab_report',
-            title: 'Quality Control (QC)',
-            desc: 'QC Reports, Batches & Testing',
-            icon: <Beaker size={24} style={{ color: '#10b981' }} />,
-            color: '#10b981',
-          });
-        }
-        if (roles.includes('production') || roles.includes('bpbs') || roles.includes('all')) {
-          assignedSections.push({
-            id: 'mf_production',
-            title: 'Production Department',
-            desc: 'Production Sheets, Dispatch & Stock',
-            icon: <Factory size={24} style={{ color: '#f59e0b' }} />,
-            color: '#f59e0b',
-          });
-        }
-        if (roles.includes('rd') || roles.includes('all')) {
-          assignedSections.push({
-            id: 'rd',
-            title: 'Research & Development',
-            desc: 'R&D Entries & Trials History',
-            icon: <Lightbulb size={24} style={{ color: '#8b5cf6' }} />,
-            color: '#8b5cf6',
-          });
-        }
-        if (roles.includes('complaints') || roles.includes('lab') || roles.includes('all')) {
-          assignedSections.push({
-            id: roles.includes('complaints') ? 'complaints' : 'complaints_lab',
-            title: 'Complaints Department',
-            desc: 'Complaint Registry & Lab Corrections',
-            icon: <ShieldAlert size={24} style={{ color: '#ef4444' }} />,
-            color: '#ef4444',
-          });
-        }
-        if (roles.includes('admin') || roles.includes('all')) {
-          assignedSections.push({
-            id: 'user_management',
-            title: 'System Administration',
-            desc: 'User Roles, Security & DB Admin',
-            icon: <Settings size={24} style={{ color: '#3b82f6' }} />,
-            color: '#3b82f6',
-          });
-        }
 
         return (
           <div className="animated-fade" style={{
@@ -478,89 +409,7 @@ export const App: React.FC = () => {
               </div>
             )}
 
-            {/* Assigned Sections Panel for Active Product Workspace */}
-            <div style={{ width: '100%', maxWidth: '1320px', padding: '0 12px', boxSizing: 'border-box' }}>
-              <p style={{
-                fontSize: '0.85rem',
-                fontWeight: 700,
-                letterSpacing: '0.12em',
-                textTransform: 'uppercase',
-                color: 'var(--text-secondary)',
-                marginBottom: '16px',
-                textAlign: 'left'
-              }}>
-                Assigned Sections for {formatProduct(activeProduct)} ({assignedSections.length})
-              </p>
-              {assignedSections.length > 0 ? (
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                  gap: '16px',
-                  width: '100%'
-                }}>
-                  {assignedSections.map((sec) => (
-                    <div
-                      key={sec.id}
-                      onClick={() => handleViewChange(sec.id)}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '16px',
-                        padding: '20px',
-                        borderRadius: '12px',
-                        background: 'var(--card-bg, #ffffff)',
-                        border: '1px solid var(--border-color, #e2e8f0)',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        textAlign: 'left'
-                      }}
-                      onMouseEnter={e => {
-                        (e.currentTarget as HTMLDivElement).style.borderColor = sec.color;
-                        (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-2px)';
-                        (e.currentTarget as HTMLDivElement).style.boxShadow = '0 6px 12px rgba(0,0,0,0.08)';
-                      }}
-                      onMouseLeave={e => {
-                        (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border-color, #e2e8f0)';
-                        (e.currentTarget as HTMLDivElement).style.transform = 'none';
-                        (e.currentTarget as HTMLDivElement).style.boxShadow = '0 2px 4px rgba(0,0,0,0.04)';
-                      }}
-                    >
-                      <div style={{
-                        padding: '12px',
-                        borderRadius: '10px',
-                        background: `${sec.color}15`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}>
-                        {sec.icon}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <h3 style={{ margin: '0 0 4px 0', fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                          {sec.title}
-                        </h3>
-                        <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                          {sec.desc}
-                        </p>
-                      </div>
-                      <ChevronRight size={18} style={{ color: 'var(--text-secondary)' }} />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div style={{
-                  padding: '24px',
-                  borderRadius: '12px',
-                  background: 'var(--card-bg, #f8fafc)',
-                  border: '1px dashed #cbd5e1',
-                  color: 'var(--text-secondary)',
-                  fontSize: '0.875rem'
-                }}>
-                  No specific section permissions assigned for workspace <strong>{formatProduct(activeProduct)}</strong>. Contact system admin if access is required.
-                </div>
-              )}
-            </div>
+
           </div>
         );
       }

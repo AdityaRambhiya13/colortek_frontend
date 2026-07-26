@@ -183,12 +183,14 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
         filtration: currentParams.filtration
       };
       
-      const [success] = await MasterFormulationAPI.updateBatch(productName, selectedBatch, updatedPayload);
+      const [success, resDataOrMsg] = await MasterFormulationAPI.updateBatch(productName, selectedBatch, updatedPayload);
       if (success) {
         setAutosaveStatus('✓ Recipe changes saved automatically');
         setTimeout(() => setAutosaveStatus(''), 3000);
       } else {
-        setAutosaveStatus('✗ Failed to autosave changes');
+        const errorMsg = typeof resDataOrMsg === 'string' ? resDataOrMsg : 'Failed to autosave changes';
+        console.error('Master formulation autosave error:', errorMsg);
+        setAutosaveStatus(`✗ ${errorMsg}`);
       }
     }, 1500);
   };
@@ -269,7 +271,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
     };
 
     setLoading(true);
-    const [success] = await MasterFormulationAPI.updateBatch(productName, selectedBatch, updatedPayload);
+    const [success, resDataOrMsg] = await MasterFormulationAPI.updateBatch(productName, selectedBatch, updatedPayload);
     setLoading(false);
 
     if (success) {
@@ -277,7 +279,8 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
       setIsEditing(false);
       loadBatchDetails(selectedBatch);
     } else {
-      onShowToast('Failed to update formulation parameters.', 'error');
+      const errorMsg = typeof resDataOrMsg === 'string' ? resDataOrMsg : 'Failed to update formulation parameters.';
+      onShowToast(errorMsg, 'error');
     }
   };
 

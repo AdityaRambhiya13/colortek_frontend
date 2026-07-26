@@ -634,22 +634,30 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                     position: 'relative'
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                    <span className="batch-label">BATCH NO</span>
+                  {/* Top Row: Label & Status Chip */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '6px' }}>
+                    <span className="batch-label" style={{ whiteSpace: 'nowrap' }}>BATCH NO</span>
                     <span style={{
-                      fontSize: '0.7rem',
+                      fontSize: '0.68rem',
                       fontWeight: 700,
                       padding: '2px 8px',
                       borderRadius: '12px',
+                      whiteSpace: 'nowrap',
                       background: isApproved ? '#dcfce7' : '#fef9c3',
                       color: isApproved ? '#166534' : '#854d0e',
                       border: isApproved ? '1px solid #86efac' : '1px solid #fde047'
                     }}>
-                      {isApproved ? '🟢 Approved' : '🟡 Pending Admin Approval'}
+                      {isApproved ? '🟢 Approved' : '🟡 Pending Approval'}
                     </span>
                   </div>
-                  <span className="batch-value">{row.batch_no}</span>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+
+                  {/* Middle Row: Batch Number */}
+                  <div className="batch-value" style={{ margin: '8px 0', fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>
+                    {row.batch_no}
+                  </div>
+
+                  {/* Bottom Row: View Chip & Approve Button */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '6px', marginTop: 'auto', paddingTop: '6px', borderTop: '1px solid #f1f5f9' }}>
                     <span className="batch-view-chip">
                       {viewMode === 'mf_production' ? 'Load Sheet' : 'View Details'}
                     </span>
@@ -658,21 +666,22 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                         onClick={(e) => handleApproveFormulation(row.batch_no, e)}
                         disabled={approving}
                         style={{
-                          padding: '4px 12px',
+                          padding: '4px 10px',
                           borderRadius: '6px',
                           background: 'linear-gradient(135deg, #10b981, #059669)',
                           color: '#ffffff',
                           fontWeight: 700,
-                          fontSize: '0.78rem',
+                          fontSize: '0.75rem',
                           border: 'none',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
                           gap: '4px',
-                          boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)'
+                          boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)',
+                          whiteSpace: 'nowrap'
                         }}
                       >
-                        <CheckCircle size={14} />
+                        <CheckCircle size={13} />
                         {approving ? '...' : 'Approve'}
                       </button>
                     )}
@@ -1054,22 +1063,23 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
 
         .mf-batch-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-          gap: 12px;
+          grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+          gap: 16px;
           width: 100%;
           padding: 8px 4px;
         }
 
         .mf-batch-card {
-          height: 90px;
+          min-height: 115px;
+          height: auto;
           background: #ffffff;
           border: 1px solid #cbd5e1;
-          border-radius: 8px;
+          border-radius: 10px;
           display: flex;
           flex-direction: column;
-          align-items: center;
+          align-items: stretch;
           justify-content: space-between;
-          padding: 10px;
+          padding: 12px 14px;
           cursor: pointer;
           transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }

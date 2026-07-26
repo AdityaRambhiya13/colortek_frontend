@@ -966,12 +966,13 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
   // 3. Side-panel filters query
   const handleFilterMatches = async (side: 'left' | 'right', filterType: string) => {
     const isLab = activeSubView === 'lab_formulations' || activeSubView === 'past_lab_formulations';
-    if (!isLab) return;
+    const isRM = activeSubView === 'rm_testing' || activeSubView === 'past_rm_testing';
+    if (!isLab && !isRM) return;
 
     const rows = side === 'left' ? leftRows : rightRows;
     const materials = rows
-      .map(r => [r.material, parseFloat(r.qty)] as [string, number])
-      .filter(m => m[0] !== '' && !isNaN(m[1]));
+      .map(r => [r.material, String(parseFloat(r.qty))])
+      .filter(m => m[0] !== '' && m[1] !== 'NaN');
 
     if (materials.length === 0) {
       onShowToast('No formula found. Populate sheets first.', 'warning');
@@ -979,7 +980,12 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     }
 
     setLoading(true);
-    const [success, data] = await LabFormulationsAPI.filterMatches(productName, filterType, materials);
+    let success, data;
+    if (isLab) {
+      [success, data] = await LabFormulationsAPI.filterMatches(productName, filterType, materials);
+    } else {
+      [success, data] = await RMFormulationsAPI.filterMatches(productName, filterType, materials);
+    }
     setLoading(false);
 
     const setDuplicateMatches = side === 'left' ? setDuplicateMatchesLeft : setDuplicateMatchesRight;

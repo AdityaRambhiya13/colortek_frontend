@@ -526,6 +526,14 @@ export const RMFormulationsAPI = {
     return handleResponse<any>(apiClient.get(`/rm_formulations/batch_detail/${batchNo}`, {
       params: { product_name: productName },
     }));
+  },
+
+  filterMatches: async (productName: string, filterType: string, materials: any[]) => {
+    return handleResponse<any>(apiClient.post('/rm_formulations/filter_matches', {
+      filter_type: filterType,
+      materials: materials,
+      product_name: productName
+    }));
   }
 };
 

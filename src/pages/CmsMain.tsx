@@ -1086,7 +1086,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       { label: 'Ref No', value: form.refNo },
       { label: 'Batch No', value: form.batchNo },
       { label: 'Product Name', value: form.product },
-      { label: 'RM Lot', value: form.rmLot },
+      { label: 'RM Lot No', value: form.rmLot },
       { label: 'RM Name', value: form.rmName },
       { label: 'Test Date', value: form.testDate },
       { label: 'Report Date', value: form.reportDate },
@@ -2643,6 +2643,36 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
         '--text-secondary': '#64748b',
       } as React.CSSProperties;
 
+  const handleEnterKeyNav = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter') {
+      const target = e.target as HTMLElement;
+      if (target.tagName.toLowerCase() === 'textarea') return;
+      const form = e.currentTarget;
+      const elements = Array.from(form.querySelectorAll('input:not([disabled]):not([readOnly]), select:not([disabled]):not([readOnly]), button:not([disabled])')) as HTMLElement[];
+      const index = elements.indexOf(target);
+      if (index > -1 && index < elements.length - 1) {
+        e.preventDefault();
+        elements[index + 1].focus();
+      }
+    }
+  };
+
+  const handleCopyLeftToRight = () => {
+    setRightForm({ ...leftForm });
+    setRightRows(leftRows.map(row => ({ ...row })));
+    setRightTestRows(leftTestRows.map(row => ({ ...row })));
+    setRightRemarks(leftRemarks);
+    onShowToast("Formulation copied from Left to Right panel", "success");
+  };
+
+  const handleCopyRightToLeft = () => {
+    setLeftForm({ ...rightForm });
+    setLeftRows(rightRows.map(row => ({ ...row })));
+    setLeftTestRows(rightTestRows.map(row => ({ ...row })));
+    setLeftRemarks(rightRemarks);
+    onShowToast("Formulation copied from Right to Left panel", "success");
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100%', ...themeStyles, overflow: 'hidden' }}>
       
@@ -2653,8 +2683,12 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
         <>
           {/* Fixed Flet Style Header Toolbar */}
           <div className="flet-fixed-toolbar">
-            <div className="flet-toolbar-title">
-              {activeSubView === 'lab_formulations' ? 'LAB FORMULATIONS' : 'RM Laboratory Testing Scope'}
+            <div className="flet-toolbar-title" style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
+              <div>{activeSubView === 'lab_formulations' ? 'LAB FORMULATIONS' : 'RM Laboratory Testing Scope'}</div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button onClick={handleCopyLeftToRight} className="flet-btn flet-btn-blue" style={{ height: '28px', padding: '0 12px', fontSize: '12px' }}>Copy Left to Right ➡️</button>
+                <button onClick={handleCopyRightToLeft} className="flet-btn flet-btn-blue" style={{ height: '28px', padding: '0 12px', fontSize: '12px' }}>⬅️ Copy Right to Left</button>
+              </div>
             </div>
 
             {/* Cross table alert */}
@@ -2778,7 +2812,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
             </div>
           </div>
 
-          <div className="dual-pane-layout" style={{ height: 'calc(100vh - 75px)', overflow: 'hidden' }}>
+          <div className="dual-pane-layout" onKeyDown={handleEnterKeyNav} style={{ height: 'calc(100vh - 75px)', overflow: 'hidden' }}>
             
             {/* ================================================================
                 LEFT PANEL SHEET
@@ -2930,16 +2964,16 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                       </>
                     )}
                     <div className="form-input-container">
+                      <span className="form-label">Formula Date</span>
+                      <input type="text" className="field-input" value={leftForm.formulaDate} onChange={e => setLeftForm({...leftForm, formulaDate: e.target.value})} />
+                    </div>
+                    <div className="form-input-container">
                       <span className="form-label">Test Date</span>
                       <input type="text" className="field-input" value={leftForm.testDate} onChange={e => setLeftForm({...leftForm, testDate: e.target.value})} />
                     </div>
                     <div className="form-input-container">
                       <span className="form-label">Report Date</span>
                       <input type="text" className="field-input" value={leftForm.reportDate} onChange={e => setLeftForm({...leftForm, reportDate: e.target.value})} />
-                    </div>
-                    <div className="form-input-container">
-                      <span className="form-label">Formula Date</span>
-                      <input type="text" className="field-input" value={leftForm.formulaDate} onChange={e => setLeftForm({...leftForm, formulaDate: e.target.value})} />
                     </div>
                     <div style={{ gridColumn: activeSubView === 'rm_testing' ? 'span 1' : 'span 2' }}></div>
                   </div>
@@ -3276,16 +3310,16 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                       </>
                     )}
                     <div className="form-input-container">
+                      <span className="form-label">Formula Date</span>
+                      <input type="text" className="field-input" value={rightForm.formulaDate} onChange={e => setRightForm({...rightForm, formulaDate: e.target.value})} />
+                    </div>
+                    <div className="form-input-container">
                       <span className="form-label">Test Date</span>
                       <input type="text" className="field-input" value={rightForm.testDate} onChange={e => setRightForm({...rightForm, testDate: e.target.value})} />
                     </div>
                     <div className="form-input-container">
                       <span className="form-label">Report Date</span>
                       <input type="text" className="field-input" value={rightForm.reportDate} onChange={e => setRightForm({...rightForm, reportDate: e.target.value})} />
-                    </div>
-                    <div className="form-input-container">
-                      <span className="form-label">Formula Date</span>
-                      <input type="text" className="field-input" value={rightForm.formulaDate} onChange={e => setRightForm({...rightForm, formulaDate: e.target.value})} />
                     </div>
                     <div style={{ gridColumn: activeSubView === 'rm_testing' ? 'span 1' : 'span 2' }}></div>
                   </div>
@@ -3785,13 +3819,13 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                               </>
                             )}
                             <tr>
+                              <td style={{ fontWeight: 'bold' }}>Formula Date</td><td>{formulaDate}</td>
+                            </tr>
+                            <tr>
                               <td style={{ fontWeight: 'bold' }}>Test Date</td><td>{testDate}</td>
                             </tr>
                             <tr>
                               <td style={{ fontWeight: 'bold' }}>Report Date</td><td>{reportDate}</td>
-                            </tr>
-                            <tr>
-                              <td style={{ fontWeight: 'bold' }}>Formula Date</td><td>{formulaDate}</td>
                             </tr>
                             {!isLabCard && (
                               <>

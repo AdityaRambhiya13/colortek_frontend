@@ -43,6 +43,16 @@ export const App: React.FC = () => {
     };
   }, []);
 
+  // Keep-alive ping to prevent Render free-tier sleep (every 10 mins)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      AuthAPI.pingServer();
+    }, 10 * 60 * 1000);
+    // Initial ping
+    AuthAPI.pingServer();
+    return () => clearInterval(interval);
+  }, []);
+
   // Initialize theme and verify active cached session
   useEffect(() => {
     // 1. Theme Configuration (Forced Light Mode)

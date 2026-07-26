@@ -166,6 +166,12 @@ const handleResponse = async <T>(promise: Promise<any>): Promise<[boolean, T | s
     return [true, response.data];
   } catch (error: any) {
     console.error('API Request Failed:', error);
+    
+    // Provide a better error message for Render cold-starts / CORS issues
+    if (error.message === 'Network Error' && !error.response) {
+      return [false, "Network Error: The backend server might be waking up from sleep or is currently unreachable. Please wait 30-60 seconds and try again."];
+    }
+    
     const errorMessage =
       error.response?.data?.detail ||
       error.response?.data?.message ||
@@ -179,6 +185,13 @@ const handleResponse = async <T>(promise: Promise<any>): Promise<[boolean, T | s
 // AUTH SERVICES
 // ============================================================================
 export const AuthAPI = {
+  pingServer: async () => {
+    try {
+      await fetch(`${API_BASE_URL}/health`);
+    } catch {
+      // Ignore background ping errors
+    }
+  },
   getUserProducts: async (username: string, password: string) => {
     const formData = new FormData();
     formData.append('username', username);

@@ -2647,6 +2647,32 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     if (e.key === 'Enter') {
       const target = e.target as HTMLElement;
       if (target.tagName.toLowerCase() === 'textarea') return;
+
+      const cell = target.closest('td');
+      const row = target.closest('tr');
+      const table = target.closest('table');
+
+      if (table && cell && row) {
+        // Grid navigation: move down one row, same column
+        e.preventDefault();
+        const colIndex = Array.from(row.children).indexOf(cell);
+        const tbody = target.closest('tbody');
+        if (tbody) {
+          const rowIndex = Array.from(tbody.querySelectorAll('tr')).indexOf(row);
+          if (rowIndex > -1 && colIndex > -1) {
+            const nextRow = tbody.querySelectorAll('tr')[rowIndex + 1];
+            if (nextRow) {
+              const nextCell = nextRow.children[colIndex];
+              if (nextCell) {
+                const nextInput = nextCell.querySelector('input:not([disabled]):not([readOnly]), select:not([disabled]):not([readOnly])') as HTMLElement;
+                if (nextInput) nextInput.focus();
+              }
+            }
+          }
+        }
+        return;
+      }
+
       const form = e.currentTarget;
       const elements = Array.from(form.querySelectorAll('input:not([disabled]):not([readOnly]), select:not([disabled]):not([readOnly]), button:not([disabled])')) as HTMLElement[];
       const index = elements.indexOf(target);
@@ -2683,12 +2709,8 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
         <>
           {/* Fixed Flet Style Header Toolbar */}
           <div className="flet-fixed-toolbar">
-            <div className="flet-toolbar-title" style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-              <div>{activeSubView === 'lab_formulations' ? 'LAB FORMULATIONS' : 'RM Laboratory Testing Scope'}</div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={handleCopyLeftToRight} className="flet-btn flet-btn-blue" style={{ height: '28px', padding: '0 12px', fontSize: '12px' }}>Copy Left to Right ➡️</button>
-                <button onClick={handleCopyRightToLeft} className="flet-btn flet-btn-blue" style={{ height: '28px', padding: '0 12px', fontSize: '12px' }}>⬅️ Copy Right to Left</button>
-              </div>
+            <div className="flet-toolbar-title">
+              {activeSubView === 'lab_formulations' ? 'LAB FORMULATIONS' : 'RM Laboratory Testing Scope'}
             </div>
 
             {/* Cross table alert */}
@@ -2928,6 +2950,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #cbd5e1', paddingBottom: '6px', marginBottom: '8px', flexShrink: 0 }}>
                       <span style={{ fontWeight: 'bold', fontSize: '13px', color: 'var(--primary-color)' }}>MATERIAL DETAILS (LEFT)</span>
                       <div style={{ display: 'flex', gap: '6px' }}>
+                        <button onClick={handleCopyLeftToRight} className="flet-btn flet-btn-blue" disabled={loading}>Copy ➡️</button>
                         <button onClick={() => handleSaveFull('left')} className="flet-btn flet-btn-blue" disabled={loading}>Save</button>
                         <button onClick={() => handleClearAllFields('left')} className="flet-btn flet-btn-orange" disabled={loading}>Clear</button>
                         <button onClick={() => handleAddRow('left')} className="flet-btn flet-btn-blue" disabled={loading}>Add Row</button>
@@ -3107,6 +3130,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                       <button onClick={() => handleAddRow('left')} className="flet-btn flet-btn-blue" disabled={loading}>Add Row</button>
                       <button onClick={() => handleDeleteSelectedRows('left')} className="flet-btn flet-btn-red" disabled={loading}>Delete Selected</button>
                       <button onClick={() => handleClearAllFields('left')} className="flet-btn flet-btn-orange" disabled={loading}>Clear All</button>
+                      <button onClick={handleCopyLeftToRight} className="flet-btn flet-btn-blue" disabled={loading}>Copy ➡️</button>
                       <button onClick={() => handleSaveFull('left')} className="flet-btn flet-btn-blue" disabled={loading}>Save</button>
                       <button onClick={() => handleSaveMaster('left')} className="flet-btn flet-btn-green" disabled={loading}>Save Master</button>
                       <button onClick={() => exportToExcel('left')} className="flet-btn flet-btn-green">Export Excel</button>
@@ -3274,6 +3298,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #cbd5e1', paddingBottom: '6px', marginBottom: '8px', flexShrink: 0 }}>
                       <span style={{ fontWeight: 'bold', fontSize: '13px', color: 'var(--primary-color)' }}>MATERIAL DETAILS (RIGHT)</span>
                       <div style={{ display: 'flex', gap: '6px' }}>
+                        <button onClick={handleCopyRightToLeft} className="flet-btn flet-btn-blue" disabled={loading}>⬅️ Copy</button>
                         <button onClick={() => handleSaveFull('right')} className="flet-btn flet-btn-blue" disabled={loading}>Save</button>
                         <button onClick={() => handleClearAllFields('right')} className="flet-btn flet-btn-orange" disabled={loading}>Clear</button>
                         <button onClick={() => handleAddRow('right')} className="flet-btn flet-btn-blue" disabled={loading}>Add Row</button>
@@ -3453,6 +3478,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                       <button onClick={() => handleAddRow('right')} className="flet-btn flet-btn-blue" disabled={loading}>Add Row</button>
                       <button onClick={() => handleDeleteSelectedRows('right')} className="flet-btn flet-btn-red" disabled={loading}>Delete Selected</button>
                       <button onClick={() => handleClearAllFields('right')} className="flet-btn flet-btn-orange" disabled={loading}>Clear All</button>
+                      <button onClick={handleCopyRightToLeft} className="flet-btn flet-btn-blue" disabled={loading}>⬅️ Copy</button>
                        {isComplaintMode ? (
                         <button onClick={handleSaveAsNewTrial} className="flet-btn flet-btn-blue" disabled={loading}>Save as New Trial</button>
                       ) : (

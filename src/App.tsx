@@ -367,7 +367,7 @@ export const App: React.FC = () => {
                         onClick={() => handleProductSwitch(product)}
                         title={formatProduct(product)}
                         style={{
-                          padding: '12px 10px',
+                          padding: '16px 12px',
                           borderRadius: '999px',
                           border: isActive
                             ? '2px solid var(--primary-color)'
@@ -376,8 +376,8 @@ export const App: React.FC = () => {
                             ? 'var(--primary-light)'
                             : 'var(--card-bg, #f8fafc)',
                           color: isActive ? 'var(--primary-color)' : 'var(--text-secondary)',
-                          fontWeight: isActive ? 800 : 600,
-                          fontSize: '0.8rem',
+                          fontWeight: isActive ? 800 : 700,
+                          fontSize: '0.85rem',
                           cursor: 'pointer',
                           boxShadow: isActive ? 'var(--shadow-glow)' : '0 1px 3px rgba(0,0,0,0.05)',
                           whiteSpace: 'nowrap',

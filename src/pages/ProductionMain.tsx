@@ -1438,6 +1438,11 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
 
     if (lmfSuccess && lmfData && typeof lmfData !== 'string') {
       const l: any = lmfData;
+      const isApproved = Boolean(l.is_approved || l.approval_status === 'approved');
+      if (!isApproved) {
+        onShowToast(`Batch '${targetBatchNo}' is waiting for Admin approval and cannot be loaded into Production yet.`, 'error');
+        return;
+      }
       const inventory = l.inventory || [];
       const form = l.form || {};
       

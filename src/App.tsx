@@ -53,6 +53,37 @@ export const App: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Idle timeout logic (30 minutes of no mouse/keyboard activity = logout)
+  useEffect(() => {
+    let lastActivity = Date.now();
+    const IDLE_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+
+    const updateActivity = () => {
+      lastActivity = Date.now();
+    };
+
+    window.addEventListener('mousemove', updateActivity);
+    window.addEventListener('keydown', updateActivity);
+    window.addEventListener('click', updateActivity);
+    window.addEventListener('scroll', updateActivity);
+
+    const interval = setInterval(() => {
+      if (Date.now() - lastActivity > IDLE_TIMEOUT) {
+        AuthAPI.logout().catch(() => {});
+        sessionStorage.clear();
+        window.location.href = '/login';
+      }
+    }, 60 * 1000); // Check every minute
+
+    return () => {
+      window.removeEventListener('mousemove', updateActivity);
+      window.removeEventListener('keydown', updateActivity);
+      window.removeEventListener('click', updateActivity);
+      window.removeEventListener('scroll', updateActivity);
+      clearInterval(interval);
+    };
+  }, []);
+
   // Initialize theme and verify active cached session
   useEffect(() => {
     // 1. Theme Configuration (Forced Light Mode)

@@ -19,6 +19,7 @@ interface FormFields {
   batchNo: string;
   product: string;
   rmLot: string;
+  rmName: string;
   testDate: string;
   reportDate: string;
   formulaDate: string;
@@ -115,8 +116,8 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
   // STATE DEFINITIONS FOR THE DUAL FORMULATION PANELS
   // --------------------------------------------------------------------------
   const activeProductFormatted = (sessionStorage.getItem('product_name') || '').replace(/_/g, ' ').toUpperCase();
-  const [leftForm, setLeftForm] = useState<FormFields>({ refNo: '', batchNo: '', product: activeProductFormatted, rmLot: '', testDate: '', reportDate: '', formulaDate: '' });
-  const [rightForm, setRightForm] = useState<FormFields>({ refNo: '', batchNo: '', product: activeProductFormatted, rmLot: '', testDate: '', reportDate: '', formulaDate: '' });
+  const [leftForm, setLeftForm] = useState<FormFields>({ refNo: '', batchNo: '', product: activeProductFormatted, rmLot: '', rmName: '', testDate: '', reportDate: '', formulaDate: '' });
+  const [rightForm, setRightForm] = useState<FormFields>({ refNo: '', batchNo: '', product: activeProductFormatted, rmLot: '', rmName: '', testDate: '', reportDate: '', formulaDate: '' });
   
   const [leftRemarks, setLeftRemarks] = useState('');
   const [rightRemarks, setRightRemarks] = useState('');
@@ -221,7 +222,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     setBpbsData(null);
     setImageReferences([]);
     setComplaintOriginInfo(null);
-    setLeftForm({ refNo: '', batchNo: '', product: (sessionStorage.getItem('product_name') || '').replace(/_/g, ' ').toUpperCase(), rmLot: '', testDate: '', reportDate: '', formulaDate: '' });
+    setLeftForm({ refNo: '', batchNo: '', product: (sessionStorage.getItem('product_name') || '').replace(/_/g, ' ').toUpperCase(), rmLot: '', rmName: '', testDate: '', reportDate: '', formulaDate: '' });
     setLeftRows(initializeRows());
     setLeftTestRows(initializeTestRows());
     setLeftRemarks('');
@@ -308,7 +309,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
               refNo: '',
               batchNo: formFields['BATCH NO'] || '',
               product: formFields['PRODUCT NAME'] || '',
-              rmLot: '',
+              rmLot: '', rmName: '',
               testDate: '',
               reportDate: '',
               formulaDate: ''
@@ -426,14 +427,14 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
     // Reset spreadsheet states to prevent data bleeding between tabs (Lab Formulations vs RM Testing)
     const activeProd = (sessionStorage.getItem('product_name') || '').replace(/_/g, ' ').toUpperCase();
-    setLeftForm({ refNo: '', batchNo: '', product: activeProd, rmLot: '', testDate: '', reportDate: '', formulaDate: '' });
+    setLeftForm({ refNo: '', batchNo: '', product: activeProd, rmLot: '', rmName: '', testDate: '', reportDate: '', formulaDate: '' });
     setLeftRows(initializeRows());
     setLeftTestRows(initializeTestRows());
     setLeftRemarks('');
     setLeftStatus('Select');
     setLeftApprovedBy('');
 
-    setRightForm({ refNo: '', batchNo: '', product: activeProd, rmLot: '', testDate: '', reportDate: '', formulaDate: '' });
+    setRightForm({ refNo: '', batchNo: '', product: activeProd, rmLot: '', rmName: '', testDate: '', reportDate: '', formulaDate: '' });
     setRightRows(initializeRows());
     setRightTestRows(initializeTestRows());
     setRightRemarks('');
@@ -856,7 +857,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     const setApprovedBy = side === 'left' ? setLeftApprovedBy : setRightApprovedBy;
     const activeProdFormatted = (sessionStorage.getItem('product_name') || '').replace(/_/g, ' ').toUpperCase();
 
-    setForm({ refNo: '', batchNo: '', product: activeProdFormatted, rmLot: '', testDate: '', reportDate: '', formulaDate: '' });
+    setForm({ refNo: '', batchNo: '', product: activeProdFormatted, rmLot: '', rmName: '', testDate: '', reportDate: '', formulaDate: '' });
     setRows(initializeRows());
     setTestRows(initializeTestRows());
     setRemarks('');
@@ -1043,6 +1044,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       'BATCH NO': form.batchNo,
       'PRODUCT NAME': form.product,
       'RM LOT NO': form.rmLot,
+      'RM NAME': form.rmName,
       'TEST DATE': form.testDate,
       'REPORT DATE': form.reportDate,
       'FORMULA DATE': form.formulaDate,
@@ -1085,6 +1087,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       { label: 'Batch No', value: form.batchNo },
       { label: 'Product Name', value: form.product },
       { label: 'RM Lot', value: form.rmLot },
+      { label: 'RM Name', value: form.rmName },
       { label: 'Test Date', value: form.testDate },
       { label: 'Report Date', value: form.reportDate },
       { label: 'Formula Date', value: form.formulaDate },
@@ -1171,23 +1174,24 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       const fd = data.form_data || [];
       if (isLab) {
         setForm({
-          refNo: data.ref_no || fd[0] || '',
-          batchNo: data.batch_no || fd[1] || '',
-          product: fd[2] || '',
-          rmLot: '',
-          testDate: fd[3] || '',
-          reportDate: fd[4] || '',
-          formulaDate: fd[5] || '',
+          refNo: fd[0] || '',
+          batchNo: batchNo,
+          product: activeSubView.includes('lab') ? (fd[2] || '') : productName,
+          rmLot: '', rmName: '',
+          testDate: activeSubView.includes('rm') ? (fd[5] || '') : (fd[3] || ''),
+          reportDate: activeSubView.includes('rm') ? (fd[6] || '') : (fd[4] || ''),
+          formulaDate: activeSubView.includes('rm') ? (fd[7] || '') : (fd[5] || ''),
         });
       } else {
         setForm({
           refNo: data.ref_no || fd[0] || '',
           batchNo: data.batch_no || fd[1] || '',
           product: fd[2] || '',
-          rmLot: fd[3] || '',
-          testDate: fd[4] || '',
-          reportDate: fd[5] || '',
-          formulaDate: fd[6] || '',
+          rmLot: activeSubView.includes('rm') ? (fd[3] || '') : '',
+          rmName: activeSubView.includes('rm') ? (fd[4] || '') : '',
+          testDate: activeSubView.includes('rm') ? (fd[5] || '') : (fd[4] || ''),
+          reportDate: activeSubView.includes('rm') ? (fd[6] || '') : (fd[5] || ''),
+          formulaDate: activeSubView.includes('rm') ? (fd[7] || '') : (fd[6] || ''),
         });
       }
 
@@ -2914,10 +2918,16 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                       <input type="text" className="field-input" value={leftForm.product} readOnly style={{ backgroundColor: 'var(--bg-app)', cursor: 'not-allowed', opacity: 0.85 }} onChange={e => setLeftForm({...leftForm, product: e.target.value})} />
                     </div>
                     {activeSubView === 'rm_testing' && (
-                      <div className="form-input-container">
-                        <span className="form-label">RM Lot No</span>
-                        <input type="text" className="field-input" value={leftForm.rmLot} onChange={e => setLeftForm({...leftForm, rmLot: e.target.value})} />
-                      </div>
+                      <>
+                        <div className="form-input-container">
+                          <span className="form-label">RM Name</span>
+                          <input type="text" className="field-input" value={leftForm.rmName} onChange={e => setLeftForm({...leftForm, rmName: e.target.value})} />
+                        </div>
+                        <div className="form-input-container">
+                          <span className="form-label">RM Lot No</span>
+                          <input type="text" className="field-input" value={leftForm.rmLot} onChange={e => setLeftForm({...leftForm, rmLot: e.target.value})} />
+                        </div>
+                      </>
                     )}
                     <div className="form-input-container">
                       <span className="form-label">Test Date</span>
@@ -3254,10 +3264,16 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                       <input type="text" className="field-input" value={rightForm.product} readOnly style={{ backgroundColor: 'var(--bg-app)', cursor: 'not-allowed', opacity: 0.85 }} onChange={e => setRightForm({...rightForm, product: e.target.value})} />
                     </div>
                     {activeSubView === 'rm_testing' && (
-                      <div className="form-input-container">
-                        <span className="form-label">RM Lot No</span>
-                        <input type="text" className="field-input" value={rightForm.rmLot} onChange={e => setRightForm({...rightForm, rmLot: e.target.value})} />
-                      </div>
+                      <>
+                        <div className="form-input-container">
+                          <span className="form-label">RM Name</span>
+                          <input type="text" className="field-input" value={rightForm.rmName} onChange={e => setRightForm({...rightForm, rmName: e.target.value})} />
+                        </div>
+                        <div className="form-input-container">
+                          <span className="form-label">RM Lot No</span>
+                          <input type="text" className="field-input" value={rightForm.rmLot} onChange={e => setRightForm({...rightForm, rmLot: e.target.value})} />
+                        </div>
+                      </>
                     )}
                     <div className="form-input-container">
                       <span className="form-label">Test Date</span>
@@ -3713,6 +3729,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                   const batchNo = b.batch_no || '-';
                   const productNameValue = b.product_name || (Array.isArray(b.form_data) ? b.form_data[2] : b.product || '-');
                   const rmLotNoValue = b.rm_name_lot_no || (Array.isArray(b.form_data) ? b.form_data[3] : b.rm_lot || '-');
+                  const rmNameValue = b.rm_name || (Array.isArray(b.form_data) ? b.form_data[4] : b.rm_name || '-');
                   const testDate = b.test_date || (Array.isArray(b.form_data) ? b.form_data[4] : '-');
                   const reportDate = b.report_date || (Array.isArray(b.form_data) ? b.form_data[5] : '-');
                   const formulaDate = b.formula_date || (Array.isArray(b.form_data) ? b.form_data[6] : '-');
@@ -3758,9 +3775,14 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                               <td style={{ fontWeight: 'bold', width: '35%' }}>Product</td><td>{productNameValue}</td>
                             </tr>
                             {!isLabCard && (
-                              <tr>
-                                <td style={{ fontWeight: 'bold' }}>RM Lot No</td><td>{rmLotNoValue}</td>
-                              </tr>
+                              <>
+                                <tr>
+                                  <td style={{ fontWeight: 'bold' }}>RM Name</td><td>{rmNameValue}</td>
+                                </tr>
+                                <tr>
+                                  <td style={{ fontWeight: 'bold' }}>RM Lot No</td><td>{rmLotNoValue}</td>
+                                </tr>
+                              </>
                             )}
                             <tr>
                               <td style={{ fontWeight: 'bold' }}>Test Date</td><td>{testDate}</td>

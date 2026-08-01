@@ -556,7 +556,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     e: React.KeyboardEvent<HTMLInputElement>, 
     side: 'left' | 'right', 
     rowIndex: number, 
-    colType: 'mr' | 'mat' | 'qty'
+    colType: 'mr' | 'mat' | 'qty' | 'solid'
   ) => {
     const rowsLength = side === 'left' ? leftRows.length : rightRows.length;
     
@@ -581,17 +581,23 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       
       if (e.shiftKey) {
         // Navigate backwards within table only
-        if (colType === 'qty') {
+        if (colType === 'solid') {
+          selector = `input[id="${side}-qty-${rowIndex}"]`;
+        } else if (colType === 'qty') {
           selector = `input[id="${side}-mat-${rowIndex}"]`;
         } else if (colType === 'mat') {
           if (activeSubView === 'rm_testing') {
             selector = `input[id="${side}-mr-${rowIndex}"]`;
           } else if (rowIndex > 0) {
-            selector = `input[id="${side}-qty-${rowIndex - 1}"]`;
+            selector = activeSubView === 'lab_formulations'
+              ? `input[id="${side}-solid-${rowIndex - 1}"]`
+              : `input[id="${side}-qty-${rowIndex - 1}"]`;
           }
         } else if (colType === 'mr') {
           if (rowIndex > 0) {
-            selector = `input[id="${side}-qty-${rowIndex - 1}"]`;
+            selector = activeSubView === 'lab_formulations'
+              ? `input[id="${side}-solid-${rowIndex - 1}"]`
+              : `input[id="${side}-qty-${rowIndex - 1}"]`;
           }
         }
       } else {
@@ -601,17 +607,26 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
         } else if (colType === 'mat') {
           selector = `input[id="${side}-qty-${rowIndex}"]`;
         } else if (colType === 'qty') {
-          if (rowIndex < rowsLength - 1) {
+          if (activeSubView === 'lab_formulations') {
+            selector = `input[id="${side}-solid-${rowIndex}"]`;
+          } else if (rowIndex < rowsLength - 1) {
             selector = activeSubView === 'rm_testing' 
               ? `input[id="${side}-mr-${rowIndex + 1}"]` 
               : `input[id="${side}-mat-${rowIndex + 1}"]`;
+          }
+        } else if (colType === 'solid') {
+          if (rowIndex < rowsLength - 1) {
+            selector = `input[id="${side}-mat-${rowIndex + 1}"]`;
           }
         }
       }
       
       if (selector) {
         const nextInput = document.querySelector(selector) as HTMLInputElement;
-        if (nextInput) nextInput.focus();
+        if (nextInput) {
+          nextInput.focus();
+          nextInput.select();
+        }
       }
     }
   };
@@ -3232,6 +3247,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                                         setLeftRows(updated);
                                       }}
                                       onFocus={e => e.target.select()}
+                                      onKeyDown={e => handleCellKeyDown(e, 'left', idx, 'solid')}
                                     />
                                   </td>
                                   <td style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '11px', color: '#16a34a' }}>
@@ -3638,6 +3654,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                                         setRightRows(updated);
                                       }}
                                       onFocus={e => e.target.select()}
+                                      onKeyDown={e => handleCellKeyDown(e, 'right', idx, 'solid')}
                                     />
                                   </td>
                                   <td style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '11px', color: '#16a34a' }}>

@@ -3064,19 +3064,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                       <input type="text" className="field-input" value={leftForm.refNo} onChange={e => setLeftForm({...leftForm, refNo: e.target.value})} onFocus={e => e.target.select()} />
                     </div>
                     <div className="form-input-container">
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span className="form-label">Batch No</span>
-                        {activeSubView === 'lab_formulations' && (
-                          <button 
-                            type="button" 
-                            onClick={() => openStarModal(leftForm.batchNo, false, '')} 
-                            title="Bookmark / Star Rating"
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
-                          >
-                            <Star size={20} color="#f59e0b" fill="#f59e0b" style={{ filter: 'drop-shadow(0px 1px 3px rgba(245,158,11,0.6))' }} />
-                          </button>
-                        )}
-                      </div>
+                      <span className="form-label">Batch No</span>
                       <input type="text" className="field-input" value={leftForm.batchNo} onChange={e => setLeftForm({...leftForm, batchNo: e.target.value})} onFocus={e => e.target.select()} />
                     </div>
                     <div className="form-input-container">
@@ -3107,7 +3095,24 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                       <span className="form-label">Report Date</span>
                       <input type="text" className="field-input" value={leftForm.reportDate} onChange={e => setLeftForm({...leftForm, reportDate: e.target.value})} onFocus={e => e.target.select()} />
                     </div>
-                    <div style={{ gridColumn: activeSubView === 'rm_testing' ? 'span 1' : 'span 2' }}></div>
+                    {activeSubView === 'lab_formulations' && (
+                      <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                        <button 
+                          type="button" 
+                          onClick={() => openStarModal(leftForm.batchNo, false, '')} 
+                          title="Bookmark / Star Rating"
+                          style={{ 
+                            display: 'flex', alignItems: 'center', gap: '4px', padding: '0 8px', 
+                            backgroundColor: '#fffbe6', border: '1px solid #fde047', borderRadius: '4px', 
+                            cursor: 'pointer', height: '28px', fontWeight: 'bold', fontSize: '11px', color: '#b45309', width: 'fit-content'
+                          }}
+                        >
+                          <Star size={15} color="#f59e0b" fill="#f59e0b" />
+                          <span>Bookmark</span>
+                        </button>
+                      </div>
+                    )}
+                    <div style={{ gridColumn: activeSubView === 'rm_testing' ? 'span 1' : 'span 1' }}></div>
                   </div>
 
                   {/* Filter controls row below form fields */}
@@ -3471,19 +3476,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                       <input type="text" className="field-input" value={rightForm.refNo} onChange={e => setRightForm({...rightForm, refNo: e.target.value})} onFocus={e => e.target.select()} />
                     </div>
                     <div className="form-input-container">
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span className="form-label">Batch No</span>
-                        {activeSubView === 'lab_formulations' && (
-                          <button 
-                            type="button" 
-                            onClick={() => openStarModal(rightForm.batchNo, false, '')} 
-                            title="Bookmark / Star Rating"
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
-                          >
-                            <Star size={20} color="#f59e0b" fill="#f59e0b" style={{ filter: 'drop-shadow(0px 1px 3px rgba(245,158,11,0.6))' }} />
-                          </button>
-                        )}
-                      </div>
+                      <span className="form-label">Batch No</span>
                       <input type="text" className="field-input" value={rightForm.batchNo} onChange={e => setRightForm({...rightForm, batchNo: e.target.value})} onFocus={e => e.target.select()} />
                     </div>
                     <div className="form-input-container">
@@ -3514,7 +3507,24 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                       <span className="form-label">Report Date</span>
                       <input type="text" className="field-input" value={rightForm.reportDate} onChange={e => setRightForm({...rightForm, reportDate: e.target.value})} onFocus={e => e.target.select()} />
                     </div>
-                    <div style={{ gridColumn: activeSubView === 'rm_testing' ? 'span 1' : 'span 2' }}></div>
+                    {activeSubView === 'lab_formulations' && (
+                      <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                        <button 
+                          type="button" 
+                          onClick={() => openStarModal(rightForm.batchNo, false, '')} 
+                          title="Bookmark / Star Rating"
+                          style={{ 
+                            display: 'flex', alignItems: 'center', gap: '4px', padding: '0 8px', 
+                            backgroundColor: '#fffbe6', border: '1px solid #fde047', borderRadius: '4px', 
+                            cursor: 'pointer', height: '28px', fontWeight: 'bold', fontSize: '11px', color: '#b45309', width: 'fit-content'
+                          }}
+                        >
+                          <Star size={15} color="#f59e0b" fill="#f59e0b" />
+                          <span>Bookmark</span>
+                        </button>
+                      </div>
+                    )}
+                    <div style={{ gridColumn: activeSubView === 'rm_testing' ? 'span 1' : 'span 1' }}></div>
                   </div>
 
                   {/* Filter controls row below form fields */}

@@ -471,7 +471,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
         startY: 32,
         theme: 'grid',
         styles: { fontSize: 7, cellPadding: 1, halign: 'center', valign: 'middle' },
-        headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
+        headStyles: { halign: 'center',  fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
         columnStyles: {
           0: { cellWidth: 10 },
           1: { cellWidth: 20 },
@@ -544,7 +544,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
         startY: 32,
         theme: 'grid',
         styles: { fontSize: 8, cellPadding: 1.5, halign: 'center', valign: 'middle' },
-        headStyles: { fillColor: [5, 150, 105], textColor: [255, 255, 255], fontStyle: 'bold' }
+        headStyles: { halign: 'center',  fillColor: [5, 150, 105], textColor: [255, 255, 255], fontStyle: 'bold' }
       });
 
       // PAGE 3: Section C
@@ -581,7 +581,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
         startY: 32,
         theme: 'grid',
         styles: { fontSize: 8, cellPadding: 1.5, halign: 'center', valign: 'middle' },
-        headStyles: { fillColor: [124, 58, 237], textColor: [255, 255, 255], fontStyle: 'bold' },
+        headStyles: { halign: 'center',  fillColor: [124, 58, 237], textColor: [255, 255, 255], fontStyle: 'bold' },
         columnStyles: {
           0: { cellWidth: 15 },
           1: { cellWidth: 35 },
@@ -1169,7 +1169,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
         startY: 32,
         theme: 'grid',
         styles: { fontSize: 8, cellPadding: 1.5, halign: 'center', valign: 'middle' },
-        headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
+        headStyles: { halign: 'center',  fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
         columnStyles: {
           0: { cellWidth: 8 },
           1: { cellWidth: 20 },
@@ -1448,7 +1448,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
         theme: 'grid',
         margin: { left: 10, right: 10 },
         styles: { fontSize: 8, cellPadding: 1.5, halign: 'center', valign: 'middle' },
-        headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
+        headStyles: { halign: 'center',  fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
         columnStyles: {
           0: { cellWidth: 8 },
           1: { cellWidth: 22 },
@@ -1646,7 +1646,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
         theme: 'grid',
         margin: { left: 10, right: 10 },
         styles: { fontSize: 8, cellPadding: 1.5, halign: 'center', valign: 'middle' },
-        headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
+        headStyles: { halign: 'center',  fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
         columnStyles: {
           0: { cellWidth: 10 },
           1: { cellWidth: 30 },
@@ -1880,7 +1880,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
         theme: 'grid',
         margin: { left: 10, right: 10 },
         styles: { fontSize: 7, cellPadding: 1, halign: 'center', valign: 'middle' },
-        headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
+        headStyles: { halign: 'center',  fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
         columnStyles: {
           0: { cellWidth: 6 },
           1: { cellWidth: 18 },
@@ -2081,7 +2081,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
         theme: 'grid',
         margin: { left: 10, right: 10 },
         styles: { fontSize: 8, cellPadding: 1.5, halign: 'center', valign: 'middle' },
-        headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
+        headStyles: { halign: 'center',  fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
         columnStyles: {
           0: { cellWidth: 10 },
           1: { cellWidth: 30 },
@@ -2173,7 +2173,14 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
           </div>
 
           <div className="table-scroll-container">
-            <table className="table-locked-header">
+            <table className="table-locked-header" style={{ minWidth: '980px' }}>
+              <colgroup>
+                <col style={{ width: '180px' }} />
+                <col style={{ width: '230px' }} />
+                <col style={{ width: '170px' }} />
+                <col style={{ width: '190px' }} />
+                <col style={{ width: '210px' }} />
+              </colgroup>
               <thead>
                 <tr>
                   <th>Customer</th>
@@ -2365,25 +2372,25 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <h4 style={{ fontWeight: 600, fontSize: '0.95rem', color: '#0f172a', borderLeft: '4px solid #3b82f6', paddingLeft: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Section A: QC Parameters</h4>
                 <div className="table-scroll-container" style={{ overflowX: 'auto', maxWidth: '100%', border: '1px solid #e2e8f0', borderRadius: '4px' }}>
-                  <table className="table-locked-header" style={{ minWidth: '1350px', tableLayout: 'fixed', width: '100%' }}>
+                  <table className="table-locked-header" style={{ minWidth: '1860px', tableLayout: 'fixed', width: '100%' }}>
                     <colgroup>
-                      <col style={{ width: '35px' }} />
-                      <col style={{ width: '90px' }} />
-                      <col style={{ width: '110px' }} />
-                      <col style={{ width: '95px' }} />
-                      <col style={{ width: '70px' }} />
-                      <col style={{ width: '70px' }} />
-                      <col style={{ width: '70px' }} />
-                      <col style={{ width: '85px' }} />
-                      <col style={{ width: '85px' }} />
-                      <col style={{ width: '70px' }} />
-                      <col style={{ width: '70px' }} />
-                      <col style={{ width: '70px' }} />
-                      <col style={{ width: '70px' }} />
-                      <col style={{ width: '70px' }} />
-                      <col style={{ width: '150px' }} />
-                      <col style={{ width: '70px' }} />
-                      <col style={{ width: '70px' }} />
+                      <col style={{ width: '65px' }} />
+                      <col style={{ width: '120px' }} />
+                      <col style={{ width: '140px' }} />
+                      <col style={{ width: '125px' }} />
+                      <col style={{ width: '100px' }} />
+                      <col style={{ width: '100px' }} />
+                      <col style={{ width: '100px' }} />
+                      <col style={{ width: '115px' }} />
+                      <col style={{ width: '115px' }} />
+                      <col style={{ width: '100px' }} />
+                      <col style={{ width: '100px' }} />
+                      <col style={{ width: '100px' }} />
+                      <col style={{ width: '100px' }} />
+                      <col style={{ width: '100px' }} />
+                      <col style={{ width: '180px' }} />
+                      <col style={{ width: '100px' }} />
+                      <col style={{ width: '100px' }} />
                     </colgroup>
                     <thead>
                       <tr>
@@ -2401,7 +2408,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
                         <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #1e293b', textAlign: 'center' }}>% Abrasion</th>
                         <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #1e293b', textAlign: 'center' }}>% Gloss Finish</th>
                         <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #1e293b', textAlign: 'center' }}>% Matt Finish</th>
-                        <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #1e293b', textAlign: 'left' }}>Product Name</th>
+                        <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #1e293b', textAlign: 'center' }}>Product Name</th>
                         <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #1e293b' }}></th>
                         <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #1e293b' }}></th>
                       </tr>
@@ -2469,10 +2476,10 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <h4 style={{ fontWeight: 600, fontSize: '0.95rem', color: '#059669', borderLeft: '4px solid #10b981', paddingLeft: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Section B: Stability Observations</h4>
                 <div className="table-scroll-container" style={{ overflowX: 'auto', maxWidth: '100%', border: '1px solid #e2e8f0', borderRadius: '4px' }}>
-                  <table className="table-locked-header" style={{ minWidth: '1205px', tableLayout: 'fixed', width: '100%' }}>
+                  <table className="table-locked-header" style={{ minWidth: '1775px', tableLayout: 'fixed', width: '100%' }}>
                     <colgroup>
-                      <col style={{ width: '35px' }} />
-                      {Array.from({ length: 18 }).map((_, i) => <col key={i} style={{ width: '65px' }} />)}
+                      <col style={{ width: '65px' }} />
+                      {Array.from({ length: 18 }).map((_, i) => <col key={i} style={{ width: '95px' }} />)}
                     </colgroup>
                     <thead>
                       <tr>
@@ -2536,27 +2543,27 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <h4 style={{ fontWeight: 600, fontSize: '0.95rem', color: '#7c3aed', borderLeft: '4px solid #8b5cf6', paddingLeft: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Section C: Verification sign-offs</h4>
                 <div className="table-scroll-container" style={{ overflowX: 'auto', maxWidth: '100%', border: '1px solid #e2e8f0', borderRadius: '4px' }}>
-                  <table className="table-locked-header" style={{ minWidth: '805px', tableLayout: 'fixed', width: '100%' }}>
+                  <table className="table-locked-header" style={{ minWidth: '1045px', tableLayout: 'fixed', width: '100%' }}>
                     <colgroup>
-                      <col style={{ width: '35px' }} />
-                      <col style={{ width: '100px' }} />
+                      <col style={{ width: '65px' }} />
+                      <col style={{ width: '130px' }} />
+                      <col style={{ width: '140px' }} />
+                      <col style={{ width: '140px' }} />
+                      <col style={{ width: '140px' }} />
                       <col style={{ width: '110px' }} />
                       <col style={{ width: '110px' }} />
-                      <col style={{ width: '110px' }} />
-                      <col style={{ width: '80px' }} />
-                      <col style={{ width: '80px' }} />
-                      <col style={{ width: '180px' }} />
+                      <col style={{ width: '210px' }} />
                     </colgroup>
                     <thead>
                       <tr>
                         <th style={{ backgroundColor: '#7c3aed', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #6d28d9', textAlign: 'center' }}>S.No</th>
                         <th style={{ backgroundColor: '#7c3aed', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #6d28d9', textAlign: 'center' }}>Batch No.</th>
-                        <th style={{ backgroundColor: '#7c3aed', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #6d28d9', textAlign: 'left' }}>Checked by (1)</th>
-                        <th style={{ backgroundColor: '#7c3aed', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #6d28d9', textAlign: 'left' }}>Checked by (2)</th>
+                        <th style={{ backgroundColor: '#7c3aed', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #6d28d9', textAlign: 'center' }}>Checked by (1)</th>
+                        <th style={{ backgroundColor: '#7c3aed', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #6d28d9', textAlign: 'center' }}>Checked by (2)</th>
                         <th style={{ backgroundColor: '#7c3aed', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #6d28d9', textAlign: 'center' }}>Date & Time</th>
                         <th style={{ backgroundColor: '#7c3aed', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #6d28d9' }}></th>
                         <th style={{ backgroundColor: '#7c3aed', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #6d28d9' }}></th>
-                        <th style={{ backgroundColor: '#7c3aed', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #6d28d9', textAlign: 'left' }}>Remarks</th>
+                        <th style={{ backgroundColor: '#7c3aed', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #6d28d9', textAlign: 'center' }}>Remarks</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2611,10 +2618,10 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
               </div>
 
               <div className="table-scroll-container" style={{ maxHeight: '420px' }}>
-                <table className="table-locked-header" style={{ minWidth: '1300px' }}>
+                <table className="table-locked-header" style={{ minWidth: '1690px' }}>
                   <thead>
                     <tr>
-                      <th style={{ width: '80px', textAlign: 'center' }}>Sr</th>
+                      <th style={{ width: '110px', textAlign: 'center' }}>Sr</th>
                       <th>Batch No</th>
                       <th>Logged Date</th>
                       <th>Viscosity @ 25°C</th>
@@ -2626,7 +2633,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
                       <th>Gloss</th>
                       <th>Matt</th>
                       <th>Product Name</th>
-                      <th style={{ textAlign: 'center', width: '130px' }}>Actions</th>
+                      <th style={{ textAlign: 'center', width: '160px' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -2749,34 +2756,34 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
               </div>
 
               <div className="table-scroll-container" style={{ overflowX: 'auto', maxWidth: '100%', border: '1px solid #000000 !important', borderRadius: '4px' }}>
-                <table className="table-locked-header" style={{ minWidth: '1600px', tableLayout: 'fixed', width: '100%' }}>
+                <table className="table-locked-header" style={{ minWidth: '1960px', tableLayout: 'fixed', width: '100%' }}>
                   <colgroup>
-                    <col style={{ width: '45px' }} />
-                    <col style={{ width: '120px' }} />
-                    <col style={{ width: '220px' }} />
-                    <col style={{ width: '100px' }} />
+                    <col style={{ width: '75px' }} />
+                    <col style={{ width: '150px' }} />
+                    <col style={{ width: '250px' }} />
+                    <col style={{ width: '130px' }} />
+                    <col style={{ width: '170px' }} />
+                    <col style={{ width: '170px' }} />
+                    <col style={{ width: '150px' }} />
                     <col style={{ width: '140px' }} />
+                    <col style={{ width: '160px' }} />
+                    <col style={{ width: '160px' }} />
+                    <col style={{ width: '160px' }} />
                     <col style={{ width: '140px' }} />
-                    <col style={{ width: '120px' }} />
-                    <col style={{ width: '110px' }} />
-                    <col style={{ width: '130px' }} />
-                    <col style={{ width: '130px' }} />
-                    <col style={{ width: '130px' }} />
-                    <col style={{ width: '110px' }} />
                   </colgroup>
                   <thead>
                     <tr>
                       <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Sr</th>
                       <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Date & Time</th>
-                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'left' }}>Material Name</th>
+                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Material Name</th>
                       <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>MR No</th>
                       <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Lot / Batch No</th>
                       <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Internal Batch No</th>
                       <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Report Date</th>
                       <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Lab Approval</th>
-                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'left' }}>Checked By</th>
-                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'left' }}>Head Sign</th>
-                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'left' }}>R&D Sign</th>
+                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Checked By</th>
+                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Head Sign</th>
+                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>R&D Sign</th>
                       <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>QC Approval</th>
                     </tr>
                   </thead>
@@ -2843,10 +2850,10 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
               </div>
 
               <div className="table-scroll-container" style={{ maxHeight: '420px', border: '1px solid #000000 !important' }}>
-                <table className="table-locked-header" style={{ minWidth: '1500px' }}>
+                <table className="table-locked-header" style={{ minWidth: '1890px' }}>
                   <thead>
                     <tr>
-                      <th style={{ width: '80px', textAlign: 'center', border: '1px solid #000000' }}>Sr</th>
+                      <th style={{ width: '110px', textAlign: 'center', border: '1px solid #000000' }}>Sr</th>
                       <th style={{ border: '1px solid #000000' }}>Date & Time</th>
                       <th style={{ border: '1px solid #000000' }}>Material Name</th>
                       <th style={{ border: '1px solid #000000' }}>MR No</th>
@@ -2858,7 +2865,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
                       <th style={{ border: '1px solid #000000' }}>Head Sign</th>
                       <th style={{ border: '1px solid #000000' }}>R&D Sign</th>
                       <th style={{ border: '1px solid #000000' }}>QC Approval</th>
-                      <th style={{ textAlign: 'center', width: '130px', border: '1px solid #000000' }}>Actions</th>
+                      <th style={{ textAlign: 'center', width: '160px', border: '1px solid #000000' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -2978,37 +2985,37 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
               </div>
 
               <div className="table-scroll-container" style={{ overflowX: 'auto', maxWidth: '100%', border: '1px solid #e2e8f0', borderRadius: '4px' }}>
-                <table className="table-locked-header" style={{ minWidth: '1600px', tableLayout: 'fixed', width: '100%' }}>
+                <table className="table-locked-header" style={{ minWidth: '1990px', tableLayout: 'fixed', width: '100%' }}>
                   <colgroup>
-                    <col style={{ width: '45px' }} />
+                    <col style={{ width: '75px' }} />
+                    <col style={{ width: '150px' }} />
+                    <col style={{ width: '250px' }} />
+                    <col style={{ width: '140px' }} />
+                    <col style={{ width: '190px' }} />
                     <col style={{ width: '120px' }} />
-                    <col style={{ width: '220px' }} />
-                    <col style={{ width: '110px' }} />
-                    <col style={{ width: '160px' }} />
-                    <col style={{ width: '90px' }} />
-                    <col style={{ width: '95px' }} />
-                    <col style={{ width: '90px' }} />
-                    <col style={{ width: '90px' }} />
-                    <col style={{ width: '90px' }} />
-                    <col style={{ width: '100px' }} />
-                    <col style={{ width: '180px' }} />
-                    <col style={{ width: '200px' }} />
+                    <col style={{ width: '125px' }} />
+                    <col style={{ width: '120px' }} />
+                    <col style={{ width: '120px' }} />
+                    <col style={{ width: '120px' }} />
+                    <col style={{ width: '130px' }} />
+                    <col style={{ width: '210px' }} />
+                    <col style={{ width: '230px' }} />
                   </colgroup>
                   <thead>
                     <tr>
                       <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #1e293b', textAlign: 'center' }}>Sr</th>
                       <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #1e293b', textAlign: 'center' }}>Date</th>
-                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #1e293b', textAlign: 'left' }}>Product Name</th>
+                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #1e293b', textAlign: 'center' }}>Product Name</th>
                       <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #1e293b', textAlign: 'center' }}>Batch No.</th>
-                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #1e293b', textAlign: 'left' }}>Party Name</th>
+                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #1e293b', textAlign: 'center' }}>Party Name</th>
                       <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #1e293b', textAlign: 'center' }}>Settling</th>
                       <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #1e293b', textAlign: 'center' }}>Shade Var.</th>
                       <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #1e293b', textAlign: 'center' }}>Adhesion</th>
                       <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #1e293b', textAlign: 'center' }}>Perfume</th>
                       <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #1e293b', textAlign: 'center' }}>Water</th>
                       <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #1e293b', textAlign: 'center' }}>Color Bleed</th>
-                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #1e293b', textAlign: 'left' }}>Observation</th>
-                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #1e293b', textAlign: 'left' }}>Remarks</th>
+                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #1e293b', textAlign: 'center' }}>Observation</th>
+                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #1e293b', textAlign: 'center' }}>Remarks</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -3077,10 +3084,10 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
               </div>
 
               <div className="table-scroll-container" style={{ maxHeight: '420px' }}>
-                <table className="table-locked-header" style={{ minWidth: '1500px' }}>
+                <table className="table-locked-header" style={{ minWidth: '1920px' }}>
                   <thead>
                     <tr>
-                      <th style={{ width: '80px', textAlign: 'center' }}>Sr</th>
+                      <th style={{ width: '110px', textAlign: 'center' }}>Sr</th>
                       <th>Batch No</th>
                       <th>Logged Date</th>
                       <th>Product Name</th>
@@ -3093,7 +3100,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
                       <th>Color Bleed</th>
                       <th>Observation</th>
                       <th>Remarks</th>
-                      <th style={{ textAlign: 'center', width: '130px' }}>Actions</th>
+                      <th style={{ textAlign: 'center', width: '160px' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -3214,27 +3221,27 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
               </div>
 
               <div className="table-scroll-container" style={{ overflowX: 'auto', maxWidth: '100%', border: '1px solid #000000 !important', borderRadius: '4px' }}>
-                <table className="table-locked-header" style={{ minWidth: '1300px', tableLayout: 'fixed', width: '100%' }}>
+                <table className="table-locked-header" style={{ minWidth: '1540px', tableLayout: 'fixed', width: '100%' }}>
                   <colgroup>
-                    <col style={{ width: '45px' }} />
+                    <col style={{ width: '75px' }} />
+                    <col style={{ width: '180px' }} />
+                    <col style={{ width: '350px' }} />
                     <col style={{ width: '150px' }} />
-                    <col style={{ width: '320px' }} />
-                    <col style={{ width: '120px' }} />
-                    <col style={{ width: '110px' }} />
-                    <col style={{ width: '160px' }} />
-                    <col style={{ width: '160px' }} />
-                    <col style={{ width: '200px' }} />
+                    <col style={{ width: '140px' }} />
+                    <col style={{ width: '190px' }} />
+                    <col style={{ width: '190px' }} />
+                    <col style={{ width: '230px' }} />
                   </colgroup>
                   <thead>
                     <tr>
                       <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Sr</th>
                       <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Date & Time</th>
-                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'left' }}>Product Name</th>
+                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Product Name</th>
                       <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Batch No.</th>
                       <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Qty (kg/ltr)</th>
-                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'left' }}>Given By</th>
-                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'left' }}>Given To</th>
-                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'left' }}>Lab Person Sign</th>
+                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Given By</th>
+                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Given To</th>
+                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Lab Person Sign</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -3288,10 +3295,10 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
               </div>
 
               <div className="table-scroll-container" style={{ maxHeight: '420px', border: '1px solid #000000 !important' }}>
-                <table className="table-locked-header" style={{ minWidth: '1200px' }}>
+                <table className="table-locked-header" style={{ minWidth: '1470px' }}>
                   <thead>
                     <tr>
-                      <th style={{ width: '80px', textAlign: 'center', border: '1px solid #000000' }}>Sr</th>
+                      <th style={{ width: '110px', textAlign: 'center', border: '1px solid #000000' }}>Sr</th>
                       <th style={{ border: '1px solid #000000' }}>Date & Time</th>
                       <th style={{ border: '1px solid #000000' }}>Product Name</th>
                       <th style={{ border: '1px solid #000000' }}>Batch No.</th>
@@ -3299,7 +3306,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
                       <th style={{ border: '1px solid #000000' }}>Given By</th>
                       <th style={{ border: '1px solid #000000' }}>Given To</th>
                       <th style={{ border: '1px solid #000000' }}>Lab Person Sign</th>
-                      <th style={{ textAlign: 'center', width: '130px', border: '1px solid #000000' }}>Actions</th>
+                      <th style={{ textAlign: 'center', width: '160px', border: '1px solid #000000' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -3418,39 +3425,39 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
               </div>
 
               <div className="table-scroll-container" style={{ overflowX: 'auto', maxWidth: '100%', border: '1px solid #000000 !important', borderRadius: '4px' }}>
-                <table className="table-locked-header" style={{ minWidth: '1600px', tableLayout: 'fixed', width: '100%' }}>
+                <table className="table-locked-header" style={{ minWidth: '2020px', tableLayout: 'fixed', width: '100%' }}>
                   <colgroup>
-                    <col style={{ width: '45px' }} />
-                    <col style={{ width: '120px' }} />
-                    <col style={{ width: '220px' }} />
-                    <col style={{ width: '100px' }} />
-                    <col style={{ width: '160px' }} />
-                    <col style={{ width: '90px' }} />
-                    <col style={{ width: '90px' }} />
-                    <col style={{ width: '100px' }} />
-                    <col style={{ width: '90px' }} />
-                    <col style={{ width: '100px' }} />
-                    <col style={{ width: '90px' }} />
+                    <col style={{ width: '75px' }} />
+                    <col style={{ width: '150px' }} />
+                    <col style={{ width: '250px' }} />
+                    <col style={{ width: '130px' }} />
+                    <col style={{ width: '190px' }} />
                     <col style={{ width: '120px' }} />
                     <col style={{ width: '120px' }} />
-                    <col style={{ width: '200px' }} />
+                    <col style={{ width: '130px' }} />
+                    <col style={{ width: '120px' }} />
+                    <col style={{ width: '130px' }} />
+                    <col style={{ width: '120px' }} />
+                    <col style={{ width: '150px' }} />
+                    <col style={{ width: '150px' }} />
+                    <col style={{ width: '230px' }} />
                   </colgroup>
                   <thead>
                     <tr>
                       <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Sr</th>
                       <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Date & Time</th>
-                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'left' }}>Product Name</th>
+                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Product Name</th>
                       <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Batch No.</th>
-                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'left' }}>Customer Name</th>
+                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Customer Name</th>
                       <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Viscosity</th>
                       <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>50% R/T</th>
                       <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Report Given (50)</th>
                       <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>100% R/T</th>
                       <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Report Given (100)</th>
                       <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Approval</th>
-                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'left' }}>Received By</th>
-                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'left' }}>Given By</th>
-                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'left' }}>Remarks</th>
+                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Received By</th>
+                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Given By</th>
+                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Remarks</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -3522,10 +3529,10 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
               </div>
 
               <div className="table-scroll-container" style={{ maxHeight: '420px', border: '1px solid #000000 !important' }}>
-                <table className="table-locked-header" style={{ minWidth: '1600px' }}>
+                <table className="table-locked-header" style={{ minWidth: '2050px' }}>
                   <thead>
                     <tr>
-                      <th style={{ width: '80px', textAlign: 'center', border: '1px solid #000000' }}>Sr</th>
+                      <th style={{ width: '110px', textAlign: 'center', border: '1px solid #000000' }}>Sr</th>
                       <th style={{ border: '1px solid #000000' }}>Date & Time</th>
                       <th style={{ border: '1px solid #000000' }}>Product Name</th>
                       <th style={{ border: '1px solid #000000' }}>Batch No.</th>
@@ -3539,7 +3546,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
                       <th style={{ border: '1px solid #000000' }}>Received By</th>
                       <th style={{ border: '1px solid #000000' }}>Given By</th>
                       <th style={{ border: '1px solid #000000' }}>Remarks</th>
-                      <th style={{ textAlign: 'center', width: '130px', border: '1px solid #000000' }}>Actions</th>
+                      <th style={{ textAlign: 'center', width: '160px', border: '1px solid #000000' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -3664,27 +3671,27 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
               </div>
 
               <div className="table-scroll-container" style={{ overflowX: 'auto', maxWidth: '100%', border: '1px solid #000000 !important', borderRadius: '4px' }}>
-                <table className="table-locked-header" style={{ minWidth: '1300px', tableLayout: 'fixed', width: '100%' }}>
+                <table className="table-locked-header" style={{ minWidth: '1540px', tableLayout: 'fixed', width: '100%' }}>
                   <colgroup>
-                    <col style={{ width: '45px' }} />
+                    <col style={{ width: '75px' }} />
+                    <col style={{ width: '180px' }} />
+                    <col style={{ width: '350px' }} />
                     <col style={{ width: '150px' }} />
-                    <col style={{ width: '320px' }} />
-                    <col style={{ width: '120px' }} />
-                    <col style={{ width: '110px' }} />
-                    <col style={{ width: '160px' }} />
-                    <col style={{ width: '160px' }} />
-                    <col style={{ width: '200px' }} />
+                    <col style={{ width: '140px' }} />
+                    <col style={{ width: '190px' }} />
+                    <col style={{ width: '190px' }} />
+                    <col style={{ width: '230px' }} />
                   </colgroup>
                   <thead>
                     <tr>
                       <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Sr</th>
                       <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Date & Time</th>
-                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'left' }}>Product Name</th>
+                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Product Name</th>
                       <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Batch No.</th>
                       <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Qty (kg/ltr)</th>
-                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'left' }}>Given By</th>
-                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'left' }}>Given To</th>
-                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'left' }}>Lab Person Sign</th>
+                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Given By</th>
+                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Given To</th>
+                      <th style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', padding: '8px 4px', border: '1px solid #000000', textAlign: 'center' }}>Lab Person Sign</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -3738,10 +3745,10 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
               </div>
 
               <div className="table-scroll-container" style={{ maxHeight: '420px', border: '1px solid #000000 !important' }}>
-                <table className="table-locked-header" style={{ minWidth: '1200px' }}>
+                <table className="table-locked-header" style={{ minWidth: '1470px' }}>
                   <thead>
                     <tr>
-                      <th style={{ width: '80px', textAlign: 'center', border: '1px solid #000000' }}>Sr</th>
+                      <th style={{ width: '110px', textAlign: 'center', border: '1px solid #000000' }}>Sr</th>
                       <th style={{ border: '1px solid #000000' }}>Date & Time</th>
                       <th style={{ border: '1px solid #000000' }}>Product Name</th>
                       <th style={{ border: '1px solid #000000' }}>Batch No.</th>
@@ -3749,7 +3756,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
                       <th style={{ border: '1px solid #000000' }}>Given By</th>
                       <th style={{ border: '1px solid #000000' }}>Given To</th>
                       <th style={{ border: '1px solid #000000' }}>Lab Person Sign</th>
-                      <th style={{ textAlign: 'center', width: '130px', border: '1px solid #000000' }}>Actions</th>
+                      <th style={{ textAlign: 'center', width: '160px', border: '1px solid #000000' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>

@@ -311,7 +311,7 @@ html {
   font-size: 12px;
   border: 1px solid #cbd5e1;
   padding: 4px 6px;
-  text-align: left;
+  text-align: center;
 }
 
 .desktop-data-grid td {
@@ -350,6 +350,8 @@ html {
 }
 
 .table-locked-header th {
+  text-align: center;
+  vertical-align: middle;
   position: sticky;
   top: 0;
   background-color: var(--bg-header);

@@ -99,7 +99,7 @@ const exportIrToPdf = (productName: string, entries: any[]) => {
     startY: 32,
     theme: 'grid',
     styles: { fontSize: 7, cellPadding: 1.5, halign: 'center', valign: 'middle' },
-    headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
+    headStyles: { halign: 'center',  fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
     columnStyles: {
       0: { cellWidth: 8 },
       1: { cellWidth: 18 },
@@ -163,7 +163,7 @@ const exportDrToPdf = (customerName: string, dispatchDate: string, rows: any[]) 
     startY: 32,
     theme: 'grid',
     styles: { fontSize: 8, cellPadding: 2, halign: 'center', valign: 'middle' },
-    headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
+    headStyles: { halign: 'center',  fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
     columnStyles: {
       0: { cellWidth: 10 },
       1: { cellWidth: 20 },
@@ -218,7 +218,7 @@ const exportMrqToPdf = (productName: string, entries: any[]) => {
     startY: 32,
     theme: 'grid',
     styles: { fontSize: 7.5, cellPadding: 1.5, halign: 'center', valign: 'middle' },
-    headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
+    headStyles: { halign: 'center',  fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
     columnStyles: {
       0: { cellWidth: 8 },
       1: { cellWidth: 25 },
@@ -270,7 +270,7 @@ const exportRjmToPdf = (productName: string, entries: any[]) => {
     startY: 32,
     theme: 'grid',
     styles: { fontSize: 8.5, cellPadding: 2, halign: 'center', valign: 'middle' },
-    headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
+    headStyles: { halign: 'center',  fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
     columnStyles: {
       0: { cellWidth: 10 },
       1: { cellWidth: 50 },
@@ -1156,7 +1156,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
       startY: 28,
       theme: 'grid',
       styles: { fontSize: 8.5, cellPadding: 2, halign: 'center', valign: 'middle' },
-      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
+      headStyles: { halign: 'center',  fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
       columnStyles: {
         0: { cellWidth: 10 },
         1: { cellWidth: 35 },
@@ -2377,7 +2377,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
       head: headers,
       body: body,
       theme: 'grid',
-      headStyles: { fillColor: [15, 23, 42], textColor: [248, 250, 252], fontStyle: 'bold' },
+      headStyles: { halign: 'center',  fillColor: [15, 23, 42], textColor: [248, 250, 252], fontStyle: 'bold' },
       styles: { fontSize: 9, cellPadding: 3, valign: 'middle' },
       columnStyles: {
         0: { cellWidth: 30 },
@@ -3671,15 +3671,15 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
           <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #000000', marginBottom: '24px' }}>
             <tbody>
               <tr>
-                <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '150px', fontSize: '14px', color: '#000000' }}>Batch Size:</td>
-                <td style={{ border: '1px solid #000000', padding: '6px', width: '200px' }}>
+                <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '180px', fontSize: '14px', color: '#000000' }}>Batch Size:</td>
+                <td style={{ border: '1px solid #000000', padding: '6px', width: '230px' }}>
                   <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsHeader.batch_size} onChange={e => updateBPBSHeader('batch_size', e.target.value)} />
                 </td>
-                <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '150px', fontSize: '14px', color: '#000000' }}>Date:</td>
-                <td style={{ border: '1px solid #000000', padding: '6px', width: '200px' }}>
+                <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '180px', fontSize: '14px', color: '#000000' }}>Date:</td>
+                <td style={{ border: '1px solid #000000', padding: '6px', width: '230px' }}>
                   <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box', backgroundColor: '#f1f5f9' }} value={bpbsHeader.date} disabled />
                 </td>
-                <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '120px', fontSize: '14px', color: '#000000' }}>Batch No.:</td>
+                <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '150px', fontSize: '14px', color: '#000000' }}>Batch No.:</td>
                 <td style={{ border: '1px solid #000000', padding: '6px' }}>
                   <div style={{ display: 'flex', gap: '6px' }}>
                     <input type="text" style={{ flexGrow: 1, height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsHeader.batch_no} onChange={e => updateBPBSHeader('batch_no', e.target.value)} />
@@ -3722,13 +3722,13 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
             <table style={{ width: '100%', borderCollapse: 'collapse', border: '2px solid #000000' }}>
               <thead>
                 <tr style={{ backgroundColor: '#ffffff' }}>
-                  <th style={{ border: '1px solid #000000', padding: '10px', textAlign: 'center', width: '80px', fontWeight: 'bold', fontSize: '14px', color: '#000000' }}>Sr. No.</th>
-                  <th style={{ border: '1px solid #000000', padding: '10px', textAlign: 'left', fontWeight: 'bold', fontSize: '14px', color: '#000000', width: '280px' }}>Item Description</th>
-                  <th style={{ border: '1px solid #000000', padding: '10px', textAlign: 'center', fontWeight: 'bold', fontSize: '14px', color: '#000000', width: '120px' }}>Qty. Used I</th>
-                  <th style={{ border: '1px solid #000000', padding: '10px', textAlign: 'center', fontWeight: 'bold', fontSize: '14px', color: '#000000', width: '120px' }}>Qty. Used II</th>
-                  <th style={{ border: '1px solid #000000', padding: '10px', textAlign: 'center', fontWeight: 'bold', fontSize: '14px', color: '#000000', width: '120px' }}>M.R. No.</th>
-                  <th style={{ border: '1px solid #000000', padding: '10px', textAlign: 'center', fontWeight: 'bold', fontSize: '14px', color: '#000000', width: '120px' }}>Input Time</th>
-                  <th style={{ border: '1px solid #000000', padding: '10px', textAlign: 'center', fontWeight: 'bold', fontSize: '14px', color: '#000000', width: '140px' }}>Charged By</th>
+                  <th style={{ border: '1px solid #000000', padding: '10px', textAlign: 'center', width: '110px', fontWeight: 'bold', fontSize: '14px', color: '#000000' }}>Sr. No.</th>
+                  <th style={{ border: '1px solid #000000', padding: '10px', textAlign: 'center', fontWeight: 'bold', fontSize: '14px', color: '#000000', width: '310px' }}>Item Description</th>
+                  <th style={{ border: '1px solid #000000', padding: '10px', textAlign: 'center', fontWeight: 'bold', fontSize: '14px', color: '#000000', width: '150px' }}>Qty. Used I</th>
+                  <th style={{ border: '1px solid #000000', padding: '10px', textAlign: 'center', fontWeight: 'bold', fontSize: '14px', color: '#000000', width: '150px' }}>Qty. Used II</th>
+                  <th style={{ border: '1px solid #000000', padding: '10px', textAlign: 'center', fontWeight: 'bold', fontSize: '14px', color: '#000000', width: '150px' }}>M.R. No.</th>
+                  <th style={{ border: '1px solid #000000', padding: '10px', textAlign: 'center', fontWeight: 'bold', fontSize: '14px', color: '#000000', width: '150px' }}>Input Time</th>
+                  <th style={{ border: '1px solid #000000', padding: '10px', textAlign: 'center', fontWeight: 'bold', fontSize: '14px', color: '#000000', width: '170px' }}>Charged By</th>
                 </tr>
               </thead>
               <tbody>
@@ -3831,16 +3831,16 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
             <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #000000' }}>
               <tbody>
                 <tr>
-                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '150px', fontSize: '14px', color: '#000000' }}>Material:</td>
-                  <td style={{ border: '1px solid #000000', padding: '6px', width: '200px' }}>
+                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '180px', fontSize: '14px', color: '#000000' }}>Material:</td>
+                  <td style={{ border: '1px solid #000000', padding: '6px', width: '230px' }}>
                     <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.material} onChange={e => updateBPBSQc('material', e.target.value)} />
                   </td>
-                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '150px', fontSize: '14px', color: '#000000' }}>Q.A. Status:</td>
-                  <td style={{ border: '1px solid #000000', padding: '6px', width: '180px' }}>
+                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '180px', fontSize: '14px', color: '#000000' }}>Q.A. Status:</td>
+                  <td style={{ border: '1px solid #000000', padding: '6px', width: '210px' }}>
                     <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.qa_status} onChange={e => updateBPBSQc('qa_status', e.target.value)} />
                   </td>
-                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '120px', fontSize: '14px', color: '#000000' }}>Filtered By:</td>
-                  <td style={{ border: '1px solid #000000', padding: '6px', width: '160px' }}>
+                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '150px', fontSize: '14px', color: '#000000' }}>Filtered By:</td>
+                  <td style={{ border: '1px solid #000000', padding: '6px', width: '190px' }}>
                     <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.filtered_by} onChange={e => updateBPBSQc('filtered_by', e.target.value)} />
                   </td>
                 </tr>
@@ -3881,18 +3881,18 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
             <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #000000' }}>
               <tbody>
                 <tr>
-                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '150px', fontSize: '14px', color: '#000000' }}>Packing Material:</td>
-                  <td style={{ border: '1px solid #000000', padding: '6px', width: '200px' }}>
+                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '180px', fontSize: '14px', color: '#000000' }}>Packing Material:</td>
+                  <td style={{ border: '1px solid #000000', padding: '6px', width: '230px' }}>
                     <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.packing_material} onChange={e => updateBPBSQc('packing_material', e.target.value)} />
                   </td>
-                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '150px', fontSize: '14px', color: '#000000' }}>Density:</td>
-                  <td style={{ border: '1px solid #000000', padding: '6px', width: '180px' }}>
+                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '180px', fontSize: '14px', color: '#000000' }}>Density:</td>
+                  <td style={{ border: '1px solid #000000', padding: '6px', width: '210px' }}>
                     <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.density} onChange={e => updateBPBSQc('density', e.target.value)} />
                   </td>
-                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '120px', fontSize: '14px', color: '#000000' }}>Viscosity:</td>
-                  <td style={{ border: '1px solid #000000', padding: '6px', width: '160px' }}>
+                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '150px', fontSize: '14px', color: '#000000' }}>Viscosity:</td>
+                  <td style={{ border: '1px solid #000000', padding: '6px', width: '190px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <input type="text" style={{ width: '80px', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.viscosity} onChange={e => updateBPBSQc('viscosity', e.target.value)} />
+                      <input type="text" style={{ width: '110px', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.viscosity} onChange={e => updateBPBSQc('viscosity', e.target.value)} />
                       <span style={{ fontSize: '12px', color: '#000000', fontWeight: 'bold', whiteSpace: 'nowrap' }}>Sec./CPS</span>
                     </div>
                   </td>
@@ -3905,7 +3905,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
                   <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', fontSize: '14px', color: '#000000' }}>Solid Content:</td>
                   <td style={{ border: '1px solid #000000', padding: '6px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <input type="text" style={{ width: '100px', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.solid} onChange={e => updateBPBSQc('solid', e.target.value)} />
+                      <input type="text" style={{ width: '130px', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.solid} onChange={e => updateBPBSQc('solid', e.target.value)} />
                       <span style={{ fontSize: '14px', color: '#000000', fontWeight: 'bold' }}>%</span>
                     </div>
                   </td>
@@ -3921,19 +3921,19 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
             <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #000000' }}>
               <tbody>
                 <tr>
-                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '150px', fontSize: '14px', color: '#000000' }}>Qty. Packed:</td>
-                  <td style={{ border: '1px solid #000000', padding: '6px', width: '200px' }}>
+                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '180px', fontSize: '14px', color: '#000000' }}>Qty. Packed:</td>
+                  <td style={{ border: '1px solid #000000', padding: '6px', width: '230px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <input type="text" style={{ width: '90px', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.qty_packed} onChange={e => updateBPBSQc('qty_packed', e.target.value)} />
+                      <input type="text" style={{ width: '120px', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.qty_packed} onChange={e => updateBPBSQc('qty_packed', e.target.value)} />
                       <span style={{ fontSize: '12px', color: '#000000', fontWeight: 'bold', whiteSpace: 'nowrap' }}>kg/ltr</span>
                     </div>
                   </td>
-                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '150px', fontSize: '14px', color: '#000000' }}>Tank Cleaning:</td>
-                  <td style={{ border: '1px solid #000000', padding: '6px', width: '180px' }}>
+                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '180px', fontSize: '14px', color: '#000000' }}>Tank Cleaning:</td>
+                  <td style={{ border: '1px solid #000000', padding: '6px', width: '210px' }}>
                     <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.tank_cleaning_check} onChange={e => updateBPBSQc('tank_cleaning_check', e.target.value)} />
                   </td>
-                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '120px', fontSize: '14px', color: '#000000' }}>Formulation:</td>
-                  <td style={{ border: '1px solid #000000', padding: '6px', width: '160px' }}>
+                  <td style={{ border: '1px solid #000000', padding: '10px 14px', fontWeight: 'bold', width: '150px', fontSize: '14px', color: '#000000' }}>Formulation:</td>
+                  <td style={{ border: '1px solid #000000', padding: '6px', width: '190px' }}>
                     <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.formulation} onChange={e => updateBPBSQc('formulation', e.target.value)} />
                   </td>
                 </tr>
@@ -3966,13 +3966,13 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
             <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #000000' }}>
               <tbody>
                 <tr>
-                  <td style={{ border: '1px solid #000000', padding: '14px', fontWeight: 'bold', width: '150px', fontSize: '14px', color: '#000000' }}>Formula Approval:</td>
+                  <td style={{ border: '1px solid #000000', padding: '14px', fontWeight: 'bold', width: '180px', fontSize: '14px', color: '#000000' }}>Formula Approval:</td>
                   <td colSpan={5} style={{ border: '1px solid #000000', padding: '6px' }}>
                     <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.signature_approval} onChange={e => updateBPBSQc('signature_approval', e.target.value)} />
                   </td>
                 </tr>
                 <tr>
-                  <td style={{ border: '1px solid #000000', padding: '14px', fontWeight: 'bold', width: '150px', fontSize: '14px', color: '#000000' }}>Formula Check:</td>
+                  <td style={{ border: '1px solid #000000', padding: '14px', fontWeight: 'bold', width: '180px', fontSize: '14px', color: '#000000' }}>Formula Check:</td>
                   <td colSpan={5} style={{ border: '1px solid #000000', padding: '6px' }}>
                     <input type="text" style={{ width: '100%', height: '32px', border: '1px solid #a3a3a3', borderRadius: '4px', padding: '0 8px', fontSize: '14px', boxSizing: 'border-box' }} value={bpbsQc.signature_check} onChange={e => updateBPBSQc('signature_check', e.target.value)} />
                   </td>
@@ -4192,14 +4192,14 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
 
               {/* Data Table */}
               <div className="table-scroll-container" style={{ maxHeight: '480px', overflowX: 'auto' }}>
-                <table style={{ borderCollapse: 'collapse', border: '1px solid #cbd5e1', width: '100%', minWidth: '1610px' }}>
+                <table style={{ borderCollapse: 'collapse', border: '1px solid #cbd5e1', width: '100%', minWidth: '1760px' }}>
                   <thead>
                     <tr style={{ backgroundColor: '#0f172a', color: '#ffffff', height: '50px' }}>
-                      <th style={{ width: '60px', textAlign: 'center', borderRight: '1px solid #334155', borderBottom: '1px solid #cbd5e1', padding: '8px', fontSize: '13px', fontWeight: 'bold' }}>Sr.</th>
-                      <th style={{ width: '450px', textAlign: 'left', borderRight: '1px solid #334155', borderBottom: '1px solid #cbd5e1', padding: '8px 14px', fontSize: '13px', fontWeight: 'bold' }}>Product Name</th>
-                      <th style={{ width: '400px', textAlign: 'left', borderRight: '1px solid #334155', borderBottom: '1px solid #cbd5e1', padding: '8px 14px', fontSize: '13px', fontWeight: 'bold' }}>Batch No.</th>
-                      <th style={{ width: '500px', textAlign: 'center', borderRight: '1px solid #334155', borderBottom: '1px solid #cbd5e1', padding: '8px', fontSize: '13px', fontWeight: 'bold' }}>Packaging Details</th>
-                      <th style={{ width: '200px', textAlign: 'right', borderBottom: '1px solid #cbd5e1', padding: '8px 16px', fontSize: '13px', fontWeight: 'bold' }}>Total Qty</th>
+                      <th style={{ width: '90px', textAlign: 'center', borderRight: '1px solid #334155', borderBottom: '1px solid #cbd5e1', padding: '8px', fontSize: '13px', fontWeight: 'bold' }}>Sr.</th>
+                      <th style={{ width: '480px', textAlign: 'center', borderRight: '1px solid #334155', borderBottom: '1px solid #cbd5e1', padding: '8px 14px', fontSize: '13px', fontWeight: 'bold' }}>Product Name</th>
+                      <th style={{ width: '430px', textAlign: 'center', borderRight: '1px solid #334155', borderBottom: '1px solid #cbd5e1', padding: '8px 14px', fontSize: '13px', fontWeight: 'bold' }}>Batch No.</th>
+                      <th style={{ width: '530px', textAlign: 'center', borderRight: '1px solid #334155', borderBottom: '1px solid #cbd5e1', padding: '8px', fontSize: '13px', fontWeight: 'bold' }}>Packaging Details</th>
+                      <th style={{ width: '230px', textAlign: 'center', borderBottom: '1px solid #cbd5e1', padding: '8px 16px', fontSize: '13px', fontWeight: 'bold' }}>Total Qty</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -4359,7 +4359,15 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
               </div>
 
               <div ref={drHistoryScrollRef} onScroll={onDrHistoryScroll} className="table-scroll-container" style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                <table className="table-locked-header">
+                <table className="table-locked-header" style={{ minWidth: '1310px' }}>
+                  <colgroup>
+                    <col style={{ width: '150px' }} />
+                    <col style={{ width: '250px' }} />
+                    <col style={{ width: '250px' }} />
+                    <col style={{ width: '160px' }} />
+                    <col style={{ width: '330px' }} />
+                    <col style={{ width: '170px' }} />
+                  </colgroup>
                   <thead>
                     <tr>
                       <th>Dispatch Date</th>
@@ -4367,7 +4375,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
                       <th>Product</th>
                       <th style={{ textAlign: 'center' }}>Batch No.</th>
                       <th>Packaging Details</th>
-                      <th style={{ textAlign: 'right' }}>Total Qty</th>
+                      <th style={{ textAlign: 'center' }}>Total Qty</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -4553,23 +4561,23 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
 
                 {/* Grid 50 Rows Double Row Header */}
                 <div className="table-scroll-container" style={{ maxHeight: '520px', border: '1px solid #cbd5e1', borderRadius: '4px' }}>
-                  <table className="table-locked-header" style={{ minWidth: '2280px', width: '2280px', borderCollapse: 'collapse' }}>
+                  <table className="table-locked-header" style={{ minWidth: '2730px', width: '2730px', borderCollapse: 'collapse' }}>
                     <colgroup>
-                      <col style={{ width: '70px', minWidth: '70px' }} />
-                      <col style={{ width: '140px', minWidth: '140px' }} />
-                      <col style={{ width: '140px', minWidth: '140px' }} />
-                      <col style={{ width: '250px', minWidth: '250px' }} />
-                      <col style={{ width: '130px', minWidth: '130px' }} />
                       <col style={{ width: '160px', minWidth: '160px' }} />
-                      <col style={{ width: '350px', minWidth: '350px' }} />
+                      <col style={{ width: '170px', minWidth: '170px' }} />
+                      <col style={{ width: '170px', minWidth: '170px' }} />
+                      <col style={{ width: '280px', minWidth: '280px' }} />
+                      <col style={{ width: '190px', minWidth: '190px' }} />
+                      <col style={{ width: '190px', minWidth: '190px' }} />
+                      <col style={{ width: '380px', minWidth: '380px' }} />
+                      <col style={{ width: '190px', minWidth: '190px' }} />
                       <col style={{ width: '160px', minWidth: '160px' }} />
-                      <col style={{ width: '100px', minWidth: '100px' }} />
-                      <col style={{ width: '100px', minWidth: '100px' }} />
-                      <col style={{ width: '140px', minWidth: '140px' }} />
-                      <col style={{ width: '140px', minWidth: '140px' }} />
-                      <col style={{ width: '100px', minWidth: '100px' }} />
-                      <col style={{ width: '100px', minWidth: '100px' }} />
-                      <col style={{ width: '200px', minWidth: '200px' }} />
+                      <col style={{ width: '160px', minWidth: '160px' }} />
+                      <col style={{ width: '170px', minWidth: '170px' }} />
+                      <col style={{ width: '170px', minWidth: '170px' }} />
+                      <col style={{ width: '160px', minWidth: '160px' }} />
+                      <col style={{ width: '160px', minWidth: '160px' }} />
+                      <col style={{ width: '230px', minWidth: '230px' }} />
                     </colgroup>
                     <thead>
                       {/* Top merged header */}
@@ -4666,23 +4674,23 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
                 </div>
 
                 <div className="table-scroll-container" style={{ maxHeight: '420px', border: '1px solid #94a3b8', borderRadius: '4px' }}>
-                  <table className="table-locked-header" style={{ minWidth: '2280px', width: '2280px', borderCollapse: 'collapse' }}>
+                  <table className="table-locked-header" style={{ minWidth: '2730px', width: '2730px', borderCollapse: 'collapse' }}>
                     <colgroup>
-                      <col style={{ width: '70px', minWidth: '70px' }} />
-                      <col style={{ width: '140px', minWidth: '140px' }} />
-                      <col style={{ width: '140px', minWidth: '140px' }} />
-                      <col style={{ width: '250px', minWidth: '250px' }} />
-                      <col style={{ width: '130px', minWidth: '130px' }} />
                       <col style={{ width: '160px', minWidth: '160px' }} />
-                      <col style={{ width: '350px', minWidth: '350px' }} />
+                      <col style={{ width: '170px', minWidth: '170px' }} />
+                      <col style={{ width: '170px', minWidth: '170px' }} />
+                      <col style={{ width: '280px', minWidth: '280px' }} />
+                      <col style={{ width: '190px', minWidth: '190px' }} />
+                      <col style={{ width: '190px', minWidth: '190px' }} />
+                      <col style={{ width: '380px', minWidth: '380px' }} />
+                      <col style={{ width: '190px', minWidth: '190px' }} />
                       <col style={{ width: '160px', minWidth: '160px' }} />
-                      <col style={{ width: '100px', minWidth: '100px' }} />
-                      <col style={{ width: '100px', minWidth: '100px' }} />
-                      <col style={{ width: '140px', minWidth: '140px' }} />
-                      <col style={{ width: '140px', minWidth: '140px' }} />
-                      <col style={{ width: '100px', minWidth: '100px' }} />
-                      <col style={{ width: '100px', minWidth: '100px' }} />
-                      <col style={{ width: '200px', minWidth: '200px' }} />
+                      <col style={{ width: '160px', minWidth: '160px' }} />
+                      <col style={{ width: '170px', minWidth: '170px' }} />
+                      <col style={{ width: '170px', minWidth: '170px' }} />
+                      <col style={{ width: '160px', minWidth: '160px' }} />
+                      <col style={{ width: '160px', minWidth: '160px' }} />
+                      <col style={{ width: '230px', minWidth: '230px' }} />
                     </colgroup>
                     <thead>
                       <tr>
@@ -4900,16 +4908,16 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
 
               {/* Grid 20 Rows */}
               <div className="table-scroll-container" style={{ maxHeight: '500px', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1580px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1790px' }}>
                   <thead>
                     <tr style={{ position: 'sticky', top: 0, zIndex: 10 }}>
-                      <th style={{ width: '60px', textAlign: 'center', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Sr</th>
-                      <th style={{ width: '350px', textAlign: 'left', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Customer Name</th>
-                      <th style={{ width: '450px', textAlign: 'left', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Product Name</th>
-                      <th style={{ width: '250px', textAlign: 'center', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Batch No.</th>
-                      <th style={{ width: '150px', textAlign: 'center', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Quantity</th>
-                      <th style={{ width: '120px', textAlign: 'center', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Unit</th>
-                      <th style={{ width: '300px', textAlign: 'center', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Charged By</th>
+                      <th style={{ width: '90px', textAlign: 'center', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Sr</th>
+                      <th style={{ width: '380px', textAlign: 'center', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Customer Name</th>
+                      <th style={{ width: '480px', textAlign: 'center', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Product Name</th>
+                      <th style={{ width: '280px', textAlign: 'center', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Batch No.</th>
+                      <th style={{ width: '180px', textAlign: 'center', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Quantity</th>
+                      <th style={{ width: '150px', textAlign: 'center', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Unit</th>
+                      <th style={{ width: '330px', textAlign: 'center', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Charged By</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -5253,16 +5261,16 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
 
               {/* History Table Container */}
               <div ref={dpHistoryScrollRef} onScroll={onDpHistoryScroll} className="table-scroll-container" style={{ maxHeight: '450px', border: '1px solid #cbd5e1', borderRadius: '8px', overflowY: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1140px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1350px' }}>
                   <thead>
                     <tr style={{ position: 'sticky', top: 0, zIndex: 10 }}>
-                      <th style={{ width: '110px', textAlign: 'center', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Production Date</th>
-                      <th style={{ width: '250px', textAlign: 'left', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Customer Name</th>
-                      <th style={{ width: '300px', textAlign: 'left', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Product Name</th>
-                      <th style={{ width: '150px', textAlign: 'center', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Batch No.</th>
-                      <th style={{ width: '100px', textAlign: 'right', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Quantity</th>
+                      <th style={{ width: '140px', textAlign: 'center', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Production Date</th>
+                      <th style={{ width: '280px', textAlign: 'center', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Customer Name</th>
+                      <th style={{ width: '330px', textAlign: 'center', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Product Name</th>
+                      <th style={{ width: '180px', textAlign: 'center', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Batch No.</th>
+                      <th style={{ width: '100px', textAlign: 'center', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Quantity</th>
                       <th style={{ width: '80px', textAlign: 'center', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Unit</th>
-                      <th style={{ width: '150px', textAlign: 'left', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Charged By</th>
+                      <th style={{ width: '150px', textAlign: 'center', backgroundColor: '#0f172a', color: '#f8fafc', fontWeight: 600, fontSize: '13px', padding: '12px 8px', border: '1px solid #334155' }}>Charged By</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -5545,21 +5553,21 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
 
           {/* Ledger Table Grid */}
           <div className="table-scroll-container" style={{ maxHeight: '600px', border: '1px solid #cbd5e1', borderRadius: '8px', overflowX: 'auto' }}>
-            <table className="table-locked-header" style={{ minWidth: '1900px', borderCollapse: 'collapse', width: '100%' }}>
+            <table className="table-locked-header" style={{ minWidth: '2230px', borderCollapse: 'collapse', width: '100%' }}>
               <thead>
                 <tr style={{ height: '40px', backgroundColor: '#0f172a' }}>
-                  <th style={{ width: '350px', minWidth: '350px', textAlign: 'left', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>PARTICULARS</th>
-                  <th style={{ width: '150px', minWidth: '150px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>BATCH NO.</th>
-                  <th style={{ width: '130px', minWidth: '130px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>DATE</th>
-                  <th style={{ width: '150px', minWidth: '150px', textAlign: 'right', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>QTY IN KGS/LTR</th>
-                  <th style={{ width: '130px', minWidth: '130px', textAlign: 'right', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>PRODUCTION</th>
-                  <th style={{ width: '130px', minWidth: '130px', textAlign: 'right', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>TOTAL</th>
-                  <th style={{ width: '130px', minWidth: '130px', textAlign: 'right', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>DISPATCH</th>
-                  <th style={{ width: '130px', minWidth: '130px', textAlign: 'right', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>BALANCE</th>
-                  <th style={{ width: '220px', minWidth: '220px', textAlign: 'left', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>ALLOTMENT</th>
-                  <th style={{ width: '150px', minWidth: '150px', textAlign: 'left', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>LOCATION</th>
-                  <th style={{ textAlign: 'left', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>REMARKS</th>
-                  <th style={{ width: '80px', minWidth: '80px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>ACTION</th>
+                  <th style={{ width: '380px', minWidth: '380px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>PARTICULARS</th>
+                  <th style={{ width: '180px', minWidth: '180px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>BATCH NO.</th>
+                  <th style={{ width: '190px', minWidth: '190px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>DATE</th>
+                  <th style={{ width: '180px', minWidth: '180px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>QTY IN KGS/LTR</th>
+                  <th style={{ width: '190px', minWidth: '190px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>PRODUCTION</th>
+                  <th style={{ width: '190px', minWidth: '190px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>TOTAL</th>
+                  <th style={{ width: '190px', minWidth: '190px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>DISPATCH</th>
+                  <th style={{ width: '190px', minWidth: '190px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>BALANCE</th>
+                  <th style={{ width: '250px', minWidth: '250px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>ALLOTMENT</th>
+                  <th style={{ width: '180px', minWidth: '180px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>LOCATION</th>
+                  <th style={{ textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>REMARKS</th>
+                  <th style={{ width: '110px', minWidth: '110px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>ACTION</th>
                 </tr>
               </thead>
               <tbody>
@@ -6071,21 +6079,21 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
 
           {/* Ledger Table Grid */}
           <div className="table-scroll-container" style={{ maxHeight: '600px', border: '1px solid #cbd5e1', borderRadius: '8px', overflowX: 'auto' }}>
-            <table className="table-locked-header" style={{ minWidth: '1900px', borderCollapse: 'collapse', width: '100%' }}>
+            <table className="table-locked-header" style={{ minWidth: '2230px', borderCollapse: 'collapse', width: '100%' }}>
               <thead>
                 <tr style={{ height: '40px', backgroundColor: '#0f172a' }}>
-                  <th style={{ width: '350px', minWidth: '350px', textAlign: 'left', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>PARTICULARS</th>
-                  <th style={{ width: '150px', minWidth: '150px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>BATCH NO.</th>
-                  <th style={{ width: '130px', minWidth: '130px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>DATE</th>
-                  <th style={{ width: '150px', minWidth: '150px', textAlign: 'right', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>QTY IN KGS/LTR</th>
-                  <th style={{ width: '130px', minWidth: '130px', textAlign: 'right', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>PRODUCTION</th>
-                  <th style={{ width: '130px', minWidth: '130px', textAlign: 'right', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>TOTAL</th>
-                  <th style={{ width: '130px', minWidth: '130px', textAlign: 'right', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>DISPATCH</th>
-                  <th style={{ width: '130px', minWidth: '130px', textAlign: 'right', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>BALANCE</th>
-                  <th style={{ width: '220px', minWidth: '220px', textAlign: 'left', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>ALLOTMENT</th>
-                  <th style={{ width: '150px', minWidth: '150px', textAlign: 'left', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>LOCATION</th>
-                  <th style={{ textAlign: 'left', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>REMARKS</th>
-                  <th style={{ width: '80px', minWidth: '80px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>ACTION</th>
+                  <th style={{ width: '380px', minWidth: '380px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>PARTICULARS</th>
+                  <th style={{ width: '180px', minWidth: '180px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>BATCH NO.</th>
+                  <th style={{ width: '190px', minWidth: '190px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>DATE</th>
+                  <th style={{ width: '180px', minWidth: '180px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>QTY IN KGS/LTR</th>
+                  <th style={{ width: '190px', minWidth: '190px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>PRODUCTION</th>
+                  <th style={{ width: '190px', minWidth: '190px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>TOTAL</th>
+                  <th style={{ width: '190px', minWidth: '190px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>DISPATCH</th>
+                  <th style={{ width: '190px', minWidth: '190px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>BALANCE</th>
+                  <th style={{ width: '250px', minWidth: '250px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>ALLOTMENT</th>
+                  <th style={{ width: '180px', minWidth: '180px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>LOCATION</th>
+                  <th style={{ textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>REMARKS</th>
+                  <th style={{ width: '110px', minWidth: '110px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>ACTION</th>
                 </tr>
               </thead>
               <tbody>
@@ -6468,20 +6476,20 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
 
           {/* Grid Container */}
           <div className="table-scroll-container" style={{ maxHeight: '600px', overflowX: 'auto', overflowY: 'auto', backgroundColor: '#f1f5f9', padding: '0px' }}>
-            <table style={{ minWidth: '2170px', borderCollapse: 'collapse', tableLayout: 'fixed', width: '2170px' }}>
+            <table style={{ minWidth: '2500px', borderCollapse: 'collapse', tableLayout: 'fixed', width: '2500px' }}>
               <thead>
                 <tr style={{ height: '55px' }}>
-                  <th style={{ width: '70px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Sr. No.</th>
-                  <th style={{ width: '250px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Department</th>
-                  <th style={{ width: '160px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Date</th>
-                  <th style={{ width: '350px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Product / Material</th>
-                  <th style={{ width: '140px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Quantity</th>
-                  <th style={{ width: '160px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Expected Date</th>
-                  <th style={{ width: '300px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Remarks</th>
-                  <th style={{ width: '250px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Purpose of Indent</th>
-                  <th style={{ width: '180px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Indented By</th>
-                  <th style={{ width: '180px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Verified By</th>
-                  <th style={{ width: '180px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Approved By</th>
+                  <th style={{ width: '100px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Sr. No.</th>
+                  <th style={{ width: '280px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Department</th>
+                  <th style={{ width: '190px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Date</th>
+                  <th style={{ width: '380px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Product / Material</th>
+                  <th style={{ width: '170px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Quantity</th>
+                  <th style={{ width: '190px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Expected Date</th>
+                  <th style={{ width: '330px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Remarks</th>
+                  <th style={{ width: '280px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Purpose of Indent</th>
+                  <th style={{ width: '210px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Indented By</th>
+                  <th style={{ width: '210px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Verified By</th>
+                  <th style={{ width: '210px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Approved By</th>
                 </tr>
               </thead>
               <tbody>
@@ -6659,16 +6667,16 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
 
           {/* Grid Container */}
           <div className="table-scroll-container" style={{ maxHeight: '600px', overflowX: 'auto', overflowY: 'auto', backgroundColor: '#f1f5f9', padding: '0px' }}>
-            <table style={{ minWidth: '1630px', borderCollapse: 'collapse', tableLayout: 'fixed', width: '1630px' }}>
+            <table style={{ minWidth: '1870px', borderCollapse: 'collapse', tableLayout: 'fixed', width: '1870px' }}>
               <thead>
                 <tr style={{ height: '55px' }}>
-                  <th style={{ width: '70px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Sr. No.</th>
-                  <th style={{ width: '300px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Customer Name</th>
-                  <th style={{ width: '350px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Product Name</th>
-                  <th style={{ width: '180px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Return Material Date</th>
-                  <th style={{ width: '180px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Replacement Date</th>
-                  <th style={{ width: '150px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Kgs</th>
-                  <th style={{ width: '400px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Remarks</th>
+                  <th style={{ width: '100px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Sr. No.</th>
+                  <th style={{ width: '330px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Customer Name</th>
+                  <th style={{ width: '380px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Product Name</th>
+                  <th style={{ width: '210px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Return Material Date</th>
+                  <th style={{ width: '210px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Replacement Date</th>
+                  <th style={{ width: '180px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Kgs</th>
+                  <th style={{ width: '430px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', padding: '5px' }}>Remarks</th>
                 </tr>
               </thead>
               <tbody>
@@ -6872,20 +6880,20 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
 
           {/* Table Container */}
           <div className="table-scroll-container" style={{ maxHeight: '600px', overflowX: 'auto', overflowY: 'auto', backgroundColor: '#f1f5f9', padding: '0px' }}>
-            <table style={{ minWidth: '1200px', borderCollapse: 'collapse', tableLayout: 'fixed', width: '100%' }}>
+            <table style={{ minWidth: '1530px', borderCollapse: 'collapse', tableLayout: 'fixed', width: '100%' }}>
               <thead>
                 <tr style={{ height: '45px', borderBottom: '3px solid #3b82f6' }}>
-                  <th style={{ width: '130px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Customer</th>
-                  <th style={{ width: '220px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Product Name</th>
-                  <th style={{ width: '120px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Batch</th>
-                  <th style={{ width: '90px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Qty</th>
-                  <th style={{ width: '80px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Unit</th>
-                  <th style={{ width: '140px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>In Charge</th>
-                  <th style={{ width: '140px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Packaging</th>
-                  <th style={{ width: '75px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Prod</th>
-                  <th style={{ width: '75px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>QC</th>
-                  <th style={{ width: '75px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Filt</th>
-                  <th style={{ width: '75px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>FG</th>
+                  <th style={{ width: '160px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Customer</th>
+                  <th style={{ width: '250px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Product Name</th>
+                  <th style={{ width: '150px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Batch</th>
+                  <th style={{ width: '120px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Qty</th>
+                  <th style={{ width: '110px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Unit</th>
+                  <th style={{ width: '170px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>In Charge</th>
+                  <th style={{ width: '170px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Packaging</th>
+                  <th style={{ width: '105px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Prod</th>
+                  <th style={{ width: '105px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>QC</th>
+                  <th style={{ width: '105px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Filt</th>
+                  <th style={{ width: '105px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>FG</th>
                 </tr>
               </thead>
               <tbody>
@@ -7142,20 +7150,20 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
 
           {/* Table Container */}
           <div className="table-scroll-container" style={{ maxHeight: '600px', overflowX: 'auto', overflowY: 'auto', backgroundColor: '#f1f5f9', padding: '0px' }}>
-            <table style={{ minWidth: '1200px', borderCollapse: 'collapse', tableLayout: 'fixed', width: '100%' }}>
+            <table style={{ minWidth: '1530px', borderCollapse: 'collapse', tableLayout: 'fixed', width: '100%' }}>
               <thead>
                 <tr style={{ height: '45px', borderBottom: '3px solid #10b981' }}>
-                  <th style={{ width: '130px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Customer</th>
-                  <th style={{ width: '220px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Product Name</th>
-                  <th style={{ width: '120px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Batch</th>
-                  <th style={{ width: '90px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Qty</th>
-                  <th style={{ width: '80px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Unit</th>
-                  <th style={{ width: '140px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>In Charge</th>
-                  <th style={{ width: '140px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Packaging</th>
-                  <th style={{ width: '75px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Prod</th>
-                  <th style={{ width: '75px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>QC</th>
-                  <th style={{ width: '75px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Filt</th>
-                  <th style={{ width: '75px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>FG</th>
+                  <th style={{ width: '160px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Customer</th>
+                  <th style={{ width: '250px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Product Name</th>
+                  <th style={{ width: '150px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Batch</th>
+                  <th style={{ width: '120px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Qty</th>
+                  <th style={{ width: '110px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Unit</th>
+                  <th style={{ width: '170px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>In Charge</th>
+                  <th style={{ width: '170px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Packaging</th>
+                  <th style={{ width: '105px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Prod</th>
+                  <th style={{ width: '105px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>QC</th>
+                  <th style={{ width: '105px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>Filt</th>
+                  <th style={{ width: '105px', backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', padding: '5px' }}>FG</th>
                 </tr>
               </thead>
               <tbody>

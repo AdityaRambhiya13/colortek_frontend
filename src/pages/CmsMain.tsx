@@ -1304,12 +1304,13 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
             selected: false
           };
         } else {
+          const mat = i.raw_material || i.material || '';
           return {
             sr: i.sr_no ? i.sr_no.toString() : (i.sr ? i.sr.toString() : ''),
-            material: i.raw_material || i.material || '',
+            material: mat,
             qty: i.qty !== undefined ? i.qty.toString() : '',
-            solid: i.solid !== undefined && i.solid !== null ? i.solid.toString() : '',
-            solid_qty: i.solid_qty !== undefined && i.solid_qty !== null ? i.solid_qty.toString() : '0',
+            solid: (mat.trim() !== '' && i.solid !== undefined && i.solid !== null) ? i.solid.toString() : '',
+            solid_qty: (mat.trim() !== '' && i.solid_qty !== undefined && i.solid_qty !== null) ? i.solid_qty.toString() : '0',
             mr: i.mr_no || i.mr || '',
             selected: false
           };
@@ -3163,10 +3164,11 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                       </thead>
                       <tbody>
                         {leftRows.map((row, idx) => {
+                          const isRowEmpty = (!row.material || row.material.trim() === '') && (!row.qty || row.qty.trim() === '');
                           const qVal = parseFloat(row.qty) || 0;
                           const sVal = parseFloat(row.solid !== undefined && row.solid !== '' ? row.solid : '0');
                           const solidPct = isNaN(sVal) ? 0 : sVal;
-                          const solidQtyCalc = (qVal * (solidPct / 100)).toFixed(2);
+                          const solidQtyCalc = isRowEmpty ? '' : (qVal * (solidPct / 100)).toFixed(2);
 
                           return (
                             <tr key={row.sr} style={{ backgroundColor: row.selected ? 'rgba(59, 130, 246, 0.08)' : (idx % 2 === 0 ? 'var(--bg-app)' : 'var(--bg-card)') }}>
@@ -3188,6 +3190,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                                     id={`left-mr-${idx}`}
                                     type="text" 
                                     className="cell-input" 
+                                    style={{ textAlign: 'center' }}
                                     value={row.mr} 
                                     onChange={e => {
                                       const updated = [...leftRows];
@@ -3244,7 +3247,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                                       type="text" 
                                       className="cell-input" 
                                       style={{ textAlign: 'center' }}
-                                      value={row.solid !== undefined ? row.solid : ''} 
+                                      value={isRowEmpty ? '' : (row.solid !== undefined ? row.solid : '')} 
                                       onChange={e => {
                                         const updated = [...leftRows];
                                         updated[idx].solid = e.target.value;
@@ -3573,10 +3576,11 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                       </thead>
                       <tbody>
                         {rightRows.map((row, idx) => {
+                          const isRowEmpty = (!row.material || row.material.trim() === '') && (!row.qty || row.qty.trim() === '');
                           const qVal = parseFloat(row.qty) || 0;
                           const sVal = parseFloat(row.solid !== undefined && row.solid !== '' ? row.solid : '0');
                           const solidPct = isNaN(sVal) ? 0 : sVal;
-                          const solidQtyCalc = (qVal * (solidPct / 100)).toFixed(2);
+                          const solidQtyCalc = isRowEmpty ? '' : (qVal * (solidPct / 100)).toFixed(2);
 
                           return (
                             <tr key={row.sr} style={{ backgroundColor: row.selected ? 'rgba(59, 130, 246, 0.08)' : (idx % 2 === 0 ? 'var(--bg-app)' : 'var(--bg-card)') }}>
@@ -3598,6 +3602,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                                     id={`right-mr-${idx}`}
                                     type="text" 
                                     className="cell-input" 
+                                    style={{ textAlign: 'center' }}
                                     value={row.mr} 
                                     onChange={e => {
                                       const updated = [...rightRows];
@@ -3654,7 +3659,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                                       type="text" 
                                       className="cell-input" 
                                       style={{ textAlign: 'center' }}
-                                      value={row.solid !== undefined ? row.solid : ''} 
+                                      value={isRowEmpty ? '' : (row.solid !== undefined ? row.solid : '')} 
                                       onChange={e => {
                                         const updated = [...rightRows];
                                         updated[idx].solid = e.target.value;

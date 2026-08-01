@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Beaker, Search, Filter, RefreshCw, FileSpreadsheet, ArrowLeft, ArrowRight,
   AlertTriangle, Copy, Trash2, CheckCircle2, ChevronLeft, ChevronRight, HelpCircle, Building,
-  Edit3, ZoomIn, Bell, Info, Printer
+  Edit3, ZoomIn, Bell, Info, Printer, Star
 } from 'lucide-react';
 import { CMSAPI, LabPastFormulationsAPI, RMPastFormulationsAPI, LabFormulationsAPI, RMFormulationsAPI, RawMaterialAPI, RepairedFormulationsAPI, API_BASE_URL, NotificationsAPI } from '../services/api';
 import * as XLSX from 'xlsx';
@@ -30,6 +30,8 @@ interface InventoryRow {
   mr: string;
   material: string;
   qty: string;
+  solid?: string;
+  solid_qty?: string;
   selected?: boolean;
 }
 
@@ -53,6 +55,11 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
   const [selectedPastBatches, setSelectedPastBatches] = useState<string[]>([]);
   const notificationsRef = useRef<HTMLDivElement>(null);
   const skipDuplicateCheck = useRef<{ left: boolean; right: boolean }>({ left: false, right: false });
+
+  const [starModalOpen, setStarModalOpen] = useState(false);
+  const [selectedBatchForStar, setSelectedBatchForStar] = useState<{ batchNo: string; isStarred: boolean; okRating: string } | null>(null);
+  const [okRatingInput, setOkRatingInput] = useState('');
+  const [isStarredOnlyFilter, setIsStarredOnlyFilter] = useState(false);
 
   const getTypeClass = (type: string) => {
     const t = (type || '').toLowerCase().trim();
@@ -138,7 +145,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
   // 25 lines of material rows (matching Flet CMS config)
   const initializeRows = (): InventoryRow[] => 
-    Array.from({ length: 25 }, (_, i) => ({ sr: (i + 1).toString(), mr: '', material: '', qty: '', selected: false }));
+    Array.from({ length: 25 }, (_, i) => ({ sr: (i + 1).toString(), mr: '', material: '', qty: '', solid: '100', solid_qty: '0', selected: false }));
   
   const [leftRows, setLeftRows] = useState<InventoryRow[]>(initializeRows());
   const [rightRows, setRightRows] = useState<InventoryRow[]>(initializeRows());
@@ -215,6 +222,66 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       const q = parseFloat(row.qty);
       return isNaN(q) ? sum : sum + q;
     }, 0).toFixed(2);
+  };
+
+  const calculateTotalSolidQty = (rows: InventoryRow[]) => {
+    return rows.reduce((sum, row) => {
+      const q = parseFloat(row.qty);
+      const s = parseFloat(row.solid !== undefined ? row.solid : '100');
+      if (isNaN(q)) return sum;
+      const sPct = isNaN(s) ? 100 : s;
+      return sum + (q * (sPct / 100));
+    }, 0).toFixed(2);
+  };
+
+  const getNextBatchNumber = (batchNoStr: string) => {
+    if (!batchNoStr || !batchNoStr.trim()) return 'R-0001';
+    const trimmed = batchNoStr.trim();
+    const match = trimmed.match(/^(.*?)(\d+)$/);
+    if (match) {
+      const prefix = match[1];
+      const numStr = match[2];
+      const nextVal = (parseInt(numStr, 10) + 1).toString().padStart(numStr.length, '0');
+      return `${prefix}${nextVal}`;
+    }
+    return `${trimmed}-1`;
+  };
+
+  const openStarModal = (batchNo: string, isStarred: boolean = false, currentOkRating: string = '') => {
+    if (!batchNo || !batchNo.trim()) {
+      onShowToast('Batch No is required to bookmark formulation.', 'warning');
+      return;
+    }
+    setSelectedBatchForStar({ batchNo, isStarred, okRating: currentOkRating });
+    setOkRatingInput(currentOkRating || '95% OK');
+    setStarModalOpen(true);
+  };
+
+  const handleSaveStarStatus = async (starredStatus: boolean) => {
+    if (!selectedBatchForStar) return;
+    try {
+      setLoading(true);
+      const [success, res] = await LabFormulationsAPI.toggleStar(
+        productName, 
+        selectedBatchForStar.batchNo, 
+        starredStatus, 
+        okRatingInput
+      );
+      if (success) {
+        onShowToast(starredStatus ? `Bookmarked ${selectedBatchForStar.batchNo} (${okRatingInput})` : `Unstarred ${selectedBatchForStar.batchNo}`, 'success');
+        setStarModalOpen(false);
+        setSelectedBatchForStar(null);
+        if (activeSubView === 'past_lab_formulations') {
+          loadPastFormulations();
+        }
+      } else {
+        onShowToast(typeof res === 'string' ? res : 'Failed to update star bookmark', 'error');
+      }
+    } catch (err: any) {
+      onShowToast(err.message || 'Failed to update star bookmark', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleExitComplaintMode = () => {
@@ -1098,10 +1165,13 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     const inventoryPayload = rows
       .filter(r => r.material.trim() !== '')
       .map(r => {
+        const q = parseFloat(r.qty) || 0;
+        const s = parseFloat(r.solid !== undefined ? r.solid : '100') || 100;
+        const sQty = q * (s / 100);
         if (isLab) {
-          return { sr_no: r.sr, raw_material: r.material, qty: r.qty };
+          return { sr_no: r.sr, raw_material: r.material, qty: r.qty, solid: s.toString(), solid_qty: sQty.toFixed(2) };
         } else {
-          return { sr_no: r.sr, mr_no: r.mr, raw_material: r.material, qty: r.qty };
+          return { sr_no: r.sr, mr_no: r.mr, raw_material: r.material, qty: r.qty, solid: s.toString(), solid_qty: sQty.toFixed(2) };
         }
       });
 
@@ -1217,6 +1287,8 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
             sr: i.sr_no ? i.sr_no.toString() : (i.sr ? i.sr.toString() : ''),
             material: i.raw_material || i.material || '',
             qty: i.qty !== undefined ? i.qty.toString() : '',
+            solid: i.solid !== undefined ? i.solid.toString() : '100',
+            solid_qty: i.solid_qty !== undefined ? i.solid_qty.toString() : '0',
             mr: i.mr_no || i.mr || '',
             selected: false
           };
@@ -1224,7 +1296,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       });
       const paddedInventory = [...inventory];
       while (paddedInventory.length < 25) {
-        paddedInventory.push({ sr: (paddedInventory.length + 1).toString(), mr: '', material: '', qty: '', selected: false });
+        paddedInventory.push({ sr: (paddedInventory.length + 1).toString(), mr: '', material: '', qty: '', solid: '100', solid_qty: '0', selected: false });
       }
       setRows(paddedInventory);
       skipDuplicateCheck.current[side] = true;
@@ -2684,19 +2756,23 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
   };
 
   const handleCopyLeftToRight = () => {
-    setRightForm({ ...leftForm });
+    skipDuplicateCheck.current.right = true;
+    const newBatchNo = getNextBatchNumber(leftForm.batchNo);
+    setRightForm({ ...leftForm, batchNo: newBatchNo });
     setRightRows(leftRows.map(row => ({ ...row })));
     setRightTestRows(leftTestRows.map(row => ({ ...row })));
     setRightRemarks(leftRemarks);
-    onShowToast("Formulation copied from Left to Right panel", "success");
+    onShowToast(`Formulation copied from Left to Right panel (New Batch: ${newBatchNo})`, "success");
   };
 
   const handleCopyRightToLeft = () => {
-    setLeftForm({ ...rightForm });
+    skipDuplicateCheck.current.left = true;
+    const newBatchNo = getNextBatchNumber(rightForm.batchNo);
+    setLeftForm({ ...rightForm, batchNo: newBatchNo });
     setLeftRows(rightRows.map(row => ({ ...row })));
     setLeftTestRows(rightTestRows.map(row => ({ ...row })));
     setLeftRemarks(rightRemarks);
-    onShowToast("Formulation copied from Right to Left panel", "success");
+    onShowToast(`Formulation copied from Right to Left panel (New Batch: ${newBatchNo})`, "success");
   };
 
   return (
@@ -2964,39 +3040,61 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginBottom: '8px', flexShrink: 0 }}>
                     <div className="form-input-container">
                       <span className="form-label">Ref No</span>
-                      <input type="text" className="field-input" value={leftForm.refNo} onChange={e => setLeftForm({...leftForm, refNo: e.target.value})} />
+                      <input type="text" className="field-input" value={leftForm.refNo} onChange={e => setLeftForm({...leftForm, refNo: e.target.value})} onFocus={e => e.target.select()} />
                     </div>
                     <div className="form-input-container">
-                      <span className="form-label">Batch No</span>
-                      <input type="text" className="field-input" value={leftForm.batchNo} onChange={e => setLeftForm({...leftForm, batchNo: e.target.value})} />
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span className="form-label">Batch No</span>
+                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                          <button 
+                            type="button" 
+                            onClick={() => setLeftForm({ ...leftForm, batchNo: getNextBatchNumber(leftForm.batchNo) })} 
+                            title="Auto-Increment Batch Number"
+                            style={{ height: '18px', padding: '0 4px', fontSize: '10px', fontWeight: 'bold', borderRadius: '3px', border: '1px solid #cbd5e1', backgroundColor: '#e2e8f0', cursor: 'pointer' }}
+                          >
+                            +1
+                          </button>
+                          {activeSubView === 'lab_formulations' && (
+                            <button 
+                              type="button" 
+                              onClick={() => openStarModal(leftForm.batchNo, false, '')} 
+                              title="Bookmark / Star Rating"
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
+                            >
+                              <Star size={14} color="#f59e0b" fill="#f59e0b" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <input type="text" className="field-input" value={leftForm.batchNo} onChange={e => setLeftForm({...leftForm, batchNo: e.target.value})} onFocus={e => e.target.select()} />
                     </div>
                     <div className="form-input-container">
                       <span className="form-label">Product Name</span>
-                      <input type="text" className="field-input" value={leftForm.product} readOnly style={{ backgroundColor: 'var(--bg-app)', cursor: 'not-allowed', opacity: 0.85 }} onChange={e => setLeftForm({...leftForm, product: e.target.value})} />
+                      <input type="text" className="field-input" value={leftForm.product} readOnly style={{ backgroundColor: 'var(--bg-app)', cursor: 'not-allowed', opacity: 0.85 }} onChange={e => setLeftForm({...leftForm, product: e.target.value})} onFocus={e => e.target.select()} />
                     </div>
                     {activeSubView === 'rm_testing' && (
                       <>
                         <div className="form-input-container">
                           <span className="form-label">RM Name</span>
-                          <input type="text" className="field-input" value={leftForm.rmName} onChange={e => setLeftForm({...leftForm, rmName: e.target.value})} />
+                          <input type="text" className="field-input" value={leftForm.rmName} onChange={e => setLeftForm({...leftForm, rmName: e.target.value})} onFocus={e => e.target.select()} />
                         </div>
                         <div className="form-input-container">
                           <span className="form-label">RM Lot No</span>
-                          <input type="text" className="field-input" value={leftForm.rmLot} onChange={e => setLeftForm({...leftForm, rmLot: e.target.value})} />
+                          <input type="text" className="field-input" value={leftForm.rmLot} onChange={e => setLeftForm({...leftForm, rmLot: e.target.value})} onFocus={e => e.target.select()} />
                         </div>
                       </>
                     )}
                     <div className="form-input-container">
                       <span className="form-label">Formula Date</span>
-                      <input type="text" className="field-input" value={leftForm.formulaDate} onChange={e => setLeftForm({...leftForm, formulaDate: e.target.value})} />
+                      <input type="text" className="field-input" value={leftForm.formulaDate} onChange={e => setLeftForm({...leftForm, formulaDate: e.target.value})} onFocus={e => e.target.select()} />
                     </div>
                     <div className="form-input-container">
                       <span className="form-label">Test Date</span>
-                      <input type="text" className="field-input" value={leftForm.testDate} onChange={e => setLeftForm({...leftForm, testDate: e.target.value})} />
+                      <input type="text" className="field-input" value={leftForm.testDate} onChange={e => setLeftForm({...leftForm, testDate: e.target.value})} onFocus={e => e.target.select()} />
                     </div>
                     <div className="form-input-container">
                       <span className="form-label">Report Date</span>
-                      <input type="text" className="field-input" value={leftForm.reportDate} onChange={e => setLeftForm({...leftForm, reportDate: e.target.value})} />
+                      <input type="text" className="field-input" value={leftForm.reportDate} onChange={e => setLeftForm({...leftForm, reportDate: e.target.value})} onFocus={e => e.target.select()} />
                     </div>
                     <div style={{ gridColumn: activeSubView === 'rm_testing' ? 'span 1' : 'span 2' }}></div>
                   </div>
@@ -3026,7 +3124,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                     </div>
                   )}
 
-                  {/* Formulations Grid Table — matching Python: Sr No | MR No | Raw Material | Qty */}
+                  {/* Formulations Grid Table */}
                   <div id="left-material-container" className="table-scroll-container" style={{ height: '308px', overflowY: 'auto', marginBottom: '4px', border: '1px solid #cbd5e1', flexShrink: 0 }}>
                     <table className="table-locked-header">
                       <thead>
@@ -3043,85 +3141,121 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                           <th style={{ width: '40px', textAlign: 'center' }}>SR NO</th>
                           {activeSubView === 'rm_testing' && <th style={{ width: '80px' }}>MR NO</th>}
                           <th>RAW MATERIAL</th>
-                          <th style={{ width: '80px', textAlign: 'center' }}>QTY</th>
+                          <th style={{ width: '70px', textAlign: 'center' }}>QTY</th>
+                          {activeSubView === 'lab_formulations' && <th style={{ width: '65px', textAlign: 'center' }}>SOLID %</th>}
+                          {activeSubView === 'lab_formulations' && <th style={{ width: '75px', textAlign: 'center' }}>SOLID QTY</th>}
                         </tr>
                       </thead>
                       <tbody>
-                        {leftRows.map((row, idx) => (
-                          <tr key={row.sr} style={{ backgroundColor: row.selected ? 'rgba(59, 130, 246, 0.08)' : (idx % 2 === 0 ? 'var(--bg-app)' : 'var(--bg-card)') }}>
-                            <td style={{ textAlign: 'center', width: '30px' }}>
-                              <input 
-                                type="checkbox" 
-                                checked={!!row.selected} 
-                                onChange={e => {
-                                  const updated = [...leftRows];
-                                  updated[idx].selected = e.target.checked;
-                                  setLeftRows(updated);
-                                }} 
-                              />
-                            </td>
-                            <td style={{ textAlign: 'center', fontWeight: 'bold', color: '#64748b' }}>{row.sr}</td>
-                            {activeSubView === 'rm_testing' && (
-                              <td>
+                        {leftRows.map((row, idx) => {
+                          const qVal = parseFloat(row.qty) || 0;
+                          const sVal = parseFloat(row.solid !== undefined ? row.solid : '100');
+                          const solidPct = isNaN(sVal) ? 100 : sVal;
+                          const solidQtyCalc = (qVal * (solidPct / 100)).toFixed(2);
+
+                          return (
+                            <tr key={row.sr} style={{ backgroundColor: row.selected ? 'rgba(59, 130, 246, 0.08)' : (idx % 2 === 0 ? 'var(--bg-app)' : 'var(--bg-card)') }}>
+                              <td style={{ textAlign: 'center', width: '30px' }}>
                                 <input 
-                                  id={`left-mr-${idx}`}
-                                  type="text" 
-                                  className="cell-input" 
-                                  value={row.mr} 
+                                  type="checkbox" 
+                                  checked={!!row.selected} 
                                   onChange={e => {
                                     const updated = [...leftRows];
-                                    updated[idx].mr = e.target.value;
+                                    updated[idx].selected = e.target.checked;
                                     setLeftRows(updated);
-                                  }}
-                                  onKeyDown={e => handleCellKeyDown(e, 'left', idx, 'mr')}
+                                  }} 
                                 />
                               </td>
-                            )}
-                            <td>
-                              <input 
-                                id={`left-mat-${idx}`}
-                                type="text" 
-                                className="cell-input" 
-                                list={['lab_formulations', 'rm_testing'].includes(activeSubView) ? undefined : "common-raw-materials"}
-                                value={row.material} 
-                                onChange={e => {
-                                  const updated = [...leftRows];
-                                  updated[idx].material = e.target.value;
-                                  setLeftRows(updated);
-                                }}
-                                onKeyDown={e => handleCellKeyDown(e, 'left', idx, 'mat')}
-                              />
-                            </td>
-                            <td>
-                              <input 
-                                id={`left-qty-${idx}`}
-                                type="text" 
-                                className="cell-input" 
-                                style={{ 
-                                  textAlign: 'center',
-                                  borderColor: (row.qty !== '' && (isNaN(parseFloat(row.qty)) || parseFloat(row.qty) <= 0)) ? 'var(--color-error)' : '#cbd5e1',
-                                  backgroundColor: (row.qty !== '' && (isNaN(parseFloat(row.qty)) || parseFloat(row.qty) <= 0)) ? 'rgba(239, 68, 68, 0.05)' : '#ffffff'
-                                }}
-                                title={(row.qty !== '' && (isNaN(parseFloat(row.qty)) || parseFloat(row.qty) <= 0)) ? 'Quantity must be a positive number' : undefined}
-                                value={row.qty} 
-                                onChange={e => {
-                                  const updated = [...leftRows];
-                                  updated[idx].qty = e.target.value;
-                                  setLeftRows(updated);
-                                }}
-                                onKeyDown={e => handleCellKeyDown(e, 'left', idx, 'qty')}
-                              />
-                            </td>
-                          </tr>
-                        ))}
+                              <td style={{ textAlign: 'center', fontWeight: 'bold', color: '#64748b' }}>{row.sr}</td>
+                              {activeSubView === 'rm_testing' && (
+                                <td>
+                                  <input 
+                                    id={`left-mr-${idx}`}
+                                    type="text" 
+                                    className="cell-input" 
+                                    value={row.mr} 
+                                    onChange={e => {
+                                      const updated = [...leftRows];
+                                      updated[idx].mr = e.target.value;
+                                      setLeftRows(updated);
+                                    }}
+                                    onFocus={e => e.target.select()}
+                                    onKeyDown={e => handleCellKeyDown(e, 'left', idx, 'mr')}
+                                  />
+                                </td>
+                              )}
+                              <td>
+                                <input 
+                                  id={`left-mat-${idx}`}
+                                  type="text" 
+                                  className="cell-input" 
+                                  list={['lab_formulations', 'rm_testing'].includes(activeSubView) ? undefined : "common-raw-materials"}
+                                  value={row.material} 
+                                  onChange={e => {
+                                    const updated = [...leftRows];
+                                    updated[idx].material = e.target.value;
+                                    setLeftRows(updated);
+                                  }}
+                                  onFocus={e => e.target.select()}
+                                  onKeyDown={e => handleCellKeyDown(e, 'left', idx, 'mat')}
+                                />
+                              </td>
+                              <td>
+                                <input 
+                                  id={`left-qty-${idx}`}
+                                  type="text" 
+                                  className="cell-input" 
+                                  style={{ 
+                                    textAlign: 'center',
+                                    borderColor: (row.qty !== '' && (isNaN(parseFloat(row.qty)) || parseFloat(row.qty) <= 0)) ? 'var(--color-error)' : '#cbd5e1',
+                                    backgroundColor: (row.qty !== '' && (isNaN(parseFloat(row.qty)) || parseFloat(row.qty) <= 0)) ? 'rgba(239, 68, 68, 0.05)' : '#ffffff'
+                                  }}
+                                  title={(row.qty !== '' && (isNaN(parseFloat(row.qty)) || parseFloat(row.qty) <= 0)) ? 'Quantity must be a positive number' : undefined}
+                                  value={row.qty} 
+                                  onChange={e => {
+                                    const updated = [...leftRows];
+                                    updated[idx].qty = e.target.value;
+                                    setLeftRows(updated);
+                                  }}
+                                  onFocus={e => e.target.select()}
+                                  onKeyDown={e => handleCellKeyDown(e, 'left', idx, 'qty')}
+                                />
+                              </td>
+                              {activeSubView === 'lab_formulations' && (
+                                <>
+                                  <td>
+                                    <input 
+                                      id={`left-solid-${idx}`}
+                                      type="text" 
+                                      className="cell-input" 
+                                      style={{ textAlign: 'center' }}
+                                      value={row.solid !== undefined ? row.solid : '100'} 
+                                      onChange={e => {
+                                        const updated = [...leftRows];
+                                        updated[idx].solid = e.target.value;
+                                        setLeftRows(updated);
+                                      }}
+                                      onFocus={e => e.target.select()}
+                                    />
+                                  </td>
+                                  <td style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '11px', color: '#16a34a' }}>
+                                    {solidQtyCalc}
+                                  </td>
+                                </>
+                              )}
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
 
                   {/* Pinned Total Weight Row */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#e2e8f0', border: '1px solid #cbd5e1', padding: '4px 10px', fontWeight: 'bold', fontSize: '12px', flexShrink: 0, marginBottom: '6px' }}>
-                    <span>TOTAL WEIGHT:</span>
-                    <span style={{ color: 'var(--primary-color)' }}>{calculateTotalWeight(leftRows)} g</span>
+                    <span>TOTAL WEIGHT: <span style={{ color: 'var(--primary-color)' }}>{calculateTotalWeight(leftRows)} g</span></span>
+                    {activeSubView === 'lab_formulations' && (
+                      <span>TOTAL SOLID QTY: <span style={{ color: '#16a34a' }}>{calculateTotalSolidQty(leftRows)} g</span></span>
+                    )}
                   </div>
 
                   {/* Material control buttons inline below table (Only for Lab Formulations) */}
@@ -3312,39 +3446,61 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginBottom: '8px', flexShrink: 0 }}>
                     <div className="form-input-container">
                       <span className="form-label">Ref No</span>
-                      <input type="text" className="field-input" value={rightForm.refNo} onChange={e => setRightForm({...rightForm, refNo: e.target.value})} />
+                      <input type="text" className="field-input" value={rightForm.refNo} onChange={e => setRightForm({...rightForm, refNo: e.target.value})} onFocus={e => e.target.select()} />
                     </div>
                     <div className="form-input-container">
-                      <span className="form-label">Batch No</span>
-                      <input type="text" className="field-input" value={rightForm.batchNo} onChange={e => setRightForm({...rightForm, batchNo: e.target.value})} />
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span className="form-label">Batch No</span>
+                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                          <button 
+                            type="button" 
+                            onClick={() => setRightForm({ ...rightForm, batchNo: getNextBatchNumber(rightForm.batchNo) })} 
+                            title="Auto-Increment Batch Number"
+                            style={{ height: '18px', padding: '0 4px', fontSize: '10px', fontWeight: 'bold', borderRadius: '3px', border: '1px solid #cbd5e1', backgroundColor: '#e2e8f0', cursor: 'pointer' }}
+                          >
+                            +1
+                          </button>
+                          {activeSubView === 'lab_formulations' && (
+                            <button 
+                              type="button" 
+                              onClick={() => openStarModal(rightForm.batchNo, false, '')} 
+                              title="Bookmark / Star Rating"
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
+                            >
+                              <Star size={14} color="#f59e0b" fill="#f59e0b" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <input type="text" className="field-input" value={rightForm.batchNo} onChange={e => setRightForm({...rightForm, batchNo: e.target.value})} onFocus={e => e.target.select()} />
                     </div>
                     <div className="form-input-container">
                       <span className="form-label">Product Name</span>
-                      <input type="text" className="field-input" value={rightForm.product} readOnly style={{ backgroundColor: 'var(--bg-app)', cursor: 'not-allowed', opacity: 0.85 }} onChange={e => setRightForm({...rightForm, product: e.target.value})} />
+                      <input type="text" className="field-input" value={rightForm.product} readOnly style={{ backgroundColor: 'var(--bg-app)', cursor: 'not-allowed', opacity: 0.85 }} onChange={e => setRightForm({...rightForm, product: e.target.value})} onFocus={e => e.target.select()} />
                     </div>
                     {activeSubView === 'rm_testing' && (
                       <>
                         <div className="form-input-container">
                           <span className="form-label">RM Name</span>
-                          <input type="text" className="field-input" value={rightForm.rmName} onChange={e => setRightForm({...rightForm, rmName: e.target.value})} />
+                          <input type="text" className="field-input" value={rightForm.rmName} onChange={e => setRightForm({...rightForm, rmName: e.target.value})} onFocus={e => e.target.select()} />
                         </div>
                         <div className="form-input-container">
                           <span className="form-label">RM Lot No</span>
-                          <input type="text" className="field-input" value={rightForm.rmLot} onChange={e => setRightForm({...rightForm, rmLot: e.target.value})} />
+                          <input type="text" className="field-input" value={rightForm.rmLot} onChange={e => setRightForm({...rightForm, rmLot: e.target.value})} onFocus={e => e.target.select()} />
                         </div>
                       </>
                     )}
                     <div className="form-input-container">
                       <span className="form-label">Formula Date</span>
-                      <input type="text" className="field-input" value={rightForm.formulaDate} onChange={e => setRightForm({...rightForm, formulaDate: e.target.value})} />
+                      <input type="text" className="field-input" value={rightForm.formulaDate} onChange={e => setRightForm({...rightForm, formulaDate: e.target.value})} onFocus={e => e.target.select()} />
                     </div>
                     <div className="form-input-container">
                       <span className="form-label">Test Date</span>
-                      <input type="text" className="field-input" value={rightForm.testDate} onChange={e => setRightForm({...rightForm, testDate: e.target.value})} />
+                      <input type="text" className="field-input" value={rightForm.testDate} onChange={e => setRightForm({...rightForm, testDate: e.target.value})} onFocus={e => e.target.select()} />
                     </div>
                     <div className="form-input-container">
                       <span className="form-label">Report Date</span>
-                      <input type="text" className="field-input" value={rightForm.reportDate} onChange={e => setRightForm({...rightForm, reportDate: e.target.value})} />
+                      <input type="text" className="field-input" value={rightForm.reportDate} onChange={e => setRightForm({...rightForm, reportDate: e.target.value})} onFocus={e => e.target.select()} />
                     </div>
                     <div style={{ gridColumn: activeSubView === 'rm_testing' ? 'span 1' : 'span 2' }}></div>
                   </div>
@@ -3374,7 +3530,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                     </div>
                   )}
 
-                  {/* Formulations Grid Table — matching Python: Sr No | MR No | Raw Material | Qty */}
+                  {/* Formulations Grid Table */}
                   <div id="right-material-container" className="table-scroll-container" style={{ height: '308px', overflowY: 'auto', marginBottom: '4px', border: '1px solid #cbd5e1', flexShrink: 0 }}>
                     <table className="table-locked-header">
                       <thead>
@@ -3391,85 +3547,121 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                           <th style={{ width: '40px', textAlign: 'center' }}>SR NO</th>
                           {activeSubView === 'rm_testing' && <th style={{ width: '80px' }}>MR NO</th>}
                           <th>RAW MATERIAL</th>
-                          <th style={{ width: '80px', textAlign: 'center' }}>QTY</th>
+                          <th style={{ width: '70px', textAlign: 'center' }}>QTY</th>
+                          {activeSubView === 'lab_formulations' && <th style={{ width: '65px', textAlign: 'center' }}>SOLID %</th>}
+                          {activeSubView === 'lab_formulations' && <th style={{ width: '75px', textAlign: 'center' }}>SOLID QTY</th>}
                         </tr>
                       </thead>
                       <tbody>
-                        {rightRows.map((row, idx) => (
-                          <tr key={row.sr} style={{ backgroundColor: row.selected ? 'rgba(59, 130, 246, 0.08)' : (idx % 2 === 0 ? 'var(--bg-app)' : 'var(--bg-card)') }}>
-                            <td style={{ textAlign: 'center', width: '30px' }}>
-                              <input 
-                                type="checkbox" 
-                                checked={!!row.selected} 
-                                onChange={e => {
-                                  const updated = [...rightRows];
-                                  updated[idx].selected = e.target.checked;
-                                  setRightRows(updated);
-                                }} 
-                              />
-                            </td>
-                            <td style={{ textAlign: 'center', fontWeight: 'bold', color: '#64748b' }}>{row.sr}</td>
-                            {activeSubView === 'rm_testing' && (
-                              <td>
+                        {rightRows.map((row, idx) => {
+                          const qVal = parseFloat(row.qty) || 0;
+                          const sVal = parseFloat(row.solid !== undefined ? row.solid : '100');
+                          const solidPct = isNaN(sVal) ? 100 : sVal;
+                          const solidQtyCalc = (qVal * (solidPct / 100)).toFixed(2);
+
+                          return (
+                            <tr key={row.sr} style={{ backgroundColor: row.selected ? 'rgba(59, 130, 246, 0.08)' : (idx % 2 === 0 ? 'var(--bg-app)' : 'var(--bg-card)') }}>
+                              <td style={{ textAlign: 'center', width: '30px' }}>
                                 <input 
-                                  id={`right-mr-${idx}`}
-                                  type="text" 
-                                  className="cell-input" 
-                                  value={row.mr} 
+                                  type="checkbox" 
+                                  checked={!!row.selected} 
                                   onChange={e => {
                                     const updated = [...rightRows];
-                                    updated[idx].mr = e.target.value;
+                                    updated[idx].selected = e.target.checked;
                                     setRightRows(updated);
-                                  }}
-                                  onKeyDown={e => handleCellKeyDown(e, 'right', idx, 'mr')}
+                                  }} 
                                 />
                               </td>
-                            )}
-                            <td>
-                              <input 
-                                id={`right-mat-${idx}`}
-                                type="text" 
-                                className="cell-input" 
-                                list={['lab_formulations', 'rm_testing'].includes(activeSubView) ? undefined : "common-raw-materials"}
-                                value={row.material} 
-                                onChange={e => {
-                                  const updated = [...rightRows];
-                                  updated[idx].material = e.target.value;
-                                  setRightRows(updated);
-                                }}
-                                onKeyDown={e => handleCellKeyDown(e, 'right', idx, 'mat')}
-                              />
-                            </td>
-                            <td>
-                              <input 
-                                id={`right-qty-${idx}`}
-                                type="text" 
-                                className="cell-input" 
-                                style={{ 
-                                  textAlign: 'center',
-                                  borderColor: (row.qty !== '' && (isNaN(parseFloat(row.qty)) || parseFloat(row.qty) <= 0)) ? 'var(--color-error)' : '#cbd5e1',
-                                  backgroundColor: (row.qty !== '' && (isNaN(parseFloat(row.qty)) || parseFloat(row.qty) <= 0)) ? 'rgba(239, 68, 68, 0.05)' : '#ffffff'
-                                }}
-                                title={(row.qty !== '' && (isNaN(parseFloat(row.qty)) || parseFloat(row.qty) <= 0)) ? 'Quantity must be a positive number' : undefined}
-                                value={row.qty} 
-                                onChange={e => {
-                                  const updated = [...rightRows];
-                                  updated[idx].qty = e.target.value;
-                                  setRightRows(updated);
-                                }}
-                                onKeyDown={e => handleCellKeyDown(e, 'right', idx, 'qty')}
-                              />
-                            </td>
-                          </tr>
-                        ))}
+                              <td style={{ textAlign: 'center', fontWeight: 'bold', color: '#64748b' }}>{row.sr}</td>
+                              {activeSubView === 'rm_testing' && (
+                                <td>
+                                  <input 
+                                    id={`right-mr-${idx}`}
+                                    type="text" 
+                                    className="cell-input" 
+                                    value={row.mr} 
+                                    onChange={e => {
+                                      const updated = [...rightRows];
+                                      updated[idx].mr = e.target.value;
+                                      setRightRows(updated);
+                                    }}
+                                    onFocus={e => e.target.select()}
+                                    onKeyDown={e => handleCellKeyDown(e, 'right', idx, 'mr')}
+                                  />
+                                </td>
+                              )}
+                              <td>
+                                <input 
+                                  id={`right-mat-${idx}`}
+                                  type="text" 
+                                  className="cell-input" 
+                                  list={['lab_formulations', 'rm_testing'].includes(activeSubView) ? undefined : "common-raw-materials"}
+                                  value={row.material} 
+                                  onChange={e => {
+                                    const updated = [...rightRows];
+                                    updated[idx].material = e.target.value;
+                                    setRightRows(updated);
+                                  }}
+                                  onFocus={e => e.target.select()}
+                                  onKeyDown={e => handleCellKeyDown(e, 'right', idx, 'mat')}
+                                />
+                              </td>
+                              <td>
+                                <input 
+                                  id={`right-qty-${idx}`}
+                                  type="text" 
+                                  className="cell-input" 
+                                  style={{ 
+                                    textAlign: 'center',
+                                    borderColor: (row.qty !== '' && (isNaN(parseFloat(row.qty)) || parseFloat(row.qty) <= 0)) ? 'var(--color-error)' : '#cbd5e1',
+                                    backgroundColor: (row.qty !== '' && (isNaN(parseFloat(row.qty)) || parseFloat(row.qty) <= 0)) ? 'rgba(239, 68, 68, 0.05)' : '#ffffff'
+                                  }}
+                                  title={(row.qty !== '' && (isNaN(parseFloat(row.qty)) || parseFloat(row.qty) <= 0)) ? 'Quantity must be a positive number' : undefined}
+                                  value={row.qty} 
+                                  onChange={e => {
+                                    const updated = [...rightRows];
+                                    updated[idx].qty = e.target.value;
+                                    setRightRows(updated);
+                                  }}
+                                  onFocus={e => e.target.select()}
+                                  onKeyDown={e => handleCellKeyDown(e, 'right', idx, 'qty')}
+                                />
+                              </td>
+                              {activeSubView === 'lab_formulations' && (
+                                <>
+                                  <td>
+                                    <input 
+                                      id={`right-solid-${idx}`}
+                                      type="text" 
+                                      className="cell-input" 
+                                      style={{ textAlign: 'center' }}
+                                      value={row.solid !== undefined ? row.solid : '100'} 
+                                      onChange={e => {
+                                        const updated = [...rightRows];
+                                        updated[idx].solid = e.target.value;
+                                        setRightRows(updated);
+                                      }}
+                                      onFocus={e => e.target.select()}
+                                    />
+                                  </td>
+                                  <td style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '11px', color: '#16a34a' }}>
+                                    {solidQtyCalc}
+                                  </td>
+                                </>
+                              )}
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
 
                   {/* Pinned Total Weight Row */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#e2e8f0', border: '1px solid #cbd5e1', padding: '4px 10px', fontWeight: 'bold', fontSize: '12px', flexShrink: 0, marginBottom: '6px' }}>
-                    <span>TOTAL WEIGHT:</span>
-                    <span style={{ color: 'var(--primary-color)' }}>{calculateTotalWeight(rightRows)} g</span>
+                    <span>TOTAL WEIGHT: <span style={{ color: 'var(--primary-color)' }}>{calculateTotalWeight(rightRows)} g</span></span>
+                    {activeSubView === 'lab_formulations' && (
+                      <span>TOTAL SOLID QTY: <span style={{ color: '#16a34a' }}>{calculateTotalSolidQty(rightRows)} g</span></span>
+                    )}
                   </div>
 
                   {/* Material control buttons inline below table (Only for Lab Formulations) */}
@@ -3701,6 +3893,29 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                 Clear
               </button>
               <button onClick={loadPastFormulations} className="flet-btn flet-btn-green" style={{ height: '32px' }}>Refresh</button>
+              {activeSubView === 'past_lab_formulations' && (
+                <button 
+                  onClick={() => {
+                    setIsStarredOnlyFilter(!isStarredOnlyFilter);
+                    setPastCurrentPage(1);
+                  }} 
+                  className="flet-btn"
+                  style={{ 
+                    height: '32px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '4px', 
+                    backgroundColor: isStarredOnlyFilter ? '#f59e0b' : '#ffffff', 
+                    color: isStarredOnlyFilter ? '#ffffff' : '#1e293b',
+                    border: '1px solid #f59e0b',
+                    fontWeight: 'bold',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <Star size={14} fill={isStarredOnlyFilter ? '#ffffff' : '#f59e0b'} color="#f59e0b" />
+                  {isStarredOnlyFilter ? 'Starred Only (Active)' : 'Starred Only'}
+                </button>
+              )}
 
               {activeSubView === 'past_lab_formulations' && (
                 <>
@@ -3796,6 +4011,14 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                   const approvalStatus = b.approval_status || '-';
                   const approvalComments = b.approval_comments || '-';
 
+                  const totalSolidQty = (b.inventory || []).reduce((sum: number, item: any) => {
+                    const qtyStr = item.qty !== undefined ? item.qty : (Array.isArray(item) ? item[2] : '0');
+                    const q = parseFloat(qtyStr);
+                    if (isNaN(q)) return sum;
+                    const sPct = item.solid !== undefined ? (parseFloat(item.solid) || 100) : 100;
+                    return sum + (q * (sPct / 100));
+                  }, 0).toFixed(2);
+
                   return (
                     <div key={b.id || b.batch_no} className="flet-report-card">
                       {/* Card Header Title */}
@@ -3815,9 +4038,24 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                               style={{ width: '15px', height: '15px', cursor: 'pointer' }}
                             />
                           )}
+                          {isLabCard && (
+                            <button 
+                              type="button" 
+                              onClick={() => openStarModal(batchNo, !!b.is_starred, b.ok_rating || '')} 
+                              title={b.is_starred ? `Starred (${b.ok_rating || 'OK'}) - Click to edit` : "Click to Star/Bookmark"}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
+                            >
+                              <Star size={16} fill={b.is_starred ? '#f59e0b' : 'none'} color="#f59e0b" />
+                            </button>
+                          )}
                           <span style={{ fontWeight: 'bold', fontSize: '15px', color: 'var(--primary-color)' }}>
                             Batch: {batchNo}
                           </span>
+                          {b.is_starred && b.ok_rating && (
+                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#b45309', backgroundColor: '#fef3c7', border: '1px solid #fcd34d', padding: '1px 6px', borderRadius: '10px' }}>
+                              {b.ok_rating}
+                            </span>
+                          )}
                         </div>
                         <span style={{ fontSize: '11px', padding: '2px 6px', backgroundColor: '#e2e8f0', borderRadius: '2px', fontWeight: 'bold' }}>
                           Ref: {refNo}
@@ -3876,10 +4114,12 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                         <table className="desktop-data-grid" style={{ marginBottom: '8px', border: '1px solid #cbd5e1' }}>
                           <thead>
                             <tr>
-                              <th style={{ width: '40px' }}>Sr</th>
+                              <th style={{ width: '30px' }}>Sr</th>
                               {!isLabCard && <th>MR No</th>}
                               <th>Material</th>
-                              <th style={{ width: '70px', textAlign: 'right' }}>Qty</th>
+                              <th style={{ width: '60px', textAlign: 'right' }}>Qty</th>
+                              {isLabCard && <th style={{ width: '55px', textAlign: 'right' }}>Solid%</th>}
+                              {isLabCard && <th style={{ width: '65px', textAlign: 'right' }}>Solid Qty</th>}
                             </tr>
                           </thead>
                           <tbody>
@@ -3888,18 +4128,25 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                               const mr = item.mr_no || (Array.isArray(item) ? item[3] : '');
                               const mat = item.raw_material || item.material || (Array.isArray(item) ? item[1] : '-');
                               const qty = item.qty !== undefined ? item.qty : (Array.isArray(item) ? item[2] : '0');
+                              const qVal = parseFloat(qty) || 0;
+                              const sPct = item.solid !== undefined ? (parseFloat(item.solid) || 100) : 100;
+                              const sQtyCalc = item.solid_qty !== undefined ? item.solid_qty : (qVal * (sPct / 100)).toFixed(2);
+
                               return (
                                 <tr key={idx}>
                                   <td>{sr}</td>
                                   {!isLabCard && <td>{mr || '-'}</td>}
                                   <td style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '120px' }}>{mat}</td>
                                   <td style={{ textAlign: 'right', fontWeight: 'bold' }}>{qty}</td>
+                                  {isLabCard && <td style={{ textAlign: 'right', color: '#64748b' }}>{sPct}%</td>}
+                                  {isLabCard && <td style={{ textAlign: 'right', fontWeight: 'bold', color: '#16a34a' }}>{sQtyCalc}</td>}
                                 </tr>
                               );
                             })}
                             <tr className="total-row">
                               <td colSpan={isLabCard ? 2 : 3} style={{ textAlign: 'right' }}>Total Qty</td>
                               <td style={{ textAlign: 'right', color: 'var(--primary-color)' }}>{totalWeight}</td>
+                              {isLabCard && <td colSpan={2} style={{ textAlign: 'right', color: '#16a34a', fontWeight: 'bold' }}>Solid: {totalSolidQty}</td>}
                             </tr>
                           </tbody>
                         </table>
@@ -4010,6 +4257,72 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
           <option key={idx} value={m} />
         ))}
       </datalist>
+
+      {starModalOpen && selectedBatchForStar && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 9999
+        }}>
+          <div style={{
+            backgroundColor: '#ffffff', borderRadius: '8px', padding: '24px', width: '380px',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.2)', border: '1px solid #cbd5e1'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+              <Star size={24} fill="#f59e0b" color="#f59e0b" />
+              <h3 style={{ margin: 0, fontSize: '18px', color: '#1e293b' }}>
+                Bookmark Formulation
+              </h3>
+            </div>
+            
+            <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 12px 0' }}>
+              Formulation Batch: <strong>{selectedBatchForStar.batchNo}</strong>
+            </p>
+
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#334155', marginBottom: '6px' }}>
+              How much OK is this formulation? (e.g. 95% OK, 100% OK, Very Good)
+            </label>
+            <input 
+              type="text" 
+              className="field-input" 
+              style={{ width: '100%', padding: '8px 12px', fontSize: '14px', borderRadius: '6px', border: '1px solid #cbd5e1', marginBottom: '20px' }}
+              value={okRatingInput} 
+              onChange={e => setOkRatingInput(e.target.value)} 
+              placeholder="e.g. 95% OK"
+              autoFocus
+              onFocus={e => e.target.select()}
+            />
+
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              {selectedBatchForStar.isStarred && (
+                <button 
+                  onClick={() => handleSaveStarStatus(false)} 
+                  className="flet-btn flet-btn-red"
+                  style={{ padding: '8px 14px' }}
+                  disabled={loading}
+                >
+                  Unstar
+                </button>
+              )}
+              <button 
+                onClick={() => setStarModalOpen(false)} 
+                className="flet-btn flet-btn-orange"
+                style={{ padding: '8px 14px' }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => handleSaveStarStatus(true)} 
+                className="flet-btn flet-btn-green"
+                style={{ padding: '8px 18px', fontWeight: 'bold' }}
+                disabled={loading}
+              >
+                Save Star
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {lightboxImage && (
         <div style={{

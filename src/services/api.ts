@@ -514,6 +514,15 @@ export const LabFormulationsAPI = {
 
   getLmfBatchCount: async (productName: string) => {
     return handleResponse<any>(apiClient.get(`/lab_formulations/lmf/count/${productName}`));
+  },
+
+  toggleStar: async (productName: string, batchNo: string, isStarred: boolean, okRating: string = '') => {
+    return handleResponse<any>(apiClient.post('/lab_formulations/toggle_star', {
+      product_name: productName,
+      batch_no: batchNo,
+      is_starred: isStarred,
+      ok_rating: okRating,
+    }));
   }
 };
 
@@ -554,12 +563,13 @@ export const RMFormulationsAPI = {
 // PAST LAB/RM FORMULATIONS SERVICES
 // ============================================================================
 export const LabPastFormulationsAPI = {
-  getPastLabFormulations: async (productName: string, pageIndex: number, pageSize: number, searchTerm?: string) => {
+  getPastLabFormulations: async (productName: string, pageIndex: number = 0, pageSize: number = 3, searchTerm?: string, isStarredOnly?: boolean) => {
     return handleResponse<any>(apiClient.get(`/lab_past_formulations/${productName}`, {
       params: {
         page_index: pageIndex,
         page_size: pageSize,
         ...(searchTerm && { batch_no_filter: searchTerm }),
+        ...(isStarredOnly && { is_starred_only: true }),
       },
     }));
   }

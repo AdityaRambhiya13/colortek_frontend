@@ -228,9 +228,9 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
   const calculateTotalSolidQty = (rows: InventoryRow[]) => {
     return rows.reduce((sum, row) => {
       const q = parseFloat(row.qty);
-      const s = parseFloat(row.solid !== undefined && row.solid !== '' ? row.solid : '100');
+      const s = parseFloat(row.solid !== undefined && row.solid !== '' ? row.solid : '0');
       if (isNaN(q)) return sum;
-      const sPct = isNaN(s) ? 100 : s;
+      const sPct = isNaN(s) ? 0 : s;
       return sum + (q * (sPct / 100));
     }, 0).toFixed(2);
   };
@@ -1182,12 +1182,12 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       .filter(r => r.material.trim() !== '')
       .map(r => {
         const q = parseFloat(r.qty) || 0;
-        const s = parseFloat(r.solid !== undefined ? r.solid : '100') || 100;
+        const s = parseFloat(r.solid !== undefined && r.solid !== '' ? r.solid : '0') || 0;
         const sQty = q * (s / 100);
         if (isLab) {
-          return { sr_no: r.sr, raw_material: r.material, qty: r.qty, solid: s.toString(), solid_qty: sQty.toFixed(2) };
+          return { sr_no: r.sr, raw_material: r.material, qty: r.qty, solid: r.solid || '0', solid_qty: sQty.toFixed(2) };
         } else {
-          return { sr_no: r.sr, mr_no: r.mr, raw_material: r.material, qty: r.qty, solid: s.toString(), solid_qty: sQty.toFixed(2) };
+          return { sr_no: r.sr, mr_no: r.mr, raw_material: r.material, qty: r.qty, solid: r.solid || '0', solid_qty: sQty.toFixed(2) };
         }
       });
 
@@ -1308,8 +1308,8 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
             sr: i.sr_no ? i.sr_no.toString() : (i.sr ? i.sr.toString() : ''),
             material: i.raw_material || i.material || '',
             qty: i.qty !== undefined ? i.qty.toString() : '',
-            solid: i.solid !== undefined ? i.solid.toString() : '100',
-            solid_qty: i.solid_qty !== undefined ? i.solid_qty.toString() : '0',
+            solid: i.solid !== undefined && i.solid !== null ? i.solid.toString() : '',
+            solid_qty: i.solid_qty !== undefined && i.solid_qty !== null ? i.solid_qty.toString() : '0',
             mr: i.mr_no || i.mr || '',
             selected: false
           };
@@ -1317,7 +1317,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       });
       const paddedInventory = [...inventory];
       while (paddedInventory.length < 25) {
-        paddedInventory.push({ sr: (paddedInventory.length + 1).toString(), mr: '', material: '', qty: '', solid: '100', solid_qty: '0', selected: false });
+        paddedInventory.push({ sr: (paddedInventory.length + 1).toString(), mr: '', material: '', qty: '', solid: '', solid_qty: '0', selected: false });
       }
       setRows(paddedInventory);
       skipDuplicateCheck.current[side] = true;
@@ -3164,8 +3164,8 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                       <tbody>
                         {leftRows.map((row, idx) => {
                           const qVal = parseFloat(row.qty) || 0;
-                          const sVal = parseFloat(row.solid !== undefined ? row.solid : '100');
-                          const solidPct = isNaN(sVal) ? 100 : sVal;
+                          const sVal = parseFloat(row.solid !== undefined && row.solid !== '' ? row.solid : '0');
+                          const solidPct = isNaN(sVal) ? 0 : sVal;
                           const solidQtyCalc = (qVal * (solidPct / 100)).toFixed(2);
 
                           return (
@@ -3574,8 +3574,8 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                       <tbody>
                         {rightRows.map((row, idx) => {
                           const qVal = parseFloat(row.qty) || 0;
-                          const sVal = parseFloat(row.solid !== undefined ? row.solid : '100');
-                          const solidPct = isNaN(sVal) ? 100 : sVal;
+                          const sVal = parseFloat(row.solid !== undefined && row.solid !== '' ? row.solid : '0');
+                          const solidPct = isNaN(sVal) ? 0 : sVal;
                           const solidQtyCalc = (qVal * (solidPct / 100)).toFixed(2);
 
                           return (
@@ -4044,7 +4044,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                     const qtyStr = item.qty !== undefined ? item.qty : (Array.isArray(item) ? item[2] : '0');
                     const q = parseFloat(qtyStr);
                     if (isNaN(q)) return sum;
-                    const sPct = item.solid !== undefined ? (parseFloat(item.solid) || 100) : 100;
+                    const sPct = item.solid !== undefined && item.solid !== '' ? (parseFloat(item.solid) || 0) : 0;
                     return sum + (q * (sPct / 100));
                   }, 0).toFixed(2);
 
@@ -4158,7 +4158,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                               const mat = item.raw_material || item.material || (Array.isArray(item) ? item[1] : '-');
                               const qty = item.qty !== undefined ? item.qty : (Array.isArray(item) ? item[2] : '0');
                               const qVal = parseFloat(qty) || 0;
-                              const sPct = item.solid !== undefined ? (parseFloat(item.solid) || 100) : 100;
+                              const sPct = item.solid !== undefined && item.solid !== '' ? (parseFloat(item.solid) || 0) : 0;
                               const sQtyCalc = item.solid_qty !== undefined ? item.solid_qty : (qVal * (sPct / 100)).toFixed(2);
 
                               return (

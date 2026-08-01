@@ -3052,7 +3052,6 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                         <button onClick={() => handleClearAllFields('left')} className="flet-btn flet-btn-orange" disabled={loading}>Clear</button>
                         <button onClick={() => handleAddRow('left')} className="flet-btn flet-btn-blue" disabled={loading}>Add Row</button>
                         <button onClick={() => handleDeleteSelectedRows('left')} className="flet-btn flet-btn-red" disabled={loading}>Del Row</button>
-                        <button onClick={() => exportToExcel('left')} className="flet-btn flet-btn-green">Excel</button>
                       </div>
                     </div>
                   ) : null}
@@ -3294,7 +3293,6 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                       <button onClick={handleCopyLeftToRight} className="flet-btn flet-btn-blue" disabled={loading}>Copy ➡️</button>
                       <button onClick={() => handleSaveFull('left')} className="flet-btn flet-btn-blue" disabled={loading}>Save</button>
                       <button onClick={() => handleSaveMaster('left')} className="flet-btn flet-btn-green" disabled={loading}>Save Master</button>
-                      <button onClick={() => exportToExcel('left')} className="flet-btn flet-btn-green">Export Excel</button>
                     </div>
                   )}
 
@@ -3464,7 +3462,6 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                         <button onClick={() => handleClearAllFields('right')} className="flet-btn flet-btn-orange" disabled={loading}>Clear</button>
                         <button onClick={() => handleAddRow('right')} className="flet-btn flet-btn-blue" disabled={loading}>Add Row</button>
                         <button onClick={() => handleDeleteSelectedRows('right')} className="flet-btn flet-btn-red" disabled={loading}>Del Row</button>
-                        <button onClick={() => exportToExcel('right')} className="flet-btn flet-btn-green">Excel</button>
                       </div>
                     </div>
                   ) : null}
@@ -3712,7 +3709,6 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                       <button onClick={() => handleSaveMaster('right')} className="flet-btn flet-btn-green" disabled={loading}>
                         {isComplaintMode ? 'Approve to Master' : 'Save Master'}
                       </button>
-                      <button onClick={() => exportToExcel('right')} className="flet-btn flet-btn-green">Export Excel</button>
                     </div>
                   )}
 

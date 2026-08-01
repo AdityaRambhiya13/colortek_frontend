@@ -60,6 +60,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
   const [selectedBatchForStar, setSelectedBatchForStar] = useState<{ batchNo: string; isStarred: boolean; okRating: string } | null>(null);
   const [okRatingInput, setOkRatingInput] = useState('');
   const [isStarredOnlyFilter, setIsStarredOnlyFilter] = useState(false);
+  const [lastNextBatchNo, setLastNextBatchNo] = useState<string>('');
 
   const getTypeClass = (type: string) => {
     const t = (type || '').toLowerCase().trim();
@@ -145,7 +146,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
   // 25 lines of material rows (matching Flet CMS config)
   const initializeRows = (): InventoryRow[] => 
-    Array.from({ length: 25 }, (_, i) => ({ sr: (i + 1).toString(), mr: '', material: '', qty: '', solid: '100', solid_qty: '0', selected: false }));
+    Array.from({ length: 25 }, (_, i) => ({ sr: (i + 1).toString(), mr: '', material: '', qty: '', solid: '', solid_qty: '0', selected: false }));
   
   const [leftRows, setLeftRows] = useState<InventoryRow[]>(initializeRows());
   const [rightRows, setRightRows] = useState<InventoryRow[]>(initializeRows());
@@ -227,7 +228,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
   const calculateTotalSolidQty = (rows: InventoryRow[]) => {
     return rows.reduce((sum, row) => {
       const q = parseFloat(row.qty);
-      const s = parseFloat(row.solid !== undefined ? row.solid : '100');
+      const s = parseFloat(row.solid !== undefined && row.solid !== '' ? row.solid : '100');
       if (isNaN(q)) return sum;
       const sPct = isNaN(s) ? 100 : s;
       return sum + (q * (sPct / 100));
@@ -924,7 +925,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     const setApprovedBy = side === 'left' ? setLeftApprovedBy : setRightApprovedBy;
     const activeProdFormatted = (sessionStorage.getItem('product_name') || '').replace(/_/g, ' ').toUpperCase();
 
-    setForm({ refNo: '', batchNo: '', product: activeProdFormatted, rmLot: '', rmName: '', testDate: '', reportDate: '', formulaDate: '' });
+    setForm({ refNo: '', batchNo: side === 'left' ? (lastNextBatchNo || '') : '', product: activeProdFormatted, rmLot: '', rmName: '', testDate: '', reportDate: '', formulaDate: '' });
     setRows(initializeRows());
     setTestRows(initializeTestRows());
     setRemarks('');
@@ -1188,6 +1189,11 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
     if (success) {
       onShowToast(`Full batch compilation successfully saved: ${form.batchNo}`, 'success');
+      const nextBatch = getNextBatchNumber(form.batchNo);
+      setLastNextBatchNo(nextBatch);
+      if (side === 'left') {
+        setRightForm(prev => ({ ...prev, batchNo: nextBatch }));
+      }
     } else {
       onShowToast(typeof data === 'string' ? data : 'Failed to save full batch.', 'error');
     }
@@ -3045,26 +3051,16 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                     <div className="form-input-container">
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span className="form-label">Batch No</span>
-                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                        {activeSubView === 'lab_formulations' && (
                           <button 
                             type="button" 
-                            onClick={() => setLeftForm({ ...leftForm, batchNo: getNextBatchNumber(leftForm.batchNo) })} 
-                            title="Auto-Increment Batch Number"
-                            style={{ height: '18px', padding: '0 4px', fontSize: '10px', fontWeight: 'bold', borderRadius: '3px', border: '1px solid #cbd5e1', backgroundColor: '#e2e8f0', cursor: 'pointer' }}
+                            onClick={() => openStarModal(leftForm.batchNo, false, '')} 
+                            title="Bookmark / Star Rating"
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
                           >
-                            +1
+                            <Star size={20} color="#f59e0b" fill="#f59e0b" style={{ filter: 'drop-shadow(0px 1px 3px rgba(245,158,11,0.6))' }} />
                           </button>
-                          {activeSubView === 'lab_formulations' && (
-                            <button 
-                              type="button" 
-                              onClick={() => openStarModal(leftForm.batchNo, false, '')} 
-                              title="Bookmark / Star Rating"
-                              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
-                            >
-                              <Star size={14} color="#f59e0b" fill="#f59e0b" />
-                            </button>
-                          )}
-                        </div>
+                        )}
                       </div>
                       <input type="text" className="field-input" value={leftForm.batchNo} onChange={e => setLeftForm({...leftForm, batchNo: e.target.value})} onFocus={e => e.target.select()} />
                     </div>
@@ -3229,7 +3225,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                                       type="text" 
                                       className="cell-input" 
                                       style={{ textAlign: 'center' }}
-                                      value={row.solid !== undefined ? row.solid : '100'} 
+                                      value={row.solid !== undefined ? row.solid : ''} 
                                       onChange={e => {
                                         const updated = [...leftRows];
                                         updated[idx].solid = e.target.value;
@@ -3247,15 +3243,25 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                           );
                         })}
                       </tbody>
+                      <tfoot style={{ position: 'sticky', bottom: 0, backgroundColor: '#e2e8f0', fontWeight: 'bold', fontSize: '11px', borderTop: '2px solid #cbd5e1' }}>
+                        <tr>
+                          <td colSpan={activeSubView === 'rm_testing' ? 4 : 3} style={{ textAlign: 'right', padding: '4px 6px', color: '#475569' }}>
+                            TOTAL:
+                          </td>
+                          <td style={{ textAlign: 'center', color: 'var(--primary-color)', padding: '4px 2px' }}>
+                            {calculateTotalWeight(leftRows)}
+                          </td>
+                          {activeSubView === 'lab_formulations' && (
+                            <>
+                              <td></td>
+                              <td style={{ textAlign: 'center', color: '#16a34a', padding: '4px 2px' }}>
+                                {calculateTotalSolidQty(leftRows)}
+                              </td>
+                            </>
+                          )}
+                        </tr>
+                      </tfoot>
                     </table>
-                  </div>
-
-                  {/* Pinned Total Weight Row */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#e2e8f0', border: '1px solid #cbd5e1', padding: '4px 10px', fontWeight: 'bold', fontSize: '12px', flexShrink: 0, marginBottom: '6px' }}>
-                    <span>TOTAL WEIGHT: <span style={{ color: 'var(--primary-color)' }}>{calculateTotalWeight(leftRows)} g</span></span>
-                    {activeSubView === 'lab_formulations' && (
-                      <span>TOTAL SOLID QTY: <span style={{ color: '#16a34a' }}>{calculateTotalSolidQty(leftRows)} g</span></span>
-                    )}
                   </div>
 
                   {/* Material control buttons inline below table (Only for Lab Formulations) */}
@@ -3451,26 +3457,16 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                     <div className="form-input-container">
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span className="form-label">Batch No</span>
-                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                        {activeSubView === 'lab_formulations' && (
                           <button 
                             type="button" 
-                            onClick={() => setRightForm({ ...rightForm, batchNo: getNextBatchNumber(rightForm.batchNo) })} 
-                            title="Auto-Increment Batch Number"
-                            style={{ height: '18px', padding: '0 4px', fontSize: '10px', fontWeight: 'bold', borderRadius: '3px', border: '1px solid #cbd5e1', backgroundColor: '#e2e8f0', cursor: 'pointer' }}
+                            onClick={() => openStarModal(rightForm.batchNo, false, '')} 
+                            title="Bookmark / Star Rating"
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
                           >
-                            +1
+                            <Star size={20} color="#f59e0b" fill="#f59e0b" style={{ filter: 'drop-shadow(0px 1px 3px rgba(245,158,11,0.6))' }} />
                           </button>
-                          {activeSubView === 'lab_formulations' && (
-                            <button 
-                              type="button" 
-                              onClick={() => openStarModal(rightForm.batchNo, false, '')} 
-                              title="Bookmark / Star Rating"
-                              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
-                            >
-                              <Star size={14} color="#f59e0b" fill="#f59e0b" />
-                            </button>
-                          )}
-                        </div>
+                        )}
                       </div>
                       <input type="text" className="field-input" value={rightForm.batchNo} onChange={e => setRightForm({...rightForm, batchNo: e.target.value})} onFocus={e => e.target.select()} />
                     </div>
@@ -3635,7 +3631,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                                       type="text" 
                                       className="cell-input" 
                                       style={{ textAlign: 'center' }}
-                                      value={row.solid !== undefined ? row.solid : '100'} 
+                                      value={row.solid !== undefined ? row.solid : ''} 
                                       onChange={e => {
                                         const updated = [...rightRows];
                                         updated[idx].solid = e.target.value;
@@ -3653,15 +3649,25 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                           );
                         })}
                       </tbody>
+                      <tfoot style={{ position: 'sticky', bottom: 0, backgroundColor: '#e2e8f0', fontWeight: 'bold', fontSize: '11px', borderTop: '2px solid #cbd5e1' }}>
+                        <tr>
+                          <td colSpan={activeSubView === 'rm_testing' ? 4 : 3} style={{ textAlign: 'right', padding: '4px 6px', color: '#475569' }}>
+                            TOTAL:
+                          </td>
+                          <td style={{ textAlign: 'center', color: 'var(--primary-color)', padding: '4px 2px' }}>
+                            {calculateTotalWeight(rightRows)}
+                          </td>
+                          {activeSubView === 'lab_formulations' && (
+                            <>
+                              <td></td>
+                              <td style={{ textAlign: 'center', color: '#16a34a', padding: '4px 2px' }}>
+                                {calculateTotalSolidQty(rightRows)}
+                              </td>
+                            </>
+                          )}
+                        </tr>
+                      </tfoot>
                     </table>
-                  </div>
-
-                  {/* Pinned Total Weight Row */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#e2e8f0', border: '1px solid #cbd5e1', padding: '4px 10px', fontWeight: 'bold', fontSize: '12px', flexShrink: 0, marginBottom: '6px' }}>
-                    <span>TOTAL WEIGHT: <span style={{ color: 'var(--primary-color)' }}>{calculateTotalWeight(rightRows)} g</span></span>
-                    {activeSubView === 'lab_formulations' && (
-                      <span>TOTAL SOLID QTY: <span style={{ color: '#16a34a' }}>{calculateTotalSolidQty(rightRows)} g</span></span>
-                    )}
                   </div>
 
                   {/* Material control buttons inline below table (Only for Lab Formulations) */}

@@ -1305,12 +1305,16 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
           };
         } else {
           const mat = i.raw_material || i.material || '';
+          const sVal = (mat.trim() !== '' && i.solid !== undefined && i.solid !== null) ? i.solid.toString() : '';
+          const sPctVal = parseFloat(sVal) || 0;
+          const qVal = parseFloat(i.qty) || 0;
+          const sQtyVal = (qVal * (sPctVal / 100)).toFixed(2);
           return {
             sr: i.sr_no ? i.sr_no.toString() : (i.sr ? i.sr.toString() : ''),
             material: mat,
             qty: i.qty !== undefined ? i.qty.toString() : '',
-            solid: (mat.trim() !== '' && i.solid !== undefined && i.solid !== null) ? i.solid.toString() : '',
-            solid_qty: (mat.trim() !== '' && i.solid_qty !== undefined && i.solid_qty !== null) ? i.solid_qty.toString() : '0',
+            solid: sVal,
+            solid_qty: (mat.trim() !== '') ? sQtyVal : '0',
             mr: i.mr_no || i.mr || '',
             selected: false
           };

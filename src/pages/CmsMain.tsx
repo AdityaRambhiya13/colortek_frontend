@@ -1300,10 +1300,19 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       // Load inventory rows and fill up to 25 rows
       const inventory = (data.inventory || []).map((i: any) => {
         if (Array.isArray(i)) {
+          const mat = i[1] || '';
+          const sVal = (mat.trim() !== '' && i[4] !== undefined && i[4] !== null) ? i[4].toString() : '';
+          const rawS = sVal.trim().toLowerCase();
+          const isNA = rawS === '' || rawS === 'n/a' || rawS === 'na' || rawS === '-' || rawS === 'nil';
+          const sPctVal = isNA ? 0 : (parseFloat(rawS) || 0);
+          const qVal = parseFloat(i[2]) || 0;
+          const sQtyVal = (qVal * (sPctVal / 100)).toFixed(2);
           return {
             sr: i[0] ? i[0].toString() : '',
-            material: i[1] || '',
+            material: mat,
             qty: i[2] !== undefined ? i[2].toString() : '',
+            solid: sVal,
+            solid_qty: (mat.trim() !== '') ? sQtyVal : '0',
             mr: i[3] || '',
             selected: false
           };
@@ -2394,6 +2403,8 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
           material: i[1] || '',
           qty: i[2] !== undefined ? i[2].toString() : '',
           mr: i[3] || '',
+          solid: i[4] !== undefined && i[4] !== null ? i[4].toString() : '',
+          solid_qty: i[5] !== undefined && i[5] !== null ? i[5].toString() : '0',
         };
       } else {
         return {
@@ -2401,6 +2412,8 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
           material: i.raw_material || i.material || '',
           qty: i.qty !== undefined ? i.qty.toString() : '',
           mr: i.mr_no || i.mr || '',
+          solid: i.solid !== undefined && i.solid !== null ? i.solid.toString() : '',
+          solid_qty: i.solid_qty !== undefined && i.solid_qty !== null ? i.solid_qty.toString() : '0',
         };
       }
     }).filter((r: any) => r.material.trim() !== '');

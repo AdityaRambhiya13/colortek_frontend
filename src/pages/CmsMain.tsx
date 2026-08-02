@@ -237,6 +237,14 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     }, 0).toFixed(2);
   };
 
+  const calculateFormulationSolidity = (rows: InventoryRow[]) => {
+    const totalWeight = parseFloat(calculateTotalWeight(rows));
+    const totalSolidQty = parseFloat(calculateTotalSolidQty(rows));
+    if (isNaN(totalWeight) || totalWeight === 0) return '0.00';
+    const solidity = (totalSolidQty * 100) / totalWeight;
+    return solidity.toFixed(2);
+  };
+
   const getNextBatchNumber = (batchNoStr: string) => {
     if (!batchNoStr || !batchNoStr.trim()) return 'R-0001';
     const trimmed = batchNoStr.trim();
@@ -3308,6 +3316,18 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                             </>
                           )}
                         </tr>
+                        {activeSubView === 'lab_formulations' && (
+                          <tr style={{ borderTop: '1px solid #cbd5e1' }}>
+                            <td colSpan={3} style={{ textAlign: 'right', padding: '4px 6px', color: '#475569' }}>
+                              Formulation Solid(100%)
+                            </td>
+                            <td></td>
+                            <td></td>
+                            <td style={{ textAlign: 'center', color: '#16a34a', padding: '4px 2px' }}>
+                              {calculateFormulationSolidity(leftRows)}%
+                            </td>
+                          </tr>
+                        )}
                       </tfoot>
                     </table>
                   </div>
@@ -3722,6 +3742,18 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                             </>
                           )}
                         </tr>
+                        {activeSubView === 'lab_formulations' && (
+                          <tr style={{ borderTop: '1px solid #cbd5e1' }}>
+                            <td colSpan={3} style={{ textAlign: 'right', padding: '4px 6px', color: '#475569' }}>
+                              Formulation Solid(100%)
+                            </td>
+                            <td></td>
+                            <td></td>
+                            <td style={{ textAlign: 'center', color: '#16a34a', padding: '4px 2px' }}>
+                              {calculateFormulationSolidity(rightRows)}%
+                            </td>
+                          </tr>
+                        )}
                       </tfoot>
                     </table>
                   </div>
@@ -4082,6 +4114,10 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                     return sum + (q * (sPct / 100));
                   }, 0).toFixed(2);
 
+                  const twNum = parseFloat(totalWeight);
+                  const tsqNum = parseFloat(totalSolidQty);
+                  const cardSolidity = (twNum > 0 ? ((tsqNum * 100) / twNum) : 0).toFixed(2);
+
                   return (
                     <div key={b.id || b.batch_no} className="flet-report-card">
                       {/* Card Header Title */}
@@ -4214,6 +4250,12 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                               <td style={{ textAlign: 'right', color: 'var(--primary-color)' }}>{totalWeight}</td>
                               {isLabCard && <td colSpan={2} style={{ textAlign: 'right', color: '#16a34a', fontWeight: 'bold' }}>Solid: {totalSolidQty}</td>}
                             </tr>
+                            {isLabCard && (
+                              <tr className="total-row" style={{ borderTop: '1px solid #cbd5e1', backgroundColor: '#f8fafc' }}>
+                                <td colSpan={4} style={{ textAlign: 'right', fontWeight: 'bold', color: '#475569' }}>Formulation Solid(100%)</td>
+                                <td style={{ textAlign: 'right', color: '#16a34a', fontWeight: 'bold' }}>{cardSolidity}%</td>
+                              </tr>
+                            )}
                           </tbody>
                         </table>
                       </div>

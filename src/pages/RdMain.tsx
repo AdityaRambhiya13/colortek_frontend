@@ -102,13 +102,13 @@ const ObservationRow = React.memo<ObservationRowProps>(({ row, idx, onChange, on
 
   const cellStyle: React.CSSProperties = {
     padding: '4px 6px',
-    borderRight: '1px solid var(--border-color)'
+    borderRight: '1px solid #334155'
   };
 
   return (
     <tr style={{ 
-      borderBottom: '1px solid var(--border-color)', 
-      backgroundColor: idx % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-app)' 
+      borderBottom: '1px solid #cbd5e1', 
+      backgroundColor: idx % 2 === 0 ? '#f8fafc' : '#ffffff' 
     }}>
       {/* Time */}
       <td style={cellStyle}>

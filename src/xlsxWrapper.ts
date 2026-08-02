@@ -4,7 +4,8 @@ export const utils = {
     book_new: () => {
         return new ExcelJS.Workbook();
     },
-    aoa_to_sheet: (data: unknown[][]) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    aoa_to_sheet: (data: any[][]): any => {
         return data; 
     },
     book_append_sheet: (wb: ExcelJS.Workbook, wsData: unknown[][], sheetName: string) => {

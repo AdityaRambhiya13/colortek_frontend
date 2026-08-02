@@ -117,6 +117,7 @@ const ObservationRow = React.memo<ObservationRowProps>(({ row, idx, onChange, on
           ref={el => { obsRefs.current[`obs-${idx}-0`] = el; }}
           value={row.time}
           onChange={e => onChange(idx, 'time', e.target.value)}
+          onFocus={e => e.target.select()}
           onKeyDown={e => onKeyDown(e, idx, 0)}
           style={inputStyle}
         />
@@ -129,6 +130,7 @@ const ObservationRow = React.memo<ObservationRowProps>(({ row, idx, onChange, on
           ref={el => { obsRefs.current[`obs-${idx}-1`] = el; }}
           value={row.vt}
           onChange={e => onChange(idx, 'vt', e.target.value)}
+          onFocus={e => e.target.select()}
           onKeyDown={e => onKeyDown(e, idx, 1)}
           style={inputStyle}
         />
@@ -141,6 +143,7 @@ const ObservationRow = React.memo<ObservationRowProps>(({ row, idx, onChange, on
           ref={el => { obsRefs.current[`obs-${idx}-2`] = el; }}
           value={row.ft}
           onChange={e => onChange(idx, 'ft', e.target.value)}
+          onFocus={e => e.target.select()}
           onKeyDown={e => onKeyDown(e, idx, 2)}
           style={inputStyle}
         />
@@ -153,6 +156,7 @@ const ObservationRow = React.memo<ObservationRowProps>(({ row, idx, onChange, on
           ref={el => { obsRefs.current[`obs-${idx}-3`] = el; }}
           value={row.charge_obs}
           onChange={e => onChange(idx, 'charge_obs', e.target.value)}
+          onFocus={e => e.target.select()}
           onKeyDown={e => onKeyDown(e, idx, 3)}
           style={inputStyle}
         />
@@ -165,6 +169,7 @@ const ObservationRow = React.memo<ObservationRowProps>(({ row, idx, onChange, on
           ref={el => { obsRefs.current[`obs-${idx}-4`] = el; }}
           value={row.observed}
           onChange={e => onChange(idx, 'observed', e.target.value)}
+          onFocus={e => e.target.select()}
           onKeyDown={e => onKeyDown(e, idx, 4)}
           style={{ ...inputStyle, textAlign: 'left' }}
         />
@@ -177,6 +182,7 @@ const ObservationRow = React.memo<ObservationRowProps>(({ row, idx, onChange, on
           ref={el => { obsRefs.current[`obs-${idx}-5`] = el; }}
           value={row.remark}
           onChange={e => onChange(idx, 'remark', e.target.value)}
+          onFocus={e => e.target.select()}
           onKeyDown={e => onKeyDown(e, idx, 5)}
           style={{ ...inputStyle, textAlign: 'left' }}
         />
@@ -382,19 +388,25 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
     rowIdx: number,
     colIdx: number
   ) => {
-    const maxRows = 12;
-    const maxCols = 6; // time, vt, ft, charge_obs, observed, remark
-
     let nextRow = rowIdx;
     let nextCol = colIdx;
 
     if (e.key === 'Enter') {
       e.preventDefault();
-      nextRow = rowIdx + 1; // Move down
-    } else if (e.key === 'ArrowDown') {
       nextRow = rowIdx + 1;
+      if (!obsRefs.current[`obs-${nextRow}-${colIdx}`]) nextRow = 0;
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      nextRow = rowIdx + 1;
+      if (!obsRefs.current[`obs-${nextRow}-${colIdx}`]) nextRow = 0;
     } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
       nextRow = rowIdx - 1;
+      if (nextRow < 0) {
+        let r = rowIdx;
+        while (obsRefs.current[`obs-${r + 1}-${colIdx}`]) r++;
+        nextRow = r;
+      }
     } else if (e.key === 'ArrowRight' && e.currentTarget.selectionStart === e.currentTarget.value.length) {
       nextCol = colIdx + 1;
     } else if (e.key === 'ArrowLeft' && e.currentTarget.selectionStart === 0) {
@@ -403,9 +415,9 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
       return;
     }
 
-    if (nextRow >= 0 && nextRow < maxRows && nextCol >= 0 && nextCol < maxCols) {
+    const refKey = `obs-${nextRow}-${nextCol}`;
+    if (obsRefs.current[refKey]) {
       e.preventDefault();
-      const refKey = `obs-${nextRow}-${nextCol}`;
       obsRefs.current[refKey]?.focus();
       obsRefs.current[refKey]?.select();
     }

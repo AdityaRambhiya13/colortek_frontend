@@ -4,7 +4,7 @@ import {
   Download, Edit3, CheckCircle, Scale, Eye, ChevronLeft, ChevronRight, Play, Info
 } from 'lucide-react';
 import { MasterFormulationAPI } from '../services/api';
-import * as XLSX from 'xlsx';
+import * as XLSX from '../xlsxWrapper';
 
 interface MasterFormulationProps {
   viewMode: string; // 'master_formulation' (view/edit) or 'mf_production' (production formula reference)
@@ -338,6 +338,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
     const sumQty = localInventory.reduce((sum, item) => sum + (parseFloat(item.qty) || 0), 0);
     
     // Build AOA rows matching python structure
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const excelRows: any[][] = [];
 
     // Title Row

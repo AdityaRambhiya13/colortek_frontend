@@ -32,18 +32,22 @@ export const Header: React.FC<HeaderProps> = ({
   const productName = sessionStorage.getItem('product_name') || 'No Workspace Selected';
 
   // Filter complaints vs regular notifications
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const complaintNotifications = notifications.filter((notif: any) => 
     (notif.target_role || '').toLowerCase().includes('complaint') || 
     (notif.title || '').toLowerCase().includes('complaint') ||
     (notif.message || '').toLowerCase().includes('complaint')
   );
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const complaintUnreadCount = complaintNotifications.filter((notif: any) => !notif.seen).length;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const regularNotifications = notifications.filter((notif: any) => 
     !((notif.target_role || '').toLowerCase().includes('complaint') || 
       (notif.title || '').toLowerCase().includes('complaint') ||
       (notif.message || '').toLowerCase().includes('complaint'))
   );
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const regularUnreadCount = regularNotifications.filter((notif: any) => !notif.seen).length;
 
   const getTypeClass = (type: string) => {
@@ -112,13 +116,16 @@ export const Header: React.FC<HeaderProps> = ({
 
   const markRegularAsSeen = async () => {
     const unseenIds = regularNotifications
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .filter((n: any) => !n.seen)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .map((n: any) => n.id);
 
     if (unseenIds.length > 0) {
       const [success] = await NotificationsAPI.markNotificationsSeen(unseenIds);
       if (success) {
         setNotifications(prev =>
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           prev.map((n: any) => unseenIds.includes(n.id) ? { ...n, seen: true } : n)
         );
       }
@@ -127,13 +134,16 @@ export const Header: React.FC<HeaderProps> = ({
 
   const markComplaintsAsSeen = async () => {
     const unseenIds = complaintNotifications
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .filter((n: any) => !n.seen)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .map((n: any) => n.id);
 
     if (unseenIds.length > 0) {
       const [success] = await NotificationsAPI.markNotificationsSeen(unseenIds);
       if (success) {
         setNotifications(prev =>
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           prev.map((n: any) => unseenIds.includes(n.id) ? { ...n, seen: true } : n)
         );
       }

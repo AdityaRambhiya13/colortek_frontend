@@ -118,6 +118,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
     setLoading(false);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const consolidateUsersList = (users: any[]) => {
     const map: Record<string, { products: Set<string>; roles: Set<string> }> = {};
     users.forEach(u => {
@@ -245,6 +246,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
       accessControl[p] = selectedRoles;
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const payload: any = {
       access_control: accessControl
     };

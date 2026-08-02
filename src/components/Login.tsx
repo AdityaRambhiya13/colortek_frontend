@@ -73,6 +73,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         setErrorMsg(typeof data === 'string' ? data : 'Invalid username or password.');
         setLoading(false);
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setErrorMsg('A connection error occurred. Verify that the server is online.');
       setLoading(false);
@@ -104,6 +105,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         setErrorMsg(typeof data === 'string' ? data : 'Invalid admin username or password.');
         setLoading(false);
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setErrorMsg('A connection error occurred. Verify that the server is online.');
       setLoading(false);

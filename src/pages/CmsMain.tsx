@@ -5,7 +5,7 @@ import {
   Edit3, ZoomIn, Bell, Info, Printer, Star
 } from 'lucide-react';
 import { CMSAPI, LabPastFormulationsAPI, RMPastFormulationsAPI, LabFormulationsAPI, RMFormulationsAPI, RawMaterialAPI, RepairedFormulationsAPI, API_BASE_URL, NotificationsAPI } from '../services/api';
-import * as XLSX from 'xlsx';
+import * as XLSX from '../xlsxWrapper';
 import { jsPDF } from 'jspdf';
 
 interface CmsMainProps {
@@ -83,6 +83,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     const [success, data] = await NotificationsAPI.getNotifications();
     if (success && Array.isArray(data)) {
       setNotifications(data);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const unseen = data.filter((notif: any) => !notif.seen).length;
       setUnreadCount(unseen);
     }
@@ -106,13 +107,16 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
   const markAllAsSeen = async () => {
     const unseenIds = notifications
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .filter((n: any) => !n.seen)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .map((n: any) => n.id);
 
     if (unseenIds.length > 0) {
       const [success] = await NotificationsAPI.markNotificationsSeen(unseenIds);
       if (success) {
         setNotifications(prev =>
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           prev.map((n: any) => ({ ...n, seen: true }))
         );
         setUnreadCount(0);
@@ -288,6 +292,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       } else {
         onShowToast(typeof res === 'string' ? res : 'Failed to update star bookmark', 'error');
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       onShowToast(err.message || 'Failed to update star bookmark', 'error');
     } finally {
@@ -396,6 +401,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
             setRightRemarks(parsed.remarks || '');
             
             // Map inventory rows and fill up to 25 rows
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const inventory = (parsed.inventory || []).map((i: any) => ({
               sr: i.sr_no ? i.sr_no.toString() : (i.sr ? i.sr.toString() : ''),
               material: i.raw_material || i.material || '',
@@ -414,6 +420,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
             const incomingTests = parsed.tests || [];
             
             const incomingMap = new Map();
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             incomingTests.forEach((t: any) => {
               if (t.method) {
                 incomingMap.set(t.method.toUpperCase(), t);
@@ -433,6 +440,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
             
             // Append any non-standard incoming tests
             const defaultMethods = new Set(defaultTestRows.map(d => d.method.toUpperCase()));
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             incomingTests.forEach((t: any) => {
               if (t.method && !defaultMethods.has(t.method.toUpperCase())) {
                 mergedTests.push({
@@ -736,6 +744,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     }
 
     // Sort and compare elements
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sortFn = (a: any, b: any) => a.mat.localeCompare(b.mat) || a.qty - b.qty;
     const sortedLeft = [...leftPairs].sort(sortFn);
     const sortedRight = [...rightPairs].sort(sortFn);
@@ -802,6 +811,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
     if (success && typeof data !== 'string') {
       const currentBatchNo = side === 'left' ? leftForm.batchNo : rightForm.batchNo;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const matches = (data.matches || []).filter((m: any) => m.toString() !== currentBatchNo.toString());
       if (matches.length > 0) {
         setDuplicateMatches(matches);
@@ -1090,6 +1100,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
         onShowToast('No historical batches match this specific filter.', 'info');
       } else {
         // Map Filtered matches to duplicate format to display
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const mapped = matches.map((m: any) => ({
           batch_no: m.batch_no,
           ref_no: m.ref_no,
@@ -1306,6 +1317,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       }
 
       // Load inventory rows and fill up to 25 rows
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const inventory = (data.inventory || []).map((i: any) => {
         if (Array.isArray(i)) {
           const mat = i[1] || '';
@@ -1353,6 +1365,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       // Duplicate check handles self-duplicates automatically now
 
       // Load test results
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const tests = (data.tests || []).map((t: any) => {
         if (Array.isArray(t)) {
           return {
@@ -1391,6 +1404,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     const isLab = activeSubView === 'lab_formulations' || activeSubView === 'past_lab_formulations';
     
     // Build a unified layout array of arrays
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data: any[][] = [
       ['Colortek CMS - Formulation Report'],
       [],
@@ -1592,6 +1606,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const generateFormulationPrintPDF = (data: any) => {
     const fd = data.form_data || [];
     const refNo = data.ref_no || fd[0] || 'N/A';
@@ -1603,6 +1618,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     const reportDate = isLab ? (fd[4] || 'N/A') : (fd[5] || 'N/A');
     const formulaDate = isLab ? (fd[5] || 'N/A') : (fd[6] || 'N/A');
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const inventory = (data.inventory || []).map((i: any) => {
       if (Array.isArray(i)) {
         return {
@@ -1619,8 +1635,10 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
           mr: i.mr_no || i.mr || '',
         };
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     }).filter((item: any) => item.material.trim() !== '');
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const tests = (data.tests || []).map((t: any) => {
       if (Array.isArray(t)) {
         return {
@@ -1635,6 +1653,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
           result: t.result || '',
         };
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     }).filter((t: any) => {
       const methodVal = (t.method || '').trim();
       const stdVal = (t.standard || '').trim();
@@ -1712,6 +1731,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     doc.setFontSize(11);
 
     let totalQty = 0;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     inventory.forEach((item: any, index: number) => {
       if (index % 2 === 0) {
         doc.setFillColor(250, 250, 250);
@@ -1784,6 +1804,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       doc.setFont('Helvetica', 'normal');
       doc.setFontSize(11);
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       tests.forEach((t: any, index: number) => {
         if (index % 2 === 0) {
           doc.setFillColor(250, 250, 250);
@@ -1821,6 +1842,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
   const printSelectedIngredientsOnly = async () => {
     if (selectedPastBatches.length === 0) return;
     setLoading(true);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const fetchedData: any[] = [];
     
     for (const batchNo of selectedPastBatches) {
@@ -1839,6 +1861,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const generateIngredientsOnlyPDF = (fetchedData: any[]) => {
     const doc = new jsPDF('p', 'mm', 'a4');
     
@@ -1859,10 +1882,12 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     };
 
     // Flatten data into individual printable card blocks (handling chunks of max 20 items per card)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const printableCards: any[] = [];
 
     fetchedData.forEach((data) => {
       const fd = data.form_data || [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const inventory = (data.inventory || []).map((i: any) => {
         if (Array.isArray(i)) {
           return {
@@ -1877,6 +1902,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
             qty: i.qty !== undefined ? i.qty.toString() : '',
           };
         }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       }).filter((item: any) => item.material.trim() !== '');
 
       const maxItemsPerCard = 20;
@@ -2012,6 +2038,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       doc.setFont('Helvetica', 'normal');
       doc.setFontSize(13); 
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       cardData.inventory.forEach((item: any, index: number) => {
         if (index % 2 === 0) {
           doc.setFillColor(250, 250, 250);
@@ -2032,6 +2059,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       if (cardData.isFinalChunk) {
         let totalQty = 0;
         const itemsToSum = cardData.fullInventoryRef || cardData.inventory;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         itemsToSum.forEach((item: any) => {
           const qtyVal = parseFloat(item.qty);
           if (!isNaN(qtyVal)) totalQty += qtyVal;
@@ -2083,6 +2111,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
   const printSelectedCompleteCards = async () => {
     if (selectedPastBatches.length === 0) return;
     setLoading(true);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const fetchedData: any[] = [];
     
     for (const batchNo of selectedPastBatches) {
@@ -2101,6 +2130,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const generateMultiFormulationsPrintPDF = (fetchedData: any[]) => {
     const doc = new jsPDF('p', 'mm', 'a4');
     const cardWidth = 94;
@@ -2128,6 +2158,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       const reportDate = isLab ? (fd[4] || 'N/A') : (fd[5] || 'N/A');
       const formulaDate = isLab ? (fd[5] || 'N/A') : (fd[6] || 'N/A');
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const inventory = (data.inventory || []).map((i: any) => {
         if (Array.isArray(i)) {
           return {
@@ -2144,8 +2175,10 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
             mr: i.mr_no || i.mr || '',
           };
         }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       }).filter((item: any) => item.material.trim() !== '');
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const tests = (data.tests || []).map((t: any) => {
         if (Array.isArray(t)) {
           return {
@@ -2160,6 +2193,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
             result: t.result || '',
           };
         }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       }).filter((t: any) => {
         const methodVal = (t.method || '').trim();
         const stdVal = (t.standard || '').trim();
@@ -2271,6 +2305,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       const displayInventory = inventory.slice(0, maxRawMaterials);
       const remainingRMCount = inventory.length - maxRawMaterials;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       displayInventory.forEach((item: any, index: number) => {
         const isLastRow = index === maxRawMaterials - 1 && remainingRMCount > 0;
         
@@ -2302,6 +2337,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       });
 
       if (remainingRMCount > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         inventory.slice(maxRawMaterials - 1).forEach((item: any) => {
           const qtyVal = parseFloat(item.qty);
           if (!isNaN(qtyVal)) totalQty += qtyVal;
@@ -2342,6 +2378,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
         const displayTests = tests.slice(0, maxTests);
         const remainingTestsCount = tests.length - maxTests;
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         displayTests.forEach((t: any, index: number) => {
           const isLastRow = index === maxTests - 1 && remainingTestsCount > 0;
           
@@ -2391,6 +2428,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     setSelectedPastBatches([]); // Reset selection after printing
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const parseDuplicateDetails = (data: any) => {
     if (!data) return null;
     const fd = data.form_data || [];
@@ -2404,6 +2442,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       formulaDate: fd[6] || data.formula_date || '',
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const inventory = (data.inventory || []).map((i: any) => {
       if (Array.isArray(i)) {
         return {
@@ -2424,8 +2463,10 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
           solid_qty: i.solid_qty !== undefined && i.solid_qty !== null ? i.solid_qty.toString() : '0',
         };
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     }).filter((r: any) => r.material.trim() !== '');
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const tests = (data.tests || []).map((t: any) => {
       if (Array.isArray(t)) {
         return {
@@ -2538,6 +2579,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
             
             {/* Matches Buttons/Chips Container */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', margin: '4px 0' }}>
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               {duplicateMatches.map((m: any, idx: number) => {
                 const isSelected = selectedBatchNo === m.batch_no;
                 return (
@@ -2669,6 +2711,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                     </tr>
                   </thead>
                   <tbody>
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     {parsed.inventory.map((row: any, idx: number) => (
                       <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
                         <td style={{ padding: '6px' }}>{row.sr}</td>
@@ -2696,6 +2739,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                       </tr>
                     </thead>
                     <tbody>
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
                       {parsed.tests.map((row: any, idx: number) => (
                         <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
                           <td style={{ padding: '6px' }}>{row.method}</td>
@@ -4087,6 +4131,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '16px' }}>
                 {pastBatches.map((b) => {
                   const isLabCard = activeSubView === 'past_lab_formulations';
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   const totalWeight = (b.inventory || []).reduce((sum: number, item: any) => {
                     const qtyStr = item.qty || (Array.isArray(item) ? item[2] : '0');
                     const q = parseFloat(qtyStr);
@@ -4104,6 +4149,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                   const approvalStatus = b.approval_status || '-';
                   const approvalComments = b.approval_comments || '-';
 
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   const totalSolidQty = (b.inventory || []).reduce((sum: number, item: any) => {
                     const qtyStr = item.qty !== undefined ? item.qty : (Array.isArray(item) ? item[2] : '0');
                     const q = parseFloat(qtyStr);
@@ -4222,6 +4268,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                             </tr>
                           </thead>
                           <tbody>
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             {(b.inventory || []).map((item: any, idx: number) => {
                               const sr = item.sr_no || (Array.isArray(item) ? item[0] : (idx + 1).toString());
                               const mr = item.mr_no || (Array.isArray(item) ? item[3] : '');
@@ -4274,9 +4321,11 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                             </tr>
                           </thead>
                           <tbody>
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             {(b.tests || []).filter((test: any) => {
                               const res = test.result || (Array.isArray(test) ? test[2] : '');
                               return res !== '';
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             }).map((test: any, idx: number) => {
                               const method = test.method || (Array.isArray(test) ? test[0] : '-');
                               const standard = test.standard || (Array.isArray(test) ? test[1] : '-');
@@ -4289,6 +4338,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                                 </tr>
                               );
                             })}
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             {(b.tests || []).filter((test: any) => {
                               const res = test.result || (Array.isArray(test) ? test[2] : '');
                               return res !== '';

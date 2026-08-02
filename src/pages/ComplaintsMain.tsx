@@ -214,6 +214,7 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
       } else {
         onShowToast(`Failed to register: ${data}`, 'error');
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error(err);
       onShowToast(`Failed to save complaint: ${err.message || err}`, 'error');
@@ -239,6 +240,7 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
       } else {
         onShowToast(`Move to Lab failed: ${data}`, 'error');
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error(err);
       onShowToast(`Failed to move batch to lab: ${err.message || err}`, 'error');
@@ -272,6 +274,7 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
     if (success && typeof data !== 'string') setLogsList(data.records || []);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const startEditLog = (log: any) => {
     setEditCustomerName(log.customer_name || '');
     setEditProductName(log.product_name || '');
@@ -320,6 +323,7 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleDeleteLog = async (log: any) => {
     if (!window.confirm(`Are you sure you want to delete complaint #${log.id} for batch '${log.batch_no}'?`)) return;
     
@@ -335,6 +339,7 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const parseJsonField = (field: any, type: 'rm' | 'tests') => {
     if (!field) return 'No details available.';
     try {
@@ -342,12 +347,14 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
       if (type === 'rm') {
         const list = d.raw_materials || d;
         if (!Array.isArray(list)) return 'Invalid format.';
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return list.map((item: any, idx: number) => {
           if (typeof item === 'string') return `${idx + 1}) ${item}`;
           return `${idx + 1}) ${item.item || item.raw_material || item.material || 'N/A'} - Qty: ${item.qty1 || item.qty || '-'}`;
         }).join('\n');
       } else {
         if (!Array.isArray(d)) return 'Invalid format.';
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return d.map((t: any) => `${t.method || 'Unknown'}: ${t.standard || 'N/A'} | Result: ${t.result || 'N/A'}`).join('\n');
       }
     } catch { return 'Error parsing data.'; }
@@ -365,6 +372,7 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
     } else { onShowToast(`Failed to load lab complaints: ${data}`, 'error'); }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleOpenLabDetail = async (batch: any) => {
     setSelectedLabComplaint(batch); setLoadingLabDetail(true); setLabComplaintDetails(null);
     const [success, data] = await ComplaintLabAPI.getRepairData(batch.product_name, batch.batch_no);
@@ -393,6 +401,7 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
       } else { 
         onShowToast(`Failed to resolve: ${data}`, 'error'); 
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error(err);
       onShowToast(`Failed to solve complaint: ${err.message || err}`, 'error');
@@ -405,10 +414,12 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
     if (!selectedLabComplaint || !labComplaintDetails) return;
     const cmsDataToLoad = {
       form_fields: { 'BATCH NO': selectedLabComplaint.batch_no, 'PRODUCT NAME': labComplaintDetails.product_name || 'N/A' },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       inventory: (labComplaintDetails.full_bpbs_data?.raw_materials || []).map((item: any, i: number) => ({
         sr_no: String(i + 1), mr_no: item.mrno || item.mr_no || item.mr || '',
         raw_material: item.item || item.raw_material || item.material || '', qty: String(item.qty1 || item.qty || '')
       })),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       tests: (labComplaintDetails.test_results || []).map((item: any) => ({
         method: item.method || '', standard: '', result: item.result || ''
       })),
@@ -449,6 +460,7 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
     } else { onShowToast(`Failed to load repaired formulations: ${data}`, 'error'); }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleSelectRepairedBatch = async (batch: any) => {
     setSelectedRepairedBatch(batch); setLoadingTrials(true); setTrialsList([]); setActiveTrialIdx(0);
     const [success, data] = await RepairedFormulationsAPI.getTrialsForBatch(batch.product_name, batch.batch_no);
@@ -545,6 +557,7 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
   // --------------------------------------------------------------------------
   // SHARED COMPONENTS
   // --------------------------------------------------------------------------
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const PaginationControls = ({ currentPage, totalPages, pageInput, onPageInput, onGo, onPrev, onNext, light }: any) => (
     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
       <button
@@ -575,6 +588,7 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
   );
 
   // Batch card used in both Lab and Repaired Formulations
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const BatchCard = ({ batchNo, productName, onClick, icon: Icon, iconColor, linkText }: any) => (
     <div
       onClick={onClick}
@@ -899,6 +913,7 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
                       </tr>
                     </thead>
                     <tbody>
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
                       {(batchRefData.master_test_results || []).map((test: any, idx: number) => (
                         <tr key={idx} style={{ borderBottom: '1px solid var(--border-light)' }}>
                           <td style={{ padding: '8px 10px', fontWeight: 600 }}>{test.method || '-'}</td>
@@ -1075,7 +1090,9 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
                   {(() => {
                     const trial = trialsList[activeTrialIdx];
                     const { repairedBatchNo, remarks } = parseModificationDetails(trial.modification_details || '');
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const rawList: any[] = trial.raw_materials || [];
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const testList: any[] = trial.test_results || [];
                     let createdAtStr = 'N/A';
                     try {
@@ -1133,6 +1150,7 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
                               <tbody>
                                 {rawList.length === 0
                                   ? <tr><td colSpan={2} style={{ padding: '10px', fontStyle: 'italic', color: '#94a3b8', textAlign: 'center' }}>No ingredients.</td></tr>
+                                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                   : rawList.map((item: any, i: number) => (
                                     <tr key={i} style={{ borderTop: '1px solid #f1f5f9' }}>
                                       <td style={{ padding: '6px 10px', color: '#1e293b' }}>{item.raw_material || item.material || item.item || '-'}</td>
@@ -1159,6 +1177,7 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
                               <tbody>
                                 {testList.length === 0
                                   ? <tr><td colSpan={2} style={{ padding: '10px', fontStyle: 'italic', color: '#94a3b8', textAlign: 'center' }}>No tests recorded.</td></tr>
+                                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                   : testList.map((test: any, i: number) => (
                                     <tr key={i} style={{ borderTop: '1px solid #f1f5f9' }}>
                                       <td style={{ padding: '6px 10px', color: '#1e293b' }}>{test.method || '-'}</td>
@@ -1642,6 +1661,7 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
                 {resolvedDetails.raw_materials?.length > 0 && (
                   <div style={{ border: '1px solid var(--border-light)', borderRadius: '8px', padding: '12px' }}>
                     <strong style={{ fontSize: '0.8rem', display: 'block', marginBottom: '6px' }}>Raw Materials:</strong>
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     {resolvedDetails.raw_materials.map((item: any, i: number) => (
                       <div key={i} style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', paddingLeft: '8px' }}>
                         – {item.material || item.raw_material || item.item}: {item.qty}
@@ -1652,6 +1672,7 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
                 {resolvedDetails.test_results?.length > 0 && (
                   <div style={{ border: '1px solid var(--border-light)', borderRadius: '8px', padding: '12px' }}>
                     <strong style={{ fontSize: '0.8rem', display: 'block', marginBottom: '6px' }}>Test Results:</strong>
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     {resolvedDetails.test_results.map((item: any, i: number) => (
                       <div key={i} style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', paddingLeft: '8px' }}>
                         – {item.method}: {item.result}

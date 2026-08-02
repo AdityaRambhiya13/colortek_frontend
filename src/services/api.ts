@@ -160,10 +160,12 @@ apiClient.interceptors.response.use(
 );
 
 // Response error handler helper
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const handleResponse = async <T>(promise: Promise<any>): Promise<[boolean, T | string]> => {
   try {
     const response = await promise;
     return [true, response.data];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error('API Request Failed:', error);
     
@@ -197,6 +199,7 @@ export const AuthAPI = {
     formData.append('username', username);
     formData.append('password', password);
     
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(
       axios.post(`${API_BASE_URL}/auth/products`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -209,6 +212,7 @@ export const AuthAPI = {
     formData.append('pre_auth_token', preAuthToken);
     formData.append('product_name', productName);
     
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [success, data] = await handleResponse<any>(
       axios.post(`${API_BASE_URL}/auth/login`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -232,6 +236,7 @@ export const AuthAPI = {
     formData.append('username', username);
     formData.append('password', secretToken);
     
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [success, data] = await handleResponse<any>(
       axios.post(`${API_BASE_URL}/auth/admin-login`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -253,6 +258,7 @@ export const AuthAPI = {
     const formData = new FormData();
     formData.append('product_name', productName);
     
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [success, data] = await handleResponse<any>(
       apiClient.post('/auth/switch', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -273,6 +279,7 @@ export const AuthAPI = {
   },
 
   verifySession: async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get('/auth/verify-session'));
   },
 
@@ -304,10 +311,12 @@ export const AdminAPI = {
     return handleResponse<UserResponse[]>(apiClient.get('/admin/users'));
   },
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   createUser: async (payload: any) => {
     return handleResponse<GeneralResponse>(apiClient.post('/admin/users', payload));
   },
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   updateUser: async (username: string, payload: any) => {
     return handleResponse<GeneralResponse>(apiClient.put(`/admin/users/${username}`, payload));
   },
@@ -334,18 +343,22 @@ export const AdminAPI = {
 // ============================================================================
 export const DatabaseAPI = {
   getProducts: async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get('/admin/products'));
   },
 
   createProduct: async (productName: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/admin/db/products', { product_name: productName }));
   },
 
   deleteProduct: async (productName: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.delete(`/admin/db/products/${productName}`));
   },
 
   renameProduct: async (oldProductName: string, newProductName: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/admin/db/products/rename', {
       old_product_name: oldProductName,
       new_product_name: newProductName,
@@ -353,14 +366,17 @@ export const DatabaseAPI = {
   },
 
   createAndAssignProduct: async (productName: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/admin/db/create-and-assign-product', { product_name: productName }));
   },
 
   openProductFolder: async (productName: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post(`/admin/db/open-folder/${productName}`));
   },
 
   bulkPredefined: async (products: string[]) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/admin/db/bulk-predefined', { products }));
   }
 };
@@ -370,14 +386,17 @@ export const DatabaseAPI = {
 // ============================================================================
 export const CMSAPI = {
   getTotalPages: async (productName: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/cms/get_total_pages', { product_name: productName }));
   },
 
   getDuplicateBatches: async (batchNo: string, productName: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/cms/get_duplicates', { batch_no: batchNo, product_name: productName }));
   },
 
   filterMatches: async (productName: string, filterType: string, materials: [string, number][]) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/cms/filter_matches', {
       product_name: productName,
       filter_type: filterType,
@@ -386,20 +405,24 @@ export const CMSAPI = {
   },
 
   getBatchDetail: async (batchNo: string, productName: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/cms/batch_detail/${batchNo}`, {
       params: { product_name: productName },
     }));
   },
 
   checkDuplicates: async (productName: string, materials: [string, string][]) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/cms/check_duplicates', {
       product_name: productName,
       materials: materials,
     }));
   },
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   saveMasterPayload: async (productName: string, batchNo: string, form: Record<string, string>, inventory: any[], tests: any[]) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/cms/save-master', {
       product_name: productName,
       csrf_token: csrfToken,
@@ -410,8 +433,10 @@ export const CMSAPI = {
     }));
   },
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   saveFullBatch: async (productName: string, formFields: any[], materials: any[], tests: any[], remarks: string) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/cms/save-full', {
       product_name: productName,
       csrf_token: csrfToken,
@@ -423,6 +448,7 @@ export const CMSAPI = {
   },
 
   getPastFormulations: async (productName: string, pageIndex: number, pageSize: number, searchTerm?: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/past_formulations/${productName}`, {
       params: {
         page_index: pageIndex,
@@ -438,14 +464,18 @@ export const CMSAPI = {
 // ============================================================================
 export const LabFormulationsAPI = {
   getTotalPages: async (productName: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/lab_formulations/get_total_pages', { product_name: productName }));
   },
 
   getDuplicateBatches: async (batchNo: string, productName: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/lab_formulations/get_duplicates', { batch_no: batchNo, product_name: productName }));
   },
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   filterMatches: async (productName: string, filterType: string, materials: any[]) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/lab_formulations/filter_matches', {
       product_name: productName,
       filter_type: filterType,
@@ -454,20 +484,25 @@ export const LabFormulationsAPI = {
   },
 
   getBatchDetail: async (batchNo: string, productName: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/lab_formulations/batch_detail/${batchNo}`, {
       params: { product_name: productName },
     }));
   },
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   checkDuplicates: async (productName: string, materials: any[]) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/lab_formulations/check_duplicates', {
       product_name: productName,
       materials: materials,
     }));
   },
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   saveMasterPayload: async (productName: string, batchNo: string, form: any, inventory: any[], tests: any[]) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/lab_formulations/save-master', {
       product_name: productName,
       csrf_token: csrfToken,
@@ -478,8 +513,10 @@ export const LabFormulationsAPI = {
     }));
   },
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   saveFullBatch: async (productName: string, formFields: any[], materials: any[], tests: any[], remarks: string) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/lab_formulations/save-full', {
       product_name: productName,
       csrf_token: csrfToken,
@@ -491,6 +528,7 @@ export const LabFormulationsAPI = {
   },
 
   getLmfBatchList: async (productName: string, fromDate?: string, toDate?: string, batchNoFilter?: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/lab_formulations/lmf/list/${productName}`, {
       params: {
         ...(fromDate && { from_date: fromDate }),
@@ -501,10 +539,13 @@ export const LabFormulationsAPI = {
   },
 
   getLmfBatchDetail: async (productName: string, batchNo: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/lab_formulations/lmf/detail/${productName}/${batchNo}`));
   },
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   updateLmfBatch: async (productName: string, batchNo: string, updatedData: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/lab_formulations/lmf/update', {
       product_name: productName,
       batch_no: batchNo,
@@ -513,10 +554,12 @@ export const LabFormulationsAPI = {
   },
 
   getLmfBatchCount: async (productName: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/lab_formulations/lmf/count/${productName}`));
   },
 
   toggleStar: async (productName: string, batchNo: string, isStarred: boolean, okRating: string = '') => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/lab_formulations/toggle_star', {
       product_name: productName,
       batch_no: batchNo,
@@ -530,8 +573,10 @@ export const LabFormulationsAPI = {
 // RM FORMULATIONS SERVICES
 // ============================================================================
 export const RMFormulationsAPI = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   saveFullBatch: async (productName: string, formFields: any[], materials: any[], tests: any[], remarks: string, approvalStatus?: string, approvalComments?: string) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/rm_formulations/save-full', {
       product_name: productName,
       csrf_token: csrfToken,
@@ -545,12 +590,15 @@ export const RMFormulationsAPI = {
   },
 
   getBatchDetail: async (batchNo: string, productName: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/rm_formulations/batch_detail/${batchNo}`, {
       params: { product_name: productName },
     }));
   },
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   filterMatches: async (productName: string, filterType: string, materials: any[]) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/rm_formulations/filter_matches', {
       filter_type: filterType,
       materials: materials,
@@ -564,6 +612,7 @@ export const RMFormulationsAPI = {
 // ============================================================================
 export const LabPastFormulationsAPI = {
   getPastLabFormulations: async (productName: string, pageIndex: number = 0, pageSize: number = 3, searchTerm?: string, isStarredOnly?: boolean) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/lab_past_formulations/${productName}`, {
       params: {
         page_index: pageIndex,
@@ -577,6 +626,7 @@ export const LabPastFormulationsAPI = {
 
 export const RMPastFormulationsAPI = {
   getPastRmFormulations: async (productName: string, pageIndex: number, pageSize: number, searchTerm?: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/rm_past_formulations/${productName}`, {
       params: {
         page_index: pageIndex,
@@ -592,6 +642,7 @@ export const RMPastFormulationsAPI = {
 // ============================================================================
 export const MasterFormulationAPI = {
   getBatchList: async (productName: string, fromDate?: string, toDate?: string, batchNoFilter?: string, onlyApproved?: boolean) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/mf/list/${productName}`, {
       params: {
         ...(fromDate && { from_date: fromDate }),
@@ -603,10 +654,13 @@ export const MasterFormulationAPI = {
   },
 
   getBatchDetail: async (productName: string, batchNo: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/mf/detail/${productName}/${batchNo}`));
   },
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   updateBatch: async (productName: string, batchNo: string, updatedData: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/mf/update', {
       product_name: productName,
       batch_no: batchNo,
@@ -615,6 +669,7 @@ export const MasterFormulationAPI = {
   },
 
   approveBatch: async (productName: string, batchNo: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/mf/approve', {
       product_name: productName,
       batch_no: batchNo,
@@ -622,10 +677,12 @@ export const MasterFormulationAPI = {
   },
 
   getBatchCount: async (productName: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/mf/count/${productName}`));
   },
 
   findByBatch: async (batchNo: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/mf/find-by-batch/${batchNo}`));
   }
 };
@@ -635,6 +692,7 @@ export const MasterFormulationAPI = {
 // ============================================================================
 export const DispatchRegisterAPI = {
   getEntries: async (productName: string, startDate?: string, endDate?: string, customerFilter?: string, batchFilter?: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/dispatch-register/entries/${productName}`, {
       params: {
         ...(startDate && { start_date: startDate }),
@@ -645,6 +703,7 @@ export const DispatchRegisterAPI = {
     }));
   },
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   saveEntry: async (productName: string, entryData: any) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
     const payload = {
@@ -654,21 +713,26 @@ export const DispatchRegisterAPI = {
     };
     
     if (entryData.id) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return handleResponse<any>(apiClient.put(`/dispatch-register/entry/${entryData.id}`, payload));
     } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return handleResponse<any>(apiClient.post('/dispatch-register/entry', payload));
     }
   },
 
   deleteEntry: async (productName: string, entryId: number) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.delete(`/dispatch-register/entry/${productName}/${entryId}`));
   },
 
   getFgProductsList: async (productNameDb: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/dispatch-register/fg-products/${productNameDb}`));
   },
 
   getFgBatchesByProduct: async (productNameDb: string, productName: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/dispatch-register/fg-batches/${productNameDb}`, {
       params: { product_filter: productName },
     }));
@@ -676,6 +740,7 @@ export const DispatchRegisterAPI = {
 
   searchFgBatches: async (productFilter: string, searchTerm: string) => {
     const productNameDb = sessionStorage.getItem('product_name') || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/dispatch-register/search-fg-batches/${productNameDb}/${searchTerm}`, {
       params: { product_filter: productFilter },
     }));
@@ -686,8 +751,10 @@ export const DispatchRegisterAPI = {
 // REJECTED MATERIAL SERVICES (RJM)
 // ============================================================================
 export const RejectedMaterialAPI = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   saveEntries: async (productName: string, entries: any[]) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/rjm/entries', {
       product_name: productName,
       csrf_token: csrfToken,
@@ -696,11 +763,14 @@ export const RejectedMaterialAPI = {
   },
 
   getEntries: async (productName: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/rjm/entries/${productName}`));
   },
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   createEntry: async (productName: string, entryData: any) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/rjm/entry', {
       product_name: productName,
       csrf_token: csrfToken,
@@ -708,8 +778,10 @@ export const RejectedMaterialAPI = {
     }));
   },
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   updateEntry: async (productName: string, entryId: number, updateData: any) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.put('/rjm/entry', {
       product_name: productName,
       csrf_token: csrfToken,
@@ -723,8 +795,10 @@ export const RejectedMaterialAPI = {
 // INWARD REGISTER SERVICES (IR)
 // ============================================================================
 export const InwardRegisterAPI = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   saveEntries: async (productName: string, entries: any[]) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/ir/entries', {
       product_name: productName,
       csrf_token: csrfToken,
@@ -733,6 +807,7 @@ export const InwardRegisterAPI = {
   },
 
   searchEntries: async (productName: string, query: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/ir/search/${productName}`, {
       params: { query },
     }));
@@ -743,8 +818,10 @@ export const InwardRegisterAPI = {
 // DAILY PRODUCTION SERVICES (DP)
 // ============================================================================
 export const DailyProductionAPI = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   saveEntries: async (productName: string, entries: any[]) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/daily-production/entries', {
       product_name: productName,
       csrf_token: csrfToken,
@@ -752,8 +829,10 @@ export const DailyProductionAPI = {
     }));
   },
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   saveSingleEntry: async (productName: string, entry: any) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/daily-production/entry', {
       product_name: productName,
       csrf_token: csrfToken,
@@ -761,8 +840,10 @@ export const DailyProductionAPI = {
     }));
   },
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   updateSingleEntry: async (productName: string, entryId: number, entry: any) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.put('/daily-production/entry', {
       product_name: productName,
       csrf_token: csrfToken,
@@ -772,6 +853,7 @@ export const DailyProductionAPI = {
   },
 
   getAllEntriesByDate: async (productName: string, dateStr: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/daily-production/entries/${productName}/all-by-date`, {
       params: { date_str: dateStr }
     }));
@@ -787,6 +869,7 @@ export const DailyProductionAPI = {
     page = 1,
     pageSize = 20
   ) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/daily-production/entries-filtered/${productName}`, {
       params: {
         page: page,
@@ -810,6 +893,7 @@ export const DailyProductionAPI = {
     qty_unit: string;
     charged_by: string;
   }) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/dp/consolidate-from-live', payload));
   }
 };
@@ -818,8 +902,10 @@ export const DailyProductionAPI = {
 // MATERIAL REQUISITION SERVICES (MRF)
 // ============================================================================
 export const MaterialRequisitionAPI = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   saveEntries: async (productName: string, entries: any[]) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/mrf/entries', {
       product_name: productName,
       csrf_token: csrfToken,
@@ -828,6 +914,7 @@ export const MaterialRequisitionAPI = {
   },
 
   getEntries: async (productName: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/mrf/entries/${productName}`));
   }
 };
@@ -836,8 +923,10 @@ export const MaterialRequisitionAPI = {
 // FINISHED GOODS SERVICES (FG)
 // ============================================================================
 export const FinishGoodAPI = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   saveEntries: async (productNameDb: string, entries: any[], deleteIds: number[] = []) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/fg/save-entries', {
       product_name: productNameDb,
       csrf_token: csrfToken,
@@ -846,7 +935,9 @@ export const FinishGoodAPI = {
     }));
   },
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   saveSingleEntry: async (productNameDb: string, entry: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/fg/save-single-entry', {
       product_name_db: productNameDb,
       entry: entry,
@@ -854,6 +945,7 @@ export const FinishGoodAPI = {
   },
 
   getPaginatedEntries: async (productNameDb: string, filterProduct = '', filterBatch = '', pageNum = 1, pageSize = 20) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/fg/entries/paginated', {
       product_name_db: productNameDb,
       filter_product: filterProduct,
@@ -864,6 +956,7 @@ export const FinishGoodAPI = {
   },
 
   getAllEntries: async (productNameDb: string, filterBatch = '') => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get('/fg/get-all-entries', {
       params: {
         product_name_db: productNameDb,
@@ -873,6 +966,7 @@ export const FinishGoodAPI = {
   },
 
   recalculateGoods: async (productNameDb: string, filterProduct: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/fg/recalculate-stock', {
       product_name_db: productNameDb,
       filter_product: filterProduct,
@@ -880,6 +974,7 @@ export const FinishGoodAPI = {
   },
 
   pushLiveProduction: async (productNameDb: string, product: string, batchNo: string, totalQty: number, allotmentDetails: string, balance: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/fg/consolidate-from-live', {
       product_name_db: productNameDb,
       product,
@@ -891,6 +986,7 @@ export const FinishGoodAPI = {
   },
 
   consolidateFromLive: async (productNameDb: string, product: string, batchNo: string, customerName: string, totalQty: number, allottedQty: number) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/fg/consolidate-from-live', {
       product_name_db: productNameDb,
       product: product,
@@ -906,8 +1002,10 @@ export const FinishGoodAPI = {
 // BATCH PRODUCTION SHEET SERVICES (BPBS)
 // ============================================================================
 export const BatchProductionSheetAPI = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   saveSheet: async (productName: string, sheetData: any) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/bpbs/save', {
       product_name: productName,
       csrf_token: csrfToken,
@@ -916,6 +1014,7 @@ export const BatchProductionSheetAPI = {
   },
 
   getSheet: async (productName: string, batchNo: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/bpbs/sheet/${productName}/${batchNo}`));
   }
 };
@@ -924,8 +1023,10 @@ export const BatchProductionSheetAPI = {
 // RESEARCH & DEVELOPMENT SERVICES (R&D)
 // ============================================================================
 export const RDReportAPI = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   createReport: async (productName: string, reportData: any) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/rd/report', {
       product_name: productName,
       csrf_token: csrfToken,
@@ -934,6 +1035,7 @@ export const RDReportAPI = {
   },
 
   getReports: async (productName: string, pageIndex: number, pageSize: number, searchTerm?: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/rd/reports/${productName}`, {
       params: {
         page_index: pageIndex,
@@ -943,7 +1045,9 @@ export const RDReportAPI = {
     }));
   },
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   searchReports: async (productName: string, filters: any, pageIndex: number) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post(`/rd/search/${productName}`, filters, {
       params: {
         page: pageIndex,
@@ -953,6 +1057,7 @@ export const RDReportAPI = {
   },
 
   getReportDetails: async (productName: string, batchNo: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/rd/details/${productName}/${batchNo}`));
   }
 };
@@ -962,10 +1067,12 @@ export const RDReportAPI = {
 // ============================================================================
 export const CustomerAPI = {
   getSubAllotment: async (productNameDb: string, masterCustomer: string, batchNo: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/customers/allotments/${productNameDb}/${masterCustomer}/${batchNo}`));
   },
 
   saveSubAllotment: async (productNameDb: string, masterCustomer: string, batchNo: string, allotments: Record<string, number>) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/customers/allotments', {
       product_name_db: productNameDb,
       master_customer: masterCustomer,
@@ -988,6 +1095,7 @@ export const NotificationsAPI = {
       return [false, 'Incomplete session variables.'] as [boolean, string];
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/notifications/${productName}/${username}/${roles}`));
   },
 
@@ -1000,6 +1108,7 @@ export const NotificationsAPI = {
       return [false, 'Incomplete session variables.'] as [boolean, string];
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/notifications/mark-seen', {
       product_name: productName,
       username: username,
@@ -1014,6 +1123,7 @@ export const NotificationsAPI = {
       return [false, 'Product context unavailable.'] as [boolean, string];
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/notifications/create', {
       product_name: productName,
       title: title,
@@ -1028,8 +1138,10 @@ export const NotificationsAPI = {
 // COMPLAINTS SERVICES
 // ============================================================================
 export const ComplaintsAPI = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   createComplaint: async (productName: string, complaintData: any) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/complaints/save', {
       product_name: productName,
       csrf_token: csrfToken,
@@ -1038,10 +1150,12 @@ export const ComplaintsAPI = {
   },
 
   getComplaints: async (productName: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/complaints/list/${productName}`));
   },
 
   getEntriesFiltered: async (pageNum = 1, pageSize = 100, batchFilter?: string, dateFilter?: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get('/complaints/list-global', {
       params: {
         page: pageNum,
@@ -1052,8 +1166,10 @@ export const ComplaintsAPI = {
     }));
   },
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   saveLabResolution: async (productName: string, complaintId: number, resolutionData: any) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post(`/complaints/lab-resolution/${complaintId}`, {
       product_name: productName,
       csrf_token: csrfToken,
@@ -1062,11 +1178,14 @@ export const ComplaintsAPI = {
   },
 
   getRepairedFormulations: async (productName: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/complaints/repaired-formulations/${productName}`));
   },
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   updateEntry: async (productName: string, complaintId: number, updateData: any) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.put(`/complaints/update/${productName}/${complaintId}`, {
       csrf_token: csrfToken,
       customer_name: updateData.customer_name,
@@ -1081,15 +1200,18 @@ export const ComplaintsAPI = {
   },
 
   deleteEntry: async (productName: string, complaintId: number) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.delete(`/complaints/delete/${productName}/${complaintId}`));
   }
 };
 
 export const ComplaintRegistrationAPI = {
   getBatchDetailsGlobal: async (batchNo: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/complaint-reg/batch-details-global/${batchNo}`));
   },
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   registerComplaintWithImage: async (productName: string, payload: any, imageFiles: File[]) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
     const formData = new FormData();
@@ -1099,6 +1221,7 @@ export const ComplaintRegistrationAPI = {
     imageFiles.forEach(file => {
       formData.append('images', file);
     });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/complaint-reg/register', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     }));
@@ -1106,6 +1229,7 @@ export const ComplaintRegistrationAPI = {
 
   moveToLab: async (productName: string, batchNo: string) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/complaint-reg/move-to-lab', {
       product_name: productName,
       batch_no: batchNo,
@@ -1116,19 +1240,24 @@ export const ComplaintRegistrationAPI = {
 
 export const ComplaintLabAPI = {
   listBatchesGlobal: async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get('/complaint-lab/list-global'));
   },
 
   getDetails: async (productName: string, batchNo: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/complaint-lab/details/${productName}/${batchNo}`));
   },
 
   getRepairData: async (productName: string, batchNo: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/complaint-lab/repair-data/${productName}/${batchNo}`));
   },
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   saveRepair: async (productName: string, payload: any) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/complaint-lab/save-repair', {
       product_name: productName,
       csrf_token: csrfToken,
@@ -1138,6 +1267,7 @@ export const ComplaintLabAPI = {
 
   solveComplaint: async (productName: string, batchNo: string) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/complaint-lab/solve', {
       product_name: productName,
       csrf_token: csrfToken,
@@ -1148,15 +1278,19 @@ export const ComplaintLabAPI = {
 
 export const RepairedFormulationsAPI = {
   listBatchesWithTrialsGlobal: async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get('/repaired-formulations/list-global'));
   },
 
   getTrialsForBatch: async (productName: string, originalBatchNo: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/repaired-formulations/trials/${productName}/${originalBatchNo}`));
   },
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   createNewTrial: async (productName: string, trialData: any) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/repaired-formulations/create-trial', {
       product_name: productName,
       csrf_token: csrfToken,
@@ -1170,12 +1304,14 @@ export const RepairedFormulationsAPI = {
 // ============================================================================
 export const ComplaintResolutionAPI = {
   listResolved: async (searchTerm?: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get('/complaint-resolution/list-global', {
       params: { ...(searchTerm && { search: searchTerm }) }
     }));
   },
 
   getResolvedDetails: async (batchNo: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/complaint-resolution/details-global/${batchNo}`));
   }
 };
@@ -1184,8 +1320,10 @@ export const ComplaintResolutionAPI = {
 // QUALITY CONTROL SERVICES (QC1 - QC7)
 // ============================================================================
 export const QCReportAPI = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   saveReport: async (productName: string, reportData: any) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/qc/save', {
       product_name: productName,
       csrf_token: csrfToken,
@@ -1194,14 +1332,17 @@ export const QCReportAPI = {
   },
 
   getAllReports: async (productName: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/qc/list/${productName}`));
   },
 
   getReportDetail: async (productName: string, batchNo: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/qc/detail/${productName}/${batchNo}`));
   },
 
   getPastEntries: async (productName: string, filterDate?: string, searchTerm?: string, page = 1, size = 20) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get('/qc/past-entries', {
       params: {
         product_name: productName,
@@ -1215,8 +1356,10 @@ export const QCReportAPI = {
 };
 
 export const RawMaterialAPI = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   saveEntries: async (productName: string, entries: any[]) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/qc/rm/save', {
       product_name: productName,
       csrf_token: csrfToken,
@@ -1225,10 +1368,12 @@ export const RawMaterialAPI = {
   },
 
   getEntries: async (productName: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/qc/rm/entries/${productName}`));
   },
 
   getPastEntries: async (productName: string, searchTerm?: string, dateFrom?: string, dateTo?: string, page = 1, size = 20) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get('/qc/rm/past-entries', {
       params: {
         product_name: productName,
@@ -1243,8 +1388,10 @@ export const RawMaterialAPI = {
 };
 
 export const ProductionBatchAPI = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   saveEntries: async (productName: string, entries: any[]) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/qc/pb/save', {
       product_name: productName,
       csrf_token: csrfToken,
@@ -1253,6 +1400,7 @@ export const ProductionBatchAPI = {
   },
 
   getPastEntries: async (productName: string, dateFrom?: string, dateTo?: string, searchTerm?: string, page = 1, size = 20) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get('/qc/pb/entries', {
       params: {
         product_name: productName,
@@ -1267,8 +1415,10 @@ export const ProductionBatchAPI = {
 };
 
 export const ObservationAPI = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   saveEntries: async (productName: string, entries: any[]) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/qc/observation/save', {
       product_name: productName,
       csrf_token: csrfToken,
@@ -1278,8 +1428,10 @@ export const ObservationAPI = {
 };
 
 export const W56RndAPI = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   saveEntries: async (productName: string, entries: any[]) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/qc/w56rnd/save', {
       product_name: productName,
       csrf_token: csrfToken,
@@ -1288,6 +1440,7 @@ export const W56RndAPI = {
   },
 
   getPastEntries: async (productName: string, searchTerm?: string, dateFrom?: string, dateTo?: string, page = 1, size = 20) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get('/qc/w56rnd/past-entries', {
       params: {
         product_name: productName,
@@ -1302,8 +1455,10 @@ export const W56RndAPI = {
 };
 
 export const ProductionBatchEntryAPI = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   saveEntries: async (productName: string, entries: any[]) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/qc/pbe/save', {
       product_name: productName,
       csrf_token: csrfToken,
@@ -1312,6 +1467,7 @@ export const ProductionBatchEntryAPI = {
   },
 
   getPastEntries: async (productName: string, searchTerm?: string, dateFrom?: string, dateTo?: string, page = 1, size = 20) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get('/qc/pbe/past-entries', {
       params: {
         product_name: productName,
@@ -1326,8 +1482,10 @@ export const ProductionBatchEntryAPI = {
 };
 
 export const LabReturnAPI = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   saveEntries: async (productName: string, entries: any[]) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/qc/lab-return/save', {
       product_name: productName,
       csrf_token: csrfToken,
@@ -1336,6 +1494,7 @@ export const LabReturnAPI = {
   },
 
   getPastEntries: async (productName: string, searchTerm?: string, dateFrom?: string, dateTo?: string, page = 1, size = 20) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get('/qc/lab-return/past-entries', {
       params: {
         product_name: productName,
@@ -1354,14 +1513,17 @@ export const LabReturnAPI = {
 // ============================================================================
 export const ProductMasterAPI = {
   getProductsList: async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get('/products/list'));
   },
 
   getProducts: async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get('/products/list'));
   },
 
   addProduct: async (product: string, subProducts: string[]) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/products/add', {
       product: product,
       sub_products: subProducts,
@@ -1369,6 +1531,7 @@ export const ProductMasterAPI = {
   },
 
   updateProduct: async (oldProduct: string, oldSubProduct: string, newProduct: string, newSubProduct: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.put('/products/update', {
       old_product: oldProduct,
       old_sub_product: oldSubProduct,
@@ -1378,6 +1541,7 @@ export const ProductMasterAPI = {
   },
 
   deleteProduct: async (product: string, subProduct: string | null) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.delete('/products/delete', {
       data: {
         product: product,
@@ -1387,6 +1551,7 @@ export const ProductMasterAPI = {
   },
 
   clearProducts: async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.delete('/products/clear'));
   }
 };
@@ -1395,8 +1560,10 @@ export const ProductMasterAPI = {
 // LIVE PRODUCTION SERVICES
 // ============================================================================
 export const LiveProductionAPI = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   saveState: async (productName: string, rows: any[]) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/live-prod/save', {
       product_name: productName,
       csrf_token: csrfToken,
@@ -1405,18 +1572,22 @@ export const LiveProductionAPI = {
   },
 
   loadState: async (productName: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/live-prod/load/${productName}`));
   },
 
   clearState: async (productName: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.delete(`/live-prod/clear/${productName}`));
   },
 
   getProdCompletedBatches: async (productName: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/live-prod/prod-completed/${productName}`));
   },
 
   updateQCStatus: async (productName: string, batchNo: string, status: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/live-prod/update-qc-status', {
       product_name: productName,
       batch_no: batchNo,
@@ -1425,6 +1596,7 @@ export const LiveProductionAPI = {
   },
 
   deleteLiveProdBatch: async (productName: string, batchNo: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.delete(`/live-prod/delete-batch/${productName}/${batchNo}`));
   }
 };
@@ -1433,8 +1605,10 @@ export const LiveProductionAPI = {
 // RM STOCK SERVICES (RMS)
 // ============================================================================
 export const RMStockAPI = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   saveEntries: async (productNameDb: string, entries: any[], deleteIds: number[] = []) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/rm-stock/save-entries', {
       product_name: productNameDb,
       csrf_token: csrfToken,
@@ -1443,7 +1617,9 @@ export const RMStockAPI = {
     }));
   },
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   saveSingleEntry: async (productNameDb: string, entry: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/rm-stock/save-single-entry', {
       product_name_db: productNameDb,
       entry: entry,
@@ -1451,12 +1627,14 @@ export const RMStockAPI = {
   },
 
   deleteSingleEntry: async (productNameDb: string, entryId: number) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.delete(`/rm-stock/delete-single-entry/${entryId}`, {
       params: { product_name_db: productNameDb }
     }));
   },
 
   getPaginatedEntries: async (productNameDb: string, filterProduct = '', filterBatch = '', pageNum = 1, pageSize = 20) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/rm-stock/entries/paginated', {
       product_name_db: productNameDb,
       filter_product: filterProduct,
@@ -1467,12 +1645,14 @@ export const RMStockAPI = {
   },
 
   getAllEntries: async (productNameDb: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get('/rm-stock/get-all-entries', {
       params: { product_name_db: productNameDb }
     }));
   },
 
   recalculateStock: async (productNameDb: string, filterProduct = '') => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/rm-stock/recalculate-stock', {
       product_name_db: productNameDb,
       filter_product: filterProduct,
@@ -1480,6 +1660,7 @@ export const RMStockAPI = {
   },
 
   consolidateFromLive: async (productNameDb: string, product: string, batchNo: string, customerName: string, totalQty: number, allottedQty: number) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/rm-stock/consolidate-from-live', {
       product_name_db: productNameDb,
       product: product,

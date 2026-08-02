@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { RDReportAPI } from '../services/api';
 import { useVirtual } from '../hooks/useVirtual';
-import * as XLSX from 'xlsx';
+import * as XLSX from '../xlsxWrapper';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -658,6 +658,7 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
   // --------------------------------------------------------------------------
   const executeSearch = async (pageNum = 1) => {
     setSearching(true);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const cleanFilters: any = {};
     Object.entries(searchFilters).forEach(([k, v]) => {
       if (v.trim()) cleanFilters[k] = v.trim();
@@ -710,6 +711,7 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
   // --------------------------------------------------------------------------
   // EXCEL EXPORT (SHEETJS)
   // --------------------------------------------------------------------------
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleExportExcel = (customData?: any) => {
     const d = customData || {
       form,
@@ -721,6 +723,7 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
 
     const activeBatchNo = d.form?.batch_no || 'RD_Report';
     const wb = XLSX.utils.book_new();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const wsRows: any[] = [];
 
     // Title Row
@@ -734,6 +737,7 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
     wsRows.push(["Sr. No.", "Raw Material", "Parts by Weight", "Raw Material %", "Remarks"]);
     
     // Normalize raw materials:
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rawList: any[] = (d.raw_materials || []).map((rm: any) => {
       if (typeof rm === 'string') {
         return { raw_material: rm, parts_by_weight: '', raw_material_pct: '', remarks: '' };
@@ -741,6 +745,7 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
       return rm;
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     rawList.forEach((rm: any, idx: number) => {
       wsRows.push([
         idx + 1,
@@ -802,6 +807,7 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
     wsRows.push(["Time", "Temp of V.T.", "Temp of F.T.", "H2O", "AV / AM.V / Nc.V / EEW", "Observations & Remarks"]);
     
     const obsList = d.observations || [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     obsList.forEach((obs: any) => {
       wsRows.push([
         obs.time || '',
@@ -847,6 +853,7 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
   // --------------------------------------------------------------------------
   // PDF EXPORT (JSPDF)
   // --------------------------------------------------------------------------
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleExportPDF = (customData?: any) => {
     const d = customData || {
       form,
@@ -946,6 +953,7 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
 
     // Raw Materials Rows
     let currentY = rmHeaderY + 7;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rawList: any[] = (d.raw_materials || []).map((rm: any) => {
       if (typeof rm === 'string') return { raw_material: rm, parts_by_weight: '', raw_material_pct: '', remarks: '' };
       return rm;
@@ -2090,6 +2098,7 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
               </div>
             ) : (() => {
               // Normalize raw materials:
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const detailRawMaterials: RDRawMaterialRow[] = (selectedBatchDetails.raw_materials || []).map((rm: any) => {
                 if (typeof rm === 'string') {
                   return { raw_material: rm, parts_by_weight: '', raw_material_pct: '', remarks: '' };
@@ -2105,6 +2114,7 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
                 detailRawMaterials.push({ raw_material: '', parts_by_weight: '', raw_material_pct: '', remarks: '' });
               }
 
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const detailObservations: RDObservationRow[] = (selectedBatchDetails.observations || []).map((obs: any) => ({
                 time: obs.time || '',
                 vt: obs.vt || '',

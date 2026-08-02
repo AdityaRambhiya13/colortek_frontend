@@ -4,7 +4,7 @@ import {
   Tag, List, BarChart3, HelpCircle, Layers, ShieldAlert
 } from 'lucide-react';
 import { ProductMasterAPI } from '../services/api';
-import * as XLSX from 'xlsx';
+import * as XLSX from '../xlsxWrapper';
 
 interface ProductsMasterProps {
   onShowToast: (msg: string, type: 'success' | 'error' | 'warning' | 'info') => void;

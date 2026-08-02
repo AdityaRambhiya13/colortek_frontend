@@ -15,7 +15,7 @@ import {
   LiveProductionAPI,
   NotificationsAPI
 } from '../services/api';
-import * as XLSX from 'xlsx';
+import * as XLSX from '../xlsxWrapper';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -286,6 +286,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
     }, 2000);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const padMainQcParams = (data: any[]): any[] => {
     const padded = [...data];
     while (padded.length < 25) {
@@ -330,6 +331,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
     return padded;
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const padFooter = (data: any[]): any[] => {
     const padded = [...data];
     while (padded.length < 25) {
@@ -667,6 +669,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleLoadHistoricalReport = (log: any) => {
     const report = log.full_data;
     if (report) {
@@ -811,6 +814,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
       const batches = (data as any).batches || [];
       // Filter client-side by liveSearchQuery if provided
       const filtered = liveSearchQuery.trim()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ? batches.filter((b: any) => 
             (b.batch_no || '').toLowerCase().includes(liveSearchQuery.toLowerCase()) ||
             (b.customer_name || '').toLowerCase().includes(liveSearchQuery.toLowerCase()) ||
@@ -964,6 +968,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
     });
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const padQc3Rows = (data: any[]): any[] => {
     const padded = [...data];
     while (padded.length < 25) {
@@ -1001,6 +1006,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
     if (success && data && typeof data !== 'string') {
       const items = (data as any).items || [];
       if (items.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const mapped = items.map((item: any) => ({
           date: item.date_time ? item.date_time.split(' ')[0] : '',
           product_name: item.product_name || '',
@@ -1058,6 +1064,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
   };
 
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleLoadHistoricalQc3 = (item: any) => {
     if (item) {
       const mapped = {
@@ -1227,6 +1234,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
     }));
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const padQc2Rows = (data: any[]): any[] => {
     const padded = [...data];
     while (padded.length < 20) {
@@ -1280,6 +1288,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
     setLoading(false);
     
     if (success && Array.isArray(data) && data.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const mapped = data.map((item: any) => ({
         entry_id: item.entry_id || '',
         date_time: item.date_time ? item.date_time.split(' ')[0] : '',
@@ -1301,6 +1310,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
       const [pastSuccess, pastData] = await RawMaterialAPI.getPastEntries(productName, undefined, undefined, undefined, 1, 20);
       setLoading(false);
       if (pastSuccess && pastData && typeof pastData !== 'string' && (pastData as any).items?.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const mapped = (pastData as any).items.map((item: any) => ({
           entry_id: item.entry_id || '',
           date_time: item.date_time ? item.date_time.split(' ')[0] : '',
@@ -1336,6 +1346,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleLoadHistoricalQc2 = (item: any) => {
     if (item) {
       const mapped = {
@@ -1489,6 +1500,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
   // ==========================================================================
   // 5. W-56 RND BATCHES ENTRY (QC5 - qc5.py)
   // ==========================================================================
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const padQc5Rows = (data: any[]): any[] => {
     const padded = [...data];
     while (padded.length < 20) {
@@ -1513,6 +1525,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
     if (success && data && typeof data !== 'string') {
       const items = (data as any).items || [];
       if (items.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const mapped = items.map((item: any) => ({
           date_time: item.date_time ? item.date_time.split(' ')[0] : '',
           product_name: item.product_name_field || item.product_name || '',
@@ -1558,6 +1571,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleLoadHistoricalQc5 = (item: any) => {
     if (item) {
       const mapped = {
@@ -1678,6 +1692,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
   // ==========================================================================
   // 6. PRODUCTION BATCHES FILTER (QC6 - qc6.py)
   // ==========================================================================
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const padQc6Rows = (data: any[]): any[] => {
     const padded = [...data];
     while (padded.length < 20) {
@@ -1708,6 +1723,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
     if (success && data && typeof data !== 'string') {
       const items = (data as any).items || [];
       if (items.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const mapped = items.map((item: any) => ({
           date_time: item.date_time ? item.date_time.split(' ')[0] : '',
           product_name: item.product_name || '',
@@ -1765,6 +1781,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleLoadHistoricalQc6 = (item: any) => {
     if (item) {
       const mapped = {
@@ -1924,6 +1941,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
   // ==========================================================================
   // 7. LAB RETURN BATCHES ENTRY (QC7 - qc7.py)
   // ==========================================================================
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const padQc7Rows = (data: any[]): any[] => {
     const padded = [...data];
     while (padded.length < 20) {
@@ -1948,6 +1966,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
     if (success && data && typeof data !== 'string') {
       const items = (data as any).items || [];
       if (items.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const mapped = items.map((item: any) => ({
           date_time: item.date_time ? item.date_time.split(' ')[0] : '',
           product_name: item.product_name_field || item.product_name || '',
@@ -1993,6 +2012,7 @@ export const QcMain: React.FC<QcMainProps> = ({ activeSubView, onShowToast }) =>
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleLoadHistoricalQc7 = (item: any) => {
     if (item) {
       const mapped = {

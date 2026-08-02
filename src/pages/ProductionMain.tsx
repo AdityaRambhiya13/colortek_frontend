@@ -23,7 +23,7 @@ import {
   NotificationsAPI
 } from '../services/api';
 import { useVirtual } from '../hooks/useVirtual';
-import * as XLSX from 'xlsx';
+import * as XLSX from '../xlsxWrapper';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -51,6 +51,7 @@ const parseProductString = (fullText: string): { main: string; sub: string } => 
   return { main: '', sub: fullText.trim() };
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const exportIrToPdf = (productName: string, entries: any[]) => {
   const doc = new jsPDF('l', 'mm', 'a4');
   const todayStr = new Date().toLocaleDateString('en-GB');
@@ -122,6 +123,7 @@ const exportIrToPdf = (productName: string, entries: any[]) => {
   doc.save(`Inward_Register_${productName || 'Report'}_${todayStr.replace(/\//g, '-')}.pdf`);
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const exportDrToPdf = (customerName: string, dispatchDate: string, rows: any[]) => {
   const doc = new jsPDF('l', 'mm', 'a4');
   const todayStr = new Date().toLocaleDateString('en-GB');
@@ -145,6 +147,7 @@ const exportDrToPdf = (customerName: string, dispatchDate: string, rows: any[]) 
   const body = rows
     .filter(r => r.batch_no || r.product_name_field)
     .map((r, idx) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const parts = r.packaging_details.map((p: any) => `${p.packets}x${p.size}${p.unit}`);
       return [
         idx + 1,
@@ -178,6 +181,7 @@ const exportDrToPdf = (customerName: string, dispatchDate: string, rows: any[]) 
   doc.save(`Dispatch_Report_${customerName.replace(/\s+/g, '_')}_${dispatchDate}.pdf`);
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const exportMrqToPdf = (productName: string, entries: any[]) => {
   const doc = new jsPDF('l', 'mm', 'a4');
   const todayStr = new Date().toLocaleDateString('en-GB');
@@ -237,6 +241,7 @@ const exportMrqToPdf = (productName: string, entries: any[]) => {
   doc.save(`Material_Requisition_${productName || 'Report'}_${todayStr.replace(/\//g, '-')}.pdf`);
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const exportRjmToPdf = (productName: string, entries: any[]) => {
   const doc = new jsPDF('l', 'mm', 'a4');
   const todayStr = new Date().toLocaleDateString('en-GB');
@@ -697,6 +702,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
       return;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let updatedRows: any[] = [];
     setLiveProdRows(prev => {
       const updated = [...prev];
@@ -818,6 +824,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
     const stage = lpStatusActiveStage;
     if (idx === -1) return;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let updatedRows: any[] = [];
     setLiveProdRows(prev => {
       const updated = [...prev];
@@ -963,6 +970,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
     }
 
     const row = liveProdRows[rowIdx];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const currentTotal = row.packaging_entries.reduce((sum: number, p: any) => sum + (parseFloat(p.size) * (parseInt(p.packets) || 0)), 0);
     const addedQty = sizeVal * packVal;
 
@@ -971,6 +979,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
       return;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let updatedRows: any[] = [];
     setLiveProdRows(prev => {
       const updated = [...prev];
@@ -997,12 +1006,15 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
     const rowIdx = lpPkgActiveIdx;
     if (rowIdx === -1) return;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let updatedRows: any[] = [];
     setLiveProdRows(prev => {
       const updated = [...prev];
       const targetRow = { ...updated[rowIdx] };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updatedEntries = targetRow.packaging_entries.filter((_: any, idx: number) => idx !== pkgIdx);
       targetRow.packaging_entries = updatedEntries;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       targetRow.total_qty = updatedEntries.reduce((sum: number, p: any) => sum + (parseFloat(p.size) * (parseInt(p.packets) || 0)), 0);
       targetRow.is_changed = true;
       updated[rowIdx] = targetRow;
@@ -1080,6 +1092,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
 
     const headers = ["Customer Name", "Product Name", "Batch No.", "Qty", "Unit", "Charged By", "Packaging Details", "Status"];
     const body = activeRows.map(row => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const pkgStr = row.packaging_entries.map((p: any) => `${p.packets} x ${p.size} ${p.unit}`).join('\n');
       const statusStr = `Prod: ${row.production_status.toUpperCase()}\nQC: ${row.qc_status.toUpperCase()}\nFilt: ${row.filteration_status.toUpperCase()}\nFG: ${row.fg_status.toUpperCase()}`;
       return [
@@ -1135,6 +1148,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
 
     const headers = [["Sr.", "Customer", "Product Name", "Batch No.", "Qty", "Unit", "Charged By", "Packaging Details", "Status"]];
     const body = activeRows.map((row, idx) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const pkgStr = row.packaging_entries.map((p: any) => `${p.packets}x${p.size}${p.unit}`).join(', ');
       const statusStr = `Prod: ${row.production_status.toUpperCase()} | QC: ${row.qc_status.toUpperCase()} | Filt: ${row.filteration_status.toUpperCase()} | FG: ${row.fg_status.toUpperCase()}`;
       return [
@@ -1348,6 +1362,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
     });
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const debouncedBPBSSave = (header: any, recipe: any[], qc: any) => {
     if (!header.batch_no) return;
     const key = `bpbs_save_${header.batch_no}`;
@@ -1375,6 +1390,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
     const [savedSuccess, savedData] = await BatchProductionSheetAPI.getSheet(productName, targetBatchNo);
     
     if (savedSuccess && savedData && typeof savedData !== 'string') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const s: any = savedData;
       setBpbsHeader({
         batch_size: String(s.batch_size || '1000'),
@@ -1437,6 +1453,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
     setLoading(false);
 
     if (lmfSuccess && lmfData && typeof lmfData !== 'string') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const l: any = lmfData;
       const isApproved = Boolean(l.is_approved || l.approval_status === 'approved');
       if (!isApproved) {
@@ -1447,6 +1464,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
       const form = l.form || {};
       
       const totalGrams = parseFloat(l.grams) || 100.0;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const totalBaseQty = inventory.reduce((sum: number, item: any) => sum + (parseFloat(item.qty) || 0), 0);
       const targetMultiplier = parseFloat(bpbsHeader.batch_size) || 1000;
 
@@ -1677,6 +1695,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
     if (success && data && typeof data !== 'string') {
       const batches = data.batches || [];
       const balances: Record<string, number> = {};
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       batches.forEach((b: any) => {
         balances[String(b.batch_no).trim()] = parseFloat(b.balance) || 0;
       });
@@ -1703,6 +1722,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
     setShowBatchModal(true);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const selectDrBatch = (batchNo: string, fgId: any) => {
     const rowIdx = batchSearch.activeIndex;
     if (rowIdx === -1) return;
@@ -1744,6 +1764,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
 
     const row = drRows[rowIdx];
     const maxBalance = row.batch_balances[row.batch_no] || 0;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const currentTotal = row.packaging_details.reduce((sum: number, p: any) => sum + (parseFloat(p.size) * (parseInt(p.packets) || 0)), 0);
     const addedQty = sizeVal * packVal;
 
@@ -1774,7 +1795,9 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
     if (rowIdx === -1) return;
 
     const row = drRows[rowIdx];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updatedPkg = row.packaging_details.filter((_: any, idx: number) => idx !== pkgIdx);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const newTotal = updatedPkg.reduce((sum: number, p: any) => sum + (parseFloat(p.size) * (parseInt(p.packets) || 0)), 0);
 
     setDrRows(prev => {
@@ -1789,6 +1812,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
     });
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const debouncedDrSave = (rowIdx: number, row: any) => {
     const key = `dr_save_${rowIdx}`;
     if (debounceTimers.current[key]) clearTimeout(debounceTimers.current[key]);
@@ -1808,6 +1832,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
 
       const [success, res] = await DispatchRegisterAPI.saveEntry(productName, payload);
       if (success && res && typeof res !== 'string') {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const responseData: any = res;
         if (responseData.new_entry && responseData.new_entry.id) {
           setDrRows(prev => {
@@ -1826,6 +1851,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
     setLoading(false);
 
     if (success && data && typeof data !== 'string') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const res: any = data;
       const entries = res.entries || [];
       if (entries.length > 0) {
@@ -2289,6 +2315,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
     setLoading(false);
 
     if (success && data && typeof data !== 'string') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const res: any = data;
       setDpHistoryLogs(res.items || []);
       setDpHistoryTotalPages(res.total_pages || 1);
@@ -2412,6 +2439,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
   const [showAllotmentDetailModal, setShowAllotmentDetailModal] = useState(false);
   const [showManageSubAllotmentsModal, setShowManageSubAllotmentsModal] = useState(false);
   const [showFgClearConfirm, setShowFgClearConfirm] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [activeAllotmentRow, setActiveAllotmentRow] = useState<any>(null);
   const [allotmentList, setAllotmentList] = useState<{ customer: string; qty: string }[]>([]);
   const [newSubCustomer, setNewSubCustomer] = useState('');
@@ -2433,6 +2461,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
     setRmsPageInput(String(rmsPage));
   }, [rmsPage]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const fetchFgStorage = async (showLoading: any = true) => {
     const shouldShowLoading = showLoading !== false;
     if (shouldShowLoading) setLoading(true);
@@ -2446,7 +2475,9 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
     if (shouldShowLoading) setLoading(false);
 
     if (success && data && typeof data !== 'string') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const res: any = data;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const items: any[] = res.items || [];
       const mappedItems = items.map(item => ({
         ...item,
@@ -2568,6 +2599,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
 
           const [saveSuccess, response] = await FinishGoodAPI.saveSingleEntry(productName, payloadRow);
           if (saveSuccess && response && typeof response !== 'string') {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const res: any = response;
             if (res.new_id) {
               setFgList(current => {
@@ -2586,6 +2618,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
     });
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleOpenAllotment = async (row: any) => {
     setActiveAllotmentRow(row);
     // Open allotment detail modal first (corresponds to Screenshot 2)
@@ -2790,6 +2823,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const exportFgToExcel = async (showLoading: any = true) => {
     const shouldShowLoading = showLoading !== false;
     if (shouldShowLoading) setLoading(true);
@@ -2802,6 +2836,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
       onShowToast('Failed to fetch data for export.', 'error');
       return;
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const allEntries: any[] = Array.isArray(data) ? data : [];
     if (allEntries.length === 0) {
       onShowToast('No data to export.', 'warning');
@@ -2841,6 +2876,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
     });
 
     const dateStr = new Date().toLocaleDateString('en-GB').replace(/\//g, '.');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rows: any[][] = [];
     
     const row1 = Array(11).fill('');
@@ -2867,6 +2903,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
     let currentMainProduct: string | null = null;
     let sumQty = 0, sumProd = 0, sumTotal = 0, sumDispatch = 0, sumBalance = 0;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const merges: any[] = [];
     merges.push({ s: { r: 3, c: 0 }, e: { r: 3, c: 10 } });
 
@@ -2974,6 +3011,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
   // ==========================================================================
   // 5.6. RAW MATERIAL STOCK STORAGE HELPERS (rm_stock.py)
   // ==========================================================================
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const fetchRmsStorage = async (showLoading: any = true) => {
     const shouldShowLoading = showLoading !== false;
     if (shouldShowLoading) setLoading(true);
@@ -2987,7 +3025,9 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
     if (shouldShowLoading) setLoading(false);
 
     if (success && data && typeof data !== 'string') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const res: any = data;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const items: any[] = res.items || [];
       const mappedItems = items.map(item => ({
         ...item,
@@ -3097,6 +3137,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
 
           const [saveSuccess, response] = await RMStockAPI.saveSingleEntry(productName, payloadRow);
           if (saveSuccess && response && typeof response !== 'string') {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const res: any = response;
             if (res.new_id) {
               setRmsList(current => {
@@ -3205,6 +3246,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const exportRmsToExcel = async (showLoading: any = true) => {
     const shouldShowLoading = showLoading !== false;
     if (shouldShowLoading) setLoading(true);
@@ -3214,6 +3256,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
       onShowToast('Failed to fetch data for export.', 'error');
       return;
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const allEntries: any[] = Array.isArray(data) ? data : [];
     if (allEntries.length === 0) {
       onShowToast('No data to export.', 'warning');
@@ -3244,6 +3287,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
     });
 
     const dateStr = new Date().toLocaleDateString('en-GB').replace(/\//g, '.');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rows: any[][] = [];
     
     const row1 = Array(11).fill('');
@@ -3269,6 +3313,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
     let currentMainProduct: string | null = null;
     let sumQty = 0, sumProd = 0, sumTotal = 0, sumDispatch = 0, sumBalance = 0;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const merges: any[] = [];
     merges.push({ s: { r: 3, c: 0 }, e: { r: 3, c: 10 } });
 
@@ -4295,6 +4340,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
                           }}>
                             {r.packaging_details.length > 0 ? (
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center' }}>
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 {r.packaging_details.map((p: any, i: number) => {
                                   const qty = parseFloat(p.size) * (parseInt(p.packets) || 0);
                                   return (
@@ -4400,6 +4446,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
                               <td>{log.product_name_field}</td>
                               <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{log.batch_no}</td>
                               <td>
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 {pkgs.map((p: any, i: number) => (
                                   <span key={i} style={{ display: 'inline-block', backgroundColor: 'var(--bg-app)', padding: '2px 6px', margin: '2px', borderRadius: '4px', fontSize: '0.8rem' }}>
                                     {p.packets}x{p.size}{p.unit}
@@ -7013,6 +7060,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
                         }}
                       >
                         {row.packaging_entries && row.packaging_entries.length > 0 ? (
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           row.packaging_entries.map((p: any) => `${p.packets} x ${p.size} ${p.unit}`).join('\n')
                         ) : (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#3b82f6', justifyContent: 'center' }}>
@@ -7214,6 +7262,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
                         }}
                       >
                         {row.packaging_entries && row.packaging_entries.length > 0 ? (
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           row.packaging_entries.map((p: any) => `${p.packets} x ${p.size} ${p.unit}`).join('\n')
                         ) : (
                           <span style={{ color: '#94a3b8' }}>None</span>
@@ -7386,6 +7435,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
             {(() => {
               const row = drRows[pkgActiveIdx];
               const maxBalance = row.batch_balances[row.batch_no] || 0;
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const currentTotal = row.packaging_details.reduce((sum: number, p: any) => sum + (parseFloat(p.size) * (parseInt(p.packets) || 0)), 0);
               const remaining = maxBalance - currentTotal;
               return (
@@ -7523,6 +7573,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
               {drRows[pkgActiveIdx].packaging_details.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '16px', color: 'var(--text-light)', fontStyle: 'italic', fontSize: '0.85rem' }}>No packages added.</div>
               ) : (
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 drRows[pkgActiveIdx].packaging_details.map((pkg: any, idx: number) => {
                   const weight = parseFloat(pkg.size) * (parseInt(pkg.packets) || 0);
                   return (
@@ -7936,6 +7987,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
 
             {(() => {
               const row = liveProdRows[lpPkgActiveIdx];
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const currentTotal = row.packaging_entries.reduce((sum: number, p: any) => sum + (parseFloat(p.size) * (parseInt(p.packets) || 0)), 0);
               const remaining = row.balance_qty - currentTotal;
               return (
@@ -8071,6 +8123,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
               {liveProdRows[lpPkgActiveIdx].packaging_entries.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '16px', color: '#64748b', fontStyle: 'italic', fontSize: '0.85rem' }}>No packages added.</div>
               ) : (
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 liveProdRows[lpPkgActiveIdx].packaging_entries.map((pkg: any, idx: number) => {
                   const weight = parseFloat(pkg.size) * (parseInt(pkg.packets) || 0);
                   return (

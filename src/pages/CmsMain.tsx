@@ -3318,12 +3318,12 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                         </tr>
                         {activeSubView === 'lab_formulations' && (
                           <tr style={{ borderTop: '1px solid #cbd5e1' }}>
-                            <td colSpan={3} style={{ textAlign: 'right', padding: '4px 6px', color: '#475569' }}>
+                            <td colSpan={3} style={{ textAlign: 'right', padding: '4px 6px', color: '#0f172a', fontWeight: 'bold' }}>
                               Formulation Solid(100%)
                             </td>
                             <td></td>
                             <td></td>
-                            <td style={{ textAlign: 'center', color: '#16a34a', padding: '4px 2px' }}>
+                            <td style={{ textAlign: 'center', color: '#dc2626', fontWeight: 'bold', padding: '4px 2px' }}>
                               {calculateFormulationSolidity(leftRows)}%
                             </td>
                           </tr>
@@ -3744,12 +3744,12 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                         </tr>
                         {activeSubView === 'lab_formulations' && (
                           <tr style={{ borderTop: '1px solid #cbd5e1' }}>
-                            <td colSpan={3} style={{ textAlign: 'right', padding: '4px 6px', color: '#475569' }}>
+                            <td colSpan={3} style={{ textAlign: 'right', padding: '4px 6px', color: '#0f172a', fontWeight: 'bold' }}>
                               Formulation Solid(100%)
                             </td>
                             <td></td>
                             <td></td>
-                            <td style={{ textAlign: 'center', color: '#16a34a', padding: '4px 2px' }}>
+                            <td style={{ textAlign: 'center', color: '#dc2626', fontWeight: 'bold', padding: '4px 2px' }}>
                               {calculateFormulationSolidity(rightRows)}%
                             </td>
                           </tr>
@@ -4252,8 +4252,8 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                             </tr>
                             {isLabCard && (
                               <tr className="total-row" style={{ borderTop: '1px solid #cbd5e1', backgroundColor: '#f8fafc' }}>
-                                <td colSpan={4} style={{ textAlign: 'right', fontWeight: 'bold', color: '#475569' }}>Formulation Solid(100%)</td>
-                                <td style={{ textAlign: 'right', color: '#16a34a', fontWeight: 'bold' }}>{cardSolidity}%</td>
+                                <td colSpan={4} style={{ textAlign: 'right', fontWeight: 'bold', color: '#0f172a' }}>Formulation Solid(100%)</td>
+                                <td style={{ textAlign: 'right', color: '#dc2626', fontWeight: 'bold' }}>{cardSolidity}%</td>
                               </tr>
                             )}
                           </tbody>

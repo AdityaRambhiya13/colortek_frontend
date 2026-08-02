@@ -313,6 +313,7 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
 
   // Focus Coordination Refs
   const obsRefs = useRef<{[key: string]: HTMLInputElement | null}>({});
+  const rmRefs = useRef<{[key: string]: HTMLInputElement | null}>({});
   const filterRefs = useRef<{[key: string]: HTMLInputElement | null}>({});
   const detailRefs = useRef<{[key: string]: HTMLInputElement | HTMLTextAreaElement | null}>({});
 
@@ -420,6 +421,46 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
       e.preventDefault();
       obsRefs.current[refKey]?.focus();
       obsRefs.current[refKey]?.select();
+    }
+  };
+
+  const handleRmKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    rowIdx: number,
+    colIdx: number
+  ) => {
+    let nextRow = rowIdx;
+    let nextCol = colIdx;
+
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      nextRow = rowIdx + 1;
+      if (!rmRefs.current[`rm-${nextRow}-${colIdx}`]) nextRow = 0;
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      nextRow = rowIdx + 1;
+      if (!rmRefs.current[`rm-${nextRow}-${colIdx}`]) nextRow = 0;
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      nextRow = rowIdx - 1;
+      if (nextRow < 0) {
+        let r = rowIdx;
+        while (rmRefs.current[`rm-${r + 1}-${colIdx}`]) r++;
+        nextRow = r;
+      }
+    } else if (e.key === 'ArrowRight' && e.currentTarget.selectionStart === e.currentTarget.value.length) {
+      nextCol = colIdx + 1;
+    } else if (e.key === 'ArrowLeft' && e.currentTarget.selectionStart === 0) {
+      nextCol = colIdx - 1;
+    } else {
+      return;
+    }
+
+    const refKey = `rm-${nextRow}-${nextCol}`;
+    if (rmRefs.current[refKey]) {
+      e.preventDefault();
+      rmRefs.current[refKey]?.focus();
+      rmRefs.current[refKey]?.select();
     }
   };
 
@@ -1458,16 +1499,16 @@ export const RdMain: React.FC<RdMainProps> = ({ activeSubView, onShowToast }) =>
                         <tr key={idx} style={{ borderBottom: idx === rawMaterials.length - 1 ? 'none' : '1px solid #cbd5e1' }}>
                           <td style={{ padding: '2px', borderRight: '1px solid #334155', textAlign: 'center', fontWeight: 'bold', color: '#64748b', backgroundColor: '#f8fafc' }}>{idx + 1}</td>
                           <td style={{ padding: '2px', borderRight: '1px solid #334155' }}>
-                            <input type="text" value={rm.raw_material} onChange={e => handleRawMaterialRowChange(idx, 'raw_material', e.target.value)} style={{ width: '100%', border: 'none', padding: '2px 4px', fontSize: '0.8rem', outline: 'none', color: '#1e293b' }} />
+                            <input type="text" ref={el => { rmRefs.current[`rm-${idx}-0`] = el; }} onKeyDown={e => handleRmKeyDown(e, idx, 0)} onFocus={e => e.target.select()} value={rm.raw_material} onChange={e => handleRawMaterialRowChange(idx, 'raw_material', e.target.value)} style={{ width: '100%', border: 'none', padding: '2px 4px', fontSize: '0.8rem', outline: 'none', color: '#1e293b' }} />
                           </td>
                           <td style={{ padding: '2px', borderRight: '1px solid #334155' }}>
-                            <input type="text" value={rm.parts_by_weight} onChange={e => handleRawMaterialRowChange(idx, 'parts_by_weight', e.target.value)} style={{ width: '100%', border: 'none', textAlign: 'center', padding: '2px 4px', fontSize: '0.8rem', outline: 'none', color: '#1e293b' }} />
+                            <input type="text" ref={el => { rmRefs.current[`rm-${idx}-1`] = el; }} onKeyDown={e => handleRmKeyDown(e, idx, 1)} onFocus={e => e.target.select()} value={rm.parts_by_weight} onChange={e => handleRawMaterialRowChange(idx, 'parts_by_weight', e.target.value)} style={{ width: '100%', border: 'none', textAlign: 'center', padding: '2px 4px', fontSize: '0.8rem', outline: 'none', color: '#1e293b' }} />
                           </td>
                           <td style={{ padding: '2px', borderRight: '1px solid #334155' }}>
-                            <input type="text" value={rm.raw_material_pct} onChange={e => handleRawMaterialRowChange(idx, 'raw_material_pct', e.target.value)} style={{ width: '100%', border: 'none', textAlign: 'center', padding: '2px 4px', fontSize: '0.8rem', outline: 'none', color: '#1e293b' }} />
+                            <input type="text" ref={el => { rmRefs.current[`rm-${idx}-2`] = el; }} onKeyDown={e => handleRmKeyDown(e, idx, 2)} onFocus={e => e.target.select()} value={rm.raw_material_pct} onChange={e => handleRawMaterialRowChange(idx, 'raw_material_pct', e.target.value)} style={{ width: '100%', border: 'none', textAlign: 'center', padding: '2px 4px', fontSize: '0.8rem', outline: 'none', color: '#1e293b' }} />
                           </td>
                           <td style={{ padding: '2px' }}>
-                            <input type="text" value={rm.remarks} onChange={e => handleRawMaterialRowChange(idx, 'remarks', e.target.value)} style={{ width: '100%', border: 'none', padding: '2px 4px', fontSize: '0.8rem', outline: 'none', color: '#1e293b' }} />
+                            <input type="text" ref={el => { rmRefs.current[`rm-${idx}-3`] = el; }} onKeyDown={e => handleRmKeyDown(e, idx, 3)} onFocus={e => e.target.select()} value={rm.remarks} onChange={e => handleRawMaterialRowChange(idx, 'remarks', e.target.value)} style={{ width: '100%', border: 'none', padding: '2px 4px', fontSize: '0.8rem', outline: 'none', color: '#1e293b' }} />
                           </td>
                         </tr>
                       ))}

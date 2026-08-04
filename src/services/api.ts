@@ -463,6 +463,15 @@ export const CMSAPI = {
 // LAB FORMULATION SERVICES
 // ============================================================================
 export const LabFormulationsAPI = {
+  uploadOCRImage: async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return handleResponse<any>(apiClient.post('/lab_formulations/ocr_upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    }));
+  },
   getTotalPages: async (productName: string) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/lab_formulations/get_total_pages', { product_name: productName }));

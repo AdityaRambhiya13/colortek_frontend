@@ -1171,6 +1171,54 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     }
   };
 
+  // OCR Upload handler
+  const handleOCRUpload = async (side: 'left' | 'right') => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async (e: any) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      try {
+        setLoading(true);
+        onShowToast('Uploading image for OCR analysis...', 'info');
+        
+        const [success, response] = await LabFormulationsAPI.uploadOCRImage(file);
+        
+        if (success && response && response.data) {
+          const setRows = side === 'left' ? setLeftRows : setRightRows;
+          const rows = side === 'left' ? leftRows : rightRows;
+          
+          const newRows = [...rows];
+          let emptyIdx = newRows.findIndex(r => !r.material && !r.qty);
+          if (emptyIdx === -1) emptyIdx = 0; // overwrite if full
+          
+          response.data.forEach((item: any, idx: number) => {
+            const targetIdx = emptyIdx + idx;
+            if (targetIdx < newRows.length) {
+              newRows[targetIdx] = {
+                ...newRows[targetIdx],
+                material: item.material || '',
+                qty: item.qty ? item.qty.toString() : ''
+              };
+            }
+          });
+          
+          setRows(newRows);
+          onShowToast('OCR Data successfully loaded!', 'success');
+        } else {
+          onShowToast(response?.detail || response || 'Failed to extract data', 'error');
+        }
+      } catch (err: any) {
+        onShowToast(`Error parsing handwritten data: ${err.message}`, 'error');
+      } finally {
+        setLoading(false);
+      }
+    };
+    input.click();
+  };
+
   // 5. Save Full formulation entry
   const handleSaveFull = async (side: 'left' | 'right') => {
     const form = side === 'left' ? leftForm : rightForm;
@@ -3379,6 +3427,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                   {/* Material control buttons inline below table (Only for Lab Formulations) */}
                   {activeSubView === 'lab_formulations' && (
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '8px', flexShrink: 0 }}>
+                      <button onClick={() => handleOCRUpload('left')} className="flet-btn flet-btn-green" disabled={loading}>Upload Data Book (OCR)</button>
                       <button onClick={() => handleAddRow('left')} className="flet-btn flet-btn-blue" disabled={loading}>Add Row</button>
                       <button onClick={() => handleDeleteSelectedRows('left')} className="flet-btn flet-btn-red" disabled={loading}>Delete Selected</button>
                       <button onClick={() => handleClearAllFields('left')} className="flet-btn flet-btn-orange" disabled={loading}>Clear All</button>
@@ -3805,6 +3854,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                   {/* Material control buttons inline below table (Only for Lab Formulations) */}
                   {activeSubView === 'lab_formulations' && (
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '8px', flexShrink: 0 }}>
+                      <button onClick={() => handleOCRUpload('right')} className="flet-btn flet-btn-green" disabled={loading}>Upload Data Book (OCR)</button>
                       <button onClick={() => handleAddRow('right')} className="flet-btn flet-btn-blue" disabled={loading}>Add Row</button>
                       <button onClick={() => handleDeleteSelectedRows('right')} className="flet-btn flet-btn-red" disabled={loading}>Delete Selected</button>
                       <button onClick={() => handleClearAllFields('right')} className="flet-btn flet-btn-orange" disabled={loading}>Clear All</button>

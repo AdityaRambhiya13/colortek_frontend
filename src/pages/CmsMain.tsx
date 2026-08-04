@@ -1189,12 +1189,22 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
         if (success && response && response.data) {
           const setRows = side === 'left' ? setLeftRows : setRightRows;
           const rows = side === 'left' ? leftRows : rightRows;
+          const setForm = side === 'left' ? setLeftForm : setRightForm;
+          const currentForm = side === 'left' ? leftForm : rightForm;
           
           const newRows = [...rows];
           let emptyIdx = newRows.findIndex(r => !r.material && !r.qty);
           if (emptyIdx === -1) emptyIdx = 0; // overwrite if full
           
-          response.data.forEach((item: any, idx: number) => {
+          // Handle new response format: { batch_no: "...", materials: [...] }
+          const materialsList = Array.isArray(response.data) ? response.data : (response.data.materials || []);
+          const batchNo = response.data.batch_no || '';
+
+          if (batchNo) {
+            setForm({ ...currentForm, batchNo: batchNo });
+          }
+
+          materialsList.forEach((item: any, idx: number) => {
             const targetIdx = emptyIdx + idx;
             if (targetIdx < newRows.length) {
               newRows[targetIdx] = {
@@ -3427,7 +3437,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                   {/* Material control buttons inline below table (Only for Lab Formulations) */}
                   {activeSubView === 'lab_formulations' && (
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '8px', flexShrink: 0 }}>
-                      <button onClick={() => handleOCRUpload('left')} className="flet-btn flet-btn-green" disabled={loading}>Upload Data Book (OCR)</button>
+                      <button onClick={() => handleOCRUpload('left')} className="flet-btn flet-btn-green" disabled={loading}>Batch Scanner</button>
                       <button onClick={() => handleAddRow('left')} className="flet-btn flet-btn-blue" disabled={loading}>Add Row</button>
                       <button onClick={() => handleDeleteSelectedRows('left')} className="flet-btn flet-btn-red" disabled={loading}>Delete Selected</button>
                       <button onClick={() => handleClearAllFields('left')} className="flet-btn flet-btn-orange" disabled={loading}>Clear All</button>
@@ -3854,7 +3864,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                   {/* Material control buttons inline below table (Only for Lab Formulations) */}
                   {activeSubView === 'lab_formulations' && (
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '8px', flexShrink: 0 }}>
-                      <button onClick={() => handleOCRUpload('right')} className="flet-btn flet-btn-green" disabled={loading}>Upload Data Book (OCR)</button>
+                      <button onClick={() => handleOCRUpload('right')} className="flet-btn flet-btn-green" disabled={loading}>Batch Scanner</button>
                       <button onClick={() => handleAddRow('right')} className="flet-btn flet-btn-blue" disabled={loading}>Add Row</button>
                       <button onClick={() => handleDeleteSelectedRows('right')} className="flet-btn flet-btn-red" disabled={loading}>Delete Selected</button>
                       <button onClick={() => handleClearAllFields('right')} className="flet-btn flet-btn-orange" disabled={loading}>Clear All</button>

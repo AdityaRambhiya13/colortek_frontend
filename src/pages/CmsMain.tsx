@@ -1191,13 +1191,16 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
           const rows = side === 'left' ? leftRows : rightRows;
           const setForm = side === 'left' ? setLeftForm : setRightForm;
           const currentForm = side === 'left' ? leftForm : rightForm;
+          const setTestRows = side === 'left' ? setLeftTestRows : setRightTestRows;
+          const testRows = side === 'left' ? leftTestRows : rightTestRows;
           
           const newRows = [...rows];
           let emptyIdx = newRows.findIndex(r => !r.material && !r.qty);
-          if (emptyIdx === -1) emptyIdx = 0; // overwrite if full
+          if (emptyIdx === -1) emptyIdx = newRows.length; // append if full
           
-          // Handle new response format: { batch_no: "...", materials: [...] }
+          // Handle new response format: { batch_no: "...", materials: [...], tests: [...] }
           const materialsList = Array.isArray(response.data) ? response.data : (response.data.materials || []);
+          const testsList = response.data.tests || [];
           const batchNo = response.data.batch_no || '';
 
           if (batchNo) {
@@ -1212,10 +1215,43 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                 material: item.material || '',
                 qty: item.qty ? item.qty.toString() : ''
               };
+            } else {
+              newRows.push({
+                material: item.material || '',
+                qty: item.qty ? item.qty.toString() : '',
+                selected: false
+              });
             }
           });
           
           setRows(newRows);
+
+          // Handle extracted tests
+          if (testsList.length > 0) {
+            const newTestRows = [...testRows];
+            let emptyTestIdx = newTestRows.findIndex(t => !t.method && !t.result && !t.standard);
+            if (emptyTestIdx === -1) emptyTestIdx = newTestRows.length;
+
+            testsList.forEach((testItem: any, idx: number) => {
+              const targetTestIdx = emptyTestIdx + idx;
+              if (targetTestIdx < newTestRows.length) {
+                newTestRows[targetTestIdx] = {
+                  ...newTestRows[targetTestIdx],
+                  method: testItem.test_name || '',
+                  result: testItem.result || ''
+                };
+              } else {
+                newTestRows.push({
+                  method: testItem.test_name || '',
+                  standard: '',
+                  result: testItem.result || '',
+                  selected: false
+                });
+              }
+            });
+            setTestRows(newTestRows);
+          }
+
           onShowToast('OCR Data successfully loaded!', 'success');
         } else {
           onShowToast(response?.detail || response || 'Failed to extract data', 'error');

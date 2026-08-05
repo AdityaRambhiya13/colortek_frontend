@@ -1217,6 +1217,8 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
               };
             } else {
               newRows.push({
+                sr: '',
+                mr: '',
                 material: item.material || '',
                 qty: item.qty ? item.qty.toString() : '',
                 selected: false

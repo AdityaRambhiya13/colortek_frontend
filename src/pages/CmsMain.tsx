@@ -3474,12 +3474,12 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
                   {/* Material control buttons inline below table (Only for Lab Formulations) */}
                   {activeSubView === 'lab_formulations' && (
-                    <div className="premium-action-bar">
-                      <button onClick={() => handleOCRUpload('left')} className="flet-btn flet-btn-blue" disabled={loading}>Batch Scanner</button>
-                      <button onClick={() => handleAddRow('left')} className="flet-btn flet-btn-outline-blue" disabled={loading}>Add Row</button>
-                      <button onClick={() => handleDeleteSelectedRows('left')} className="flet-btn flet-btn-outline-red" disabled={loading}>Delete Selected</button>
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '8px', flexShrink: 0 }}>
+                      <button onClick={() => handleOCRUpload('left')} className="flet-btn flet-btn-green" disabled={loading}>Batch Scanner</button>
+                      <button onClick={() => handleAddRow('left')} className="flet-btn flet-btn-blue" disabled={loading}>Add Row</button>
+                      <button onClick={() => handleDeleteSelectedRows('left')} className="flet-btn flet-btn-red" disabled={loading}>Delete Selected</button>
                       <button onClick={() => handleClearAllFields('left')} className="flet-btn flet-btn-orange" disabled={loading}>Clear All</button>
-                      <button onClick={handleCopyLeftToRight} className="flet-btn flet-btn-outline-blue" disabled={loading}>Copy ➡️</button>
+                      <button onClick={handleCopyLeftToRight} className="flet-btn flet-btn-blue" disabled={loading}>Copy ➡️</button>
                       <button onClick={() => handleSaveFull('left')} className="flet-btn flet-btn-blue" disabled={loading}>Save</button>
                       <button onClick={() => handleSaveMaster('left')} className="flet-btn flet-btn-green" disabled={loading}>Save Master</button>
                     </div>
@@ -3901,13 +3901,13 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
                   {/* Material control buttons inline below table (Only for Lab Formulations) */}
                   {activeSubView === 'lab_formulations' && (
-                    <div className="premium-action-bar">
-                      <button onClick={() => handleOCRUpload('right')} className="flet-btn flet-btn-blue" disabled={loading}>Batch Scanner</button>
-                      <button onClick={() => handleAddRow('right')} className="flet-btn flet-btn-outline-blue" disabled={loading}>Add Row</button>
-                      <button onClick={() => handleDeleteSelectedRows('right')} className="flet-btn flet-btn-outline-red" disabled={loading}>Delete Selected</button>
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '8px', flexShrink: 0 }}>
+                      <button onClick={() => handleOCRUpload('right')} className="flet-btn flet-btn-green" disabled={loading}>Batch Scanner</button>
+                      <button onClick={() => handleAddRow('right')} className="flet-btn flet-btn-blue" disabled={loading}>Add Row</button>
+                      <button onClick={() => handleDeleteSelectedRows('right')} className="flet-btn flet-btn-red" disabled={loading}>Delete Selected</button>
                       <button onClick={() => handleClearAllFields('right')} className="flet-btn flet-btn-orange" disabled={loading}>Clear All</button>
-                      <button onClick={handleCopyRightToLeft} className="flet-btn flet-btn-outline-blue" disabled={loading}>⬅️ Copy</button>
-                      {isComplaintMode ? (
+                      <button onClick={handleCopyRightToLeft} className="flet-btn flet-btn-blue" disabled={loading}>⬅️ Copy</button>
+                       {isComplaintMode ? (
                         <button onClick={handleSaveAsNewTrial} className="flet-btn flet-btn-blue" disabled={loading}>Save as New Trial</button>
                       ) : (
                         <button onClick={() => handleSaveFull('right')} className="flet-btn flet-btn-blue" disabled={loading}>Save</button>

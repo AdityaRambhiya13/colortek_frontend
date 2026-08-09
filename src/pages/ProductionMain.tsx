@@ -4340,7 +4340,6 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
                           }}>
                             {r.packaging_details.length > 0 ? (
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center' }}>
-                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 {r.packaging_details.map((p: any, i: number) => {
                                   const qty = parseFloat(p.size) * (parseInt(p.packets) || 0);
                                   return (
@@ -4446,7 +4445,6 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
                               <td>{log.product_name_field}</td>
                               <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{log.batch_no}</td>
                               <td>
-                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 {pkgs.map((p: any, i: number) => (
                                   <span key={i} style={{ display: 'inline-block', backgroundColor: 'var(--bg-app)', padding: '2px 6px', margin: '2px', borderRadius: '4px', fontSize: '0.8rem' }}>
                                     {p.packets}x{p.size}{p.unit}
@@ -7060,7 +7058,6 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
                         }}
                       >
                         {row.packaging_entries && row.packaging_entries.length > 0 ? (
-                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           row.packaging_entries.map((p: any) => `${p.packets} x ${p.size} ${p.unit}`).join('\n')
                         ) : (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#3b82f6', justifyContent: 'center' }}>
@@ -7262,7 +7259,6 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
                         }}
                       >
                         {row.packaging_entries && row.packaging_entries.length > 0 ? (
-                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           row.packaging_entries.map((p: any) => `${p.packets} x ${p.size} ${p.unit}`).join('\n')
                         ) : (
                           <span style={{ color: '#94a3b8' }}>None</span>
@@ -7573,7 +7569,6 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
               {drRows[pkgActiveIdx].packaging_details.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '16px', color: 'var(--text-light)', fontStyle: 'italic', fontSize: '0.85rem' }}>No packages added.</div>
               ) : (
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 drRows[pkgActiveIdx].packaging_details.map((pkg: any, idx: number) => {
                   const weight = parseFloat(pkg.size) * (parseInt(pkg.packets) || 0);
                   return (
@@ -8123,7 +8118,6 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
               {liveProdRows[lpPkgActiveIdx].packaging_entries.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '16px', color: '#64748b', fontStyle: 'italic', fontSize: '0.85rem' }}>No packages added.</div>
               ) : (
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 liveProdRows[lpPkgActiveIdx].packaging_entries.map((pkg: any, idx: number) => {
                   const weight = parseFloat(pkg.size) * (parseInt(pkg.packets) || 0);
                   return (

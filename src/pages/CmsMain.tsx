@@ -1172,10 +1172,13 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
   };
 
   // OCR Upload handler
-  const handleOCRUpload = async (side: 'left' | 'right') => {
+  const handleOCRUpload = async (side: 'left' | 'right', useCamera: boolean = false) => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
+    if (useCamera) {
+      input.setAttribute('capture', 'environment');
+    }
     input.onchange = async (e: any) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -3475,7 +3478,8 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                   {/* Material control buttons inline below table (Only for Lab Formulations) */}
                   {activeSubView === 'lab_formulations' && (
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '8px', flexShrink: 0 }}>
-                      <button onClick={() => handleOCRUpload('left')} className="flet-btn flet-btn-green" disabled={loading}>Batch Scanner</button>
+                      <button onClick={() => handleOCRUpload('left')} className="flet-btn flet-btn-green" disabled={loading}>Batch Scanner (Upload)</button>
+                      <button onClick={() => handleOCRUpload('left', true)} className="flet-btn flet-btn-green" disabled={loading}>Batch Scanner (Camera)</button>
                       <button onClick={() => handleAddRow('left')} className="flet-btn flet-btn-blue" disabled={loading}>Add Row</button>
                       <button onClick={() => handleDeleteSelectedRows('left')} className="flet-btn flet-btn-red" disabled={loading}>Delete Selected</button>
                       <button onClick={() => handleClearAllFields('left')} className="flet-btn flet-btn-orange" disabled={loading}>Clear All</button>
@@ -3902,7 +3906,8 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                   {/* Material control buttons inline below table (Only for Lab Formulations) */}
                   {activeSubView === 'lab_formulations' && (
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '8px', flexShrink: 0 }}>
-                      <button onClick={() => handleOCRUpload('right')} className="flet-btn flet-btn-green" disabled={loading}>Batch Scanner</button>
+                      <button onClick={() => handleOCRUpload('right')} className="flet-btn flet-btn-green" disabled={loading}>Batch Scanner (Upload)</button>
+                      <button onClick={() => handleOCRUpload('right', true)} className="flet-btn flet-btn-green" disabled={loading}>Batch Scanner (Camera)</button>
                       <button onClick={() => handleAddRow('right')} className="flet-btn flet-btn-blue" disabled={loading}>Add Row</button>
                       <button onClick={() => handleDeleteSelectedRows('right')} className="flet-btn flet-btn-red" disabled={loading}>Delete Selected</button>
                       <button onClick={() => handleClearAllFields('right')} className="flet-btn flet-btn-orange" disabled={loading}>Clear All</button>
@@ -4366,7 +4371,6 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                             </tr>
                           </thead>
                           <tbody>
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             {(b.inventory || []).map((item: any, idx: number) => {
                               const sr = item.sr_no || (Array.isArray(item) ? item[0] : (idx + 1).toString());
                               const mr = item.mr_no || (Array.isArray(item) ? item[3] : '');
@@ -4419,11 +4423,9 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                             </tr>
                           </thead>
                           <tbody>
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             {(b.tests || []).filter((test: any) => {
                               const res = test.result || (Array.isArray(test) ? test[2] : '');
                               return res !== '';
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             }).map((test: any, idx: number) => {
                               const method = test.method || (Array.isArray(test) ? test[0] : '-');
                               const standard = test.standard || (Array.isArray(test) ? test[1] : '-');
@@ -4436,7 +4438,6 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                                 </tr>
                               );
                             })}
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             {(b.tests || []).filter((test: any) => {
                               const res = test.result || (Array.isArray(test) ? test[2] : '');
                               return res !== '';

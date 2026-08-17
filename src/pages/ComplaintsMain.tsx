@@ -53,6 +53,9 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
   const [foundProductDb, setFoundProductDb] = useState('');
   const [saving, setSaving] = useState(false);
   const [moving, setMoving] = useState(false);
+  const [customerFormulation, setCustomerFormulation] = useState<{rm: string, batchNo: string, qty: string}[]>(
+    Array(10).fill({ rm: '', batchNo: '', qty: '' })
+  );
 
   // Logs modal
   const [showLogsModal, setShowLogsModal] = useState(false);
@@ -182,6 +185,7 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
       setInitialObservation(''); setComplaintDetails('');
       setImageFiles([]); setImagePreviews([]);
       setBatchRefData(null); setFoundProductDb('');
+      setCustomerFormulation(Array(10).fill({ rm: '', batchNo: '', qty: '' }));
     }
   };
 
@@ -199,7 +203,8 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
         product_name_ui: productNameUi.trim(), complaint_text: complaintDetails.trim(),
         observation_text: initialObservation.trim(),
         raw_materials: batchRefData?.production_sheet_data || {},
-        test_results: batchRefData?.master_test_results || []
+        test_results: batchRefData?.master_test_results || [],
+        customer_formulation: customerFormulation
       };
       const [success, data] = await ComplaintRegistrationAPI.registerComplaintWithImage(foundProductDb, payload, imageFiles);
       if (success) {
@@ -237,6 +242,7 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
         setInitialObservation(''); setComplaintDetails('');
         setImageFiles([]); setImagePreviews([]);
         setBatchRefData(null); setFoundProductDb('');
+        setCustomerFormulation(Array(10).fill({ rm: '', batchNo: '', qty: '' }));
       } else {
         onShowToast(`Move to Lab failed: ${data}`, 'error');
       }
@@ -626,8 +632,8 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
           <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 8px 0', color: 'var(--text-primary)' }}>Complaint Registration</h3>
 
-            {/* Two Column Grid for inputs */}
-            <div style={{ display: 'grid', gridTemplateColumns: '5fr 7fr', gap: '24px' }}>
+            {/* Three Column Grid for inputs */}
+            <div style={{ display: 'grid', gridTemplateColumns: '4fr 4fr 5fr', gap: '20px' }}>
               
               {/* Left Column: Form Fields */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -638,7 +644,7 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
                     value={productNameUi} 
                     onChange={e => setProductNameUi(e.target.value)}
                     placeholder="Enter Product Name"
-                    style={{ padding: '10px 14px', fontSize: '0.85rem', border: '1.5px solid var(--border-color, #cbd5e1)', borderRadius: '6px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', width: '100%', boxSizing: 'border-box', outline: 'none' }} 
+                    style={{ padding: '10px 14px', fontSize: '0.85rem', border: '1px solid #94a3b8', borderRadius: '6px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', width: '100%', boxSizing: 'border-box', outline: 'none' }} 
                   />
                 </div>
                 
@@ -649,7 +655,7 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
                     value={customerName} 
                     onChange={e => setCustomerName(e.target.value)}
                     placeholder="Enter Customer Name"
-                    style={{ padding: '10px 14px', fontSize: '0.85rem', border: '1.5px solid var(--border-color, #cbd5e1)', borderRadius: '6px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', width: '100%', boxSizing: 'border-box', outline: 'none' }} 
+                    style={{ padding: '10px 14px', fontSize: '0.85rem', border: '1px solid #94a3b8', borderRadius: '6px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', width: '100%', boxSizing: 'border-box', outline: 'none' }} 
                   />
                 </div>
                 
@@ -661,7 +667,7 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
                     onChange={e => setBatchNo(e.target.value)}
                     placeholder="Enter Batch Number"
                     onKeyDown={e => { if (e.key === 'Enter') handleBatchSearch(); }}
-                    style={{ padding: '10px 14px', fontSize: '0.85rem', border: '1.5px solid var(--border-color, #cbd5e1)', borderRadius: '6px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', width: '100%', boxSizing: 'border-box', outline: 'none' }} 
+                    style={{ padding: '10px 14px', fontSize: '0.85rem', border: '1px solid #94a3b8', borderRadius: '6px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', width: '100%', boxSizing: 'border-box', outline: 'none' }} 
                   />
                 </div>
                 
@@ -672,20 +678,59 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
                     value={initialObservation} 
                     onChange={e => setInitialObservation(e.target.value)}
                     placeholder="Enter Initial Observation"
-                    style={{ padding: '10px 14px', fontSize: '0.85rem', border: '1.5px solid var(--border-color, #cbd5e1)', borderRadius: '6px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', width: '100%', boxSizing: 'border-box', outline: 'none' }} 
+                    style={{ padding: '10px 14px', fontSize: '0.85rem', border: '1px solid #94a3b8', borderRadius: '6px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', width: '100%', boxSizing: 'border-box', outline: 'none' }} 
                   />
                 </div>
               </div>
 
-              {/* Right Column: Complaint Details TextArea */}
+              {/* Middle Column: Complaint Details TextArea */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Complaint Details</label>
                 <textarea 
                   value={complaintDetails} 
                   onChange={e => setComplaintDetails(e.target.value)}
                   placeholder="Enter Complaint Details"
-                  style={{ width: '100%', padding: '12px 14px', fontSize: '0.85rem', border: '1.5px solid var(--border-color, #cbd5e1)', borderRadius: '8px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', resize: 'none', flex: 1, boxSizing: 'border-box', minHeight: '235px', outline: 'none' }}
+                  style={{ width: '100%', padding: '12px 14px', fontSize: '0.85rem', border: '1px solid #94a3b8', borderRadius: '8px', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', resize: 'none', flex: 1, boxSizing: 'border-box', minHeight: '235px', outline: 'none' }}
                 />
+              </div>
+
+              {/* Right Column: Customer Formulation */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Customer Formulation</label>
+                <div style={{ border: '1px solid #94a3b8', borderRadius: '8px', overflow: 'hidden', backgroundColor: 'var(--bg-card)', display: 'flex', flexDirection: 'column', height: '100%' }}>
+                  <div style={{ flex: 1, overflowY: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem' }}>
+                      <thead style={{ position: 'sticky', top: 0, backgroundColor: 'var(--bg-light)', zIndex: 1, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+                        <tr>
+                          <th style={{ padding: '8px', textAlign: 'left', borderBottom: '1px solid var(--border-light)' }}>Raw Material</th>
+                          <th style={{ padding: '8px', textAlign: 'left', borderBottom: '1px solid var(--border-light)', width: '25%' }}>Batch No.</th>
+                          <th style={{ padding: '8px', textAlign: 'left', borderBottom: '1px solid var(--border-light)', width: '20%' }}>Qty</th>
+                          <th style={{ padding: '8px', textAlign: 'center', borderBottom: '1px solid var(--border-light)', width: '30px' }}>
+                            <button onClick={() => setCustomerFormulation(prev => [...prev, { rm: '', batchNo: '', qty: '' }])} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#10b981', padding: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Add Row"><Plus size={14} /></button>
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {customerFormulation.map((row, idx) => (
+                          <tr key={idx} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                            <td style={{ padding: '4px' }}>
+                              <input type="text" value={row.rm} onChange={e => { const newF = [...customerFormulation]; newF[idx].rm = e.target.value; setCustomerFormulation(newF); }} style={{ width: '100%', border: '1px solid var(--border-light)', borderRadius: '4px', padding: '6px', fontSize: '0.75rem', boxSizing: 'border-box', outline: 'none' }} placeholder="RM Name" />
+                            </td>
+                            <td style={{ padding: '4px' }}>
+                              <input type="text" value={row.batchNo} onChange={e => { const newF = [...customerFormulation]; newF[idx].batchNo = e.target.value; setCustomerFormulation(newF); }} style={{ width: '100%', border: '1px solid var(--border-light)', borderRadius: '4px', padding: '6px', fontSize: '0.75rem', boxSizing: 'border-box', outline: 'none' }} placeholder="Batch" />
+                            </td>
+                            <td style={{ padding: '4px' }}>
+                              <input type="text" value={row.qty} onChange={e => { const newF = [...customerFormulation]; newF[idx].qty = e.target.value; setCustomerFormulation(newF); }} style={{ width: '100%', border: '1px solid var(--border-light)', borderRadius: '4px', padding: '6px', fontSize: '0.75rem', boxSizing: 'border-box', outline: 'none' }} placeholder="Qty" />
+                            </td>
+                            <td style={{ padding: '4px', textAlign: 'center' }}>
+                              <button onClick={() => setCustomerFormulation(prev => prev.filter((_, i) => i !== idx))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }} title="Remove Row"><Trash2 size={13} /></button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1519,6 +1564,35 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
                   <strong style={{ fontSize: '0.95rem', fontWeight: 700, color: '#3b82f6', display: 'block', marginBottom: '6px' }}>Observation</strong>
                   <p style={{ fontSize: '0.9rem', margin: 0, color: '#334155', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>{labComplaintDetails.observation || 'No remarks.'}</p>
                 </div>
+
+                {labComplaintDetails.customer_formulation && labComplaintDetails.customer_formulation.length > 0 && labComplaintDetails.customer_formulation.some((r: any) => r.rm || r.batchNo || r.qty) && (
+                  <div style={{ marginBottom: '20px' }}>
+                    <strong style={{ fontSize: '0.95rem', fontWeight: 700, color: '#10b981', display: 'block', marginBottom: '6px' }}>Customer Formulation</strong>
+                    <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+                        <thead style={{ backgroundColor: '#f8fafc' }}>
+                          <tr>
+                            <th style={{ padding: '8px 12px', textAlign: 'left', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: 600 }}>Raw Material</th>
+                            <th style={{ padding: '8px 12px', textAlign: 'left', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: 600 }}>Batch No.</th>
+                            <th style={{ padding: '8px 12px', textAlign: 'left', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: 600 }}>Qty</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {labComplaintDetails.customer_formulation.map((row: any, idx: number) => {
+                            if (!row.rm && !row.batchNo && !row.qty) return null;
+                            return (
+                              <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                <td style={{ padding: '8px 12px', color: '#334155' }}>{row.rm || '-'}</td>
+                                <td style={{ padding: '8px 12px', color: '#334155' }}>{row.batchNo || '-'}</td>
+                                <td style={{ padding: '8px 12px', color: '#334155' }}>{row.qty || '-'}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
 
                 {showModalImages && (
                   <div style={{ border: '1px solid #e2e8f0', borderRadius: '12px', padding: '12px', backgroundColor: '#f8fafc', marginBottom: '20px' }}>

@@ -22,7 +22,7 @@ export const CustomerFormulationTable: React.FC<CustomerFormulationTableProps> =
 
   const handleRemoveRow = (index: number) => {
     if (customerFormulation.length <= 1) {
-      // Keep at least one empty row instead of a completely blank table
+      // Keep at least one empty row
       setCustomerFormulation([{ rm: '', batchNo: '', qty: '' }]);
       return;
     }
@@ -40,7 +40,7 @@ export const CustomerFormulationTable: React.FC<CustomerFormulationTableProps> =
   const cellInputStyle: React.CSSProperties = {
     width: '100%',
     height: '100%',
-    padding: '6px 8px',
+    padding: '4px 6px',
     fontSize: '0.78rem',
     border: 'none',
     outline: 'none',
@@ -54,14 +54,15 @@ export const CustomerFormulationTable: React.FC<CustomerFormulationTableProps> =
     padding: 0,
     borderRight: '1px solid var(--border-medium, #cbd5e1)',
     borderBottom: '1px solid var(--border-medium, #cbd5e1)',
-    backgroundColor: 'var(--bg-card, #ffffff)'
+    backgroundColor: 'var(--bg-card, #ffffff)',
+    height: '28px'
   };
 
   const headerCellStyle: React.CSSProperties = {
-    padding: '8px 10px',
+    padding: '6px 8px',
     textAlign: 'left',
     fontWeight: 700,
-    fontSize: '0.78rem',
+    fontSize: '0.74rem',
     color: 'var(--text-primary, #1e293b)',
     backgroundColor: 'var(--bg-light, #f8fafc)',
     borderRight: '1px solid var(--border-medium, #cbd5e1)',
@@ -71,7 +72,7 @@ export const CustomerFormulationTable: React.FC<CustomerFormulationTableProps> =
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', height: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
           Customer Formulation
@@ -103,110 +104,103 @@ export const CustomerFormulationTable: React.FC<CustomerFormulationTableProps> =
         border: '1px solid var(--border-medium, #94a3b8)', 
         borderRadius: '6px', 
         overflow: 'hidden', 
-        backgroundColor: 'var(--bg-card, #ffffff)', 
-        display: 'flex', 
-        flexDirection: 'column', 
-        minHeight: '235px',
-        maxHeight: '280px',
+        backgroundColor: 'var(--bg-card, #ffffff)',
         boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
       }}>
-        <div style={{ flex: 1, overflowY: 'auto', overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
-            <thead style={{ position: 'sticky', top: 0, zIndex: 2 }}>
-              <tr>
-                <th style={{ ...headerCellStyle, width: '40px', textAlign: 'center' }}>#</th>
-                <th style={{ ...headerCellStyle, width: '44%' }}>Raw Material</th>
-                <th style={{ ...headerCellStyle, width: '28%' }}>Batch No.</th>
-                <th style={{ ...headerCellStyle, width: '20%' }}>Qty</th>
-                <th style={{ ...headerCellStyle, width: '38px', textAlign: 'center', borderRight: 'none', padding: '6px' }}>
-                  Action
-                </th>
+        <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+          <thead>
+            <tr>
+              <th style={{ ...headerCellStyle, width: '34px', textAlign: 'center' }}>#</th>
+              <th style={{ ...headerCellStyle, width: '45%' }}>Raw Material</th>
+              <th style={{ ...headerCellStyle, width: '28%' }}>Batch No.</th>
+              <th style={{ ...headerCellStyle, width: '20%' }}>Qty</th>
+              <th style={{ ...headerCellStyle, width: '34px', textAlign: 'center', borderRight: 'none', padding: '4px' }}>
+                
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {customerFormulation.map((row, idx) => (
+              <tr 
+                key={idx}
+                style={{
+                  backgroundColor: idx % 2 === 1 ? 'var(--bg-light, #f8fafc)' : 'transparent',
+                  transition: 'background-color 0.1s ease'
+                }}
+              >
+                {/* Row Number */}
+                <td style={{ 
+                  ...cellStyle, 
+                  textAlign: 'center', 
+                  fontSize: '0.72rem', 
+                  fontWeight: 600, 
+                  color: 'var(--text-secondary, #64748b)',
+                  backgroundColor: 'var(--bg-light, #f8fafc)',
+                  userSelect: 'none'
+                }}>
+                  {idx + 1}
+                </td>
+
+                {/* Raw Material Input - clean with no hint/placeholder */}
+                <td style={cellStyle}>
+                  <input 
+                    type="text" 
+                    value={row.rm} 
+                    onChange={e => handleCellChange(idx, 'rm', e.target.value)} 
+                    style={cellInputStyle} 
+                  />
+                </td>
+
+                {/* Batch No Input - clean with no hint/placeholder */}
+                <td style={cellStyle}>
+                  <input 
+                    type="text" 
+                    value={row.batchNo} 
+                    onChange={e => handleCellChange(idx, 'batchNo', e.target.value)} 
+                    style={cellInputStyle} 
+                  />
+                </td>
+
+                {/* Qty Input - clean with no hint/placeholder */}
+                <td style={cellStyle}>
+                  <input 
+                    type="text" 
+                    value={row.qty} 
+                    onChange={e => handleCellChange(idx, 'qty', e.target.value)} 
+                    style={cellInputStyle} 
+                  />
+                </td>
+
+                {/* Delete Button */}
+                <td style={{ ...cellStyle, borderRight: 'none', textAlign: 'center', verticalAlign: 'middle', padding: '2px' }}>
+                  <button 
+                    type="button"
+                    onClick={() => handleRemoveRow(idx)} 
+                    style={{ 
+                      background: 'transparent', 
+                      border: 'none', 
+                      cursor: 'pointer', 
+                      color: '#ef4444', 
+                      padding: '2px', 
+                      display: 'inline-flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center',
+                      borderRadius: '4px',
+                      width: '100%',
+                      height: '100%',
+                      transition: 'background-color 0.15s ease'
+                    }} 
+                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.12)')}
+                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+                    title="Delete row"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {customerFormulation.map((row, idx) => (
-                <tr 
-                  key={idx}
-                  style={{
-                    backgroundColor: idx % 2 === 1 ? 'var(--bg-light, #f8fafc)' : 'transparent',
-                    transition: 'background-color 0.1s ease'
-                  }}
-                >
-                  {/* Row Number */}
-                  <td style={{ 
-                    ...cellStyle, 
-                    textAlign: 'center', 
-                    fontSize: '0.72rem', 
-                    fontWeight: 600, 
-                    color: 'var(--text-secondary, #64748b)',
-                    backgroundColor: 'var(--bg-light, #f8fafc)',
-                    userSelect: 'none'
-                  }}>
-                    {idx + 1}
-                  </td>
-
-                  {/* Raw Material Input */}
-                  <td style={cellStyle}>
-                    <input 
-                      type="text" 
-                      value={row.rm} 
-                      onChange={e => handleCellChange(idx, 'rm', e.target.value)} 
-                      style={cellInputStyle} 
-                      placeholder="e.g. Titanium Dioxide" 
-                    />
-                  </td>
-
-                  {/* Batch No Input */}
-                  <td style={cellStyle}>
-                    <input 
-                      type="text" 
-                      value={row.batchNo} 
-                      onChange={e => handleCellChange(idx, 'batchNo', e.target.value)} 
-                      style={cellInputStyle} 
-                      placeholder="e.g. B-1049" 
-                    />
-                  </td>
-
-                  {/* Qty Input */}
-                  <td style={cellStyle}>
-                    <input 
-                      type="text" 
-                      value={row.qty} 
-                      onChange={e => handleCellChange(idx, 'qty', e.target.value)} 
-                      style={cellInputStyle} 
-                      placeholder="e.g. 25.0 kg" 
-                    />
-                  </td>
-
-                  {/* Delete Button */}
-                  <td style={{ ...cellStyle, borderRight: 'none', textAlign: 'center', verticalAlign: 'middle' }}>
-                    <button 
-                      type="button"
-                      onClick={() => handleRemoveRow(idx)} 
-                      style={{ 
-                        background: 'transparent', 
-                        border: 'none', 
-                        cursor: 'pointer', 
-                        color: '#ef4444', 
-                        padding: '4px', 
-                        display: 'inline-flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center',
-                        borderRadius: '4px',
-                        transition: 'background-color 0.15s ease'
-                      }} 
-                      onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.12)')}
-                      onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
-                      title="Delete row"
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

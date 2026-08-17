@@ -3,6 +3,7 @@ import {
   X, RefreshCw, CheckCircle2, AlertTriangle, Image, Edit3, ZoomIn,
   ShieldAlert, ChevronLeft, Trash2, Check, Search
 } from 'lucide-react';
+import { API_BASE_URL } from '../../services/api';
 
 // ============================================================================
 // 1. RESOLVED COMPLAINT MODAL
@@ -221,7 +222,9 @@ export const LabComplaintDetailsModal: React.FC<LabComplaintDetailsModalProps> =
                 {labComplaintDetails.image_references && labComplaintDetails.image_references.length > 0 ? (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                     {labComplaintDetails.image_references.map((filename: string, idx: number) => {
-                      const fileUrl = filename.startsWith('http') ? filename : `https://clrwxqngtwshynvsbjac.supabase.co/storage/v1/object/public/complaint-images/${filename}`;
+                      const fileUrl = filename.startsWith('http') 
+                        ? filename 
+                        : `${API_BASE_URL}/complaint-reg/images/${filename}`;
                       return (
                         <div key={idx} onClick={() => onViewImage(fileUrl)}
                           style={{ width: '80px', height: '80px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #cbd5e1', cursor: 'pointer', position: 'relative' }}>

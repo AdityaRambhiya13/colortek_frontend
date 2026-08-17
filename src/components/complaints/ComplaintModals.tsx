@@ -185,23 +185,25 @@ export const LabComplaintDetailsModal: React.FC<LabComplaintDetailsModalProps> =
             {labComplaintDetails.customer_formulation && labComplaintDetails.customer_formulation.length > 0 && labComplaintDetails.customer_formulation.some((r: any) => r.rm || r.batchNo || r.qty) && (
               <div style={{ marginBottom: '20px' }}>
                 <strong style={{ fontSize: '0.95rem', fontWeight: 700, color: '#10b981', display: 'block', marginBottom: '6px' }}>Customer Formulation</strong>
-                <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
+                <div style={{ border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden', backgroundColor: '#ffffff', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
-                    <thead style={{ backgroundColor: '#f8fafc' }}>
+                    <thead style={{ backgroundColor: '#f1f5f9' }}>
                       <tr>
-                        <th style={{ padding: '8px 12px', textAlign: 'left', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: 600 }}>Raw Material</th>
-                        <th style={{ padding: '8px 12px', textAlign: 'left', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: 600 }}>Batch No.</th>
-                        <th style={{ padding: '8px 12px', textAlign: 'left', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: 600 }}>Qty</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'center', width: '36px', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', color: '#1e293b', fontWeight: 700, fontSize: '0.75rem' }}>#</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'left', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', color: '#1e293b', fontWeight: 700, fontSize: '0.75rem' }}>RAW MATERIAL</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'left', width: '30%', borderRight: '1px solid #cbd5e1', borderBottom: '2px solid #94a3b8', color: '#1e293b', fontWeight: 700, fontSize: '0.75rem' }}>BATCH NO.</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'left', width: '22%', borderBottom: '2px solid #94a3b8', color: '#1e293b', fontWeight: 700, fontSize: '0.75rem' }}>QTY</th>
                       </tr>
                     </thead>
                     <tbody>
                       {labComplaintDetails.customer_formulation.map((row: any, idx: number) => {
                         if (!row.rm && !row.batchNo && !row.qty) return null;
                         return (
-                          <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                            <td style={{ padding: '8px 12px', color: '#334155' }}>{row.rm || '-'}</td>
-                            <td style={{ padding: '8px 12px', color: '#334155' }}>{row.batchNo || '-'}</td>
-                            <td style={{ padding: '8px 12px', color: '#334155' }}>{row.qty || '-'}</td>
+                          <tr key={idx} style={{ backgroundColor: idx % 2 === 1 ? '#f8fafc' : '#ffffff' }}>
+                            <td style={{ padding: '6px 8px', textAlign: 'center', borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1', color: '#64748b', fontSize: '0.75rem', fontWeight: 600, backgroundColor: '#f8fafc' }}>{idx + 1}</td>
+                            <td style={{ padding: '6px 10px', borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1', color: '#0f172a', fontWeight: 500 }}>{row.rm || '-'}</td>
+                            <td style={{ padding: '6px 10px', borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1', color: '#0f172a' }}>{row.batchNo || '-'}</td>
+                            <td style={{ padding: '6px 10px', borderBottom: '1px solid #cbd5e1', color: '#0f172a' }}>{row.qty || '-'}</td>
                           </tr>
                         );
                       })}

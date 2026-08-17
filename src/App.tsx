@@ -279,6 +279,7 @@ export const App: React.FC = () => {
 
       // Master Formulation Page
       case 'master_formulation':
+      case 'lab_master_formulation':
       case 'mf_production':
         return <MasterFormulation viewMode={currentView} onShowToast={showToast} onChangeView={handleViewChange} />;
 

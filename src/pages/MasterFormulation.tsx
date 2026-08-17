@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   BookOpen, Search, Calendar, RefreshCw, 
-  Download, Edit3, CheckCircle, Scale, Eye, ChevronLeft, ChevronRight, Play, Info
+  Download, Edit3, CheckCircle, Scale, Eye, ChevronLeft, ChevronRight, Play, Info,
+  Plus, Image as ImageIcon, ZoomIn
 } from 'lucide-react';
-import { MasterFormulationAPI } from '../services/api';
+import { MasterFormulationAPI, API_BASE_URL } from '../services/api';
+import { CreateMasterModal } from '../components/master_formulation/CreateMasterModal';
 import * as XLSX from '../xlsxWrapper';
 
 interface MasterFormulationProps {
@@ -57,6 +59,8 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
   const roles = roleString.split(',').map(r => r.trim().toLowerCase()).filter(Boolean);
   const isAdmin = roles.includes('admin') || roles.includes('all') || username === 'admin' || username === 'adi' || roles.length >= 5;
   const [approving, setApproving] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
 
   const handleApproveFormulation = async (targetBatchNo?: string, e?: React.MouseEvent) => {
     if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
@@ -510,13 +514,40 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           
           {/* Logo / Header Title */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
             <BookOpen size={28} color="var(--primary-color)" />
             <div>
               <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'var(--primary-color)' }}>
-                {viewMode === 'mf_production' ? 'Production Formulations' : 'Master Formulations'}
+                {viewMode === 'mf_production' 
+                  ? 'Production Formulations' 
+                  : viewMode === 'lab_master_formulation' 
+                    ? 'Lab Master Formulations' 
+                    : 'Master Formulations'}
               </h3>
             </div>
+            {viewMode !== 'mf_production' && (
+              <button
+                type="button"
+                onClick={() => setCreateModalOpen(true)}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: '8px',
+                  background: 'linear-gradient(135deg, #10b981, #059669)',
+                  color: '#ffffff',
+                  fontWeight: 700,
+                  fontSize: '12px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  boxShadow: '0 2px 4px rgba(16, 185, 129, 0.25)',
+                  marginLeft: '8px'
+                }}
+              >
+                <Plus size={14} /> Create New Master
+              </button>
+            )}
           </div>
 
           {/* Filters Bar & Pagination */}
@@ -631,7 +662,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                   }}
                   className="mf-batch-card"
                   style={{
-                    borderLeft: isApproved ? '4px solid #10b981' : '4px solid #f59e0b',
+                    borderLeft: viewMode === 'lab_master_formulation' ? '4px solid #3b82f6' : isApproved ? '4px solid #10b981' : '4px solid #f59e0b',
                     position: 'relative'
                   }}
                 >
@@ -644,11 +675,11 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                       padding: '2px 8px',
                       borderRadius: '12px',
                       whiteSpace: 'nowrap',
-                      background: isApproved ? '#dcfce7' : '#fef9c3',
-                      color: isApproved ? '#166534' : '#854d0e',
-                      border: isApproved ? '1px solid #86efac' : '1px solid #fde047'
+                      background: viewMode === 'lab_master_formulation' ? '#eff6ff' : isApproved ? '#dcfce7' : '#fef9c3',
+                      color: viewMode === 'lab_master_formulation' ? '#1d4ed8' : isApproved ? '#166534' : '#854d0e',
+                      border: viewMode === 'lab_master_formulation' ? '1px solid #bfdbfe' : isApproved ? '1px solid #86efac' : '1px solid #fde047'
                     }}>
-                      {isApproved ? '🟢 Approved' : '🟡 Pending Approval'}
+                      {viewMode === 'lab_master_formulation' ? '🟢 Active' : isApproved ? '🟢 Approved' : '🟡 Pending Approval'}
                     </span>
                   </div>
 
@@ -662,7 +693,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                     <span className="batch-view-chip">
                       {viewMode === 'mf_production' ? 'Load Sheet' : 'View Details'}
                     </span>
-                    {isAdmin && !isApproved && viewMode !== 'mf_production' && (
+                    {isAdmin && !isApproved && viewMode === 'master_formulation' && (
                       <button
                         onClick={(e) => handleApproveFormulation(row.batch_no, e)}
                         disabled={approving}
@@ -718,7 +749,15 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
             <div style={{ flexGrow: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', backgroundColor: '#f8fafc' }}>
               
               {/* Approval Status Banner */}
-              {Boolean(detailData.is_approved || detailData.approval_status === 'approved') ? (
+              {viewMode === 'lab_master_formulation' ? (
+                <div style={{ padding: '10px 18px', borderRadius: '10px', background: '#eff6ff', border: '1px solid #bfdbfe', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#1e40af', fontWeight: 700, fontSize: '0.85rem' }}>
+                    <CheckCircle size={18} color="#2563eb" />
+                    <span>Lab Master Formulation &mdash; Active Specification</span>
+                  </div>
+                  <span style={{ fontSize: '0.75rem', color: '#3b82f6', fontWeight: 600 }}>Permanent Storage</span>
+                </div>
+              ) : Boolean(detailData.is_approved || detailData.approval_status === 'approved') ? (
                 <div style={{ padding: '12px 20px', borderRadius: '10px', background: '#f0fdf4', border: '1px solid #bbf7d0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#15803d', fontWeight: 700, fontSize: '0.9rem' }}>
                     <CheckCircle size={20} color="#16a34a" />
@@ -759,6 +798,62 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                   )}
                 </div>
               )}
+
+              {/* Attached Physical Master Formulation Sheet (if exists) */}
+              {(() => {
+                const images: string[] = detailData.image_references || detailData.form?.image_references || [];
+                if (images.length === 0) return null;
+
+                return (
+                  <div className="premium-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: '#ffffff', border: '1px solid #e2e8f0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
+                      <ImageIcon size={16} color="#8b5cf6" />
+                      <span style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Attached Physical Master Formulation Sheet ({images.length})
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                      {images.map((imgName, idx) => {
+                        const imgUrl = imgName.startsWith('http') ? imgName : `${API_BASE_URL}/mf/images/${imgName}`;
+                        return (
+                          <div 
+                            key={idx} 
+                            onClick={() => setZoomedImage(imgUrl)}
+                            style={{
+                              position: 'relative',
+                              width: '160px',
+                              height: '110px',
+                              borderRadius: '8px',
+                              overflow: 'hidden',
+                              border: '1px solid #cbd5e1',
+                              cursor: 'pointer',
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                            }}
+                          >
+                            <img src={imgUrl} alt="Master Sheet" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <div style={{
+                              position: 'absolute',
+                              bottom: '4px',
+                              right: '4px',
+                              backgroundColor: 'rgba(0,0,0,0.65)',
+                              color: '#fff',
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              fontSize: '10px',
+                              fontWeight: 600
+                            }}>
+                              <ZoomIn size={10} /> Zoom
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
               
               {/* Row: Formulation Details (Left Card) & Recalculator Inputs (Right Card) */}
               <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px', flexShrink: 0 }}>
@@ -1336,8 +1431,43 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
         }
         .flet-btn:active {
           transform: translateY(1px);
-        }
       `}</style>
+
+      {/* Create Master Formulation Modal */}
+      <CreateMasterModal
+        isOpen={createModalOpen}
+        productName={productName}
+        onClose={() => setCreateModalOpen(false)}
+        onSuccess={(createdBatch) => {
+          loadMasterList();
+          loadBatchDetails(createdBatch);
+        }}
+        onShowToast={onShowToast}
+      />
+
+      {/* Zoom Modal for Attached Physical Sheet Images */}
+      {zoomedImage && (
+        <div 
+          className="modal-overlay" 
+          style={{ zIndex: 1400, background: 'rgba(0,0,0,0.85)' }} 
+          onClick={() => setZoomedImage(null)}
+        >
+          <div style={{ position: 'relative', maxWidth: '90vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <img 
+              src={zoomedImage} 
+              alt="Enlarged Sheet" 
+              style={{ maxWidth: '100%', maxHeight: '85vh', objectFit: 'contain', borderRadius: '8px' }} 
+            />
+            <button 
+              type="button"
+              onClick={() => setZoomedImage(null)}
+              style={{ position: 'absolute', top: '-40px', right: '0', background: 'none', border: 'none', color: '#ffffff', fontSize: '28px', cursor: 'pointer' }}
+            >
+              &times;
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   );

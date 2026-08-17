@@ -1,0 +1,786 @@
+import React, { useState, useRef } from 'react';
+import { 
+  X, Scale, Image as ImageIcon, Trash2, Plus, RefreshCw, CheckCircle2, 
+  UploadCloud, ZoomIn, AlertCircle, FileText
+} from 'lucide-react';
+import { MasterFormulationAPI } from '../../services/api';
+
+interface InventoryItem {
+  sr: string;
+  remarks: string;
+  material: string;
+  qty: string;
+  rounded_qty: string;
+}
+
+interface TestItem {
+  method: string;
+  standard: string;
+  result: string;
+}
+
+interface CreateMasterModalProps {
+  isOpen: boolean;
+  productName: string;
+  onClose: () => void;
+  onSuccess: (batchNo: string) => void;
+  onShowToast: (msg: string, type: 'success' | 'error' | 'warning' | 'info') => void;
+}
+
+export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
+  isOpen,
+  productName,
+  onClose,
+  onSuccess,
+  onShowToast
+}) => {
+  // Form Header Fields
+  const [batchNo, setBatchNo] = useState('');
+  const [refNo, setRefNo] = useState('');
+  const [customerName, setCustomerName] = useState('');
+  const [formulaDate, setFormulaDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [refBookNo, setRefBookNo] = useState('');
+
+  // Additional Parameters (matching all 8 standard parameters)
+  const [packaging, setPackaging] = useState('');
+  const [viscosity, setViscosity] = useState('');
+  const [density, setDensity] = useState('');
+  const [ratio, setRatio] = useState('');
+  const [filtration, setFiltration] = useState('');
+  const [remarks, setRemarks] = useState('');
+  const [sender, setSender] = useState('');
+  const [approval, setApproval] = useState('');
+
+  // Attached Sheet Image
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [uploadedImageFilename, setUploadedImageFilename] = useState<string | null>(null);
+  const [previewZoomOpen, setPreviewZoomOpen] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Composition Inventory Rows (starts with 5 clean rows)
+  const [inventory, setInventory] = useState<InventoryItem[]>([
+    { sr: '1', remarks: '', material: '', qty: '', rounded_qty: '' },
+    { sr: '2', remarks: '', material: '', qty: '', rounded_qty: '' },
+    { sr: '3', remarks: '', material: '', qty: '', rounded_qty: '' },
+    { sr: '4', remarks: '', material: '', qty: '', rounded_qty: '' },
+    { sr: '5', remarks: '', material: '', qty: '', rounded_qty: '' },
+  ]);
+
+  // QC Test Rows
+  const [tests, setTests] = useState<TestItem[]>([
+    { method: 'Viscosity', standard: '', result: '' },
+    { method: 'Density', standard: '', result: '' },
+    { method: 'Solid Content', standard: '', result: '' },
+  ]);
+
+  const [saving, setSaving] = useState(false);
+
+  if (!isOpen) return null;
+
+  // Handle Image Selection and Auto-Upload
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImageFile(file);
+    const localUrl = URL.createObjectURL(file);
+    setImagePreviewUrl(localUrl);
+
+    // Upload to server permanently
+    setUploadingImage(true);
+    const [success, res] = await MasterFormulationAPI.uploadImage(file);
+    setUploadingImage(false);
+
+    if (success && res?.filename) {
+      setUploadedImageFilename(res.filename);
+      onShowToast('Sheet image successfully uploaded & stored.', 'success');
+    } else {
+      onShowToast(typeof res === 'string' ? res : 'Failed to upload sheet image.', 'error');
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
+    setImagePreviewUrl(null);
+    setUploadedImageFilename(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  // Inventory Table helpers
+  const handleInventoryChange = (index: number, field: keyof InventoryItem, value: string) => {
+    const updated = [...inventory];
+    updated[index] = { ...updated[index], [field]: value };
+    setInventory(updated);
+  };
+
+  const addInventoryRow = () => {
+    setInventory(prev => [
+      ...prev,
+      { sr: String(prev.length + 1), remarks: '', material: '', qty: '', rounded_qty: '' }
+    ]);
+  };
+
+  const removeInventoryRow = (index: number) => {
+    if (inventory.length <= 1) {
+      setInventory([{ sr: '1', remarks: '', material: '', qty: '', rounded_qty: '' }]);
+      return;
+    }
+    const updated = inventory.filter((_, i) => i !== index).map((row, i) => ({
+      ...row,
+      sr: String(i + 1)
+    }));
+    setInventory(updated);
+  };
+
+  // Test Table helpers
+  const handleTestChange = (index: number, field: keyof TestItem, value: string) => {
+    const updated = [...tests];
+    updated[index] = { ...updated[index], [field]: value };
+    setTests(updated);
+  };
+
+  const addTestRow = () => {
+    setTests(prev => [...prev, { method: '', standard: '', result: '' }]);
+  };
+
+  const removeTestRow = (index: number) => {
+    if (tests.length <= 1) {
+      setTests([{ method: '', standard: '', result: '' }]);
+      return;
+    }
+    setTests(tests.filter((_, i) => i !== index));
+  };
+
+  // Total Calculations
+  const totalQty = inventory.reduce((sum, item) => sum + (parseFloat(item.qty) || 0), 0);
+
+  // Form Submit
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanBatchNo = batchNo.trim();
+    if (!cleanBatchNo) {
+      onShowToast('Batch No is required to create a Master Formulation.', 'error');
+      return;
+    }
+
+    setSaving(true);
+
+    const payload = {
+      batch_no: cleanBatchNo,
+      ref_no: refNo.trim(),
+      customer_name: customerName.trim(),
+      formula_date: formulaDate,
+      ref_book_no: refBookNo.trim(),
+      packaging: packaging.trim(),
+      viscosity: viscosity.trim(),
+      density: density.trim(),
+      ratio: ratio.trim(),
+      filtration: filtration.trim(),
+      remarks: remarks.trim(),
+      sender: sender.trim(),
+      approval: approval.trim(),
+      inventory: inventory
+        .filter(item => item.material.trim() !== '' || item.qty.trim() !== '')
+        .map((item, idx) => ({
+          sr: String(idx + 1),
+          remarks: item.remarks || '',
+          material: item.material || '',
+          raw_material: item.material || '',
+          qty: item.qty || '',
+          rounded_qty: item.rounded_qty || item.qty || ''
+        })),
+      tests: tests
+        .filter(t => t.method.trim() !== '' || t.result.trim() !== '')
+        .map(t => ({
+          method: t.method || '',
+          standard: t.standard || '',
+          result: t.result || ''
+        })),
+      image_references: uploadedImageFilename ? [uploadedImageFilename] : []
+    };
+
+    const [success, res] = await MasterFormulationAPI.createBatch(productName, payload);
+    setSaving(false);
+
+    if (success) {
+      onShowToast(`Master formulation ${cleanBatchNo} created successfully!`, 'success');
+      onSuccess(cleanBatchNo);
+      onClose();
+    } else {
+      const errMsg = typeof res === 'string' ? res : 'Failed to create master formulation.';
+      onShowToast(errMsg, 'error');
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 1100 }}>
+      <div 
+        className="modal-content animated-scale" 
+        onClick={e => e.stopPropagation()} 
+        style={{ 
+          maxWidth: '1300px', 
+          width: '95%', 
+          maxHeight: '92vh', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          padding: 0,
+          borderRadius: '16px',
+          overflow: 'hidden'
+        }}
+      >
+        {/* Modal Header */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          background: 'linear-gradient(135deg, #1e293b, #0f172a)',
+          padding: '16px 24px',
+          color: '#ffffff',
+          flexShrink: 0
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Scale size={22} color="#38bdf8" />
+            <div>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0, color: '#ffffff' }}>
+                Create New Lab Master Formulation
+              </h3>
+              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                Product Scope: <strong style={{ color: '#38bdf8' }}>{productName.replace(/_/g, ' ').toUpperCase()}</strong>
+              </span>
+            </div>
+          </div>
+          <button 
+            type="button"
+            onClick={onClose} 
+            className="modal-close-btn"
+            style={{ color: '#94a3b8', fontSize: '24px', background: 'none', border: 'none', cursor: 'pointer' }}
+          >
+            &times;
+          </button>
+        </div>
+
+        {/* Scrollable Form Body */}
+        <form onSubmit={handleSave} style={{ flexGrow: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', backgroundColor: '#f8fafc' }}>
+          
+          {/* Top Section: Form Header & Image Upload Box */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: '20px' }}>
+            
+            {/* Header Fields Card */}
+            <div className="premium-card" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
+                <FileText size={16} color="#3b82f6" />
+                <span style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Formulation Identification
+                </span>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+                <div className="form-input-container" style={{ margin: 0 }}>
+                  <span className="form-label" style={{ fontWeight: 700, color: '#1e293b' }}>Batch No *</span>
+                  <input 
+                    type="text" 
+                    className="field-input" 
+                    required 
+                    placeholder="e.g. B-1025" 
+                    value={batchNo} 
+                    onChange={e => setBatchNo(e.target.value)} 
+                    style={{ fontWeight: 700, borderColor: '#93c5fd' }}
+                  />
+                </div>
+
+                <div className="form-input-container" style={{ margin: 0 }}>
+                  <span className="form-label">Ref No</span>
+                  <input 
+                    type="text" 
+                    className="field-input" 
+                    placeholder="e.g. REF-2026-01" 
+                    value={refNo} 
+                    onChange={e => setRefNo(e.target.value)} 
+                  />
+                </div>
+
+                <div className="form-input-container" style={{ margin: 0 }}>
+                  <span className="form-label">Customer Name</span>
+                  <input 
+                    type="text" 
+                    className="field-input" 
+                    placeholder="Customer / Account name" 
+                    value={customerName} 
+                    onChange={e => setCustomerName(e.target.value)} 
+                  />
+                </div>
+
+                <div className="form-input-container" style={{ margin: 0 }}>
+                  <span className="form-label">Formula Date</span>
+                  <input 
+                    type="date" 
+                    className="field-input" 
+                    value={formulaDate} 
+                    onChange={e => setFormulaDate(e.target.value)} 
+                  />
+                </div>
+
+                <div className="form-input-container" style={{ margin: 0, gridColumn: 'span 2' }}>
+                  <span className="form-label">Ref Book No</span>
+                  <input 
+                    type="text" 
+                    className="field-input" 
+                    placeholder="Reference book / ledger page no" 
+                    value={refBookNo} 
+                    onChange={e => setRefBookNo(e.target.value)} 
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Permanent Sheet Image Upload Card */}
+            <div className="premium-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <ImageIcon size={16} color="#8b5cf6" />
+                  <span style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    MF Sheet Photo / Scan
+                  </span>
+                </div>
+                {uploadingImage && (
+                  <span style={{ fontSize: '11px', color: '#6366f1', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <RefreshCw size={12} className="spin-loader" /> Saving...
+                  </span>
+                )}
+              </div>
+
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                accept="image/*" 
+                style={{ display: 'none' }} 
+                onChange={handleFileSelect} 
+              />
+
+              {!imagePreviewUrl ? (
+                <div 
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    flexGrow: 1,
+                    minHeight: '130px',
+                    border: '2px dashed #cbd5e1',
+                    borderRadius: '10px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    cursor: 'pointer',
+                    backgroundColor: '#ffffff',
+                    transition: 'all 0.2s ease',
+                    padding: '16px',
+                    textAlign: 'center'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = '#8b5cf6'}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = '#cbd5e1'}
+                >
+                  <UploadCloud size={32} color="#8b5cf6" />
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>
+                    Click to Upload MF Physical Sheet Photo
+                  </span>
+                  <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                    JPG, PNG, WEBP — Stored permanently with this formulation
+                  </span>
+                </div>
+              ) : (
+                <div style={{ position: 'relative', width: '100%', height: '140px', borderRadius: '10px', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
+                  <img 
+                    src={imagePreviewUrl} 
+                    alt="Master sheet" 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                  />
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0,0,0,0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '12px',
+                    opacity: 0.9
+                  }}>
+                    <button 
+                      type="button" 
+                      onClick={() => setPreviewZoomOpen(true)}
+                      style={{ padding: '6px 12px', borderRadius: '6px', backgroundColor: 'rgba(255,255,255,0.9)', color: '#0f172a', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      <ZoomIn size={14} /> Preview
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={handleRemoveImage}
+                      style={{ padding: '6px 12px', borderRadius: '6px', backgroundColor: '#ef4444', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      <Trash2 size={14} /> Remove
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+          </div>
+
+          {/* Additional Parameters Grid (Packaging, Viscosity, Density, etc.) */}
+          <div className="premium-card" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
+              <Scale size={16} color="#3b82f6" />
+              <span style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Standard Parameters & Specifications
+              </span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px' }}>
+              <div className="form-input-container" style={{ margin: 0 }}>
+                <span className="form-label">Packaging</span>
+                <input type="text" className="field-input" placeholder="e.g. 50 Kg Drum" value={packaging} onChange={e => setPackaging(e.target.value)} />
+              </div>
+              <div className="form-input-container" style={{ margin: 0 }}>
+                <span className="form-label">Viscosity</span>
+                <input type="text" className="field-input" placeholder="e.g. 25-30 sec" value={viscosity} onChange={e => setViscosity(e.target.value)} />
+              </div>
+              <div className="form-input-container" style={{ margin: 0 }}>
+                <span className="form-label">Density</span>
+                <input type="text" className="field-input" placeholder="e.g. 1.05" value={density} onChange={e => setDensity(e.target.value)} />
+              </div>
+              <div className="form-input-container" style={{ margin: 0 }}>
+                <span className="form-label">Ratio</span>
+                <input type="text" className="field-input" placeholder="e.g. 4:1" value={ratio} onChange={e => setRatio(e.target.value)} />
+              </div>
+              <div className="form-input-container" style={{ margin: 0 }}>
+                <span className="form-label">Filtration</span>
+                <input type="text" className="field-input" placeholder="e.g. 100 Mesh" value={filtration} onChange={e => setFiltration(e.target.value)} />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '12px' }}>
+              <div className="form-input-container" style={{ margin: 0 }}>
+                <span className="form-label">Remarks & Instructions</span>
+                <textarea 
+                  className="field-input" 
+                  rows={2} 
+                  placeholder="Manufacturing notes, precautions, or comments" 
+                  value={remarks} 
+                  onChange={e => setRemarks(e.target.value)} 
+                  style={{ resize: 'none', height: '60px' }}
+                />
+              </div>
+              <div className="form-input-container" style={{ margin: 0 }}>
+                <span className="form-label">Sender</span>
+                <input type="text" className="field-input" placeholder="Sender name" value={sender} onChange={e => setSender(e.target.value)} />
+              </div>
+              <div className="form-input-container" style={{ margin: 0 }}>
+                <span className="form-label">Approval</span>
+                <input type="text" className="field-input" placeholder="Approval authority" value={approval} onChange={e => setApproval(e.target.value)} />
+              </div>
+            </div>
+          </div>
+
+          {/* Interactive Composition / Raw Materials Table */}
+          <div className="premium-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Scale size={16} color="#3b82f6" />
+                <span style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Raw Material Composition ({inventory.filter(i => i.material.trim()).length} Items)
+                </span>
+              </div>
+              <button 
+                type="button" 
+                onClick={addInventoryRow}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: '6px',
+                  backgroundColor: '#f1f5f9',
+                  border: '1px solid #cbd5e1',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: '#334155',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <Plus size={14} color="#10b981" /> Add Row
+              </button>
+            </div>
+
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#f1f5f9', borderBottom: '2px solid #cbd5e1' }}>
+                    <th style={{ width: '45px', textAlign: 'center', padding: '8px' }}>#</th>
+                    <th style={{ width: '220px', textAlign: 'left', padding: '8px' }}>Steps / Process</th>
+                    <th style={{ textAlign: 'left', padding: '8px' }}>Raw Material Description</th>
+                    <th style={{ width: '140px', textAlign: 'right', padding: '8px' }}>Quantity (Grams)</th>
+                    <th style={{ width: '100px', textAlign: 'right', padding: '8px' }}>% Form</th>
+                    <th style={{ width: '120px', textAlign: 'center', padding: '8px' }}>Rounded Qty</th>
+                    <th style={{ width: '50px', textAlign: 'center', padding: '8px' }}>Act</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {inventory.map((row, idx) => {
+                    const rowQty = parseFloat(row.qty) || 0;
+                    const pct = totalQty > 0 ? ((rowQty / totalQty) * 100).toFixed(2) : '0.00';
+                    return (
+                      <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ textAlign: 'center', color: '#64748b', fontWeight: 600, padding: '4px' }}>
+                          {idx + 1}
+                        </td>
+                        <td style={{ padding: '4px' }}>
+                          <input 
+                            type="text" 
+                            className="field-input" 
+                            style={{ height: '30px', fontSize: '12px', padding: '4px 8px' }}
+                            placeholder="e.g. Charge under high speed"
+                            value={row.remarks} 
+                            onChange={e => handleInventoryChange(idx, 'remarks', e.target.value)} 
+                          />
+                        </td>
+                        <td style={{ padding: '4px' }}>
+                          <input 
+                            type="text" 
+                            className="field-input" 
+                            style={{ height: '30px', fontSize: '12px', padding: '4px 8px', fontWeight: 600 }}
+                            placeholder="Raw material name"
+                            value={row.material} 
+                            onChange={e => handleInventoryChange(idx, 'material', e.target.value)} 
+                          />
+                        </td>
+                        <td style={{ padding: '4px' }}>
+                          <input 
+                            type="number" 
+                            step="any"
+                            className="field-input" 
+                            style={{ height: '30px', fontSize: '12px', textAlign: 'right', padding: '4px 8px' }}
+                            placeholder="0.00"
+                            value={row.qty} 
+                            onChange={e => handleInventoryChange(idx, 'qty', e.target.value)} 
+                          />
+                        </td>
+                        <td style={{ textAlign: 'right', padding: '8px', color: '#64748b', fontWeight: 600, backgroundColor: '#f8fafc' }}>
+                          {pct}%
+                        </td>
+                        <td style={{ padding: '4px' }}>
+                          <input 
+                            type="text" 
+                            className="field-input" 
+                            style={{ height: '30px', fontSize: '12px', textAlign: 'center', padding: '4px 8px', color: '#2563eb', fontWeight: 700 }}
+                            placeholder="Round"
+                            value={row.rounded_qty} 
+                            onChange={e => handleInventoryChange(idx, 'rounded_qty', e.target.value)} 
+                          />
+                        </td>
+                        <td style={{ textAlign: 'center', padding: '4px' }}>
+                          <button 
+                            type="button" 
+                            onClick={() => removeInventoryRow(idx)}
+                            style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '4px' }}
+                            title="Remove row"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr style={{ backgroundColor: '#f8fafc', borderTop: '2px solid #cbd5e1', fontWeight: 700 }}>
+                    <td colSpan={3} style={{ padding: '10px', textAlign: 'right', color: '#0f172a' }}>
+                      TOTAL COMPOSITION:
+                    </td>
+                    <td style={{ padding: '10px', textAlign: 'right', color: '#2563eb', fontSize: '13px' }}>
+                      {totalQty.toFixed(2)} g
+                    </td>
+                    <td style={{ padding: '10px', textAlign: 'right', color: '#0f172a' }}>
+                      {totalQty > 0 ? '100.00%' : '0.00%'}
+                    </td>
+                    <td colSpan={2}></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+          {/* QC / Quality Check Tests Table */}
+          <div className="premium-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <CheckCircle2 size={16} color="#10b981" />
+                <span style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Quality Control Test Specifications
+                </span>
+              </div>
+              <button 
+                type="button" 
+                onClick={addTestRow}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: '6px',
+                  backgroundColor: '#f1f5f9',
+                  border: '1px solid #cbd5e1',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: '#334155',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <Plus size={14} color="#10b981" /> Add Test
+              </button>
+            </div>
+
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#f1f5f9', borderBottom: '2px solid #cbd5e1' }}>
+                    <th style={{ textAlign: 'left', padding: '8px' }}>Test Parameter / Method</th>
+                    <th style={{ textAlign: 'left', padding: '8px' }}>Standard Specification Range</th>
+                    <th style={{ textAlign: 'left', padding: '8px' }}>Observed Result</th>
+                    <th style={{ width: '50px', textAlign: 'center', padding: '8px' }}>Act</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tests.map((testRow, idx) => (
+                    <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '4px' }}>
+                        <input 
+                          type="text" 
+                          className="field-input" 
+                          style={{ height: '30px', fontSize: '12px', padding: '4px 8px', fontWeight: 600 }}
+                          placeholder="e.g. Viscosity @ 30C"
+                          value={testRow.method} 
+                          onChange={e => handleTestChange(idx, 'method', e.target.value)} 
+                        />
+                      </td>
+                      <td style={{ padding: '4px' }}>
+                        <input 
+                          type="text" 
+                          className="field-input" 
+                          style={{ height: '30px', fontSize: '12px', padding: '4px 8px' }}
+                          placeholder="e.g. 28 - 32 sec"
+                          value={testRow.standard} 
+                          onChange={e => handleTestChange(idx, 'standard', e.target.value)} 
+                        />
+                      </td>
+                      <td style={{ padding: '4px' }}>
+                        <input 
+                          type="text" 
+                          className="field-input" 
+                          style={{ height: '30px', fontSize: '12px', padding: '4px 8px' }}
+                          placeholder="e.g. 30 sec"
+                          value={testRow.result} 
+                          onChange={e => handleTestChange(idx, 'result', e.target.value)} 
+                        />
+                      </td>
+                      <td style={{ textAlign: 'center', padding: '4px' }}>
+                        <button 
+                          type="button" 
+                          onClick={() => removeTestRow(idx)}
+                          style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '4px' }}
+                          title="Remove test"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Modal Footer Controls */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            alignItems: 'center',
+            gap: '12px',
+            borderTop: '1px solid #e2e8f0',
+            paddingTop: '16px',
+            marginTop: '8px'
+          }}>
+            <button 
+              type="button" 
+              onClick={onClose}
+              className="btn-secondary"
+              style={{ padding: '10px 20px', borderRadius: '8px', cursor: 'pointer' }}
+              disabled={saving}
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              className="btn-primary"
+              style={{
+                padding: '10px 28px',
+                borderRadius: '8px',
+                background: 'linear-gradient(135deg, #10b981, #059669)',
+                color: '#ffffff',
+                fontWeight: 700,
+                fontSize: '14px',
+                border: 'none',
+                cursor: saving ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: '0 4px 6px -1px rgba(16, 185, 129, 0.3)'
+              }}
+              disabled={saving}
+            >
+              {saving ? (
+                <>
+                  <RefreshCw size={16} className="spin-loader" /> Saving Master Formulation...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 size={16} /> Save Master Formulation
+                </>
+              )}
+            </button>
+          </div>
+
+        </form>
+
+        {/* Zoom Modal for Attached Image Preview */}
+        {previewZoomOpen && imagePreviewUrl && (
+          <div 
+            className="modal-overlay" 
+            style={{ zIndex: 1200, background: 'rgba(0,0,0,0.85)' }} 
+            onClick={() => setPreviewZoomOpen(false)}
+          >
+            <div style={{ position: 'relative', maxWidth: '90vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <img 
+                src={imagePreviewUrl} 
+                alt="Enlarged Sheet" 
+                style={{ maxWidth: '100%', maxHeight: '85vh', objectFit: 'contain', borderRadius: '8px' }} 
+              />
+              <button 
+                type="button"
+                onClick={() => setPreviewZoomOpen(false)}
+                style={{ position: 'absolute', top: '-40px', right: '0', background: 'none', border: 'none', color: '#ffffff', fontSize: '28px', cursor: 'pointer' }}
+              >
+                &times;
+              </button>
+            </div>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+};

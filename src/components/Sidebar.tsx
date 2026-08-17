@@ -212,6 +212,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           renderLink('master_formulation', 'Master Formulation', <FileText size={18} />)
         }
 
+        {/* Lab Master Formulations (Lab MF Role) */}
+        {(roles.includes('lab_mf') || roles.includes('mf') || roles.includes('all')) && 
+          renderLink('lab_master_formulation', 'Lab Master Formulations', <FileText size={18} />)
+        }
+
         {/* R&D Section (RD Role) */}
         {(roles.includes('rd') || roles.includes('all')) && renderFolder(
           'rd',

@@ -693,6 +693,26 @@ export const MasterFormulationAPI = {
   findByBatch: async (batchNo: string) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/mf/find-by-batch/${batchNo}`));
+  },
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  createBatch: async (productName: string, payload: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return handleResponse<any>(apiClient.post('/mf/create', {
+      product_name: productName,
+      ...payload
+    }));
+  },
+
+  uploadImage: async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return handleResponse<any>(apiClient.post('/mf/upload-image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }));
   }
 };
 

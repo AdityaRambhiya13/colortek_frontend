@@ -52,7 +52,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
   const [confirmInput, setConfirmInput] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  const MODULES = ['admin', 'cms', 'mf', 'qc', 'complaints', 'production', 'lab', 'rd'];
+  const MODULES = ['admin', 'cms', 'mf', 'lab_mf', 'qc', 'complaints', 'production', 'lab', 'rd'];
 
   const fetchAuditLogs = async () => {
     setLoadingAudit(true);
@@ -454,7 +454,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
                       checked={createRoles[role] || false} 
                       onChange={e => setCreateRoles({ ...createRoles, [role]: e.target.checked })}
                     />
-                    <span>{role.toUpperCase()}</span>
+                    <span>{role === 'lab_mf' ? 'LAB MF' : role.toUpperCase()}</span>
                   </label>
                 ))}
               </div>
@@ -540,7 +540,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
                       onChange={e => setUpdateRoles({ ...updateRoles, [role]: e.target.checked })}
                       disabled={!selectedUser}
                     />
-                    <span>{role.toUpperCase()}</span>
+                    <span>{role === 'lab_mf' ? 'LAB MF' : role.toUpperCase()}</span>
                   </label>
                 ))}
               </div>

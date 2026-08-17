@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { 
-  X, Scale, Image as ImageIcon, Trash2, Plus, RefreshCw, CheckCircle2, 
-  UploadCloud, ZoomIn, AlertCircle, FileText
+  Scale, Image as ImageIcon, Trash2, Plus, RefreshCw, CheckCircle2, 
+  UploadCloud, ZoomIn, FileText
 } from 'lucide-react';
 import { MasterFormulationAPI } from '../../services/api';
 
@@ -41,7 +41,7 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
   const [formulaDate, setFormulaDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [refBookNo, setRefBookNo] = useState('');
 
-  // Additional Parameters (matching all 8 standard parameters)
+  // Standard Parameters
   const [packaging, setPackaging] = useState('');
   const [viscosity, setViscosity] = useState('');
   const [density, setDensity] = useState('');
@@ -215,6 +215,57 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
     }
   };
 
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    height: '34px',
+    padding: '6px 10px',
+    fontSize: '12px',
+    fontWeight: 500,
+    color: '#0f172a',
+    backgroundColor: '#ffffff',
+    border: '1px solid #cbd5e1',
+    borderRadius: '6px',
+    outline: 'none',
+    boxSizing: 'border-box',
+    transition: 'border-color 0.15s ease, box-shadow 0.15s ease'
+  };
+
+  const tableInputStyle: React.CSSProperties = {
+    width: '100%',
+    height: '30px',
+    padding: '4px 8px',
+    fontSize: '12px',
+    color: '#0f172a',
+    backgroundColor: '#ffffff',
+    border: '1px solid #cbd5e1',
+    borderRadius: '4px',
+    outline: 'none',
+    boxSizing: 'border-box'
+  };
+
+  const cardStyle: React.CSSProperties = {
+    backgroundColor: '#ffffff',
+    border: '1px solid #cbd5e1',
+    borderRadius: '10px',
+    padding: '16px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+  };
+
+  const tableHeaderStyle: React.CSSProperties = {
+    backgroundColor: '#f1f5f9',
+    border: '1px solid #cbd5e1',
+    padding: '8px 10px',
+    fontSize: '12px',
+    fontWeight: 700,
+    color: '#334155'
+  };
+
+  const tableCellStyle: React.CSSProperties = {
+    border: '1px solid #cbd5e1',
+    padding: '4px 6px',
+    verticalAlign: 'middle'
+  };
+
   return (
     <div className="modal-overlay" onClick={onClose} style={{ zIndex: 1100 }}>
       <div 
@@ -228,7 +279,9 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
           flexDirection: 'column', 
           padding: 0,
           borderRadius: '16px',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          border: '1px solid #cbd5e1',
+          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1)'
         }}
       >
         {/* Modal Header */}
@@ -239,7 +292,8 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
           background: 'linear-gradient(135deg, #1e293b, #0f172a)',
           padding: '16px 24px',
           color: '#ffffff',
-          flexShrink: 0
+          flexShrink: 0,
+          borderBottom: '1px solid #334155'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Scale size={22} color="#38bdf8" />
@@ -269,8 +323,8 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
           <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: '20px' }}>
             
             {/* Header Fields Card */}
-            <div className="premium-card" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
+            <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #cbd5e1', paddingBottom: '8px' }}>
                 <FileText size={16} color="#3b82f6" />
                 <span style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   Formulation Identification
@@ -278,67 +332,62 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
-                <div className="form-input-container" style={{ margin: 0 }}>
-                  <span className="form-label" style={{ fontWeight: 700, color: '#1e293b' }}>Batch No *</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#1e293b' }}>Batch No *</label>
                   <input 
                     type="text" 
-                    className="field-input" 
                     required 
-                    placeholder="e.g. B-1025" 
                     value={batchNo} 
                     onChange={e => setBatchNo(e.target.value)} 
-                    style={{ fontWeight: 700, borderColor: '#93c5fd' }}
+                    style={{ ...inputStyle, fontWeight: 700, borderColor: '#3b82f6' }}
                   />
                 </div>
 
-                <div className="form-input-container" style={{ margin: 0 }}>
-                  <span className="form-label">Ref No</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Ref No</label>
                   <input 
                     type="text" 
-                    className="field-input" 
-                    placeholder="e.g. REF-2026-01" 
                     value={refNo} 
                     onChange={e => setRefNo(e.target.value)} 
+                    style={inputStyle}
                   />
                 </div>
 
-                <div className="form-input-container" style={{ margin: 0 }}>
-                  <span className="form-label">Customer Name</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Customer Name</label>
                   <input 
                     type="text" 
-                    className="field-input" 
-                    placeholder="Customer / Account name" 
                     value={customerName} 
                     onChange={e => setCustomerName(e.target.value)} 
+                    style={inputStyle}
                   />
                 </div>
 
-                <div className="form-input-container" style={{ margin: 0 }}>
-                  <span className="form-label">Formula Date</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Formula Date</label>
                   <input 
                     type="date" 
-                    className="field-input" 
                     value={formulaDate} 
                     onChange={e => setFormulaDate(e.target.value)} 
+                    style={inputStyle}
                   />
                 </div>
 
-                <div className="form-input-container" style={{ margin: 0, gridColumn: 'span 2' }}>
-                  <span className="form-label">Ref Book No</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', gridColumn: 'span 2' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Ref Book No</label>
                   <input 
                     type="text" 
-                    className="field-input" 
-                    placeholder="Reference book / ledger page no" 
                     value={refBookNo} 
                     onChange={e => setRefBookNo(e.target.value)} 
+                    style={inputStyle}
                   />
                 </div>
               </div>
             </div>
 
             {/* Permanent Sheet Image Upload Card */}
-            <div className="premium-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
+            <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #cbd5e1', paddingBottom: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <ImageIcon size={16} color="#8b5cf6" />
                   <span style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -365,8 +414,8 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
                   onClick={() => fileInputRef.current?.click()}
                   style={{
                     flexGrow: 1,
-                    minHeight: '130px',
-                    border: '2px dashed #cbd5e1',
+                    minHeight: '140px',
+                    border: '2px dashed #94a3b8',
                     borderRadius: '10px',
                     display: 'flex',
                     flexDirection: 'column',
@@ -380,14 +429,11 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
                     textAlign: 'center'
                   }}
                   onMouseEnter={e => e.currentTarget.style.borderColor = '#8b5cf6'}
-                  onMouseLeave={e => e.currentTarget.style.borderColor = '#cbd5e1'}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = '#94a3b8'}
                 >
                   <UploadCloud size={32} color="#8b5cf6" />
                   <span style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>
-                    Click to Upload MF Physical Sheet Photo
-                  </span>
-                  <span style={{ fontSize: '11px', color: '#94a3b8' }}>
-                    JPG, PNG, WEBP — Stored permanently with this formulation
+                    Upload Master Formulation Sheet Photo
                   </span>
                 </div>
               ) : (
@@ -413,7 +459,7 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
                     <button 
                       type="button" 
                       onClick={() => setPreviewZoomOpen(true)}
-                      style={{ padding: '6px 12px', borderRadius: '6px', backgroundColor: 'rgba(255,255,255,0.9)', color: '#0f172a', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}
+                      style={{ padding: '6px 12px', borderRadius: '6px', backgroundColor: 'rgba(255,255,255,0.95)', color: '#0f172a', border: '1px solid #cbd5e1', cursor: 'pointer', fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}
                     >
                       <ZoomIn size={14} /> Preview
                     </button>
@@ -431,9 +477,9 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
 
           </div>
 
-          {/* Additional Parameters Grid (Packaging, Viscosity, Density, etc.) */}
-          <div className="premium-card" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
+          {/* Standard Parameters Grid */}
+          <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #cbd5e1', paddingBottom: '8px' }}>
               <Scale size={16} color="#3b82f6" />
               <span style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 Standard Parameters & Specifications
@@ -441,54 +487,52 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px' }}>
-              <div className="form-input-container" style={{ margin: 0 }}>
-                <span className="form-label">Packaging</span>
-                <input type="text" className="field-input" placeholder="e.g. 50 Kg Drum" value={packaging} onChange={e => setPackaging(e.target.value)} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Packaging</label>
+                <input type="text" value={packaging} onChange={e => setPackaging(e.target.value)} style={inputStyle} />
               </div>
-              <div className="form-input-container" style={{ margin: 0 }}>
-                <span className="form-label">Viscosity</span>
-                <input type="text" className="field-input" placeholder="e.g. 25-30 sec" value={viscosity} onChange={e => setViscosity(e.target.value)} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Viscosity</label>
+                <input type="text" value={viscosity} onChange={e => setViscosity(e.target.value)} style={inputStyle} />
               </div>
-              <div className="form-input-container" style={{ margin: 0 }}>
-                <span className="form-label">Density</span>
-                <input type="text" className="field-input" placeholder="e.g. 1.05" value={density} onChange={e => setDensity(e.target.value)} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Density</label>
+                <input type="text" value={density} onChange={e => setDensity(e.target.value)} style={inputStyle} />
               </div>
-              <div className="form-input-container" style={{ margin: 0 }}>
-                <span className="form-label">Ratio</span>
-                <input type="text" className="field-input" placeholder="e.g. 4:1" value={ratio} onChange={e => setRatio(e.target.value)} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Ratio</label>
+                <input type="text" value={ratio} onChange={e => setRatio(e.target.value)} style={inputStyle} />
               </div>
-              <div className="form-input-container" style={{ margin: 0 }}>
-                <span className="form-label">Filtration</span>
-                <input type="text" className="field-input" placeholder="e.g. 100 Mesh" value={filtration} onChange={e => setFiltration(e.target.value)} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Filtration</label>
+                <input type="text" value={filtration} onChange={e => setFiltration(e.target.value)} style={inputStyle} />
               </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '12px' }}>
-              <div className="form-input-container" style={{ margin: 0 }}>
-                <span className="form-label">Remarks & Instructions</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Remarks & Instructions</label>
                 <textarea 
-                  className="field-input" 
                   rows={2} 
-                  placeholder="Manufacturing notes, precautions, or comments" 
                   value={remarks} 
                   onChange={e => setRemarks(e.target.value)} 
-                  style={{ resize: 'none', height: '60px' }}
+                  style={{ ...inputStyle, height: '60px', resize: 'none', fontFamily: 'inherit' }}
                 />
               </div>
-              <div className="form-input-container" style={{ margin: 0 }}>
-                <span className="form-label">Sender</span>
-                <input type="text" className="field-input" placeholder="Sender name" value={sender} onChange={e => setSender(e.target.value)} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Sender</label>
+                <input type="text" value={sender} onChange={e => setSender(e.target.value)} style={inputStyle} />
               </div>
-              <div className="form-input-container" style={{ margin: 0 }}>
-                <span className="form-label">Approval</span>
-                <input type="text" className="field-input" placeholder="Approval authority" value={approval} onChange={e => setApproval(e.target.value)} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Approval</label>
+                <input type="text" value={approval} onChange={e => setApproval(e.target.value)} style={inputStyle} />
               </div>
             </div>
           </div>
 
-          {/* Interactive Composition / Raw Materials Table */}
-          <div className="premium-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
+          {/* Interactive Composition / Raw Materials Table with Clean Borders */}
+          <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #cbd5e1', paddingBottom: '8px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Scale size={16} color="#3b82f6" />
                 <span style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -501,7 +545,7 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
                 style={{
                   padding: '5px 12px',
                   borderRadius: '6px',
-                  backgroundColor: '#f1f5f9',
+                  backgroundColor: '#ffffff',
                   border: '1px solid #cbd5e1',
                   fontSize: '12px',
                   fontWeight: 600,
@@ -517,16 +561,16 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
             </div>
 
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #cbd5e1', fontSize: '12px' }}>
                 <thead>
-                  <tr style={{ backgroundColor: '#f1f5f9', borderBottom: '2px solid #cbd5e1' }}>
-                    <th style={{ width: '45px', textAlign: 'center', padding: '8px' }}>#</th>
-                    <th style={{ width: '220px', textAlign: 'left', padding: '8px' }}>Steps / Process</th>
-                    <th style={{ textAlign: 'left', padding: '8px' }}>Raw Material Description</th>
-                    <th style={{ width: '140px', textAlign: 'right', padding: '8px' }}>Quantity (Grams)</th>
-                    <th style={{ width: '100px', textAlign: 'right', padding: '8px' }}>% Form</th>
-                    <th style={{ width: '120px', textAlign: 'center', padding: '8px' }}>Rounded Qty</th>
-                    <th style={{ width: '50px', textAlign: 'center', padding: '8px' }}>Act</th>
+                  <tr>
+                    <th style={{ ...tableHeaderStyle, width: '45px', textAlign: 'center' }}>#</th>
+                    <th style={{ ...tableHeaderStyle, width: '220px', textAlign: 'left' }}>Steps / Process</th>
+                    <th style={{ ...tableHeaderStyle, textAlign: 'left' }}>Raw Material Description</th>
+                    <th style={{ ...tableHeaderStyle, width: '140px', textAlign: 'right' }}>Quantity (Grams)</th>
+                    <th style={{ ...tableHeaderStyle, width: '100px', textAlign: 'right' }}>% Form</th>
+                    <th style={{ ...tableHeaderStyle, width: '120px', textAlign: 'center' }}>Rounded Qty</th>
+                    <th style={{ ...tableHeaderStyle, width: '50px', textAlign: 'center' }}>Act</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -534,55 +578,47 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
                     const rowQty = parseFloat(row.qty) || 0;
                     const pct = totalQty > 0 ? ((rowQty / totalQty) * 100).toFixed(2) : '0.00';
                     return (
-                      <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={{ textAlign: 'center', color: '#64748b', fontWeight: 600, padding: '4px' }}>
+                      <tr key={idx}>
+                        <td style={{ ...tableCellStyle, textAlign: 'center', color: '#64748b', fontWeight: 600 }}>
                           {idx + 1}
                         </td>
-                        <td style={{ padding: '4px' }}>
+                        <td style={tableCellStyle}>
                           <input 
                             type="text" 
-                            className="field-input" 
-                            style={{ height: '30px', fontSize: '12px', padding: '4px 8px' }}
-                            placeholder="e.g. Charge under high speed"
+                            style={tableInputStyle}
                             value={row.remarks} 
                             onChange={e => handleInventoryChange(idx, 'remarks', e.target.value)} 
                           />
                         </td>
-                        <td style={{ padding: '4px' }}>
+                        <td style={tableCellStyle}>
                           <input 
                             type="text" 
-                            className="field-input" 
-                            style={{ height: '30px', fontSize: '12px', padding: '4px 8px', fontWeight: 600 }}
-                            placeholder="Raw material name"
+                            style={{ ...tableInputStyle, fontWeight: 600 }}
                             value={row.material} 
                             onChange={e => handleInventoryChange(idx, 'material', e.target.value)} 
                           />
                         </td>
-                        <td style={{ padding: '4px' }}>
+                        <td style={tableCellStyle}>
                           <input 
                             type="number" 
                             step="any"
-                            className="field-input" 
-                            style={{ height: '30px', fontSize: '12px', textAlign: 'right', padding: '4px 8px' }}
-                            placeholder="0.00"
+                            style={{ ...tableInputStyle, textAlign: 'right' }}
                             value={row.qty} 
                             onChange={e => handleInventoryChange(idx, 'qty', e.target.value)} 
                           />
                         </td>
-                        <td style={{ textAlign: 'right', padding: '8px', color: '#64748b', fontWeight: 600, backgroundColor: '#f8fafc' }}>
+                        <td style={{ ...tableCellStyle, textAlign: 'right', color: '#64748b', fontWeight: 600, backgroundColor: '#f8fafc' }}>
                           {pct}%
                         </td>
-                        <td style={{ padding: '4px' }}>
+                        <td style={tableCellStyle}>
                           <input 
                             type="text" 
-                            className="field-input" 
-                            style={{ height: '30px', fontSize: '12px', textAlign: 'center', padding: '4px 8px', color: '#2563eb', fontWeight: 700 }}
-                            placeholder="Round"
+                            style={{ ...tableInputStyle, textAlign: 'center', color: '#2563eb', fontWeight: 700 }}
                             value={row.rounded_qty} 
                             onChange={e => handleInventoryChange(idx, 'rounded_qty', e.target.value)} 
                           />
                         </td>
-                        <td style={{ textAlign: 'center', padding: '4px' }}>
+                        <td style={{ ...tableCellStyle, textAlign: 'center' }}>
                           <button 
                             type="button" 
                             onClick={() => removeInventoryRow(idx)}
@@ -597,26 +633,26 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
                   })}
                 </tbody>
                 <tfoot>
-                  <tr style={{ backgroundColor: '#f8fafc', borderTop: '2px solid #cbd5e1', fontWeight: 700 }}>
-                    <td colSpan={3} style={{ padding: '10px', textAlign: 'right', color: '#0f172a' }}>
+                  <tr style={{ backgroundColor: '#f8fafc', fontWeight: 700 }}>
+                    <td colSpan={3} style={{ ...tableCellStyle, textAlign: 'right', color: '#0f172a', padding: '8px 10px' }}>
                       TOTAL COMPOSITION:
                     </td>
-                    <td style={{ padding: '10px', textAlign: 'right', color: '#2563eb', fontSize: '13px' }}>
+                    <td style={{ ...tableCellStyle, textAlign: 'right', color: '#2563eb', fontSize: '13px', padding: '8px 10px' }}>
                       {totalQty.toFixed(2)} g
                     </td>
-                    <td style={{ padding: '10px', textAlign: 'right', color: '#0f172a' }}>
+                    <td style={{ ...tableCellStyle, textAlign: 'right', color: '#0f172a', padding: '8px 10px' }}>
                       {totalQty > 0 ? '100.00%' : '0.00%'}
                     </td>
-                    <td colSpan={2}></td>
+                    <td colSpan={2} style={tableCellStyle}></td>
                   </tr>
                 </tfoot>
               </table>
             </div>
           </div>
 
-          {/* QC / Quality Check Tests Table */}
-          <div className="premium-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
+          {/* QC / Quality Check Tests Table with Clean Borders */}
+          <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #cbd5e1', paddingBottom: '8px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <CheckCircle2 size={16} color="#10b981" />
                 <span style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -629,7 +665,7 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
                 style={{
                   padding: '5px 12px',
                   borderRadius: '6px',
-                  backgroundColor: '#f1f5f9',
+                  backgroundColor: '#ffffff',
                   border: '1px solid #cbd5e1',
                   fontSize: '12px',
                   fontWeight: 600,
@@ -645,49 +681,43 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
             </div>
 
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #cbd5e1', fontSize: '12px' }}>
                 <thead>
-                  <tr style={{ backgroundColor: '#f1f5f9', borderBottom: '2px solid #cbd5e1' }}>
-                    <th style={{ textAlign: 'left', padding: '8px' }}>Test Parameter / Method</th>
-                    <th style={{ textAlign: 'left', padding: '8px' }}>Standard Specification Range</th>
-                    <th style={{ textAlign: 'left', padding: '8px' }}>Observed Result</th>
-                    <th style={{ width: '50px', textAlign: 'center', padding: '8px' }}>Act</th>
+                  <tr>
+                    <th style={{ ...tableHeaderStyle, textAlign: 'left' }}>Test Parameter / Method</th>
+                    <th style={{ ...tableHeaderStyle, textAlign: 'left' }}>Standard Specification Range</th>
+                    <th style={{ ...tableHeaderStyle, textAlign: 'left' }}>Observed Result</th>
+                    <th style={{ ...tableHeaderStyle, width: '50px', textAlign: 'center' }}>Act</th>
                   </tr>
                 </thead>
                 <tbody>
                   {tests.map((testRow, idx) => (
-                    <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ padding: '4px' }}>
+                    <tr key={idx}>
+                      <td style={tableCellStyle}>
                         <input 
                           type="text" 
-                          className="field-input" 
-                          style={{ height: '30px', fontSize: '12px', padding: '4px 8px', fontWeight: 600 }}
-                          placeholder="e.g. Viscosity @ 30C"
+                          style={{ ...tableInputStyle, fontWeight: 600 }}
                           value={testRow.method} 
                           onChange={e => handleTestChange(idx, 'method', e.target.value)} 
                         />
                       </td>
-                      <td style={{ padding: '4px' }}>
+                      <td style={tableCellStyle}>
                         <input 
                           type="text" 
-                          className="field-input" 
-                          style={{ height: '30px', fontSize: '12px', padding: '4px 8px' }}
-                          placeholder="e.g. 28 - 32 sec"
+                          style={tableInputStyle}
                           value={testRow.standard} 
                           onChange={e => handleTestChange(idx, 'standard', e.target.value)} 
                         />
                       </td>
-                      <td style={{ padding: '4px' }}>
+                      <td style={tableCellStyle}>
                         <input 
                           type="text" 
-                          className="field-input" 
-                          style={{ height: '30px', fontSize: '12px', padding: '4px 8px' }}
-                          placeholder="e.g. 30 sec"
+                          style={tableInputStyle}
                           value={testRow.result} 
                           onChange={e => handleTestChange(idx, 'result', e.target.value)} 
                         />
                       </td>
-                      <td style={{ textAlign: 'center', padding: '4px' }}>
+                      <td style={{ ...tableCellStyle, textAlign: 'center' }}>
                         <button 
                           type="button" 
                           onClick={() => removeTestRow(idx)}
@@ -710,7 +740,7 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
             justifyContent: 'flex-end',
             alignItems: 'center',
             gap: '12px',
-            borderTop: '1px solid #e2e8f0',
+            borderTop: '1px solid #cbd5e1',
             paddingTop: '16px',
             marginTop: '8px'
           }}>
@@ -718,7 +748,7 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
               type="button" 
               onClick={onClose}
               className="btn-secondary"
-              style={{ padding: '10px 20px', borderRadius: '8px', cursor: 'pointer' }}
+              style={{ padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', border: '1px solid #cbd5e1' }}
               disabled={saving}
             >
               Cancel

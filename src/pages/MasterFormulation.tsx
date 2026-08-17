@@ -573,7 +573,6 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                 style={{ height: '32px', fontSize: '12px' }}
                 value={searchTerm} 
                 onChange={e => setSearchTerm(e.target.value)} 
-                placeholder="Search batch..."
               />
             </div>
 
@@ -1027,16 +1026,16 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                   return (
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                       <div className="table-scroll-container" style={{ maxHeight: '450px', overflowY: 'auto' }}>
-                        <table className="table-locked-header" style={{ fontSize: '12px', width: '100%', borderCollapse: 'collapse' }}>
+                        <table className="table-locked-header" style={{ fontSize: '12px', width: '100%', borderCollapse: 'collapse', border: '1px solid #cbd5e1' }}>
                           <thead>
-                            <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
-                              <th style={{ width: '45px', textAlign: 'center', padding: '10px' }}>Sr</th>
-                              <th style={{ width: '220px', padding: '10px' }}>Steps / Remarks</th>
-                              <th style={{ padding: '10px', textAlign: 'left' }}>Raw Material</th>
-                              <th style={{ width: '110px', textAlign: 'right', padding: '10px' }}>Original Qty</th>
-                              <th style={{ width: '100px', textAlign: 'right', padding: '10px' }}>% Form</th>
-                              <th style={{ width: '110px', textAlign: 'right', padding: '10px' }}>Final Qty</th>
-                              <th style={{ width: '110px', textAlign: 'center', padding: '10px' }}>Rounded Qty</th>
+                            <tr style={{ backgroundColor: '#f1f5f9' }}>
+                              <th style={{ width: '45px', textAlign: 'center', padding: '8px 10px', border: '1px solid #cbd5e1', backgroundColor: '#f1f5f9', color: '#334155' }}>Sr</th>
+                              <th style={{ width: '220px', padding: '8px 10px', border: '1px solid #cbd5e1', backgroundColor: '#f1f5f9', color: '#334155' }}>Steps / Remarks</th>
+                              <th style={{ padding: '8px 10px', textAlign: 'left', border: '1px solid #cbd5e1', backgroundColor: '#f1f5f9', color: '#334155' }}>Raw Material</th>
+                              <th style={{ width: '110px', textAlign: 'right', padding: '8px 10px', border: '1px solid #cbd5e1', backgroundColor: '#f1f5f9', color: '#334155' }}>Original Qty</th>
+                              <th style={{ width: '100px', textAlign: 'right', padding: '8px 10px', border: '1px solid #cbd5e1', backgroundColor: '#f1f5f9', color: '#334155' }}>% Form</th>
+                              <th style={{ width: '110px', textAlign: 'right', padding: '8px 10px', border: '1px solid #cbd5e1', backgroundColor: '#f1f5f9', color: '#334155' }}>Final Qty</th>
+                              <th style={{ width: '110px', textAlign: 'center', padding: '8px 10px', border: '1px solid #cbd5e1', backgroundColor: '#f1f5f9', color: '#334155' }}>Rounded Qty</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -1046,29 +1045,28 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                               const finalQty = totalQty > 0 ? ((qty / totalQty) * parseFloat(grams || '100')).toFixed(2) : '0.00';
                               const defaultRounded = Math.round(parseFloat(finalQty));
                               const roundedQty = item.rounded_qty || String(defaultRounded);
- 
+
                               return (
-                                <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                                  <td style={{ textAlign: 'center', color: '#64748b', fontWeight: 600, padding: '6px 10px' }}>{idx + 1}</td>
-                                  <td style={{ padding: '4px' }}>
+                                <tr key={idx}>
+                                  <td style={{ textAlign: 'center', color: '#64748b', fontWeight: 600, padding: '4px 8px', border: '1px solid #cbd5e1' }}>{idx + 1}</td>
+                                  <td style={{ padding: '4px', border: '1px solid #cbd5e1' }}>
                                     <input 
                                       type="text" 
                                       className="table-cell-input" 
-                                      style={{ width: '100%', padding: '6px 8px', fontSize: '12px', height: '30px' }}
+                                      style={{ width: '100%', padding: '4px 8px', fontSize: '12px', height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', backgroundColor: '#ffffff' }}
                                       value={item.remarks || ''} 
-                                      placeholder="Add step/remark"
                                       onChange={e => handleInventoryChange(idx, 'remarks', e.target.value)}
                                     />
                                   </td>
-                                  <td style={{ fontWeight: 600, color: '#1e293b', padding: '6px 10px' }}>{item.material || item.raw_material || '-'}</td>
-                                  <td style={{ textAlign: 'right', color: '#475569', padding: '6px 10px' }}>{qty.toFixed(2)}</td>
-                                  <td style={{ textAlign: 'right', color: '#475569', backgroundColor: '#f8fafc', padding: '6px 10px' }}>{percent}%</td>
-                                  <td style={{ textAlign: 'right', fontWeight: 700, color: '#1d4ed8', backgroundColor: '#f8fafc', padding: '6px 10px' }}>{finalQty}</td>
-                                  <td style={{ padding: '4px' }}>
+                                  <td style={{ fontWeight: 600, color: '#1e293b', padding: '6px 10px', border: '1px solid #cbd5e1' }}>{item.material || item.raw_material || '-'}</td>
+                                  <td style={{ textAlign: 'right', color: '#475569', padding: '6px 10px', border: '1px solid #cbd5e1' }}>{qty.toFixed(2)}</td>
+                                  <td style={{ textAlign: 'right', color: '#475569', backgroundColor: '#f8fafc', padding: '6px 10px', border: '1px solid #cbd5e1' }}>{percent}%</td>
+                                  <td style={{ textAlign: 'right', fontWeight: 700, color: '#1d4ed8', backgroundColor: '#f8fafc', padding: '6px 10px', border: '1px solid #cbd5e1' }}>{finalQty}</td>
+                                  <td style={{ padding: '4px', border: '1px solid #cbd5e1' }}>
                                     <input 
                                       type="text" 
                                       className="table-cell-input" 
-                                      style={{ textAlign: 'center', width: '100%', padding: '6px 8px', fontSize: '12px', fontWeight: 'bold', height: '30px', color: '#1d4ed8' }}
+                                      style={{ textAlign: 'center', width: '100%', padding: '4px 8px', fontSize: '12px', fontWeight: 'bold', height: '30px', color: '#1d4ed8', border: '1px solid #cbd5e1', borderRadius: '4px', backgroundColor: '#ffffff' }}
                                       value={roundedQty} 
                                       onChange={e => handleInventoryChange(idx, 'rounded_qty', e.target.value)}
                                     />
@@ -1078,12 +1076,12 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                             })}
                           </tbody>
                           <tfoot>
-                            <tr style={{ background: 'linear-gradient(to right, #f8fafc, #f1f5f9)', fontWeight: 700, borderTop: '2px solid #cbd5e1' }}>
-                              <td colSpan={3} style={{ padding: '10px 12px', color: '#0f172a' }}>TOTALS</td>
-                              <td style={{ textAlign: 'right', padding: '10px 12px', color: '#475569' }}>{totalQty.toFixed(2)}</td>
-                              <td style={{ textAlign: 'right', padding: '10px 12px', color: '#475569' }}>100.00%</td>
-                              <td style={{ textAlign: 'right', color: '#1d4ed8', padding: '10px 12px' }}>{parseFloat(grams).toFixed(2)}</td>
-                              <td style={{ textAlign: 'center', color: '#1d4ed8', padding: '10px 12px', borderLeft: '1px solid #cbd5e1' }}>{totalRounded.toFixed(2)}</td>
+                            <tr style={{ background: '#f8fafc', fontWeight: 700 }}>
+                              <td colSpan={3} style={{ padding: '8px 10px', color: '#0f172a', border: '1px solid #cbd5e1' }}>TOTALS</td>
+                              <td style={{ textAlign: 'right', padding: '8px 10px', color: '#475569', border: '1px solid #cbd5e1' }}>{totalQty.toFixed(2)}</td>
+                              <td style={{ textAlign: 'right', padding: '8px 10px', color: '#475569', border: '1px solid #cbd5e1' }}>100.00%</td>
+                              <td style={{ textAlign: 'right', color: '#1d4ed8', padding: '8px 10px', border: '1px solid #cbd5e1' }}>{parseFloat(grams).toFixed(2)}</td>
+                              <td style={{ textAlign: 'center', color: '#1d4ed8', padding: '8px 10px', border: '1px solid #cbd5e1' }}>{totalRounded.toFixed(2)}</td>
                             </tr>
                           </tfoot>
                         </table>

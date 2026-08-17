@@ -111,7 +111,8 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
   const loadMasterList = async () => {
     setLoading(true);
     const onlyApproved = viewMode === 'mf_production';
-    const [success, data] = await MasterFormulationAPI.getBatchList(productName, fromDate, toDate, searchTerm, onlyApproved);
+    const isLabMf = viewMode === 'lab_master_formulation';
+    const [success, data] = await MasterFormulationAPI.getBatchList(productName, fromDate, toDate, searchTerm, onlyApproved, isLabMf);
     setLoading(false);
 
     if (success && typeof data !== 'string') {
@@ -125,12 +126,13 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
 
   useEffect(() => {
     loadMasterList();
-  }, [fromDate, toDate, searchTerm]);
+  }, [fromDate, toDate, searchTerm, viewMode]);
 
   // Load detailed specifications
   const loadBatchDetails = async (batchNo: string) => {
     setLoading(true);
-    const [success, data] = await MasterFormulationAPI.getBatchDetail(productName, batchNo);
+    const isLabMf = viewMode === 'lab_master_formulation';
+    const [success, data] = await MasterFormulationAPI.getBatchDetail(productName, batchNo, isLabMf);
     setLoading(false);
 
     if (success && typeof data !== 'string') {

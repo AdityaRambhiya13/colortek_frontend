@@ -650,7 +650,7 @@ export const RMPastFormulationsAPI = {
 // MASTER FORMULATION SERVICES
 // ============================================================================
 export const MasterFormulationAPI = {
-  getBatchList: async (productName: string, fromDate?: string, toDate?: string, batchNoFilter?: string, onlyApproved?: boolean) => {
+  getBatchList: async (productName: string, fromDate?: string, toDate?: string, batchNoFilter?: string, onlyApproved?: boolean, isLabMf?: boolean) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/mf/list/${productName}`, {
       params: {
@@ -658,13 +658,18 @@ export const MasterFormulationAPI = {
         ...(toDate && { to_date: toDate }),
         ...(batchNoFilter && { batch_no_filter: batchNoFilter }),
         ...(onlyApproved !== undefined && { only_approved: onlyApproved }),
+        ...(isLabMf !== undefined && { is_lab_mf: isLabMf }),
       },
     }));
   },
 
-  getBatchDetail: async (productName: string, batchNo: string) => {
+  getBatchDetail: async (productName: string, batchNo: string, isLabMf?: boolean) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return handleResponse<any>(apiClient.get(`/mf/detail/${productName}/${batchNo}`));
+    return handleResponse<any>(apiClient.get(`/mf/detail/${productName}/${batchNo}`, {
+      params: {
+        ...(isLabMf !== undefined && { is_lab_mf: isLabMf }),
+      }
+    }));
   },
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -685,9 +690,13 @@ export const MasterFormulationAPI = {
     }));
   },
 
-  getBatchCount: async (productName: string) => {
+  getBatchCount: async (productName: string, isLabMf?: boolean) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return handleResponse<any>(apiClient.get(`/mf/count/${productName}`));
+    return handleResponse<any>(apiClient.get(`/mf/count/${productName}`, {
+      params: {
+        ...(isLabMf !== undefined && { is_lab_mf: isLabMf }),
+      }
+    }));
   },
 
   findByBatch: async (batchNo: string) => {

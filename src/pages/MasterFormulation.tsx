@@ -525,7 +525,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                     : 'Master Formulations'}
               </h3>
             </div>
-            {viewMode !== 'mf_production' && (
+            {viewMode === 'lab_master_formulation' && (
               <button
                 type="button"
                 onClick={() => setCreateModalOpen(true)}

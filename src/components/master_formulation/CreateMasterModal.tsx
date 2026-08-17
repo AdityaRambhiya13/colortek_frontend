@@ -41,6 +41,9 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
   const [formulaDate, setFormulaDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [refBookNo, setRefBookNo] = useState('');
 
+  // Target Quantity (Grams) Recalculator (Matching OG Master Formulation)
+  const [grams, setGrams] = useState('100');
+
   // Standard Parameters
   const [packaging, setPackaging] = useState('');
   const [viscosity, setViscosity] = useState('');
@@ -156,6 +159,13 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
 
   // Total Calculations
   const totalQty = inventory.reduce((sum, item) => sum + (parseFloat(item.qty) || 0), 0);
+  const targetGramsNum = parseFloat(grams) || 100;
+  const totalRounded = inventory.reduce((sum, item) => {
+    const rowQty = parseFloat(item.qty) || 0;
+    const finalQty = totalQty > 0 ? (rowQty / totalQty) * targetGramsNum : 0;
+    const defaultR = Math.round(finalQty);
+    return sum + (parseFloat(item.rounded_qty) || defaultR);
+  }, 0);
 
   // Form Submit
   const handleSave = async (e: React.FormEvent) => {
@@ -184,14 +194,19 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
       approval: approval.trim(),
       inventory: inventory
         .filter(item => item.material.trim() !== '' || item.qty.trim() !== '')
-        .map((item, idx) => ({
-          sr: String(idx + 1),
-          remarks: item.remarks || '',
-          material: item.material || '',
-          raw_material: item.material || '',
-          qty: item.qty || '',
-          rounded_qty: item.rounded_qty || item.qty || ''
-        })),
+        .map((item, idx) => {
+          const rowQty = parseFloat(item.qty) || 0;
+          const finalQty = totalQty > 0 ? ((rowQty / totalQty) * targetGramsNum).toFixed(2) : '0.00';
+          const defaultRounded = Math.round(parseFloat(finalQty));
+          return {
+            sr: String(idx + 1),
+            remarks: item.remarks || '',
+            material: item.material || '',
+            raw_material: item.material || '',
+            qty: item.qty || '',
+            rounded_qty: item.rounded_qty || String(defaultRounded)
+          };
+        }),
       tests: tests
         .filter(t => t.method.trim() !== '' || t.result.trim() !== '')
         .map(t => ({
@@ -226,8 +241,7 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
     border: '1px solid #cbd5e1',
     borderRadius: '6px',
     outline: 'none',
-    boxSizing: 'border-box',
-    transition: 'border-color 0.15s ease, box-shadow 0.15s ease'
+    boxSizing: 'border-box'
   };
 
   const tableInputStyle: React.CSSProperties = {
@@ -272,7 +286,7 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
         className="modal-content animated-scale" 
         onClick={e => e.stopPropagation()} 
         style={{ 
-          maxWidth: '1300px', 
+          maxWidth: '1350px', 
           width: '95%', 
           maxHeight: '92vh', 
           display: 'flex', 
@@ -281,7 +295,7 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
           borderRadius: '16px',
           overflow: 'hidden',
           border: '1px solid #cbd5e1',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1)'
+          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)'
         }}
       >
         {/* Modal Header */}
@@ -319,11 +333,11 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
         {/* Scrollable Form Body */}
         <form onSubmit={handleSave} style={{ flexGrow: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', backgroundColor: '#f8fafc' }}>
           
-          {/* Top Section: Form Header & Image Upload Box */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: '20px' }}>
+          {/* Top Section: Form Header, Target Quantity Recalculator, and Image Upload Box */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 0.9fr 1fr', gap: '16px' }}>
             
             {/* Header Fields Card */}
-            <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #cbd5e1', paddingBottom: '8px' }}>
                 <FileText size={16} color="#3b82f6" />
                 <span style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -331,7 +345,7 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
                 </span>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <label style={{ fontSize: '12px', fontWeight: 700, color: '#1e293b' }}>Batch No *</label>
                   <input 
@@ -385,6 +399,36 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
               </div>
             </div>
 
+            {/* Standard Recalculator / Target Qty (Grams) Section (Matching OG Master Formulation) */}
+            <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: '12px', background: 'linear-gradient(to right bottom, #ffffff, #f8fafc)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #cbd5e1', paddingBottom: '8px' }}>
+                <RefreshCw size={16} color="#3b82f6" />
+                <span style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Standard Recalculator
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '6px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#1e293b' }}>
+                    Target Quantity (Grams)
+                  </label>
+                  <input 
+                    type="number" 
+                    step="any"
+                    value={grams} 
+                    onChange={e => setGrams(e.target.value)} 
+                    style={{ ...inputStyle, fontWeight: 'bold', fontSize: '14px', borderColor: '#3b82f6' }}
+                  />
+                </div>
+
+                <div style={{ background: '#eff6ff', padding: '10px', borderRadius: '8px', border: '1px solid #bfdbfe', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span style={{ fontSize: '11px', color: '#1e40af', fontWeight: 600 }}>Calculated Total Output:</span>
+                  <strong style={{ fontSize: '14px', color: '#1d4ed8' }}>{targetGramsNum.toFixed(2)} Grams</strong>
+                </div>
+              </div>
+            </div>
+
             {/* Permanent Sheet Image Upload Card */}
             <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #cbd5e1', paddingBottom: '8px' }}>
@@ -414,7 +458,7 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
                   onClick={() => fileInputRef.current?.click()}
                   style={{
                     flexGrow: 1,
-                    minHeight: '140px',
+                    minHeight: '130px',
                     border: '2px dashed #94a3b8',
                     borderRadius: '10px',
                     display: 'flex',
@@ -431,13 +475,13 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
                   onMouseEnter={e => e.currentTarget.style.borderColor = '#8b5cf6'}
                   onMouseLeave={e => e.currentTarget.style.borderColor = '#94a3b8'}
                 >
-                  <UploadCloud size={32} color="#8b5cf6" />
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>
+                  <UploadCloud size={30} color="#8b5cf6" />
+                  <span style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>
                     Upload Master Formulation Sheet Photo
                   </span>
                 </div>
               ) : (
-                <div style={{ position: 'relative', width: '100%', height: '140px', borderRadius: '10px', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
+                <div style={{ position: 'relative', width: '100%', height: '130px', borderRadius: '10px', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
                   <img 
                     src={imagePreviewUrl} 
                     alt="Master sheet" 
@@ -530,13 +574,13 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
             </div>
           </div>
 
-          {/* Interactive Composition / Raw Materials Table with Clean Borders */}
+          {/* Interactive Composition Table Matching OG Master Formulation Columns */}
           <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #cbd5e1', paddingBottom: '8px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Scale size={16} color="#3b82f6" />
                 <span style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Raw Material Composition ({inventory.filter(i => i.material.trim()).length} Items)
+                  Inventory Composition ({inventory.filter(i => i.material.trim()).length} Items)
                 </span>
               </div>
               <button 
@@ -564,19 +608,24 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
               <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #cbd5e1', fontSize: '12px' }}>
                 <thead>
                   <tr>
-                    <th style={{ ...tableHeaderStyle, width: '45px', textAlign: 'center' }}>#</th>
-                    <th style={{ ...tableHeaderStyle, width: '220px', textAlign: 'left' }}>Steps / Process</th>
-                    <th style={{ ...tableHeaderStyle, textAlign: 'left' }}>Raw Material Description</th>
-                    <th style={{ ...tableHeaderStyle, width: '140px', textAlign: 'right' }}>Quantity (Grams)</th>
-                    <th style={{ ...tableHeaderStyle, width: '100px', textAlign: 'right' }}>% Form</th>
-                    <th style={{ ...tableHeaderStyle, width: '120px', textAlign: 'center' }}>Rounded Qty</th>
-                    <th style={{ ...tableHeaderStyle, width: '50px', textAlign: 'center' }}>Act</th>
+                    <th style={{ ...tableHeaderStyle, width: '45px', textAlign: 'center' }}>Sr</th>
+                    <th style={{ ...tableHeaderStyle, width: '220px', textAlign: 'left' }}>Steps / Remarks</th>
+                    <th style={{ ...tableHeaderStyle, textAlign: 'left' }}>Raw Material</th>
+                    <th style={{ ...tableHeaderStyle, width: '110px', textAlign: 'right' }}>Original Qty</th>
+                    <th style={{ ...tableHeaderStyle, width: '90px', textAlign: 'right' }}>% Form</th>
+                    <th style={{ ...tableHeaderStyle, width: '110px', textAlign: 'right' }}>Final Qty</th>
+                    <th style={{ ...tableHeaderStyle, width: '110px', textAlign: 'center' }}>Rounded Qty</th>
+                    <th style={{ ...tableHeaderStyle, width: '45px', textAlign: 'center' }}>Act</th>
                   </tr>
                 </thead>
                 <tbody>
                   {inventory.map((row, idx) => {
                     const rowQty = parseFloat(row.qty) || 0;
                     const pct = totalQty > 0 ? ((rowQty / totalQty) * 100).toFixed(2) : '0.00';
+                    const finalQty = totalQty > 0 ? ((rowQty / totalQty) * targetGramsNum).toFixed(2) : '0.00';
+                    const defaultRounded = Math.round(parseFloat(finalQty));
+                    const currentRounded = row.rounded_qty || (rowQty > 0 ? String(defaultRounded) : '');
+
                     return (
                       <tr key={idx}>
                         <td style={{ ...tableCellStyle, textAlign: 'center', color: '#64748b', fontWeight: 600 }}>
@@ -610,11 +659,14 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
                         <td style={{ ...tableCellStyle, textAlign: 'right', color: '#64748b', fontWeight: 600, backgroundColor: '#f8fafc' }}>
                           {pct}%
                         </td>
+                        <td style={{ ...tableCellStyle, textAlign: 'right', fontWeight: 700, color: '#1d4ed8', backgroundColor: '#f8fafc' }}>
+                          {finalQty}
+                        </td>
                         <td style={tableCellStyle}>
                           <input 
                             type="text" 
                             style={{ ...tableInputStyle, textAlign: 'center', color: '#2563eb', fontWeight: 700 }}
-                            value={row.rounded_qty} 
+                            value={currentRounded} 
                             onChange={e => handleInventoryChange(idx, 'rounded_qty', e.target.value)} 
                           />
                         </td>
@@ -635,15 +687,21 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
                 <tfoot>
                   <tr style={{ backgroundColor: '#f8fafc', fontWeight: 700 }}>
                     <td colSpan={3} style={{ ...tableCellStyle, textAlign: 'right', color: '#0f172a', padding: '8px 10px' }}>
-                      TOTAL COMPOSITION:
+                      TOTALS:
                     </td>
-                    <td style={{ ...tableCellStyle, textAlign: 'right', color: '#2563eb', fontSize: '13px', padding: '8px 10px' }}>
-                      {totalQty.toFixed(2)} g
+                    <td style={{ ...tableCellStyle, textAlign: 'right', color: '#475569', padding: '8px 10px' }}>
+                      {totalQty.toFixed(2)}
                     </td>
-                    <td style={{ ...tableCellStyle, textAlign: 'right', color: '#0f172a', padding: '8px 10px' }}>
+                    <td style={{ ...tableCellStyle, textAlign: 'right', color: '#475569', padding: '8px 10px' }}>
                       {totalQty > 0 ? '100.00%' : '0.00%'}
                     </td>
-                    <td colSpan={2} style={tableCellStyle}></td>
+                    <td style={{ ...tableCellStyle, textAlign: 'right', color: '#1d4ed8', padding: '8px 10px' }}>
+                      {targetGramsNum.toFixed(2)}
+                    </td>
+                    <td style={{ ...tableCellStyle, textAlign: 'center', color: '#1d4ed8', padding: '8px 10px' }}>
+                      {totalRounded.toFixed(2)}
+                    </td>
+                    <td style={tableCellStyle}></td>
                   </tr>
                 </tfoot>
               </table>

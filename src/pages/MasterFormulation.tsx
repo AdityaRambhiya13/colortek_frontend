@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   BookOpen, Search, Calendar, RefreshCw, 
   Download, Edit3, CheckCircle, Scale, Eye, ChevronLeft, ChevronRight, Play, Info,
-  Plus, Image as ImageIcon, ZoomIn
+  Plus, Image as ImageIcon, ZoomIn, UploadCloud, Trash2
 } from 'lucide-react';
 import { MasterFormulationAPI, API_BASE_URL } from '../services/api';
 import { CreateMasterModal } from '../components/master_formulation/CreateMasterModal';
@@ -65,6 +65,11 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
   const [autosaveStatus, setAutosaveStatus] = useState('');
   const [localInventory, setLocalInventory] = useState<any[]>([]);
   const autosaveTimer = useRef<number | null>(null);
+
+  // Attached Physical Sheet Images
+  const [attachedImages, setAttachedImages] = useState<string[]>([]);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const detailFileInputRef = useRef<HTMLInputElement>(null);
 
   const roleString = sessionStorage.getItem('user_roles') || sessionStorage.getItem('role') || sessionStorage.getItem('user_role') || '';
   const username = (sessionStorage.getItem('username') || '').toLowerCase();
@@ -182,8 +187,118 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
       
       setGrams(String(data.grams || form['QUANTITY (Grams)'] || '100'));
       setLocalInventory(data.inventory || []);
+
+      const imgs: string[] = data.image_references || form.image_references || [];
+      setAttachedImages(imgs);
     } else {
       onShowToast('Could not load formulation details.', 'error');
+    }
+  };
+
+  // Upload image handler for detail view
+  const handleDetailImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    const [success, res] = await MasterFormulationAPI.uploadImage(file);
+    setUploadingImage(false);
+
+    if (success && res?.filename) {
+      const newImages = [...attachedImages, res.filename];
+      setAttachedImages(newImages);
+
+      if (selectedBatch && detailData) {
+        const updatedPayload = {
+          form: {
+            ...(detailData.form || {}),
+            image_references: newImages
+          },
+          inventory: localInventory.map(item => ({
+            material: item.material || item.raw_material || '',
+            qty: item.qty || 0,
+            percent: item.percent || '',
+            final_qty: item.final_qty || '',
+            rounded_qty: item.rounded_qty || '',
+            remarks: item.remarks || ''
+          })),
+          tests: detailData.tests || [],
+          image_references: newImages,
+          grams: parseFloat(grams) || 100.0,
+          doc_no: docNo,
+          review_no: reviewNo,
+          review_date: reviewDate,
+          issue_no: issueNo,
+          issue_date: issueDate,
+          customer_name: customerName,
+          ref_no: refNo,
+          formula_date: formulaDate,
+          date,
+          time,
+          ref_book_no: refBookNo,
+          packaging,
+          viscosity,
+          density,
+          ratio,
+          filtration,
+          remarks,
+          sender,
+          approval
+        };
+        await MasterFormulationAPI.updateBatch(productName, selectedBatch, updatedPayload);
+        setDetailData({ ...detailData, image_references: newImages, form: { ...(detailData.form || {}), image_references: newImages } });
+      }
+      onShowToast('Physical sheet photo uploaded and attached successfully!', 'success');
+    } else {
+      onShowToast(typeof res === 'string' ? res : 'Failed to upload sheet image.', 'error');
+    }
+    if (detailFileInputRef.current) detailFileInputRef.current.value = '';
+  };
+
+  // Remove image handler for detail view
+  const handleRemoveDetailImage = async (imgIdx: number) => {
+    const newImages = attachedImages.filter((_, idx) => idx !== imgIdx);
+    setAttachedImages(newImages);
+    if (selectedBatch && detailData) {
+      const updatedPayload = {
+        form: {
+          ...(detailData.form || {}),
+          image_references: newImages
+        },
+        inventory: localInventory.map(item => ({
+          material: item.material || item.raw_material || '',
+          qty: item.qty || 0,
+          percent: item.percent || '',
+          final_qty: item.final_qty || '',
+          rounded_qty: item.rounded_qty || '',
+          remarks: item.remarks || ''
+        })),
+        tests: detailData.tests || [],
+        image_references: newImages,
+        grams: parseFloat(grams) || 100.0,
+        doc_no: docNo,
+        review_no: reviewNo,
+        review_date: reviewDate,
+        issue_no: issueNo,
+        issue_date: issueDate,
+        customer_name: customerName,
+        ref_no: refNo,
+        formula_date: formulaDate,
+        date,
+        time,
+        ref_book_no: refBookNo,
+        packaging,
+        viscosity,
+        density,
+        ratio,
+        filtration,
+        remarks,
+        sender,
+        approval
+      };
+      await MasterFormulationAPI.updateBatch(productName, selectedBatch, updatedPayload);
+      setDetailData({ ...detailData, image_references: newImages, form: { ...(detailData.form || {}), image_references: newImages } });
+      onShowToast('Image removed from formulation.', 'info');
     }
   };
 
@@ -233,7 +348,8 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
         filtration: currentParams.filtration,
         date: currentParams.date,
         time: currentParams.time,
-        'QUANTITY (Grams)': currentParams.grams
+        'QUANTITY (Grams)': currentParams.grams,
+        image_references: attachedImages
       };
 
       const updatedPayload = {
@@ -247,6 +363,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
           remarks: item.remarks || ''
         })),
         tests: detailData.tests || [],
+        image_references: attachedImages,
         grams: parseFloat(currentParams.grams) || 100.0,
         doc_no: currentParams.docNo,
         review_no: currentParams.reviewNo,
@@ -358,7 +475,8 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
       filtration,
       date,
       time,
-      'QUANTITY (Grams)': grams
+      'QUANTITY (Grams)': grams,
+      image_references: attachedImages
     };
 
     const updatedPayload = {
@@ -372,6 +490,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
         remarks: item.remarks || ''
       })),
       tests: detailData.tests || [],
+      image_references: attachedImages,
       grams: parseFloat(grams) || 100.0,
       doc_no: docNo,
       review_no: reviewNo,
@@ -763,66 +882,171 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                 </div>
               )}
 
-              {/* Attached Physical Master Formulation Sheet (if exists) */}
-              {(() => {
-                const images: string[] = detailData.image_references || detailData.form?.image_references || [];
-                if (images.length === 0) return null;
-
-                return (
-                  <div className="premium-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: '#ffffff', border: '1px solid #e2e8f0' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
-                      <ImageIcon size={16} color="#8b5cf6" />
-                      <span style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        Attached Physical Master Formulation Sheet ({images.length})
+              {/* Attached Physical Master Formulation Sheet Photo / Scans Card */}
+              <div className="premium-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: '#ffffff', border: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <ImageIcon size={16} color="#8b5cf6" />
+                    <span style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Physical Master Formulation Sheet Photos / Scans ({attachedImages.length})
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {uploadingImage && (
+                      <span style={{ fontSize: '11px', color: '#6366f1', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+                        <RefreshCw size={12} className="spin-loader" /> Uploading image...
                       </span>
-                    </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
-                      {images.map((imgName, idx) => {
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => detailFileInputRef.current?.click()}
+                      disabled={uploadingImage}
+                      className="flet-btn flet-btn-blue"
+                      style={{
+                        padding: '4px 12px',
+                        height: '30px',
+                        fontSize: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        borderRadius: '6px',
+                        background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                        color: '#ffffff',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontWeight: 600
+                      }}
+                    >
+                      <UploadCloud size={14} /> Upload / Attach Sheet Photo
+                    </button>
+                    <input
+                      type="file"
+                      ref={detailFileInputRef}
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={handleDetailImageUpload}
+                    />
+                  </div>
+                </div>
+
+                {attachedImages.length === 0 ? (
+                  <div
+                    onClick={() => detailFileInputRef.current?.click()}
+                    style={{
+                      border: '2px dashed #cbd5e1',
+                      borderRadius: '10px',
+                      padding: '24px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      cursor: 'pointer',
+                      backgroundColor: '#f8fafc',
+                      transition: 'all 0.2s ease',
+                      textAlign: 'center'
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.borderColor = '#8b5cf6';
+                      e.currentTarget.style.backgroundColor = '#faf5ff';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.borderColor = '#cbd5e1';
+                      e.currentTarget.style.backgroundColor = '#f8fafc';
+                    }}
+                  >
+                    <UploadCloud size={32} color="#8b5cf6" />
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>
+                      No physical sheet attached. Click here to upload a photo/scan of the master formulation sheet
+                    </span>
+                    <span style={{ fontSize: '11px', color: '#64748b' }}>Supports JPG, PNG, WEBP, GIF, BMP</span>
+                  </div>
+                ) : (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px' }}>
+                      {attachedImages.map((imgName, idx) => {
                         const imgUrl = imgName.startsWith('http') ? imgName : `${API_BASE_URL}/mf/images/${imgName}`;
                         return (
-                          <div 
-                            key={idx} 
-                            onClick={() => setZoomedImage(imgUrl)}
+                          <div
+                            key={idx}
                             style={{
                               position: 'relative',
-                              width: '160px',
-                              height: '110px',
+                              width: '180px',
+                              height: '120px',
                               borderRadius: '8px',
                               overflow: 'hidden',
                               border: '1px solid #cbd5e1',
-                              cursor: 'pointer',
-                              boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.06)',
+                              backgroundColor: '#000000'
                             }}
                           >
-                            <img src={imgUrl} alt="Master Sheet" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            <div style={{
-                              position: 'absolute',
-                              bottom: '4px',
-                              right: '4px',
-                              backgroundColor: 'rgba(0,0,0,0.65)',
-                              color: '#fff',
-                              padding: '2px 6px',
-                              borderRadius: '4px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              fontSize: '10px',
-                              fontWeight: 600
-                            }}>
-                              <ZoomIn size={10} /> Zoom
+                            <img
+                              src={imgUrl}
+                              alt={`Master Sheet ${idx + 1}`}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                            <div
+                              style={{
+                                position: 'absolute',
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                padding: '4px 6px',
+                                background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center'
+                              }}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => setZoomedImage(imgUrl)}
+                                style={{
+                                  background: 'rgba(255,255,255,0.9)',
+                                  color: '#0f172a',
+                                  border: 'none',
+                                  borderRadius: '4px',
+                                  padding: '2px 8px',
+                                  fontSize: '11px',
+                                  fontWeight: 600,
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}
+                              >
+                                <ZoomIn size={12} /> Zoom
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveDetailImage(idx)}
+                                style={{
+                                  background: 'rgba(239, 68, 68, 0.9)',
+                                  color: '#ffffff',
+                                  border: 'none',
+                                  borderRadius: '4px',
+                                  padding: '2px 8px',
+                                  fontSize: '11px',
+                                  fontWeight: 600,
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}
+                                title="Delete this image"
+                              >
+                                <Trash2 size={12} /> Remove
+                              </button>
                             </div>
                           </div>
                         );
                       })}
                     </div>
-                  </div>
-                );
-              })()}
+                  )}
+                </div>
               
               {/* Row 1: Document Control (Left) & Formulation Identification (Right) */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: '16px', flexShrink: 0 }}>
                 
-                {/* Document Control Card */}
                 <div className="premium-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
                     <BookOpen size={16} color="#3b82f6" />

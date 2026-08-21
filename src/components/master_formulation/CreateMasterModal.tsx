@@ -34,6 +34,13 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
   onSuccess,
   onShowToast
 }) => {
+  // Document Control Fields (Matching Master Formulation Specification)
+  const [docNo, setDocNo] = useState('DOC-MF-01');
+  const [reviewNo, setReviewNo] = useState('03');
+  const [reviewDate, setReviewDate] = useState('01.04.2025');
+  const [issueNo, setIssueNo] = useState('01');
+  const [issueDate, setIssueDate] = useState('01.04.2025');
+
   // Form Header Fields
   const [batchNo, setBatchNo] = useState('');
   const [refNo, setRefNo] = useState('');
@@ -53,6 +60,11 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
   const [remarks, setRemarks] = useState('');
   const [sender, setSender] = useState('');
   const [approval, setApproval] = useState('');
+  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [time, setTime] = useState(() => {
+    const d = new Date();
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  });
 
   // Attached Sheet Image
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -180,10 +192,16 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
 
     const payload = {
       batch_no: cleanBatchNo,
+      doc_no: docNo.trim(),
+      review_no: reviewNo.trim(),
+      review_date: reviewDate.trim(),
+      issue_no: issueNo.trim(),
+      issue_date: issueDate.trim(),
       ref_no: refNo.trim(),
       customer_name: customerName.trim(),
       formula_date: formulaDate,
       ref_book_no: refBookNo.trim(),
+      grams: parseFloat(grams) || 100.0,
       packaging: packaging.trim(),
       viscosity: viscosity.trim(),
       density: density.trim(),
@@ -192,6 +210,8 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
       remarks: remarks.trim(),
       sender: sender.trim(),
       approval: approval.trim(),
+      date: date || formulaDate,
+      time: time.trim(),
       inventory: inventory
         .filter(item => item.material.trim() !== '' || item.qty.trim() !== '')
         .map((item, idx) => {
@@ -341,8 +361,32 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #cbd5e1', paddingBottom: '8px' }}>
                 <FileText size={16} color="#3b82f6" />
                 <span style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Formulation Identification
+                  Formulation Identification & Control
                 </span>
+              </div>
+
+              {/* Document Control Header Strip */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px', background: '#f8fafc', padding: '8px 10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <label style={{ fontSize: '9px', fontWeight: 700, color: '#64748b' }}>DOC #</label>
+                  <input type="text" value={docNo} onChange={e => setDocNo(e.target.value)} style={{ ...inputStyle, height: '26px', fontSize: '11px', padding: '2px 6px' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <label style={{ fontSize: '9px', fontWeight: 700, color: '#64748b' }}>REVIEW #</label>
+                  <input type="text" value={reviewNo} onChange={e => setReviewNo(e.target.value)} style={{ ...inputStyle, height: '26px', fontSize: '11px', padding: '2px 6px' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <label style={{ fontSize: '9px', fontWeight: 700, color: '#64748b' }}>REV DATE</label>
+                  <input type="text" value={reviewDate} onChange={e => setReviewDate(e.target.value)} style={{ ...inputStyle, height: '26px', fontSize: '11px', padding: '2px 6px' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <label style={{ fontSize: '9px', fontWeight: 700, color: '#64748b' }}>ISSUE #</label>
+                  <input type="text" value={issueNo} onChange={e => setIssueNo(e.target.value)} style={{ ...inputStyle, height: '26px', fontSize: '11px', padding: '2px 6px' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <label style={{ fontSize: '9px', fontWeight: 700, color: '#64748b' }}>ISSUE DATE</label>
+                  <input type="text" value={issueDate} onChange={e => setIssueDate(e.target.value)} style={{ ...inputStyle, height: '26px', fontSize: '11px', padding: '2px 6px' }} />
+                </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
@@ -553,14 +597,14 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr', gap: '12px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Remarks & Instructions</label>
                 <textarea 
                   rows={2} 
                   value={remarks} 
                   onChange={e => setRemarks(e.target.value)} 
-                  style={{ ...inputStyle, height: '60px', resize: 'none', fontFamily: 'inherit' }}
+                  style={{ ...inputStyle, height: '60px', resize: 'none', fontFamily: 'inherit' }} 
                 />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -570,6 +614,14 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Approval</label>
                 <input type="text" value={approval} onChange={e => setApproval(e.target.value)} style={inputStyle} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Date</label>
+                <input type="date" value={date} onChange={e => setDate(e.target.value)} style={inputStyle} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Time</label>
+                <input type="text" value={time} onChange={e => setTime(e.target.value)} style={inputStyle} />
               </div>
             </div>
           </div>

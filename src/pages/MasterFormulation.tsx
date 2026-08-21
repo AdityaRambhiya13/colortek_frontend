@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { MasterFormulationAPI, API_BASE_URL } from '../services/api';
 import { CreateMasterModal } from '../components/master_formulation/CreateMasterModal';
-import * as XLSX from '../xlsxWrapper';
+import { generateAndDownloadMasterFormulationExcel } from '../utils/masterFormulationExcel';
 
 interface MasterFormulationProps {
   viewMode: string; // 'master_formulation' (view/edit) or 'mf_production' (production formula reference)
@@ -35,7 +35,19 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
   const [detailData, setDetailData] = useState<any | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 
-  // Edit Field binds for all 11 parameters in mf.py
+  // Document Control (Matching Official Physical Specification Sheet)
+  const [docNo, setDocNo] = useState('DOC-MF-01');
+  const [reviewNo, setReviewNo] = useState('03');
+  const [reviewDate, setReviewDate] = useState('01.04.2025');
+  const [issueNo, setIssueNo] = useState('01');
+  const [issueDate, setIssueDate] = useState('01.04.2025');
+
+  // Formulation Identification
+  const [customerName, setCustomerName] = useState('');
+  const [refNo, setRefNo] = useState('');
+  const [formulaDate, setFormulaDate] = useState('');
+
+  // Edit Field binds for all parameters in master formulation specification
   const [density, setDensity] = useState('');
   const [viscosity, setViscosity] = useState('');
   const [refBookNo, setRefBookNo] = useState('');
@@ -143,7 +155,19 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
 
       const form = data.form || {};
 
-      // Load all 11 parameter fields
+      // Document Control
+      setDocNo(data.doc_no || form.doc_no || form['DOC #'] || form['doc_no'] || 'DOC-MF-01');
+      setReviewNo(data.review_no || form.review_no || form['REVIEW'] || form['review_no'] || '03');
+      setReviewDate(data.review_date || form.review_date || form['REVIEW DATE'] || form['review_date'] || '01.04.2025');
+      setIssueNo(data.issue_no || form.issue_no || form['ISSUE'] || form['issue_no'] || '01');
+      setIssueDate(data.issue_date || form.issue_date || form['ISSUE DATE'] || form['issue_date'] || '01.04.2025');
+
+      // Formulation Identification
+      setCustomerName(data.customer_name || form.customer_name || form['CUSTOMER NAME'] || form.customer || '');
+      setRefNo(data.ref_no || form.ref_no || form['REF NO'] || '');
+      setFormulaDate(data.formula_date || form.formula_date || form['FORMULA DATE'] || data.date || form.date || '');
+
+      // Load all parameter fields
       setDensity(data.density || form.density || form.DENSITY || '');
       setViscosity(data.viscosity || form.viscosity || form.VISCOSITY || '');
       setRefBookNo(data.ref_book_no || form.ref_book_no || form['REF BOOK NO'] || '');
@@ -166,7 +190,10 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
   // Unified debounced autosave matching 1500ms debounce in mf.py
   const triggerAutosave = (
     currentInv = localInventory,
-    currentParams = { density, viscosity, refBookNo, packaging, date, time, ratio, filtration, remarks, sender, approval, grams }
+    currentParams = { 
+      docNo, reviewNo, reviewDate, issueNo, issueDate, customerName, refNo, formulaDate,
+      density, viscosity, refBookNo, packaging, date, time, ratio, filtration, remarks, sender, approval, grams 
+    }
   ) => {
     setAutosaveStatus('Saving recipe changes...');
     if (autosaveTimer.current) {
@@ -178,6 +205,22 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
       
       const updatedForm = {
         ...(detailData.form || {}),
+        doc_no: currentParams.docNo,
+        'DOC #': currentParams.docNo,
+        review_no: currentParams.reviewNo,
+        'REVIEW': currentParams.reviewNo,
+        review_date: currentParams.reviewDate,
+        'REVIEW DATE': currentParams.reviewDate,
+        issue_no: currentParams.issueNo,
+        'ISSUE': currentParams.issueNo,
+        issue_date: currentParams.issueDate,
+        'ISSUE DATE': currentParams.issueDate,
+        customer_name: currentParams.customerName,
+        'CUSTOMER NAME': currentParams.customerName,
+        ref_no: currentParams.refNo,
+        'REF NO': currentParams.refNo,
+        formula_date: currentParams.formulaDate,
+        'FORMULA DATE': currentParams.formulaDate,
         'REF BOOK NO': currentParams.refBookNo,
         'ref_book_no': currentParams.refBookNo,
         remarks: currentParams.remarks,
@@ -205,6 +248,14 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
         })),
         tests: detailData.tests || [],
         grams: parseFloat(currentParams.grams) || 100.0,
+        doc_no: currentParams.docNo,
+        review_no: currentParams.reviewNo,
+        review_date: currentParams.reviewDate,
+        issue_no: currentParams.issueNo,
+        issue_date: currentParams.issueDate,
+        customer_name: currentParams.customerName,
+        ref_no: currentParams.refNo,
+        formula_date: currentParams.formulaDate,
         date: currentParams.date,
         time: currentParams.time,
         ref_book_no: currentParams.refBookNo,
@@ -212,7 +263,10 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
         viscosity: currentParams.viscosity,
         density: currentParams.density,
         ratio: currentParams.ratio,
-        filtration: currentParams.filtration
+        filtration: currentParams.filtration,
+        remarks: currentParams.remarks,
+        sender: currentParams.sender,
+        approval: currentParams.approval
       };
       
       const [success, resDataOrMsg] = await MasterFormulationAPI.updateBatch(productName, selectedBatch, updatedPayload);
@@ -229,10 +283,21 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
 
   // State changes for params trigger autosave
   const handleParamChange = (field: string, val: string) => {
-    const params = { density, viscosity, refBookNo, packaging, date, time, ratio, filtration, remarks, sender, approval, grams };
+    const params = { 
+      docNo, reviewNo, reviewDate, issueNo, issueDate, customerName, refNo, formulaDate,
+      density, viscosity, refBookNo, packaging, date, time, ratio, filtration, remarks, sender, approval, grams 
+    };
     params[field as keyof typeof params] = val;
     
-    if (field === 'density') setDensity(val);
+    if (field === 'docNo') setDocNo(val);
+    else if (field === 'reviewNo') setReviewNo(val);
+    else if (field === 'reviewDate') setReviewDate(val);
+    else if (field === 'issueNo') setIssueNo(val);
+    else if (field === 'issueDate') setIssueDate(val);
+    else if (field === 'customerName') setCustomerName(val);
+    else if (field === 'refNo') setRefNo(val);
+    else if (field === 'formulaDate') setFormulaDate(val);
+    else if (field === 'density') setDensity(val);
     else if (field === 'viscosity') setViscosity(val);
     else if (field === 'refBookNo') setRefBookNo(val);
     else if (field === 'packaging') setPackaging(val);
@@ -265,6 +330,22 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
     
     const updatedForm = {
       ...(detailData.form || {}),
+      doc_no: docNo,
+      'DOC #': docNo,
+      review_no: reviewNo,
+      'REVIEW': reviewNo,
+      review_date: reviewDate,
+      'REVIEW DATE': reviewDate,
+      issue_no: issueNo,
+      'ISSUE': issueNo,
+      issue_date: issueDate,
+      'ISSUE DATE': issueDate,
+      customer_name: customerName,
+      'CUSTOMER NAME': customerName,
+      ref_no: refNo,
+      'REF NO': refNo,
+      formula_date: formulaDate,
+      'FORMULA DATE': formulaDate,
       'REF BOOK NO': refBookNo,
       'ref_book_no': refBookNo,
       remarks,
@@ -292,6 +373,14 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
       })),
       tests: detailData.tests || [],
       grams: parseFloat(grams) || 100.0,
+      doc_no: docNo,
+      review_no: reviewNo,
+      review_date: reviewDate,
+      issue_no: issueNo,
+      issue_date: issueDate,
+      customer_name: customerName,
+      ref_no: refNo,
+      formula_date: formulaDate,
       date,
       time,
       ref_book_no: refBookNo,
@@ -299,7 +388,10 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
       viscosity,
       density,
       ratio,
-      filtration
+      filtration,
+      remarks,
+      sender,
+      approval
     };
 
     setLoading(true);
@@ -316,168 +408,39 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
     }
   };
 
-  // Fully formatted A4 Excel download matching python implementation
+  // Fully formatted A4 Excel download matching the reference physical master sheet
   const exportMasterToExcel = (batchNo: string) => {
     if (!detailData) return;
+    const isLab = viewMode === 'lab_master_formulation';
 
-    const get_val = (key: string, defaultVal = '') => {
-      return getRecordValue(key, defaultVal);
-    };
+    generateAndDownloadMasterFormulationExcel({
+      docNo,
+      reviewNo,
+      reviewDate,
+      issueNo,
+      issueDate,
+      formulaDate: formulaDate || date,
+      customerName,
+      productName: getRecordValue('product_name', productName),
+      batchNo,
+      refNo,
+      refBookNo,
+      grams,
+      packaging,
+      viscosity,
+      density,
+      ratio,
+      filtration,
+      remarks,
+      sender,
+      approval,
+      date,
+      time,
+      isLab,
+      inventory: localInventory
+    });
 
-    const format_date = (val: string) => {
-      if (!val) return '';
-      const clean = val.split(' ')[0];
-      try {
-        const parts = clean.split('-');
-        if (parts.length === 3) {
-          // Assuming yyyy-mm-dd
-          if (parts[0].length === 4) return `${parts[2]}-${parts[1]}-${parts[0]}`;
-          return clean;
-        }
-        return clean;
-      } catch {
-        return clean;
-      }
-    };
-
-    // Calculate totals
-    const sumQty = localInventory.reduce((sum, item) => sum + (parseFloat(item.qty) || 0), 0);
-    
-    // Build AOA rows matching python structure
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const excelRows: any[][] = [];
-
-    // Title Row
-    excelRows.push(['Master Formulation Book - Production', '', '', '', '', '', '']); // Row 0
-    // Doc Row
-    excelRows.push(['DOC #', '', get_val('doc_no', 'doc_no'), 'REVIEW 03', '', 'ISSUE 01', '']); // Row 1
-    // Issue Date Row
-    excelRows.push(['REVIEW DATE:', '', format_date(get_val('review_date', '01.04.2025')), 'ISSUE DATE:', '', format_date(get_val('issue_date', '01.04.2025')), '']); // Row 2
-    // Formula Date Row
-    excelRows.push(['FORMULA DATE:', '', format_date(get_val('formula_date')), '', '', '', '']); // Row 3
-    // Customer Name Row
-    excelRows.push(['CUSTOMER NAME:', '', get_val('customer_name'), '', '', '', '']); // Row 4
-    // Product Name Row
-    excelRows.push(['PRODUCT NAME:', '', get_val('product_name', productName), '', '', '', '']); // Row 5
-    // Batch No Row
-    excelRows.push(['BATCH NO:', '', batchNo, '', '', '', '']); // Row 6
-    // Ref No Row
-    excelRows.push(['REF NO:', '', get_val('ref_no'), '', '', '', '']); // Row 7
-    // Ref Book No Row
-    excelRows.push(['REF BOOK NO :', '', refBookNo, '', '', '', '']); // Row 8
-    // Quantity Grams Row
-    excelRows.push(['QUANTITY (Grams):', '', Number(grams) || 100, '', '', '', '']); // Row 9
-
-    // Empty row
-    excelRows.push([]); // Row 10 (Spacer)
-
-    // Table Headers
-    excelRows.push(['Sr. No.', 'STEPS', 'RAW MATERIAL', 'QUANTITY', '%', 'FINAL QUANTITY', 'ROUND QUANTITY']); // Row 11
-
-    let totalQty = 0;
-    let totalFinal = 0;
-    let totalRounded = 0;
-
-    // Build 24 rows
-    for (let i = 0; i < 24; i++) {
-      if (i < localInventory.length) {
-        const item = localInventory[i];
-        const qty = parseFloat(item.qty) || 0;
-        const percent = sumQty > 0 ? (qty / sumQty) * 100 : 0;
-        const finalQty = sumQty > 0 ? (qty / sumQty) * parseFloat(grams || '100') : 0;
-        const defaultR = Math.round(finalQty);
-        const roundedQty = parseFloat(item.rounded_qty) || defaultR;
-
-        totalQty += qty;
-        totalFinal += finalQty;
-        totalRounded += roundedQty;
-
-        excelRows.push([
-          i + 1,
-          item.remarks || '', // Steps / Remarks
-          item.material || item.raw_material || '',
-          qty ? qty : '',
-          percent ? `${percent.toFixed(2)}%` : '',
-          finalQty ? Number(finalQty.toFixed(2)) : '',
-          roundedQty ? roundedQty : ''
-        ]);
-      } else {
-        excelRows.push([i + 1, '', '', '', '', '', '']);
-      }
-    }
-
-    // Total Row
-    excelRows.push([
-      'TOTAL',
-      '',
-      '',
-      totalQty ? Number(totalQty.toFixed(2)) : '',
-      '100.00%',
-      totalFinal ? Number(totalFinal.toFixed(2)) : '',
-      totalRounded ? Number(totalRounded.toFixed(2)) : ''
-    ]);
-
-    // Footer Rows
-    excelRows.push(['PACKING :-', '', packaging, '', 'VISCOSITY :-', viscosity, '']);
-    excelRows.push(['FILTERATION :-', '', filtration, '', 'DENSITY :-', density, '']);
-    excelRows.push(['REMARK :-', '', remarks, '', 'RATIO', ratio, '']);
-    excelRows.push(['SENDER :-', '', sender, '', '', '', '']);
-    excelRows.push(['APPROVAL :-', '', approval, '', '', '', '']);
-
-    // Date/Time Row
-    excelRows.push(['', '', '', 'DATE', format_date(date), 'TIME', time]);
-
-    // Signatures
-    excelRows.push(['INCHARGE SIGNATURE', '', 'APPROVER SIGNATURE', '', '', 'PRODUCTION SIGNATURE', '']);
-    excelRows.push(['', '', '', '', '', '', '']); // Signature box 1
-    excelRows.push(['', '', '', '', '', '', '']); // Signature box 2
-    excelRows.push(['', '', '', '', '', '', '']); // Signature box 3
-
-    // Create worksheet and workbook
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet(excelRows);
-
-    // Apply merges matching Flet merges exactly
-    const merges = [
-      { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }, // Title Row
-      { s: { r: 1, c: 0 }, e: { r: 1, c: 1 } }, { s: { r: 1, c: 3 }, e: { r: 1, c: 4 } }, { s: { r: 1, c: 5 }, e: { r: 1, c: 6 } },
-      { s: { r: 2, c: 0 }, e: { r: 2, c: 1 } }, { s: { r: 2, c: 3 }, e: { r: 2, c: 4 } }, { s: { r: 2, c: 5 }, e: { r: 2, c: 6 } },
-      { s: { r: 3, c: 0 }, e: { r: 3, c: 1 } }, { s: { r: 3, c: 2 }, e: { r: 3, c: 6 } },
-      { s: { r: 4, c: 0 }, e: { r: 4, c: 1 } }, { s: { r: 4, c: 2 }, e: { r: 4, c: 6 } },
-      { s: { r: 5, c: 0 }, e: { r: 5, c: 1 } }, { s: { r: 5, c: 2 }, e: { r: 5, c: 6 } },
-      { s: { r: 6, c: 0 }, e: { r: 6, c: 1 } }, { s: { r: 6, c: 2 }, e: { r: 6, c: 6 } },
-      { s: { r: 7, c: 0 }, e: { r: 7, c: 1 } }, { s: { r: 7, c: 2 }, e: { r: 7, c: 6 } },
-      { s: { r: 8, c: 0 }, e: { r: 8, c: 1 } }, { s: { r: 8, c: 2 }, e: { r: 8, c: 6 } },
-      { s: { r: 9, c: 0 }, e: { r: 9, c: 1 } }, { s: { r: 9, c: 2 }, e: { r: 9, c: 6 } },
-      { s: { r: 36, c: 0 }, e: { r: 36, c: 2 } }, // TOTALS label merge
-      { s: { r: 37, c: 0 }, e: { r: 37, c: 1 } }, { s: { r: 37, c: 2 }, e: { r: 37, c: 3 } }, { s: { r: 37, c: 5 }, e: { r: 37, c: 6 } }, // PACKING / VISCOSITY
-      { s: { r: 38, c: 0 }, e: { r: 38, c: 1 } }, { s: { r: 38, c: 2 }, e: { r: 38, c: 3 } }, { s: { r: 38, c: 5 }, e: { r: 38, c: 6 } }, // FILTERATION / DENSITY
-      { s: { r: 39, c: 0 }, e: { r: 39, c: 1 } }, { s: { r: 39, c: 2 }, e: { r: 39, c: 3 } }, { s: { r: 39, c: 5 }, e: { r: 39, c: 6 } }, // REMARK / RATIO
-      { s: { r: 40, c: 0 }, e: { r: 40, c: 1 } }, { s: { r: 40, c: 2 }, e: { r: 40, c: 6 } }, // SENDER
-      { s: { r: 41, c: 0 }, e: { r: 41, c: 1 } }, { s: { r: 41, c: 2 }, e: { r: 41, c: 6 } }, // APPROVAL
-      { s: { r: 43, c: 0 }, e: { r: 43, c: 1 } }, { s: { r: 43, c: 2 }, e: { r: 43, c: 4 } }, { s: { r: 43, c: 5 }, e: { r: 43, c: 6 } }, // Signature headers
-      { s: { r: 44, c: 0 }, e: { r: 46, c: 1 } }, // Incharge Sig Box
-      { s: { r: 44, c: 2 }, e: { r: 46, c: 4 } }, // Approver Sig Box
-      { s: { r: 44, c: 5 }, e: { r: 46, c: 6 } }  // Production Sig Box
-    ];
-
-    ws['!merges'] = merges;
-
-    // Set column widths
-    const wscols = [
-      { wch: 8 },  // A: Sr
-      { wch: 15 }, // B: STEPS
-      { wch: 35 }, // C: Raw Material
-      { wch: 14 }, // D: Quantity
-      { wch: 10 }, // E: %
-      { wch: 16 }, // F: Final Quantity
-      { wch: 16 }  // G: Round Quantity
-    ];
-    ws['!cols'] = wscols;
-
-    XLSX.utils.book_append_sheet(wb, ws, 'Master Formulation');
-    XLSX.writeFile(wb, `${batchNo}_MASTER.xlsx`);
-    onShowToast(`Batch ${batchNo} master Excel recipe downloaded.`, 'success');
+    onShowToast(`Master Excel recipe for batch ${batchNo} downloaded.`, 'success');
   };
 
   // Local client-side pagination matching Flet pagination
@@ -856,44 +819,122 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                 );
               })()}
               
-              {/* Row: Formulation Details (Left Card) & Recalculator Inputs (Right Card) */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px', flexShrink: 0 }}>
+              {/* Row 1: Document Control (Left) & Formulation Identification (Right) */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: '16px', flexShrink: 0 }}>
                 
-                {/* Formulation Details Summary Card */}
-                <div className="premium-card" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {/* Document Control Card */}
+                <div className="premium-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
-                    <Info size={16} color="#3b82f6" />
-                    <span style={{ fontWeight: 700, fontSize: '14px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Formulation Details</span>
+                    <BookOpen size={16} color="#3b82f6" />
+                    <span style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Document Control</span>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
-                    <div style={{ background: '#f8fafc', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                      <span className="premium-field-label">Ref No</span>
-                      <strong style={{ fontSize: '13px', color: '#1e293b' }}>{detailData.ref_no || detailData.form?.ref_no || '-'}</strong>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+                    <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <span className="premium-field-label">DOC #</span>
+                      {isEditing ? (
+                        <input type="text" className="premium-field-input" value={docNo} onChange={e => handleParamChange('docNo', e.target.value)} style={{ height: '28px', fontSize: '12px', fontWeight: 600 }} />
+                      ) : (
+                        <strong style={{ fontSize: '13px', color: '#1e293b' }}>{docNo || '-'}</strong>
+                      )}
                     </div>
-                    <div style={{ background: '#eff6ff', padding: '10px 14px', borderRadius: '10px', border: '1px solid #bfdbfe', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                      <span className="premium-field-label" style={{ color: '#1d4ed8' }}>Batch No</span>
-                      <strong style={{ fontSize: '13px', color: '#1e293b' }}>{selectedBatch}</strong>
+                    <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <span className="premium-field-label">Review #</span>
+                      {isEditing ? (
+                        <input type="text" className="premium-field-input" value={reviewNo} onChange={e => handleParamChange('reviewNo', e.target.value)} style={{ height: '28px', fontSize: '12px', fontWeight: 600 }} />
+                      ) : (
+                        <strong style={{ fontSize: '13px', color: '#1e293b' }}>{reviewNo || '-'}</strong>
+                      )}
                     </div>
-                    <div style={{ background: '#ecfdf5', padding: '10px 14px', borderRadius: '10px', border: '1px solid #a7f3d0', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                      <span className="premium-field-label" style={{ color: '#059669' }}>Product Name</span>
-                      <strong style={{ fontSize: '13px', color: '#1e293b' }}>{getRecordValue('product_name', productName)}</strong>
+                    <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <span className="premium-field-label">Review Date</span>
+                      {isEditing ? (
+                        <input type="text" className="premium-field-input" value={reviewDate} onChange={e => handleParamChange('reviewDate', e.target.value)} style={{ height: '28px', fontSize: '12px' }} />
+                      ) : (
+                        <strong style={{ fontSize: '13px', color: '#1e293b' }}>{reviewDate || '-'}</strong>
+                      )}
                     </div>
-                    <div style={{ background: '#f8fafc', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                      <span className="premium-field-label">Formula Date</span>
-                      <strong style={{ fontSize: '13px', color: '#1e293b' }}>{date || detailData.form?.formula_date || '-'}</strong>
+                    <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <span className="premium-field-label">Issue #</span>
+                      {isEditing ? (
+                        <input type="text" className="premium-field-input" value={issueNo} onChange={e => handleParamChange('issueNo', e.target.value)} style={{ height: '28px', fontSize: '12px', fontWeight: 600 }} />
+                      ) : (
+                        <strong style={{ fontSize: '13px', color: '#1e293b' }}>{issueNo || '-'}</strong>
+                      )}
+                    </div>
+                    <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 2' }}>
+                      <span className="premium-field-label">Issue Date</span>
+                      {isEditing ? (
+                        <input type="text" className="premium-field-input" value={issueDate} onChange={e => handleParamChange('issueDate', e.target.value)} style={{ height: '28px', fontSize: '12px' }} />
+                      ) : (
+                        <strong style={{ fontSize: '13px', color: '#1e293b' }}>{issueDate || '-'}</strong>
+                      )}
                     </div>
                   </div>
                 </div>
- 
+
+                {/* Formulation Details Summary Card */}
+                <div className="premium-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
+                    <Info size={16} color="#3b82f6" />
+                    <span style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Formulation Identification</span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                    <div style={{ background: '#eff6ff', padding: '8px 12px', borderRadius: '8px', border: '1px solid #bfdbfe', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <span className="premium-field-label" style={{ color: '#1d4ed8' }}>Batch No</span>
+                      <strong style={{ fontSize: '13px', color: '#1e293b' }}>{selectedBatch}</strong>
+                    </div>
+                    <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <span className="premium-field-label">Ref No</span>
+                      {isEditing ? (
+                        <input type="text" className="premium-field-input" value={refNo} onChange={e => handleParamChange('refNo', e.target.value)} style={{ height: '28px', fontSize: '12px' }} />
+                      ) : (
+                        <strong style={{ fontSize: '13px', color: '#1e293b' }}>{refNo || detailData.ref_no || detailData.form?.ref_no || '-'}</strong>
+                      )}
+                    </div>
+                    <div style={{ background: '#ecfdf5', padding: '8px 12px', borderRadius: '8px', border: '1px solid #a7f3d0', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <span className="premium-field-label" style={{ color: '#059669' }}>Product Name</span>
+                      <strong style={{ fontSize: '13px', color: '#1e293b' }}>{getRecordValue('product_name', productName)}</strong>
+                    </div>
+                    <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <span className="premium-field-label">Customer Name</span>
+                      {isEditing ? (
+                        <input type="text" className="premium-field-input" value={customerName} onChange={e => handleParamChange('customerName', e.target.value)} style={{ height: '28px', fontSize: '12px' }} />
+                      ) : (
+                        <strong style={{ fontSize: '13px', color: '#1e293b' }}>{customerName || getRecordValue('customer_name') || '-'}</strong>
+                      )}
+                    </div>
+                    <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <span className="premium-field-label">Formula Date</span>
+                      {isEditing ? (
+                        <input type="date" className="premium-field-input" value={formulaDate} onChange={e => handleParamChange('formulaDate', e.target.value)} style={{ height: '28px', fontSize: '12px' }} />
+                      ) : (
+                        <strong style={{ fontSize: '13px', color: '#1e293b' }}>{formulaDate || date || detailData.form?.formula_date || '-'}</strong>
+                      )}
+                    </div>
+                    <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <span className="premium-field-label">Ref Book No</span>
+                      {isEditing ? (
+                        <input type="text" className="premium-field-input" value={refBookNo} onChange={e => handleParamChange('refBookNo', e.target.value)} style={{ height: '28px', fontSize: '12px' }} />
+                      ) : (
+                        <strong style={{ fontSize: '13px', color: '#1e293b' }}>{refBookNo || '-'}</strong>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Row 2: Standard Recalculator & Additional Specifications */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2.5fr', gap: '16px', flexShrink: 0 }}>
                 {/* Live Recalculator Targets Card */}
-                <div className="premium-card" style={{ display: 'flex', flexDirection: 'column', gap: '14px', background: 'linear-gradient(to right bottom, #ffffff, #f8fafc)' }}>
+                <div className="premium-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: 'linear-gradient(to right bottom, #ffffff, #f8fafc)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
                     <RefreshCw size={16} color="#3b82f6" />
-                    <span style={{ fontWeight: 700, fontSize: '14px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Standard Recalculator</span>
+                    <span style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Standard Recalculator</span>
                   </div>
                   
-                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: '12px', marginTop: '6px' }}>
-                    <div className="premium-field-container" style={{ flexGrow: 1 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+                    <div className="premium-field-container">
                       <span className="premium-field-label">Target Quantity (Grams)</span>
                       <input 
                         type="number" 
@@ -906,76 +947,56 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                     
                     <button 
                       onClick={() => triggerAutosave(localInventory)} 
-                      className="refresh-btn" 
-                      style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }} 
+                      className="flet-btn flet-btn-blue" 
+                      style={{ height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', borderRadius: '6px', fontSize: '12px' }} 
                       title="Recalculate & Save"
                     >
-                      <RefreshCw size={16} />
+                      <RefreshCw size={14} /> Recalculate Recipe
                     </button>
                   </div>
                 </div>
- 
-              </div>
- 
-              {/* Parameter Editor Forms (Additional Details section matching Flet cards) */}
-              <div className="premium-card" style={{ display: 'flex', flexDirection: 'column', gap: '16px', flexShrink: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
-                  <Edit3 size={16} color="#3b82f6" />
-                  <span style={{ fontWeight: 700, fontSize: '14px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Additional Parameters</span>
-                </div>
- 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-                  <div className="premium-field-container">
-                    <span className="premium-field-label">Ref Book No</span>
-                    <input type="text" className="premium-field-input" value={refBookNo} onChange={e => handleParamChange('refBookNo', e.target.value)} disabled={!isEditing} />
+
+                {/* Additional Parameters Card */}
+                <div className="premium-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
+                    <Edit3 size={16} color="#3b82f6" />
+                    <span style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Parameters & Footer Specifications</span>
                   </div>
-                  <div className="premium-field-container">
-                    <span className="premium-field-label">Date</span>
-                    <input type="text" className="premium-field-input" value={date} onChange={e => handleParamChange('date', e.target.value)} disabled={!isEditing} />
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
+                    <div className="premium-field-container">
+                      <span className="premium-field-label">Packaging</span>
+                      <input type="text" className="premium-field-input" value={packaging} onChange={e => handleParamChange('packaging', e.target.value)} disabled={!isEditing} />
+                    </div>
+                    <div className="premium-field-container">
+                      <span className="premium-field-label">Viscosity</span>
+                      <input type="text" className="premium-field-input" value={viscosity} onChange={e => handleParamChange('viscosity', e.target.value)} disabled={!isEditing} />
+                    </div>
+                    <div className="premium-field-container">
+                      <span className="premium-field-label">Density</span>
+                      <input type="text" className="premium-field-input" value={density} onChange={e => handleParamChange('density', e.target.value)} disabled={!isEditing} />
+                    </div>
+                    <div className="premium-field-container">
+                      <span className="premium-field-label">Ratio</span>
+                      <input type="text" className="premium-field-input" value={ratio} onChange={e => handleParamChange('ratio', e.target.value)} disabled={!isEditing} />
+                    </div>
+                    <div className="premium-field-container">
+                      <span className="premium-field-label">Filtration</span>
+                      <input type="text" className="premium-field-input" value={filtration} onChange={e => handleParamChange('filtration', e.target.value)} disabled={!isEditing} />
+                    </div>
                   </div>
-                  <div className="premium-field-container">
-                    <span className="premium-field-label">Time</span>
-                    <input type="text" className="premium-field-input" value={time} onChange={e => handleParamChange('time', e.target.value)} disabled={!isEditing} />
-                  </div>
-                </div>
- 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px' }}>
-                  <div className="premium-field-container">
-                    <span className="premium-field-label">Packaging</span>
-                    <input type="text" className="premium-field-input" value={packaging} onChange={e => handleParamChange('packaging', e.target.value)} disabled={!isEditing} />
-                  </div>
-                  <div className="premium-field-container">
-                    <span className="premium-field-label">Viscosity</span>
-                    <input type="text" className="premium-field-input" value={viscosity} onChange={e => handleParamChange('viscosity', e.target.value)} disabled={!isEditing} />
-                  </div>
-                  <div className="premium-field-container">
-                    <span className="premium-field-label">Density</span>
-                    <input type="text" className="premium-field-input" value={density} onChange={e => handleParamChange('density', e.target.value)} disabled={!isEditing} />
-                  </div>
-                  <div className="premium-field-container">
-                    <span className="premium-field-label">Ratio</span>
-                    <input type="text" className="premium-field-input" value={ratio} onChange={e => handleParamChange('ratio', e.target.value)} disabled={!isEditing} />
-                  </div>
-                  <div className="premium-field-container">
-                    <span className="premium-field-label">Filtration</span>
-                    <input type="text" className="premium-field-input" value={filtration} onChange={e => handleParamChange('filtration', e.target.value)} disabled={!isEditing} />
-                  </div>
-                </div>
- 
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px' }}>
-                  <div className="premium-field-container">
-                    <span className="premium-field-label">Remarks</span>
-                    <textarea 
-                      className="premium-field-input" 
-                      value={remarks} 
-                      onChange={e => handleParamChange('remarks', e.target.value)} 
-                      disabled={!isEditing} 
-                      style={{ height: '80px', resize: 'none', fontFamily: 'inherit' }} 
-                    />
-                  </div>
-                  
-                  {/* Sender & Approval fields stacked vertically */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr', gap: '10px' }}>
+                    <div className="premium-field-container">
+                      <span className="premium-field-label">Remarks & Instructions</span>
+                      <textarea 
+                        className="premium-field-input" 
+                        value={remarks} 
+                        onChange={e => handleParamChange('remarks', e.target.value)} 
+                        disabled={!isEditing} 
+                        style={{ height: '34px', resize: 'none', fontFamily: 'inherit', fontSize: '12px' }} 
+                      />
+                    </div>
                     <div className="premium-field-container">
                       <span className="premium-field-label">Sender</span>
                       <input type="text" className="premium-field-input" value={sender} onChange={e => handleParamChange('sender', e.target.value)} disabled={!isEditing} />
@@ -984,9 +1005,16 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                       <span className="premium-field-label">Approval</span>
                       <input type="text" className="premium-field-input" value={approval} onChange={e => handleParamChange('approval', e.target.value)} disabled={!isEditing} />
                     </div>
+                    <div className="premium-field-container">
+                      <span className="premium-field-label">Date</span>
+                      <input type="text" className="premium-field-input" value={date} onChange={e => handleParamChange('date', e.target.value)} disabled={!isEditing} />
+                    </div>
+                    <div className="premium-field-container">
+                      <span className="premium-field-label">Time</span>
+                      <input type="text" className="premium-field-input" value={time} onChange={e => handleParamChange('time', e.target.value)} disabled={!isEditing} />
+                    </div>
                   </div>
                 </div>
- 
               </div>
  
               {/* Composition Table Card */}
@@ -1118,7 +1146,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                 </button>
               )}
 
-              {viewMode === 'master_formulation' && (
+              {(viewMode === 'master_formulation' || viewMode === 'lab_master_formulation') && (
                 isEditing ? (
                   <>
                     <button onClick={() => setIsEditing(false)} className="flet-btn flet-btn-orange" style={{ padding: '0 20px', height: '38px', borderRadius: '8px', fontWeight: 600 }} disabled={loading}>

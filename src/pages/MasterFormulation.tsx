@@ -2029,9 +2029,13 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
         isOpen={createModalOpen}
         productName={productName}
         onClose={() => setCreateModalOpen(false)}
-        onSuccess={(createdBatch) => {
-          loadMasterList();
-          loadBatchDetails(createdBatch);
+        onSuccess={(createdBatch, createdProduct) => {
+          if (createdProduct && createdProduct.trim().toLowerCase() !== productName.trim().toLowerCase()) {
+            onShowToast(`✓ Master formulation '${createdBatch}' created under product '${createdProduct.toUpperCase()}'! Switch to that product from top bar to view.`, 'success');
+          } else {
+            loadMasterList();
+            loadBatchDetails(createdBatch);
+          }
         }}
         onShowToast={onShowToast}
       />

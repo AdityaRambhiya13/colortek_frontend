@@ -23,7 +23,7 @@ interface CreateMasterModalProps {
   isOpen: boolean;
   productName: string;
   onClose: () => void;
-  onSuccess: (batchNo: string) => void;
+  onSuccess: (batchNo: string, createdProductName?: string) => void;
   onShowToast: (msg: string, type: 'success' | 'error' | 'warning' | 'info') => void;
 }
 
@@ -238,7 +238,7 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
 
     if (success) {
       onShowToast(`Master formulation ${cleanBatchNo} created successfully!`, 'success');
-      onSuccess(cleanBatchNo);
+      onSuccess(cleanBatchNo, targetProdName);
       onClose();
     } else {
       const errMsg = typeof res === 'string' ? res : 'Failed to create master formulation.';

@@ -28,6 +28,8 @@ export interface ComplaintRegistrationFormProps {
   foundProductDb: string;
   batchRefData: any;
   handleBatchSearch: () => void;
+  bypassMasterCheck: boolean;
+  setBypassMasterCheck: (v: boolean) => void;
 }
 
 export const ComplaintRegistrationForm: React.FC<ComplaintRegistrationFormProps> = ({
@@ -55,12 +57,40 @@ export const ComplaintRegistrationForm: React.FC<ComplaintRegistrationFormProps>
   openLogsModal,
   foundProductDb,
   batchRefData,
-  handleBatchSearch
+  handleBatchSearch,
+  bypassMasterCheck,
+  setBypassMasterCheck
 }) => {
   return (
     <div className="animated-fade" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 8px 0', color: 'var(--text-primary)' }}>Complaint Registration</h3>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '4px' }}>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>Complaint Registration</h3>
+          
+          <label style={{ 
+            display: 'inline-flex', 
+            alignItems: 'center', 
+            gap: '8px', 
+            cursor: 'pointer', 
+            fontSize: '0.85rem', 
+            fontWeight: 600, 
+            color: bypassMasterCheck ? '#d97706' : 'var(--text-secondary)', 
+            backgroundColor: bypassMasterCheck ? 'rgba(245, 158, 11, 0.12)' : 'var(--bg-light)', 
+            padding: '7px 14px', 
+            borderRadius: '8px', 
+            border: `1px solid ${bypassMasterCheck ? '#f59e0b' : 'var(--border-light)'}`,
+            userSelect: 'none',
+            transition: 'all 0.2s ease'
+          }}>
+            <input 
+              type="checkbox" 
+              checked={bypassMasterCheck} 
+              onChange={e => setBypassMasterCheck(e.target.checked)} 
+              style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#f59e0b' }} 
+            />
+            <span>Bypass Master Formulation Check (Allow Unregistered Batch)</span>
+          </label>
+        </div>
 
         {/* Three Column Grid for inputs */}
         <div style={{ display: 'grid', gridTemplateColumns: '4fr 4fr 5fr', gap: '20px' }}>
@@ -185,22 +215,33 @@ export const ComplaintRegistrationForm: React.FC<ComplaintRegistrationFormProps>
         </div>
 
         {/* Batch summary details / badge if any */}
-        {foundProductDb && (
-          <div style={{ padding: '10px 14px', backgroundColor: 'var(--primary-light)', borderRadius: '8px', border: '1px solid var(--primary-color)', display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'center', marginTop: '6px' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary-color)' }}>
-              ✓ DB: {foundProductDb}
+        {bypassMasterCheck ? (
+          <div style={{ padding: '10px 14px', backgroundColor: 'rgba(245, 158, 11, 0.1)', borderRadius: '8px', border: '1px solid #f59e0b', display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'center', marginTop: '6px' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#b45309', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              ⚠️ Unregistered Batch (Master Formulation Check Bypassed)
             </span>
-            {batchRefData && (
-              <>
-                <span style={{ fontSize: '0.75rem', color: 'var(--primary-color)' }}>
-                  | Raw Materials: {batchRefData.production_sheet_data?.raw_materials?.length || 0}
-                </span>
-                <span style={{ fontSize: '0.75rem', color: 'var(--primary-color)' }}>
-                  | QC Parameters: {batchRefData.master_test_results?.length || 0}
-                </span>
-              </>
-            )}
+            <span style={{ fontSize: '0.75rem', color: '#92400e' }}>
+              Batch search requirement is bypassed. You can enter details, customer formulation, save, and move directly to Lab.
+            </span>
           </div>
+        ) : (
+          foundProductDb && (
+            <div style={{ padding: '10px 14px', backgroundColor: 'var(--primary-light)', borderRadius: '8px', border: '1px solid var(--primary-color)', display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'center', marginTop: '6px' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary-color)' }}>
+                ✓ DB: {foundProductDb}
+              </span>
+              {batchRefData && (
+                <>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--primary-color)' }}>
+                    | Raw Materials: {batchRefData.production_sheet_data?.raw_materials?.length || 0}
+                  </span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--primary-color)' }}>
+                    | QC Parameters: {batchRefData.master_test_results?.length || 0}
+                  </span>
+                </>
+              )}
+            </div>
+          )
         )}
       </div>
 

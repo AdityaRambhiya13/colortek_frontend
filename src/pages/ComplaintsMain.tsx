@@ -69,6 +69,7 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
   const [customerFormulation, setCustomerFormulation] = useState<{rm: string, batchNo: string, qty: string}[]>(
     Array(10).fill({ rm: '', batchNo: '', qty: '' })
   );
+  const [bypassMasterCheck, setBypassMasterCheck] = useState(false);
 
   // Logs modal
   const [showLogsModal, setShowLogsModal] = useState(false);
@@ -143,6 +144,7 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
   // Debounced Batch Search for Complaint Registration
   const lastSearchedBatchNo = useRef('');
   useEffect(() => {
+    if (bypassMasterCheck) return;
     const trimmed = batchNo.trim();
     if (!trimmed) {
       setBatchRefData(null);
@@ -157,7 +159,7 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
       handleBatchSearch();
     }, 800); // 800ms debounce
     return () => clearTimeout(timer);
-  }, [batchNo]);
+  }, [batchNo, bypassMasterCheck]);
 
   // --------------------------------------------------------------------------
   // REGISTRATION FUNCTIONS
@@ -188,7 +190,11 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
       setCustomerName(data.production_sheet_data?.customer || '');
       onShowToast(`Batch loaded from '${data.found_product_name}'!`, 'success');
     } else {
-      onShowToast(`No database record found for batch '${batchNo}'.`, 'warning');
+      if (!bypassMasterCheck) {
+        onShowToast(`No database record found for batch '${batchNo}'.`, 'warning');
+      } else {
+        onShowToast(`No database record found for batch '${batchNo}' (Bypass mode active).`, 'info');
+      }
     }
   };
 
@@ -199,6 +205,7 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
       setImageFiles([]); setImagePreviews([]);
       setBatchRefData(null); setFoundProductDb('');
       setCustomerFormulation(Array(10).fill({ rm: '', batchNo: '', qty: '' }));
+      setBypassMasterCheck(false);
     }
   };
 
@@ -206,20 +213,28 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
     if (!batchNo.trim() || !customerName.trim() || !complaintDetails.trim()) {
       onShowToast('Required: Batch No, Customer Name, Complaint Details.', 'warning'); return;
     }
-    if (!foundProductDb) {
-      onShowToast('Please load a valid batch first.', 'warning'); return;
+    
+    const targetProduct = foundProductDb || (productNameUi.trim() ? productNameUi.trim().toLowerCase().replace(/\s+/g, '_') : '') || currentProduct;
+    if (!targetProduct) {
+      if (bypassMasterCheck) {
+        onShowToast('Please enter a Product Name.', 'warning');
+      } else {
+        onShowToast('Please load a valid batch first or enable bypass.', 'warning');
+      }
+      return;
     }
+
     setSaving(true);
     try {
       const payload = {
         batch_no: batchNo.trim(), customer_name: customerName.trim(),
-        product_name_ui: productNameUi.trim(), complaint_text: complaintDetails.trim(),
+        product_name_ui: productNameUi.trim() || targetProduct, complaint_text: complaintDetails.trim(),
         observation_text: initialObservation.trim(),
         raw_materials: batchRefData?.production_sheet_data || {},
         test_results: batchRefData?.master_test_results || [],
         customer_formulation: customerFormulation
       };
-      const [success, data] = await ComplaintRegistrationAPI.registerComplaintWithImage(foundProductDb, payload, imageFiles);
+      const [success, data] = await ComplaintRegistrationAPI.registerComplaintWithImage(targetProduct, payload, imageFiles);
       if (success) {
         onShowToast(`Complaint for Batch '${batchNo}' registered!`, 'success');
         await NotificationsAPI.createNotification(
@@ -242,12 +257,23 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
   };
 
   const handleMoveToLab = async () => {
-    if (!batchNo.trim() || !foundProductDb) {
-      onShowToast('Please load batch details first.', 'warning'); return;
+    if (!batchNo.trim()) {
+      onShowToast('Please enter a batch number.', 'warning'); return;
     }
+    
+    const targetProduct = foundProductDb || (productNameUi.trim() ? productNameUi.trim().toLowerCase().replace(/\s+/g, '_') : '') || currentProduct;
+    if (!targetProduct) {
+      if (bypassMasterCheck) {
+        onShowToast('Please enter a Product Name.', 'warning');
+      } else {
+        onShowToast('Please load batch details first or enable bypass.', 'warning');
+      }
+      return;
+    }
+
     setMoving(true);
     try {
-      const [success, data] = await ComplaintRegistrationAPI.moveToLab(foundProductDb, batchNo.trim());
+      const [success, data] = await ComplaintRegistrationAPI.moveToLab(targetProduct, batchNo.trim());
       if (success) {
         onShowToast(`Batch '${batchNo}' pushed to Lab queue!`, 'success');
         // Clear form fields after successfully pushing to the lab
@@ -606,6 +632,8 @@ export const ComplaintsMain: React.FC<ComplaintsMainProps> = ({ activeSubView, o
           foundProductDb={foundProductDb}
           batchRefData={batchRefData}
           handleBatchSearch={handleBatchSearch}
+          bypassMasterCheck={bypassMasterCheck}
+          setBypassMasterCheck={setBypassMasterCheck}
         />
       )}
 

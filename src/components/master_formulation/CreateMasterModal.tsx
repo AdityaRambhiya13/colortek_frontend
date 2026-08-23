@@ -367,7 +367,7 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 1100 }}>
+    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 99999 }}>
       <div 
         className="modal-content animated-scale" 
         onClick={e => e.stopPropagation()} 

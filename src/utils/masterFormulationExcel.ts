@@ -296,12 +296,13 @@ export const generateAndDownloadMasterFormulationExcel = async (params: MasterEx
       finalQtyVal = totalBaseQty > 0 ? (rawQty / totalBaseQty) * targetGrams : 0;
       calcTotalFinal += finalQtyVal;
       
-      const defaultRound = Math.round(finalQtyVal);
       const parsedRound = item?.rounded_qty !== undefined && item.rounded_qty !== '' 
         ? parseFloat(String(item.rounded_qty)) 
-        : defaultRound;
-      roundQtyVal = !isNaN(parsedRound) ? parsedRound : defaultRound;
-      calcTotalRounded += typeof roundQtyVal === 'number' ? roundQtyVal : defaultRound;
+        : null;
+      roundQtyVal = parsedRound !== null && !isNaN(parsedRound) ? parsedRound : (item?.rounded_qty || '');
+      if (typeof roundQtyVal === 'number') {
+        calcTotalRounded += roundQtyVal;
+      }
     }
 
     // Col A: Sr. No.

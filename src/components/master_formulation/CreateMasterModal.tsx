@@ -173,8 +173,7 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
   const totalQty = inventory.reduce((sum, item) => sum + (parseFloat(item.qty) || 0), 0);
   const targetGramsNum = parseFloat(grams) || 100;
   const totalRounded = inventory.reduce((sum, item) => {
-    const val = parseFloat(item.rounded_qty);
-    return isNaN(val) ? sum : sum + val;
+    return sum + (parseFloat(item.rounded_qty) || 0);
   }, 0);
 
   // Form Submit

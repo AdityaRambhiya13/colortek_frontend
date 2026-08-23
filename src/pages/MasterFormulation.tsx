@@ -957,10 +957,10 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                       {viewMode === 'mf_production' ? 'Load Sheet' : 'View Details'}
                     </span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      {(viewMode === 'lab_master_formulation' || isAdmin) && viewMode !== 'mf_production' && (
+                      {viewMode === 'lab_master_formulation' && (
                         <button
                           onClick={(e) => handleDeleteFormulation(row.batch_no, e)}
-                          title={viewMode === 'lab_master_formulation' ? "Delete Lab Master Formulation" : "Delete Master Formulation"}
+                          title="Delete Lab Master Formulation"
                           style={{
                             padding: '4px 8px',
                             borderRadius: '6px',
@@ -1086,86 +1086,87 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                 </div>
               )}
 
-              {/* Attached Physical Master Formulation Sheet Photo / Scans Card */}
-              <div className="premium-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: '#ffffff', border: '1px solid #e2e8f0' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <ImageIcon size={16} color="#8b5cf6" />
-                    <span style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      {viewMode === 'lab_master_formulation' ? 'Physical Lab Master Formulation Sheet Photos / Scans' : 'Physical Master Formulation Sheet Photos / Scans'} ({attachedImages.length})
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {uploadingImage && (
-                      <span style={{ fontSize: '11px', color: '#6366f1', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
-                        <RefreshCw size={12} className="spin-loader" /> Uploading image...
+              {/* Attached Physical Lab Master Formulation Sheet Photo / Scans Card (Lab Master Formulation only) */}
+              {viewMode === 'lab_master_formulation' && (
+                <div className="premium-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: '#ffffff', border: '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <ImageIcon size={16} color="#8b5cf6" />
+                      <span style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Physical Lab Master Formulation Sheet Photos / Scans ({attachedImages.length})
                       </span>
-                    )}
-                    <button
-                      type="button"
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {uploadingImage && (
+                        <span style={{ fontSize: '11px', color: '#6366f1', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+                          <RefreshCw size={12} className="spin-loader" /> Uploading image...
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => detailFileInputRef.current?.click()}
+                        disabled={uploadingImage}
+                        className="flet-btn flet-btn-blue"
+                        style={{
+                          padding: '4px 12px',
+                          height: '30px',
+                          fontSize: '12px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          borderRadius: '6px',
+                          background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                          color: '#ffffff',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontWeight: 600
+                        }}
+                      >
+                        <UploadCloud size={14} /> Upload / Attach Sheet Photo
+                      </button>
+                      <input
+                        type="file"
+                        ref={detailFileInputRef}
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={handleDetailImageUpload}
+                      />
+                    </div>
+                  </div>
+
+                  {attachedImages.length === 0 ? (
+                    <div
                       onClick={() => detailFileInputRef.current?.click()}
-                      disabled={uploadingImage}
-                      className="flet-btn flet-btn-blue"
                       style={{
-                        padding: '4px 12px',
-                        height: '30px',
-                        fontSize: '12px',
+                        border: '2px dashed #cbd5e1',
+                        borderRadius: '10px',
+                        padding: '24px',
                         display: 'flex',
+                        flexDirection: 'column',
                         alignItems: 'center',
-                        gap: '6px',
-                        borderRadius: '6px',
-                        background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
-                        color: '#ffffff',
-                        border: 'none',
+                        justifyContent: 'center',
+                        gap: '8px',
                         cursor: 'pointer',
-                        fontWeight: 600
+                        backgroundColor: '#f8fafc',
+                        transition: 'all 0.2s ease',
+                        textAlign: 'center'
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.borderColor = '#8b5cf6';
+                        e.currentTarget.style.backgroundColor = '#faf5ff';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.borderColor = '#cbd5e1';
+                        e.currentTarget.style.backgroundColor = '#f8fafc';
                       }}
                     >
-                      <UploadCloud size={14} /> Upload / Attach Sheet Photo
-                    </button>
-                    <input
-                      type="file"
-                      ref={detailFileInputRef}
-                      accept="image/*"
-                      style={{ display: 'none' }}
-                      onChange={handleDetailImageUpload}
-                    />
-                  </div>
-                </div>
-
-                {attachedImages.length === 0 ? (
-                  <div
-                    onClick={() => detailFileInputRef.current?.click()}
-                    style={{
-                      border: '2px dashed #cbd5e1',
-                      borderRadius: '10px',
-                      padding: '24px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '8px',
-                      cursor: 'pointer',
-                      backgroundColor: '#f8fafc',
-                      transition: 'all 0.2s ease',
-                      textAlign: 'center'
-                    }}
-                    onMouseEnter={e => {
-                      e.currentTarget.style.borderColor = '#8b5cf6';
-                      e.currentTarget.style.backgroundColor = '#faf5ff';
-                    }}
-                    onMouseLeave={e => {
-                      e.currentTarget.style.borderColor = '#cbd5e1';
-                      e.currentTarget.style.backgroundColor = '#f8fafc';
-                    }}
-                  >
-                    <UploadCloud size={32} color="#8b5cf6" />
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>
-                      No physical sheet attached. Click here to upload a photo/scan of the {viewMode === 'lab_master_formulation' ? 'lab master formulation sheet' : 'master formulation sheet'}
-                    </span>
-                    <span style={{ fontSize: '11px', color: '#64748b' }}>Supports JPG, PNG, WEBP, GIF, BMP</span>
-                  </div>
-                ) : (
+                      <UploadCloud size={32} color="#8b5cf6" />
+                      <span style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>
+                        No physical sheet attached. Click here to upload a photo/scan of the lab master formulation sheet
+                      </span>
+                      <span style={{ fontSize: '11px', color: '#64748b' }}>Supports JPG, PNG, WEBP, GIF, BMP</span>
+                    </div>
+                  ) : (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px' }}>
                       {attachedImages.map((imgName, idx) => {
                         const imgUrl = imgName.startsWith('http') ? imgName : `${API_BASE_URL}/mf/images/${imgName}`;
@@ -1247,6 +1248,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                     </div>
                   )}
                 </div>
+              )}
               
               {/* Row 1: Document Control (Left) & Formulation Identification (Right) */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: '16px', flexShrink: 0 }}>
@@ -1674,7 +1676,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
  
               {!isEditing && (
                 <>
-                  {(viewMode === 'lab_master_formulation' || isAdmin) && viewMode !== 'mf_production' && (
+                  {viewMode === 'lab_master_formulation' && (
                     <button
                       type="button"
                       onClick={() => handleDeleteFormulation(selectedBatch)}
@@ -1682,7 +1684,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                       className="flet-btn flet-btn-red"
                       style={{ padding: '0 16px', height: '38px', display: 'flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg, #ef4444, #dc2626)', border: 'none', borderRadius: '8px', color: '#ffffff', fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 10px rgba(239, 68, 68, 0.2)' }}
                     >
-                      <Trash2 size={14} /> Delete Formulation
+                      <Trash2 size={14} /> Delete Lab Formulation
                     </button>
                   )}
                   <button type="button" onClick={() => setSelectedBatch(null)} className="flet-btn flet-btn-orange" style={{ padding: '0 20px', height: '38px', borderRadius: '8px', fontWeight: 600 }}>
@@ -1696,7 +1698,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
         </div>
       )}
 
-      {/* Delete Master Formulation Confirmation Dialog */}
+      {/* Delete Lab Master Formulation Confirmation Dialog */}
       {deletingBatch && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, backdropFilter: 'blur(4px)' }}>
           <div style={{ backgroundColor: '#ffffff', borderRadius: '14px', width: '90%', maxWidth: '440px', padding: '24px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)', border: '1px solid #e2e8f0' }}>
@@ -1706,13 +1708,13 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
               </div>
               <div>
                 <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#1e293b' }}>
-                  {viewMode === 'lab_master_formulation' ? 'Delete Lab Master Formulation' : 'Delete Master Formulation'}
+                  Delete Lab Master Formulation
                 </h3>
                 <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#64748b' }}>This action cannot be undone.</p>
               </div>
             </div>
             <p style={{ fontSize: '0.9rem', color: '#334155', lineHeight: 1.5, margin: '0 0 20px 0' }}>
-              Are you sure you want to permanently delete {viewMode === 'lab_master_formulation' ? 'Lab Master Formulation' : 'Master Formulation'} batch <strong>{deletingBatch}</strong>?
+              Are you sure you want to permanently delete Lab Master Formulation batch <strong>{deletingBatch}</strong>?
             </p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
               <button

@@ -589,7 +589,7 @@ export const LabFormulationsAPI = {
 
   getLmfBatchList: async (productName: string, fromDate?: string, toDate?: string, batchNoFilter?: string) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return handleResponse<any>(apiClient.get(`/lab_formulations/lmf/list/${productName}`, {
+    return handleResponse<any>(apiClient.get(`/lab_formulations/lmf/list/${encodeURIComponent(productName)}`, {
       params: {
         ...(fromDate && { from_date: fromDate }),
         ...(toDate && { to_date: toDate }),
@@ -600,7 +600,7 @@ export const LabFormulationsAPI = {
 
   getLmfBatchDetail: async (productName: string, batchNo: string) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return handleResponse<any>(apiClient.get(`/lab_formulations/lmf/detail/${productName}/${batchNo}`));
+    return handleResponse<any>(apiClient.get(`/lab_formulations/lmf/detail/${encodeURIComponent(productName)}/${encodeURIComponent(batchNo)}`));
   },
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -615,12 +615,12 @@ export const LabFormulationsAPI = {
 
   getLmfBatchCount: async (productName: string) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return handleResponse<any>(apiClient.get(`/lab_formulations/lmf/count/${productName}`));
+    return handleResponse<any>(apiClient.get(`/lab_formulations/lmf/count/${encodeURIComponent(productName)}`));
   },
 
   deleteLmfBatch: async (productName: string, batchNo: string) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return handleResponse<any>(apiClient.delete(`/lab_formulations/lmf/delete/${productName}/${batchNo}`));
+    return handleResponse<any>(apiClient.delete(`/lab_formulations/lmf/delete/${encodeURIComponent(productName)}/${encodeURIComponent(batchNo)}`));
   },
 
   toggleStar: async (productName: string, batchNo: string, isStarred: boolean, okRating: string = '') => {
@@ -709,7 +709,7 @@ export const RMPastFormulationsAPI = {
 export const MasterFormulationAPI = {
   getBatchList: async (productName: string, fromDate?: string, toDate?: string, batchNoFilter?: string, onlyApproved?: boolean, isLabMf?: boolean) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return handleResponse<any>(apiClient.get(`/mf/list/${productName}`, {
+    return handleResponse<any>(apiClient.get(`/mf/list/${encodeURIComponent(productName)}`, {
       params: {
         ...(fromDate && { from_date: fromDate }),
         ...(toDate && { to_date: toDate }),
@@ -722,7 +722,7 @@ export const MasterFormulationAPI = {
 
   getBatchDetail: async (productName: string, batchNo: string, isLabMf?: boolean) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return handleResponse<any>(apiClient.get(`/mf/detail/${productName}/${batchNo}`, {
+    return handleResponse<any>(apiClient.get(`/mf/detail/${encodeURIComponent(productName)}/${encodeURIComponent(batchNo)}`, {
       params: {
         ...(isLabMf !== undefined && { is_lab_mf: isLabMf }),
       }
@@ -749,7 +749,7 @@ export const MasterFormulationAPI = {
 
   getBatchCount: async (productName: string, isLabMf?: boolean) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return handleResponse<any>(apiClient.get(`/mf/count/${productName}`, {
+    return handleResponse<any>(apiClient.get(`/mf/count/${encodeURIComponent(productName)}`, {
       params: {
         ...(isLabMf !== undefined && { is_lab_mf: isLabMf }),
       }
@@ -758,7 +758,7 @@ export const MasterFormulationAPI = {
 
   findByBatch: async (batchNo: string) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return handleResponse<any>(apiClient.get(`/mf/find-by-batch/${batchNo}`));
+    return handleResponse<any>(apiClient.get(`/mf/find-by-batch/${encodeURIComponent(batchNo)}`));
   },
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -772,7 +772,7 @@ export const MasterFormulationAPI = {
 
   deleteBatch: async (productName: string, batchNo: string) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return handleResponse<any>(apiClient.delete(`/mf/delete/${productName}/${batchNo}`));
+    return handleResponse<any>(apiClient.delete(`/mf/delete/${encodeURIComponent(productName)}/${encodeURIComponent(batchNo)}`));
   },
 
   uploadImage: async (file: File) => {

@@ -2,10 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   BookOpen, Search, Calendar, RefreshCw, 
   Download, Edit3, CheckCircle, Scale, Eye, ChevronLeft, ChevronRight, Play, Info,
-  Plus, Image as ImageIcon, ZoomIn, UploadCloud, Trash2
+  Plus, Image as ImageIcon, ZoomIn, UploadCloud, Trash2, Layers
 } from 'lucide-react';
 import { MasterFormulationAPI, LabFormulationsAPI, API_BASE_URL } from '../services/api';
 import { CreateMasterModal } from '../components/master_formulation/CreateMasterModal';
+import { BulkMasterUploadModal } from '../components/master_formulation/BulkMasterUploadModal';
 import { generateAndDownloadMasterFormulationExcel } from '../utils/masterFormulationExcel';
 
 interface MasterFormulationProps {
@@ -76,6 +77,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
   const isAdmin = roles.includes('admin') || roles.includes('all') || username === 'admin' || username === 'adi' || roles.length >= 5;
   const [approving, setApproving] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [bulkModalOpen, setBulkModalOpen] = useState(false);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
 
   // Deletion states
@@ -92,9 +94,16 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
   const confirmDeleteFormulation = async () => {
     if (!deletingBatch) return;
     setIsDeleting(true);
-    const isLabMf = viewMode === 'lab_master_formulation';
-    const deleteApi = isLabMf ? LabFormulationsAPI.deleteLmfBatch : MasterFormulationAPI.deleteBatch;
-    const [success, resDataOrMsg] = await deleteApi(productName, deletingBatch);
+    // Try MasterFormulationAPI first (which handles all MF tables), fallback to LabFormulationsAPI
+    let [success, resDataOrMsg] = await MasterFormulationAPI.deleteBatch(productName, deletingBatch);
+    if (!success) {
+      const [lmfSuccess, lmfMsg] = await LabFormulationsAPI.deleteLmfBatch(productName, deletingBatch);
+      if (lmfSuccess) {
+        success = true;
+      } else {
+        resDataOrMsg = lmfMsg;
+      }
+    }
     setIsDeleting(false);
     
     if (success) {
@@ -752,27 +761,49 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
               </h3>
             </div>
             {viewMode === 'lab_master_formulation' && (
-              <button
-                type="button"
-                onClick={() => setCreateModalOpen(true)}
-                style={{
-                  padding: '6px 14px',
-                  borderRadius: '8px',
-                  background: 'linear-gradient(135deg, #10b981, #059669)',
-                  color: '#ffffff',
-                  fontWeight: 700,
-                  fontSize: '12px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  boxShadow: '0 2px 4px rgba(16, 185, 129, 0.25)',
-                  marginLeft: '8px'
-                }}
-              >
-                <Plus size={14} /> Create New Master
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => setCreateModalOpen(true)}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '8px',
+                    background: 'linear-gradient(135deg, #10b981, #059669)',
+                    color: '#ffffff',
+                    fontWeight: 700,
+                    fontSize: '12px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: '0 2px 4px rgba(16, 185, 129, 0.25)'
+                  }}
+                >
+                  <Plus size={14} /> Create New Master
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBulkModalOpen(true)}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '8px',
+                    background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                    color: '#ffffff',
+                    fontWeight: 700,
+                    fontSize: '12px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: '0 2px 4px rgba(59, 130, 246, 0.25)'
+                  }}
+                  title="Upload multiple physical sheet photos and review them sequentially"
+                >
+                  <Layers size={14} /> Bulk Upload Studio
+                </button>
+              </div>
             )}
           </div>
 
@@ -926,10 +957,10 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                       {viewMode === 'mf_production' ? 'Load Sheet' : 'View Details'}
                     </span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      {viewMode === 'lab_master_formulation' && (
+                      {(viewMode === 'lab_master_formulation' || isAdmin) && viewMode !== 'mf_production' && (
                         <button
                           onClick={(e) => handleDeleteFormulation(row.batch_no, e)}
-                          title="Delete Lab Master Formulation"
+                          title={viewMode === 'lab_master_formulation' ? "Delete Lab Master Formulation" : "Delete Master Formulation"}
                           style={{
                             padding: '4px 8px',
                             borderRadius: '6px',
@@ -1643,7 +1674,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
  
               {!isEditing && (
                 <>
-                  {viewMode === 'lab_master_formulation' && (
+                  {(viewMode === 'lab_master_formulation' || isAdmin) && viewMode !== 'mf_production' && (
                     <button
                       type="button"
                       onClick={() => handleDeleteFormulation(selectedBatch)}
@@ -1651,7 +1682,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                       className="flet-btn flet-btn-red"
                       style={{ padding: '0 16px', height: '38px', display: 'flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg, #ef4444, #dc2626)', border: 'none', borderRadius: '8px', color: '#ffffff', fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 10px rgba(239, 68, 68, 0.2)' }}
                     >
-                      <Trash2 size={14} /> Delete Lab Formulation
+                      <Trash2 size={14} /> Delete Formulation
                     </button>
                   )}
                   <button type="button" onClick={() => setSelectedBatch(null)} className="flet-btn flet-btn-orange" style={{ padding: '0 20px', height: '38px', borderRadius: '8px', fontWeight: 600 }}>
@@ -1665,7 +1696,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
         </div>
       )}
 
-      {/* Delete Lab Master Formulation Confirmation Dialog */}
+      {/* Delete Master Formulation Confirmation Dialog */}
       {deletingBatch && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, backdropFilter: 'blur(4px)' }}>
           <div style={{ backgroundColor: '#ffffff', borderRadius: '14px', width: '90%', maxWidth: '440px', padding: '24px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)', border: '1px solid #e2e8f0' }}>
@@ -1674,12 +1705,14 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                 <Trash2 size={22} />
               </div>
               <div>
-                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#1e293b' }}>Delete Lab Master Formulation</h3>
+                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#1e293b' }}>
+                  {viewMode === 'lab_master_formulation' ? 'Delete Lab Master Formulation' : 'Delete Master Formulation'}
+                </h3>
                 <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#64748b' }}>This action cannot be undone.</p>
               </div>
             </div>
             <p style={{ fontSize: '0.9rem', color: '#334155', lineHeight: 1.5, margin: '0 0 20px 0' }}>
-              Are you sure you want to permanently delete Lab Master Formulation batch <strong>{deletingBatch}</strong>?
+              Are you sure you want to permanently delete {viewMode === 'lab_master_formulation' ? 'Lab Master Formulation' : 'Master Formulation'} batch <strong>{deletingBatch}</strong>?
             </p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
               <button
@@ -1997,6 +2030,18 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
         onSuccess={(createdBatch) => {
           loadMasterList();
           loadBatchDetails(createdBatch);
+        }}
+        onShowToast={onShowToast}
+      />
+
+      {/* Bulk Master Formulation Upload Studio Modal */}
+      <BulkMasterUploadModal
+        isOpen={bulkModalOpen}
+        productName={productName}
+        onClose={() => setBulkModalOpen(false)}
+        onSuccess={() => {
+          setBulkModalOpen(false);
+          loadMasterList();
         }}
         onShowToast={onShowToast}
       />

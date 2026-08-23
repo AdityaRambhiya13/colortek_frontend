@@ -170,6 +170,76 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
     setTests(tests.filter((_, i) => i !== index));
   };
 
+  // Keyboard Excel-like navigation: Enter key moves to next row in the same column
+  const handleTableKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    rowIndex: number,
+    field: string,
+    tableType: 'inventory' | 'tests'
+  ) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (tableType === 'inventory') {
+        if (rowIndex === inventory.length - 1) {
+          setInventory(prev => [
+            ...prev,
+            { sr: String(prev.length + 1), remarks: '', material: '', qty: '', rounded_qty: '' }
+          ]);
+          setTimeout(() => {
+            const nextInput = document.querySelector<HTMLInputElement>(
+              `input[data-table="inventory"][data-row="${rowIndex + 1}"][data-col="${field}"]`
+            );
+            nextInput?.focus();
+            nextInput?.select();
+          }, 40);
+        } else {
+          const nextInput = document.querySelector<HTMLInputElement>(
+            `input[data-table="inventory"][data-row="${rowIndex + 1}"][data-col="${field}"]`
+          );
+          nextInput?.focus();
+          nextInput?.select();
+        }
+      } else if (tableType === 'tests') {
+        if (rowIndex === tests.length - 1) {
+          setTests(prev => [...prev, { method: '', standard: '', result: '' }]);
+          setTimeout(() => {
+            const nextInput = document.querySelector<HTMLInputElement>(
+              `input[data-table="tests"][data-row="${rowIndex + 1}"][data-col="${field}"]`
+            );
+            nextInput?.focus();
+            nextInput?.select();
+          }, 40);
+        } else {
+          const nextInput = document.querySelector<HTMLInputElement>(
+            `input[data-table="tests"][data-row="${rowIndex + 1}"][data-col="${field}"]`
+          );
+          nextInput?.focus();
+          nextInput?.select();
+        }
+      }
+    } else if (e.key === 'ArrowDown') {
+      const nextInput = document.querySelector<HTMLInputElement>(
+        `input[data-table="${tableType}"][data-row="${rowIndex + 1}"][data-col="${field}"]`
+      );
+      if (nextInput) {
+        e.preventDefault();
+        nextInput.focus();
+        nextInput.select();
+      }
+    } else if (e.key === 'ArrowUp' && rowIndex > 0) {
+      const prevInput = document.querySelector<HTMLInputElement>(
+        `input[data-table="${tableType}"][data-row="${rowIndex - 1}"][data-col="${field}"]`
+      );
+      if (prevInput) {
+        e.preventDefault();
+        prevInput.focus();
+        prevInput.select();
+      }
+    }
+  };
+
   // Total Calculations
   const totalQty = inventory.reduce((sum, item) => sum + (parseFloat(item.qty) || 0), 0);
   const targetGramsNum = parseFloat(grams) || 100;
@@ -701,16 +771,24 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
                           <input 
                             type="text" 
                             style={tableInputStyle}
+                            data-table="inventory"
+                            data-row={idx}
+                            data-col="remarks"
                             value={row.remarks} 
                             onChange={e => handleInventoryChange(idx, 'remarks', e.target.value)} 
+                            onKeyDown={e => handleTableKeyDown(e, idx, 'remarks', 'inventory')}
                           />
                         </td>
                         <td style={tableCellStyle}>
                           <input 
                             type="text" 
                             style={{ ...tableInputStyle, fontWeight: 600 }}
+                            data-table="inventory"
+                            data-row={idx}
+                            data-col="material"
                             value={row.material} 
                             onChange={e => handleInventoryChange(idx, 'material', e.target.value)} 
+                            onKeyDown={e => handleTableKeyDown(e, idx, 'material', 'inventory')}
                           />
                         </td>
                         <td style={tableCellStyle}>
@@ -718,8 +796,12 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
                             type="number" 
                             step="any"
                             style={{ ...tableInputStyle, textAlign: 'right' }}
+                            data-table="inventory"
+                            data-row={idx}
+                            data-col="qty"
                             value={row.qty} 
                             onChange={e => handleInventoryChange(idx, 'qty', e.target.value)} 
+                            onKeyDown={e => handleTableKeyDown(e, idx, 'qty', 'inventory')}
                           />
                         </td>
                         <td style={{ ...tableCellStyle, textAlign: 'right', color: '#64748b', fontWeight: 600, backgroundColor: '#f8fafc' }}>
@@ -732,8 +814,12 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
                           <input 
                             type="text" 
                             style={{ ...tableInputStyle, textAlign: 'center', color: '#2563eb', fontWeight: 700 }}
+                            data-table="inventory"
+                            data-row={idx}
+                            data-col="rounded_qty"
                             value={currentRounded} 
                             onChange={e => handleInventoryChange(idx, 'rounded_qty', e.target.value)} 
+                            onKeyDown={e => handleTableKeyDown(e, idx, 'rounded_qty', 'inventory')}
                           />
                         </td>
                         <td style={{ ...tableCellStyle, textAlign: 'center' }}>
@@ -821,24 +907,36 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
                         <input 
                           type="text" 
                           style={{ ...tableInputStyle, fontWeight: 600 }}
+                          data-table="tests"
+                          data-row={idx}
+                          data-col="method"
                           value={testRow.method} 
                           onChange={e => handleTestChange(idx, 'method', e.target.value)} 
+                          onKeyDown={e => handleTableKeyDown(e, idx, 'method', 'tests')}
                         />
                       </td>
                       <td style={tableCellStyle}>
                         <input 
                           type="text" 
                           style={tableInputStyle}
+                          data-table="tests"
+                          data-row={idx}
+                          data-col="standard"
                           value={testRow.standard} 
                           onChange={e => handleTestChange(idx, 'standard', e.target.value)} 
+                          onKeyDown={e => handleTableKeyDown(e, idx, 'standard', 'tests')}
                         />
                       </td>
                       <td style={tableCellStyle}>
                         <input 
                           type="text" 
                           style={tableInputStyle}
+                          data-table="tests"
+                          data-row={idx}
+                          data-col="result"
                           value={testRow.result} 
                           onChange={e => handleTestChange(idx, 'result', e.target.value)} 
+                          onKeyDown={e => handleTableKeyDown(e, idx, 'result', 'tests')}
                         />
                       </td>
                       <td style={{ ...tableCellStyle, textAlign: 'center' }}>

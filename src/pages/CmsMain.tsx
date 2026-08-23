@@ -4443,7 +4443,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                               const isNA = rawS === '' || rawS === 'n/a' || rawS === 'na' || rawS === '-' || rawS === 'nil';
                               const sPct = isNA ? 0 : (parseFloat(rawS) || 0);
                               const sQtyCalc = (qVal * (sPct / 100)).toFixed(2);
-                              const displaySolidLabel = isNA && item.solid ? item.solid : `${sPct}%`;
+                              const displaySolidLabel = rawS === '' ? '-' : (isNA ? (item.solid || '-') : `${sPct}%`);
 
                               return (
                                 <tr key={idx}>

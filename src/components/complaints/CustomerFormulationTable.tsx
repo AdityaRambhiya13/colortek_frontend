@@ -12,6 +12,8 @@ interface CustomerFormulationTableProps {
   setCustomerFormulation: React.Dispatch<React.SetStateAction<CustomerFormulationRow[]>>;
 }
 
+const FIELDS: (keyof CustomerFormulationRow)[] = ['rm', 'batchNo', 'qty'];
+
 export const CustomerFormulationTable: React.FC<CustomerFormulationTableProps> = ({
   customerFormulation,
   setCustomerFormulation
@@ -35,6 +37,89 @@ export const CustomerFormulationTable: React.FC<CustomerFormulationTableProps> =
       updated[index] = { ...updated[index], [field]: value };
       return updated;
     });
+  };
+
+  const focusCell = (rowIndex: number, field: keyof CustomerFormulationRow) => {
+    const el = document.getElementById(`cust-form-${rowIndex}-${field}`);
+    if (el) {
+      el.focus();
+      if (el instanceof HTMLInputElement) {
+        el.select();
+      }
+    }
+  };
+
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    rowIndex: number,
+    field: keyof CustomerFormulationRow
+  ) => {
+    const colIndex = FIELDS.indexOf(field);
+
+    if (e.key === 'Tab') {
+      if (e.shiftKey) {
+        // Shift + Tab (Backward)
+        if (colIndex > 0) {
+          e.preventDefault();
+          focusCell(rowIndex, FIELDS[colIndex - 1]);
+        } else if (rowIndex > 0) {
+          e.preventDefault();
+          focusCell(rowIndex - 1, FIELDS[FIELDS.length - 1]);
+        }
+      } else {
+        // Tab (Forward)
+        if (colIndex < FIELDS.length - 1) {
+          e.preventDefault();
+          focusCell(rowIndex, FIELDS[colIndex + 1]);
+        } else {
+          e.preventDefault();
+          if (rowIndex < customerFormulation.length - 1) {
+            focusCell(rowIndex + 1, FIELDS[0]);
+          } else {
+            // Last cell of the last row: automatically append a new row and focus it
+            setCustomerFormulation(prev => [...prev, { rm: '', batchNo: '', qty: '' }]);
+            setTimeout(() => {
+              focusCell(rowIndex + 1, FIELDS[0]);
+            }, 30);
+          }
+        }
+      }
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (e.shiftKey) {
+        // Shift + Enter (Backward)
+        if (colIndex > 0) {
+          focusCell(rowIndex, FIELDS[colIndex - 1]);
+        } else if (rowIndex > 0) {
+          focusCell(rowIndex - 1, FIELDS[FIELDS.length - 1]);
+        }
+      } else {
+        // Enter (Forward: rm -> batchNo -> qty -> next row rm)
+        if (colIndex < FIELDS.length - 1) {
+          focusCell(rowIndex, FIELDS[colIndex + 1]);
+        } else {
+          if (rowIndex < customerFormulation.length - 1) {
+            focusCell(rowIndex + 1, FIELDS[0]);
+          } else {
+            // Last cell of the last row: automatically append a new row and focus it
+            setCustomerFormulation(prev => [...prev, { rm: '', batchNo: '', qty: '' }]);
+            setTimeout(() => {
+              focusCell(rowIndex + 1, FIELDS[0]);
+            }, 30);
+          }
+        }
+      }
+    } else if (e.key === 'ArrowDown') {
+      if (rowIndex < customerFormulation.length - 1) {
+        e.preventDefault();
+        focusCell(rowIndex + 1, field);
+      }
+    } else if (e.key === 'ArrowUp') {
+      if (rowIndex > 0) {
+        e.preventDefault();
+        focusCell(rowIndex - 1, field);
+      }
+    }
   };
 
   const cellInputStyle: React.CSSProperties = {
@@ -141,32 +226,41 @@ export const CustomerFormulationTable: React.FC<CustomerFormulationTableProps> =
                   {idx + 1}
                 </td>
 
-                {/* Raw Material Input - clean with no hint/placeholder */}
+                {/* Raw Material Input */}
                 <td style={cellStyle}>
                   <input 
+                    id={`cust-form-${idx}-rm`}
                     type="text" 
                     value={row.rm} 
                     onChange={e => handleCellChange(idx, 'rm', e.target.value)} 
+                    onKeyDown={e => handleKeyDown(e, idx, 'rm')}
+                    onFocus={e => e.target.select()}
                     style={cellInputStyle} 
                   />
                 </td>
 
-                {/* Batch No Input - clean with no hint/placeholder */}
+                {/* Batch No Input */}
                 <td style={cellStyle}>
                   <input 
+                    id={`cust-form-${idx}-batchNo`}
                     type="text" 
                     value={row.batchNo} 
                     onChange={e => handleCellChange(idx, 'batchNo', e.target.value)} 
+                    onKeyDown={e => handleKeyDown(e, idx, 'batchNo')}
+                    onFocus={e => e.target.select()}
                     style={cellInputStyle} 
                   />
                 </td>
 
-                {/* Qty Input - clean with no hint/placeholder */}
+                {/* Qty Input */}
                 <td style={cellStyle}>
                   <input 
+                    id={`cust-form-${idx}-qty`}
                     type="text" 
                     value={row.qty} 
                     onChange={e => handleCellChange(idx, 'qty', e.target.value)} 
+                    onKeyDown={e => handleKeyDown(e, idx, 'qty')}
+                    onFocus={e => e.target.select()}
                     style={cellInputStyle} 
                   />
                 </td>
@@ -176,6 +270,7 @@ export const CustomerFormulationTable: React.FC<CustomerFormulationTableProps> =
                   <button 
                     type="button"
                     onClick={() => handleRemoveRow(idx)} 
+                    tabIndex={-1}
                     style={{ 
                       background: 'transparent', 
                       border: 'none', 

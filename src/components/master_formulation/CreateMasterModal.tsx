@@ -173,10 +173,8 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
   const totalQty = inventory.reduce((sum, item) => sum + (parseFloat(item.qty) || 0), 0);
   const targetGramsNum = parseFloat(grams) || 100;
   const totalRounded = inventory.reduce((sum, item) => {
-    const rowQty = parseFloat(item.qty) || 0;
-    const finalQty = totalQty > 0 ? (rowQty / totalQty) * targetGramsNum : 0;
-    const defaultR = Math.round(finalQty);
-    return sum + (parseFloat(item.rounded_qty) || defaultR);
+    const val = parseFloat(item.rounded_qty);
+    return isNaN(val) ? sum : sum + val;
   }, 0);
 
   // Form Submit
@@ -215,16 +213,13 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
       inventory: inventory
         .filter(item => item.material.trim() !== '' || item.qty.trim() !== '')
         .map((item, idx) => {
-          const rowQty = parseFloat(item.qty) || 0;
-          const finalQty = totalQty > 0 ? ((rowQty / totalQty) * targetGramsNum).toFixed(2) : '0.00';
-          const defaultRounded = Math.round(parseFloat(finalQty));
           return {
             sr: String(idx + 1),
             remarks: item.remarks || '',
             material: item.material || '',
             raw_material: item.material || '',
             qty: item.qty || '',
-            rounded_qty: item.rounded_qty || String(defaultRounded)
+            rounded_qty: item.rounded_qty || ''
           };
         }),
       tests: tests
@@ -675,8 +670,7 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
                     const rowQty = parseFloat(row.qty) || 0;
                     const pct = totalQty > 0 ? ((rowQty / totalQty) * 100).toFixed(2) : '0.00';
                     const finalQty = totalQty > 0 ? ((rowQty / totalQty) * targetGramsNum).toFixed(2) : '0.00';
-                    const defaultRounded = Math.round(parseFloat(finalQty));
-                    const currentRounded = row.rounded_qty || (rowQty > 0 ? String(defaultRounded) : '');
+                    const currentRounded = row.rounded_qty || '';
 
                     return (
                       <tr key={idx}>

@@ -1368,15 +1368,18 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                 </div>
                 {(() => {
                   const totalQty = localInventory.reduce((sum, item) => sum + (parseFloat(item.qty) || 0), 0);
+                  const isLabMf = viewMode === 'lab_master_formulation';
                   const totalRounded = localInventory.reduce((sum, item) => {
-                    const itemQty = parseFloat(item.qty) || 0;
-                    const itemFinalQty = totalQty > 0 ? (itemQty / totalQty) * parseFloat(grams || '100') : 0;
-                    const defaultR = Math.round(itemFinalQty);
                     const valStr = item.rounded_qty !== undefined && item.rounded_qty !== null ? item.rounded_qty : '';
-                    const valNum = valStr === '' ? defaultR : (parseFloat(valStr) || 0);
-                    return sum + valNum;
+                    if (valStr === '') {
+                      if (isLabMf) return sum;
+                      const itemQty = parseFloat(item.qty) || 0;
+                      const itemFinalQty = totalQty > 0 ? (itemQty / totalQty) * parseFloat(grams || '100') : 0;
+                      return sum + Math.round(itemFinalQty);
+                    }
+                    return sum + (parseFloat(valStr) || 0);
                   }, 0);
- 
+
                   return (
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                       <div className="table-scroll-container" style={{ maxHeight: '450px', overflowY: 'auto' }}>
@@ -1397,8 +1400,8 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                               const qty = parseFloat(item.qty) || 0;
                               const percent = totalQty > 0 ? ((qty / totalQty) * 100).toFixed(2) : '0.00';
                               const finalQty = totalQty > 0 ? ((qty / totalQty) * parseFloat(grams || '100')).toFixed(2) : '0.00';
-                              const defaultRounded = Math.round(parseFloat(finalQty));
-                              const roundedQty = item.rounded_qty !== undefined && item.rounded_qty !== null ? item.rounded_qty : String(defaultRounded);
+                              const defaultRounded = isLabMf ? '' : String(Math.round(parseFloat(finalQty)));
+                              const roundedQty = item.rounded_qty !== undefined && item.rounded_qty !== null ? item.rounded_qty : defaultRounded;
 
                               return (
                                 <tr key={idx}>
@@ -1426,6 +1429,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                                       className="table-cell-input" 
                                       style={{ textAlign: 'center', width: '100%', padding: '4px 8px', fontSize: '12px', fontWeight: 'bold', height: '30px', color: '#1d4ed8', border: '1px solid #cbd5e1', borderRadius: '4px', backgroundColor: '#ffffff' }}
                                       value={roundedQty} 
+                                      placeholder="-"
                                       onChange={e => handleInventoryChange(idx, 'rounded_qty', e.target.value)}
                                       onKeyDown={e => handleTableKeyDown(e, idx, 'rounded')}
                                       onFocus={e => e.target.select()}
@@ -1441,7 +1445,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                               <td style={{ textAlign: 'right', padding: '8px 10px', color: '#475569', border: '1px solid #cbd5e1' }}>{totalQty.toFixed(2)}</td>
                               <td style={{ textAlign: 'right', padding: '8px 10px', color: '#475569', border: '1px solid #cbd5e1' }}>100.00%</td>
                               <td style={{ textAlign: 'right', color: '#1d4ed8', padding: '8px 10px', border: '1px solid #cbd5e1' }}>{parseFloat(grams).toFixed(2)}</td>
-                              <td style={{ textAlign: 'center', color: '#1d4ed8', padding: '8px 10px', border: '1px solid #cbd5e1' }}>{totalRounded.toFixed(2)}</td>
+                              <td style={{ textAlign: 'center', color: '#1d4ed8', padding: '8px 10px', border: '1px solid #cbd5e1' }}>{totalRounded > 0 ? totalRounded.toFixed(2) : '-'}</td>
                             </tr>
                           </tfoot>
                         </table>

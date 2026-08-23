@@ -110,11 +110,49 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
     }
   };
 
-  const handleTableKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, idx: number, col: 'remarks' | 'rounded') => {
+  const handleAddInventoryRow = () => {
+    const newRow = {
+      sr: String(localInventory.length + 1),
+      remarks: '',
+      material: '',
+      raw_material: '',
+      qty: '0',
+      rounded_qty: ''
+    };
+    const updated = [...localInventory, newRow];
+    setLocalInventory(updated);
+    triggerAutosave(updated);
+  };
+
+  const handleRemoveInventoryRow = (removeIdx: number) => {
+    if (localInventory.length <= 1) {
+      const reset = [{ sr: '1', remarks: '', material: '', raw_material: '', qty: '0', rounded_qty: '' }];
+      setLocalInventory(reset);
+      triggerAutosave(reset);
+      return;
+    }
+    const updated = localInventory.filter((_, i) => i !== removeIdx).map((item, i) => ({
+      ...item,
+      sr: String(i + 1)
+    }));
+    setLocalInventory(updated);
+    triggerAutosave(updated);
+  };
+
+  const handleTableKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, idx: number, col: 'remarks' | 'mat' | 'qty' | 'rounded') => {
     const len = localInventory.length;
     if (e.key === 'Tab') {
       if (e.shiftKey) {
         if (col === 'rounded') {
+          e.preventDefault();
+          const target = isEditing ? `mf-qty-${idx}` : `mf-remarks-${idx}`;
+          const prev = document.getElementById(target) as HTMLInputElement;
+          if (prev) { prev.focus(); prev.select(); }
+        } else if (col === 'qty') {
+          e.preventDefault();
+          const prev = document.getElementById(`mf-mat-${idx}`) as HTMLInputElement;
+          if (prev) { prev.focus(); prev.select(); }
+        } else if (col === 'mat') {
           e.preventDefault();
           const prev = document.getElementById(`mf-remarks-${idx}`) as HTMLInputElement;
           if (prev) { prev.focus(); prev.select(); }
@@ -126,6 +164,15 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
       } else {
         if (col === 'remarks') {
           e.preventDefault();
+          const target = isEditing ? `mf-mat-${idx}` : `mf-rounded-${idx}`;
+          const next = document.getElementById(target) as HTMLInputElement;
+          if (next) { next.focus(); next.select(); }
+        } else if (col === 'mat') {
+          e.preventDefault();
+          const next = document.getElementById(`mf-qty-${idx}`) as HTMLInputElement;
+          if (next) { next.focus(); next.select(); }
+        } else if (col === 'qty') {
+          e.preventDefault();
           const next = document.getElementById(`mf-rounded-${idx}`) as HTMLInputElement;
           if (next) { next.focus(); next.select(); }
         } else if (col === 'rounded' && idx < len - 1) {
@@ -135,14 +182,14 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
         }
       }
     } else if (e.key === 'ArrowDown' || e.key === 'Enter') {
+      e.preventDefault();
       if (idx < len - 1) {
-        e.preventDefault();
         const next = document.getElementById(`mf-${col}-${idx + 1}`) as HTMLInputElement;
         if (next) { next.focus(); next.select(); }
       }
     } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
       if (idx > 0) {
-        e.preventDefault();
         const prev = document.getElementById(`mf-${col}-${idx - 1}`) as HTMLInputElement;
         if (prev) { prev.focus(); prev.select(); }
       }
@@ -505,6 +552,9 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
   const handleInventoryChange = (idx: number, field: string, val: string) => {
     const updated = [...localInventory];
     updated[idx] = { ...updated[idx], [field]: val };
+    if (field === 'material') {
+      updated[idx].raw_material = val;
+    }
     setLocalInventory(updated);
     triggerAutosave(updated);
   };
@@ -1208,7 +1258,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                     <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                       <span className="premium-field-label">Ref No</span>
                       {isEditing ? (
-                        <input type="text" className="premium-field-input" value={refNo} onChange={e => handleParamChange('refNo', e.target.value)} style={{ height: '28px', fontSize: '12px' }} />
+                        <input type="text" className="premium-field-input" value={refNo} onChange={e => handleParamChange('refNo', e.target.value)} onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }} style={{ height: '28px', fontSize: '12px' }} />
                       ) : (
                         <strong style={{ fontSize: '13px', color: '#1e293b' }}>{refNo || detailData.ref_no || detailData.form?.ref_no || '-'}</strong>
                       )}
@@ -1220,7 +1270,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                     <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                       <span className="premium-field-label">Customer Name</span>
                       {isEditing ? (
-                        <input type="text" className="premium-field-input" value={customerName} onChange={e => handleParamChange('customerName', e.target.value)} style={{ height: '28px', fontSize: '12px' }} />
+                        <input type="text" className="premium-field-input" value={customerName} onChange={e => handleParamChange('customerName', e.target.value)} onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }} style={{ height: '28px', fontSize: '12px' }} />
                       ) : (
                         <strong style={{ fontSize: '13px', color: '#1e293b' }}>{customerName || getRecordValue('customer_name') || '-'}</strong>
                       )}
@@ -1228,7 +1278,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                     <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                       <span className="premium-field-label">Formula Date</span>
                       {isEditing ? (
-                        <input type="date" className="premium-field-input" value={formulaDate} onChange={e => handleParamChange('formulaDate', e.target.value)} style={{ height: '28px', fontSize: '12px' }} />
+                        <input type="date" className="premium-field-input" value={formulaDate} onChange={e => handleParamChange('formulaDate', e.target.value)} onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }} style={{ height: '28px', fontSize: '12px' }} />
                       ) : (
                         <strong style={{ fontSize: '13px', color: '#1e293b' }}>{formulaDate || date || detailData.form?.formula_date || '-'}</strong>
                       )}
@@ -1236,7 +1286,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                     <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                       <span className="premium-field-label">Ref Book No</span>
                       {isEditing ? (
-                        <input type="text" className="premium-field-input" value={refBookNo} onChange={e => handleParamChange('refBookNo', e.target.value)} style={{ height: '28px', fontSize: '12px' }} />
+                        <input type="text" className="premium-field-input" value={refBookNo} onChange={e => handleParamChange('refBookNo', e.target.value)} onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }} style={{ height: '28px', fontSize: '12px' }} />
                       ) : (
                         <strong style={{ fontSize: '13px', color: '#1e293b' }}>{refBookNo || '-'}</strong>
                       )}
@@ -1263,11 +1313,13 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                         className="premium-field-input" 
                         value={grams} 
                         onChange={e => handleParamChange('grams', e.target.value)} 
+                        onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }}
                         style={{ fontWeight: 'bold', fontSize: '15px' }}
                       />
                     </div>
                     
                     <button 
+                      type="button"
                       onClick={() => triggerAutosave(localInventory)} 
                       className="flet-btn flet-btn-blue" 
                       style={{ height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', borderRadius: '6px', fontSize: '12px' }} 
@@ -1288,23 +1340,23 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
                     <div className="premium-field-container">
                       <span className="premium-field-label">Packaging</span>
-                      <input type="text" className="premium-field-input" value={packaging} onChange={e => handleParamChange('packaging', e.target.value)} disabled={!isEditing} />
+                      <input type="text" className="premium-field-input" value={packaging} onChange={e => handleParamChange('packaging', e.target.value)} onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }} disabled={!isEditing} />
                     </div>
                     <div className="premium-field-container">
                       <span className="premium-field-label">Viscosity</span>
-                      <input type="text" className="premium-field-input" value={viscosity} onChange={e => handleParamChange('viscosity', e.target.value)} disabled={!isEditing} />
+                      <input type="text" className="premium-field-input" value={viscosity} onChange={e => handleParamChange('viscosity', e.target.value)} onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }} disabled={!isEditing} />
                     </div>
                     <div className="premium-field-container">
                       <span className="premium-field-label">Density</span>
-                      <input type="text" className="premium-field-input" value={density} onChange={e => handleParamChange('density', e.target.value)} disabled={!isEditing} />
+                      <input type="text" className="premium-field-input" value={density} onChange={e => handleParamChange('density', e.target.value)} onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }} disabled={!isEditing} />
                     </div>
                     <div className="premium-field-container">
                       <span className="premium-field-label">Ratio</span>
-                      <input type="text" className="premium-field-input" value={ratio} onChange={e => handleParamChange('ratio', e.target.value)} disabled={!isEditing} />
+                      <input type="text" className="premium-field-input" value={ratio} onChange={e => handleParamChange('ratio', e.target.value)} onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }} disabled={!isEditing} />
                     </div>
                     <div className="premium-field-container">
                       <span className="premium-field-label">Filtration</span>
-                      <input type="text" className="premium-field-input" value={filtration} onChange={e => handleParamChange('filtration', e.target.value)} disabled={!isEditing} />
+                      <input type="text" className="premium-field-input" value={filtration} onChange={e => handleParamChange('filtration', e.target.value)} onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }} disabled={!isEditing} />
                     </div>
                   </div>
 
@@ -1321,19 +1373,19 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                     </div>
                     <div className="premium-field-container">
                       <span className="premium-field-label">Sender</span>
-                      <input type="text" className="premium-field-input" value={sender} onChange={e => handleParamChange('sender', e.target.value)} disabled={!isEditing} />
+                      <input type="text" className="premium-field-input" value={sender} onChange={e => handleParamChange('sender', e.target.value)} onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }} disabled={!isEditing} />
                     </div>
                     <div className="premium-field-container">
                       <span className="premium-field-label">Approval</span>
-                      <input type="text" className="premium-field-input" value={approval} onChange={e => handleParamChange('approval', e.target.value)} disabled={!isEditing} />
+                      <input type="text" className="premium-field-input" value={approval} onChange={e => handleParamChange('approval', e.target.value)} onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }} disabled={!isEditing} />
                     </div>
                     <div className="premium-field-container">
                       <span className="premium-field-label">Date</span>
-                      <input type="text" className="premium-field-input" value={date} onChange={e => handleParamChange('date', e.target.value)} disabled={!isEditing} />
+                      <input type="text" className="premium-field-input" value={date} onChange={e => handleParamChange('date', e.target.value)} onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }} disabled={!isEditing} />
                     </div>
                     <div className="premium-field-container">
                       <span className="premium-field-label">Time</span>
-                      <input type="text" className="premium-field-input" value={time} onChange={e => handleParamChange('time', e.target.value)} disabled={!isEditing} />
+                      <input type="text" className="premium-field-input" value={time} onChange={e => handleParamChange('time', e.target.value)} onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }} disabled={!isEditing} />
                     </div>
                   </div>
                 </div>
@@ -1346,25 +1398,37 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                     <Scale size={16} color="#3b82f6" />
                     <span style={{ fontWeight: 700, fontSize: '14px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Inventory Composition</span>
                   </div>
-                  {autosaveStatus && (
-                    <span style={{ display: 'inline-flex', alignItems: 'center' }}>
-                      {autosaveStatus.includes('Saving') && (
-                        <span className="badge-status badge-status-saving">
-                          <RefreshCw size={10} className="spin-loader" style={{ marginRight: '6px' }} /> Saving recipe changes...
-                        </span>
-                      )}
-                      {autosaveStatus.includes('✓') && (
-                        <span className="badge-status badge-status-success">
-                          ✓ Recipe changes saved automatically
-                        </span>
-                      )}
-                      {autosaveStatus.includes('✗') && (
-                        <span className="badge-status badge-status-error">
-                          ✗ Failed to autosave changes
-                        </span>
-                      )}
-                    </span>
-                  )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    {isEditing && (
+                      <button
+                        type="button"
+                        onClick={handleAddInventoryRow}
+                        className="flet-btn flet-btn-blue"
+                        style={{ padding: '0 12px', height: '28px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', borderRadius: '6px', cursor: 'pointer' }}
+                      >
+                        <Plus size={13} /> Add Row
+                      </button>
+                    )}
+                    {autosaveStatus && (
+                      <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                        {autosaveStatus.includes('Saving') && (
+                          <span className="badge-status badge-status-saving">
+                            <RefreshCw size={10} className="spin-loader" style={{ marginRight: '6px' }} /> Saving recipe changes...
+                          </span>
+                        )}
+                        {autosaveStatus.includes('✓') && (
+                          <span className="badge-status badge-status-success">
+                            ✓ Recipe changes saved automatically
+                          </span>
+                        )}
+                        {autosaveStatus.includes('✗') && (
+                          <span className="badge-status badge-status-error">
+                            ✗ Failed to autosave changes
+                          </span>
+                        )}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 {(() => {
                   const totalQty = localInventory.reduce((sum, item) => sum + (parseFloat(item.qty) || 0), 0);
@@ -1387,6 +1451,9 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                               <th style={{ width: '100px', textAlign: 'right', padding: '8px 10px', border: '1px solid #cbd5e1', backgroundColor: '#f1f5f9', color: '#334155' }}>% Form</th>
                               <th style={{ width: '110px', textAlign: 'right', padding: '8px 10px', border: '1px solid #cbd5e1', backgroundColor: '#f1f5f9', color: '#334155' }}>Final Qty</th>
                               <th style={{ width: '110px', textAlign: 'center', padding: '8px 10px', border: '1px solid #cbd5e1', backgroundColor: '#f1f5f9', color: '#334155' }}>Rounded Qty</th>
+                              {isEditing && (
+                                <th style={{ width: '45px', textAlign: 'center', padding: '8px 4px', border: '1px solid #cbd5e1', backgroundColor: '#f1f5f9', color: '#334155' }}>Act</th>
+                              )}
                             </tr>
                           </thead>
                           <tbody>
@@ -1411,8 +1478,39 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                                       onFocus={e => e.target.select()}
                                     />
                                   </td>
-                                  <td style={{ fontWeight: 600, color: '#1e293b', padding: '6px 10px', border: '1px solid #cbd5e1' }}>{item.material || item.raw_material || '-'}</td>
-                                  <td style={{ textAlign: 'right', color: '#475569', padding: '6px 10px', border: '1px solid #cbd5e1' }}>{qty.toFixed(2)}</td>
+                                  <td style={{ fontWeight: 600, color: '#1e293b', padding: isEditing ? '4px' : '6px 10px', border: '1px solid #cbd5e1' }}>
+                                    {isEditing ? (
+                                      <input 
+                                        id={`mf-mat-${idx}`}
+                                        type="text" 
+                                        className="table-cell-input" 
+                                        style={{ width: '100%', padding: '4px 8px', fontSize: '12px', height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', backgroundColor: '#ffffff', fontWeight: 600 }}
+                                        value={item.material || item.raw_material || ''} 
+                                        onChange={e => handleInventoryChange(idx, 'material', e.target.value)}
+                                        onKeyDown={e => handleTableKeyDown(e, idx, 'mat')}
+                                        onFocus={e => e.target.select()}
+                                      />
+                                    ) : (
+                                      item.material || item.raw_material || '-'
+                                    )}
+                                  </td>
+                                  <td style={{ textAlign: 'right', color: '#475569', padding: isEditing ? '4px' : '6px 10px', border: '1px solid #cbd5e1' }}>
+                                    {isEditing ? (
+                                      <input 
+                                        id={`mf-qty-${idx}`}
+                                        type="number" 
+                                        step="any"
+                                        className="table-cell-input" 
+                                        style={{ textAlign: 'right', width: '100%', padding: '4px 8px', fontSize: '12px', height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', backgroundColor: '#ffffff' }}
+                                        value={item.qty !== undefined && item.qty !== null ? item.qty : ''} 
+                                        onChange={e => handleInventoryChange(idx, 'qty', e.target.value)}
+                                        onKeyDown={e => handleTableKeyDown(e, idx, 'qty')}
+                                        onFocus={e => e.target.select()}
+                                      />
+                                    ) : (
+                                      qty.toFixed(2)
+                                    )}
+                                  </td>
                                   <td style={{ textAlign: 'right', color: '#475569', backgroundColor: '#f8fafc', padding: '6px 10px', border: '1px solid #cbd5e1' }}>{percent}%</td>
                                   <td style={{ textAlign: 'right', fontWeight: 700, color: '#1d4ed8', backgroundColor: '#f8fafc', padding: '6px 10px', border: '1px solid #cbd5e1' }}>{finalQty}</td>
                                   <td style={{ padding: '4px', border: '1px solid #cbd5e1' }}>
@@ -1427,6 +1525,18 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                                       onFocus={e => e.target.select()}
                                     />
                                   </td>
+                                  {isEditing && (
+                                    <td style={{ textAlign: 'center', padding: '4px', border: '1px solid #cbd5e1' }}>
+                                      <button 
+                                        type="button" 
+                                        onClick={() => handleRemoveInventoryRow(idx)}
+                                        style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '4px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                                        title="Delete Row"
+                                      >
+                                        <Trash2 size={14} />
+                                      </button>
+                                    </td>
+                                  )}
                                 </tr>
                               );
                             })}
@@ -1438,6 +1548,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                               <td style={{ textAlign: 'right', padding: '8px 10px', color: '#475569', border: '1px solid #cbd5e1' }}>100.00%</td>
                               <td style={{ textAlign: 'right', color: '#1d4ed8', padding: '8px 10px', border: '1px solid #cbd5e1' }}>{parseFloat(grams).toFixed(2)}</td>
                               <td style={{ textAlign: 'center', color: '#1d4ed8', padding: '8px 10px', border: '1px solid #cbd5e1' }}>{totalRounded.toFixed(2)}</td>
+                              {isEditing && <td style={{ border: '1px solid #cbd5e1' }}></td>}
                             </tr>
                           </tfoot>
                         </table>
@@ -1454,6 +1565,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', padding: '16px 24px', borderTop: '1px solid #e2e8f0', backgroundColor: '#ffffff', borderBottomLeftRadius: '16px', borderBottomRightRadius: '16px', flexShrink: 0, boxShadow: '0 -4px 6px -1px rgba(0,0,0,0.05)' }}>
               
               <button 
+                type="button"
                 onClick={() => exportMasterToExcel(selectedBatch)}
                 className="flet-btn flet-btn-green"
                 style={{ padding: '0 20px', height: '38px', display: 'flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none', borderRadius: '8px', color: '#ffffff', fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 10px rgba(16, 185, 129, 0.2)', transition: 'all 0.2s' }}
@@ -1463,6 +1575,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
  
               {isAdmin && !Boolean(detailData.is_approved || detailData.approval_status === 'approved') && (
                 <button 
+                  type="button"
                   onClick={() => handleApproveFormulation()}
                   disabled={approving}
                   className="flet-btn flet-btn-green"
@@ -1475,15 +1588,15 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
               {(viewMode === 'master_formulation' || viewMode === 'lab_master_formulation') && (
                 isEditing ? (
                   <>
-                    <button onClick={() => setIsEditing(false)} className="flet-btn flet-btn-orange" style={{ padding: '0 20px', height: '38px', borderRadius: '8px', fontWeight: 600 }} disabled={loading}>
+                    <button type="button" onClick={() => setIsEditing(false)} className="flet-btn flet-btn-orange" style={{ padding: '0 20px', height: '38px', borderRadius: '8px', fontWeight: 600 }} disabled={loading}>
                       Cancel
                     </button>
-                    <button onClick={handleUpdateFormulation} className="flet-btn flet-btn-blue" style={{ padding: '0 20px', height: '38px', display: 'flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg, #3b82f6, #2563eb)', border: 'none', borderRadius: '8px', color: '#ffffff', fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 10px rgba(59, 130, 246, 0.2)', transition: 'all 0.2s' }} disabled={loading}>
+                    <button type="button" onClick={handleUpdateFormulation} className="flet-btn flet-btn-blue" style={{ padding: '0 20px', height: '38px', display: 'flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg, #3b82f6, #2563eb)', border: 'none', borderRadius: '8px', color: '#ffffff', fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 10px rgba(59, 130, 246, 0.2)', transition: 'all 0.2s' }} disabled={loading}>
                       <CheckCircle size={14} /> Save Changes
                     </button>
                   </>
                 ) : (
-                  <button onClick={() => setIsEditing(true)} className="flet-btn flet-btn-blue" style={{ padding: '0 20px', height: '38px', display: 'flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg, #3b82f6, #2563eb)', border: 'none', borderRadius: '8px', color: '#ffffff', fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 10px rgba(59, 130, 246, 0.2)', transition: 'all 0.2s' }}>
+                  <button type="button" onClick={() => setIsEditing(true)} className="flet-btn flet-btn-blue" style={{ padding: '0 20px', height: '38px', display: 'flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg, #3b82f6, #2563eb)', border: 'none', borderRadius: '8px', color: '#ffffff', fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 10px rgba(59, 130, 246, 0.2)', transition: 'all 0.2s' }}>
                     <Edit3 size={14} /> Edit Parameters
                   </button>
                 )
@@ -1493,6 +1606,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                 <>
                   {viewMode === 'lab_master_formulation' && (
                     <button
+                      type="button"
                       onClick={() => handleDeleteFormulation(selectedBatch)}
                       disabled={isDeleting}
                       className="flet-btn flet-btn-red"
@@ -1501,7 +1615,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                       <Trash2 size={14} /> Delete Lab Formulation
                     </button>
                   )}
-                  <button onClick={() => setSelectedBatch(null)} className="flet-btn flet-btn-orange" style={{ padding: '0 20px', height: '38px', borderRadius: '8px', fontWeight: 600 }}>
+                  <button type="button" onClick={() => setSelectedBatch(null)} className="flet-btn flet-btn-orange" style={{ padding: '0 20px', height: '38px', borderRadius: '8px', fontWeight: 600 }}>
                     Close
                   </button>
                 </>

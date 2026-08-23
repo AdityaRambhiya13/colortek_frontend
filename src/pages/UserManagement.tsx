@@ -137,13 +137,18 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
       
       // Initialize checkboxes
       const createProdMap: Record<string, boolean> = {};
-      const updateProdMap: Record<string, boolean> = {};
       products.forEach((p: string) => {
         createProdMap[p] = false;
-        updateProdMap[p] = false;
       });
       setCreateProducts(createProdMap);
-      setUpdateProducts(updateProdMap);
+
+      setUpdateProducts(prev => {
+        const next: Record<string, boolean> = {};
+        products.forEach((p: string) => {
+          next[p] = prev[p] || false;
+        });
+        return next;
+      });
     }
 
     // Fetch users list
@@ -284,16 +289,24 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
     setUpdatePassword('');
     setUpdateBatchModifyPassword('');
 
-    // Pre-fill checkboxes
+    // Pre-fill checkboxes with robust case and whitespace/underscore normalization
+    const userProdsNormalized = new Set(
+      user.products.map(p => p.trim().toLowerCase().replace(/[\s_-]+/g, '_'))
+    );
+    const userProdsRaw = new Set(user.products.map(p => p.trim().toLowerCase()));
+
     const prodMap: Record<string, boolean> = {};
     productsList.forEach(p => {
-      prodMap[p] = user.products.includes(p);
+      const pClean = p.trim().toLowerCase();
+      const pNorm = pClean.replace(/[\s_-]+/g, '_');
+      prodMap[p] = userProdsNormalized.has(pNorm) || userProdsRaw.has(pClean) || user.products.includes(p);
     });
     setUpdateProducts(prodMap);
 
+    const userRolesNormalized = new Set(user.roles.map(r => r.trim().toLowerCase()));
     const roleMap: Record<string, boolean> = {};
     MODULES.forEach(r => {
-      roleMap[r] = user.roles.includes(r);
+      roleMap[r] = userRolesNormalized.has(r.toLowerCase()) || user.roles.includes(r);
     });
     setUpdateRoles(roleMap);
   };
@@ -602,8 +615,36 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
             </div>
 
             <div className="form-input-container">
-              <span className="form-label" style={{ fontWeight: 600 }}>Assign Product Scope(s)</span>
-              <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px', maxHeight: '120px', overflowY: 'auto', backgroundColor: 'var(--input-bg)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                <span className="form-label" style={{ fontWeight: 600, margin: 0 }}>
+                  Assign Product Scope(s) ({Object.values(createProducts).filter(Boolean).length} / {productsList.length})
+                </span>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      const all: Record<string, boolean> = {};
+                      productsList.forEach(p => all[p] = true);
+                      setCreateProducts(all);
+                    }}
+                    style={{ background: 'none', border: 'none', color: '#6366f1', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}
+                  >
+                    Select All
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      const all: Record<string, boolean> = {};
+                      productsList.forEach(p => all[p] = false);
+                      setCreateProducts(all);
+                    }}
+                    style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+              <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px', maxHeight: '140px', overflowY: 'auto', backgroundColor: 'var(--input-bg)' }}>
                 {productsList.length === 0 ? (
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-light)', fontStyle: 'italic' }}>No active product databases created.</span>
                 ) : (
@@ -622,7 +663,35 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
             </div>
 
             <div className="form-input-container">
-              <span className="form-label" style={{ fontWeight: 600 }}>Define Module Role Access</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                <span className="form-label" style={{ fontWeight: 600, margin: 0 }}>
+                  Define Module Role Access ({Object.values(createRoles).filter(Boolean).length} / {MODULES.length})
+                </span>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      const all: Record<string, boolean> = {};
+                      MODULES.forEach(r => all[r] = true);
+                      setCreateRoles(all);
+                    }}
+                    style={{ background: 'none', border: 'none', color: '#6366f1', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}
+                  >
+                    Select All
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      const all: Record<string, boolean> = {};
+                      MODULES.forEach(r => all[r] = false);
+                      setCreateRoles(all);
+                    }}
+                    style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px 16px', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px', backgroundColor: 'var(--input-bg)' }}>
                 {MODULES.map(role => (
                   <label key={role} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 500 }}>
@@ -714,8 +783,38 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
             </div>
 
             <div className="form-input-container">
-              <span className="form-label" style={{ fontWeight: 600 }}>Update Product Scope(s)</span>
-              <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px', maxHeight: '120px', overflowY: 'auto', backgroundColor: 'var(--input-bg)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                <span className="form-label" style={{ fontWeight: 600, margin: 0 }}>
+                  Update Product Scope(s) ({Object.values(updateProducts).filter(Boolean).length} / {productsList.length})
+                </span>
+                {selectedUser && (
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        const all: Record<string, boolean> = {};
+                        productsList.forEach(p => all[p] = true);
+                        setUpdateProducts(all);
+                      }}
+                      style={{ background: 'none', border: 'none', color: '#7c3aed', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}
+                    >
+                      Select All
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        const all: Record<string, boolean> = {};
+                        productsList.forEach(p => all[p] = false);
+                        setUpdateProducts(all);
+                      }}
+                      style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}
+                    >
+                      Clear
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px', maxHeight: '140px', overflowY: 'auto', backgroundColor: 'var(--input-bg)' }}>
                 {productsList.map(p => (
                   <label key={p} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 0', fontSize: '0.85rem', cursor: selectedUser ? 'pointer' : 'not-allowed', opacity: selectedUser ? 1 : 0.6 }}>
                     <input 
@@ -731,7 +830,37 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
             </div>
 
             <div className="form-input-container">
-              <span className="form-label" style={{ fontWeight: 600 }}>Update Module Role Access</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                <span className="form-label" style={{ fontWeight: 600, margin: 0 }}>
+                  Update Module Role Access ({Object.values(updateRoles).filter(Boolean).length} / {MODULES.length})
+                </span>
+                {selectedUser && (
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        const all: Record<string, boolean> = {};
+                        MODULES.forEach(r => all[r] = true);
+                        setUpdateRoles(all);
+                      }}
+                      style={{ background: 'none', border: 'none', color: '#7c3aed', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}
+                    >
+                      Select All
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        const all: Record<string, boolean> = {};
+                        MODULES.forEach(r => all[r] = false);
+                        setUpdateRoles(all);
+                      }}
+                      style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}
+                    >
+                      Clear
+                    </button>
+                  </div>
+                )}
+              </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px 16px', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px', backgroundColor: 'var(--input-bg)' }}>
                 {MODULES.map(role => (
                   <label key={role} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', cursor: selectedUser ? 'pointer' : 'not-allowed', fontWeight: 500, opacity: selectedUser ? 1 : 0.6 }}>

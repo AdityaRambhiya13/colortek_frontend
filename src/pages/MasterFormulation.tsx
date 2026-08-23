@@ -966,7 +966,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
             {/* Dialog Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(135deg, #1e293b, #0f172a)', padding: '16px 24px', borderTopLeftRadius: '16px', borderTopRightRadius: '16px', flexShrink: 0, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
               <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ffffff', margin: 0, letterSpacing: '0.02em', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Scale size={20} color="#3b82f6" /> Master Formulation Specification: {selectedBatch}
+                <Scale size={20} color="#3b82f6" /> {viewMode === 'lab_master_formulation' ? 'Lab Master Formulation Specification' : viewMode === 'mf_production' ? 'Production Formulation Specification' : 'Master Formulation Specification'}: {selectedBatch}
               </h3>
               <button 
                 onClick={() => setSelectedBatch(null)} 
@@ -1036,7 +1036,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <ImageIcon size={16} color="#8b5cf6" />
                     <span style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      Physical Master Formulation Sheet Photos / Scans ({attachedImages.length})
+                      {viewMode === 'lab_master_formulation' ? 'Physical Lab Master Formulation Sheet Photos / Scans' : 'Physical Master Formulation Sheet Photos / Scans'} ({attachedImages.length})
                     </span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1105,7 +1105,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                   >
                     <UploadCloud size={32} color="#8b5cf6" />
                     <span style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>
-                      No physical sheet attached. Click here to upload a photo/scan of the master formulation sheet
+                      No physical sheet attached. Click here to upload a photo/scan of the {viewMode === 'lab_master_formulation' ? 'lab master formulation sheet' : 'master formulation sheet'}
                     </span>
                     <span style={{ fontSize: '11px', color: '#64748b' }}>Supports JPG, PNG, WEBP, GIF, BMP</span>
                   </div>
@@ -1573,7 +1573,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                 <Download size={14} /> Download Excel
               </button>
  
-              {isAdmin && !Boolean(detailData.is_approved || detailData.approval_status === 'approved') && (
+              {isAdmin && viewMode === 'master_formulation' && !Boolean(detailData.is_approved || detailData.approval_status === 'approved') && (
                 <button 
                   type="button"
                   onClick={() => handleApproveFormulation()}

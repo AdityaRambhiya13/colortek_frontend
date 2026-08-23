@@ -413,6 +413,37 @@ export const BulkMasterUploadModal: React.FC<BulkMasterUploadModalProps> = ({
               </div>
             )}
 
+            {queue.length > 0 && !isFinished && (
+              <button
+                onClick={(e) => handleSaveBatch(true, e)}
+                disabled={currentItem?.status === 'saving'}
+                style={{
+                  padding: '7px 16px',
+                  borderRadius: '8px',
+                  background: 'linear-gradient(135deg, #10b981, #059669)',
+                  color: '#ffffff',
+                  border: 'none',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)'
+                }}
+              >
+                {currentItem?.status === 'saving' ? (
+                  <>
+                    <RefreshCw size={14} className="spin-loader" /> Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save size={14} /> Save Batch & Next ➔
+                  </>
+                )}
+              </button>
+            )}
+
             <button
               onClick={() => fileInputRef.current?.click()}
               style={{
@@ -1124,27 +1155,30 @@ export const BulkMasterUploadModal: React.FC<BulkMasterUploadModalProps> = ({
 
               </form>
 
-              {/* Navigation Controls Bar */}
+              {/* Navigation Controls Bar with Sticky Save Buttons */}
               <div style={{
-                padding: '12px 24px',
-                borderTop: '1px solid #e2e8f0',
-                backgroundColor: '#f8fafc',
+                padding: '10px 20px',
+                borderTop: '1px solid #cbd5e1',
+                backgroundColor: '#ffffff',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'space-between'
+                justifyContent: 'space-between',
+                gap: '12px',
+                boxShadow: '0 -4px 12px rgba(0,0,0,0.05)',
+                zIndex: 10
               }}>
                 <button
                   type="button"
                   disabled={currentIndex === 0}
                   onClick={handlePrevious}
                   style={{
-                    padding: '6px 12px',
-                    borderRadius: '6px',
+                    padding: '7px 14px',
+                    borderRadius: '8px',
                     border: '1px solid #cbd5e1',
-                    backgroundColor: '#ffffff',
+                    backgroundColor: '#f8fafc',
                     color: currentIndex === 0 ? '#94a3b8' : '#334155',
                     cursor: currentIndex === 0 ? 'not-allowed' : 'pointer',
-                    fontSize: '0.8rem',
+                    fontSize: '0.82rem',
                     fontWeight: 600,
                     display: 'flex',
                     alignItems: 'center',
@@ -1154,30 +1188,85 @@ export const BulkMasterUploadModal: React.FC<BulkMasterUploadModalProps> = ({
                   <ChevronLeft size={16} /> Prev
                 </button>
 
-                <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>
-                  Image {currentIndex + 1} / {queue.length}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={(e) => handleSaveBatch(false, e)}
+                    disabled={currentItem?.status === 'saving'}
+                    style={{
+                      padding: '7px 14px',
+                      borderRadius: '8px',
+                      backgroundColor: '#f0fdf4',
+                      color: '#15803d',
+                      border: '1px solid #86efac',
+                      fontSize: '0.82rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <CheckCircle size={15} /> Save (Stay)
+                  </button>
 
-                <button
-                  type="button"
-                  disabled={currentIndex === queue.length - 1}
-                  onClick={advanceNext}
-                  style={{
-                    padding: '6px 12px',
-                    borderRadius: '6px',
-                    border: '1px solid #cbd5e1',
-                    backgroundColor: '#ffffff',
-                    color: currentIndex === queue.length - 1 ? '#94a3b8' : '#334155',
-                    cursor: currentIndex === queue.length - 1 ? 'not-allowed' : 'pointer',
-                    fontSize: '0.8rem',
-                    fontWeight: 600,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px'
-                  }}
-                >
-                  Next <ChevronRight size={16} />
-                </button>
+                  <button
+                    type="button"
+                    onClick={(e) => handleSaveBatch(true, e)}
+                    disabled={currentItem?.status === 'saving'}
+                    style={{
+                      padding: '8px 20px',
+                      borderRadius: '8px',
+                      background: 'linear-gradient(135deg, #10b981, #059669)',
+                      color: '#ffffff',
+                      border: 'none',
+                      fontSize: '0.88rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      boxShadow: '0 3px 10px rgba(16, 185, 129, 0.3)'
+                    }}
+                  >
+                    {currentItem?.status === 'saving' ? (
+                      <>
+                        <RefreshCw size={15} className="spin-loader" /> Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save size={15} /> Save Batch & Next ➔
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '0.82rem', color: '#64748b', fontWeight: 600 }}>
+                    {currentIndex + 1} / {queue.length}
+                  </span>
+
+                  <button
+                    type="button"
+                    disabled={currentIndex === queue.length - 1}
+                    onClick={advanceNext}
+                    style={{
+                      padding: '7px 14px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      backgroundColor: '#f8fafc',
+                      color: currentIndex === queue.length - 1 ? '#94a3b8' : '#334155',
+                      cursor: currentIndex === queue.length - 1 ? 'not-allowed' : 'pointer',
+                      fontSize: '0.82rem',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    Next <ChevronRight size={16} />
+                  </button>
+                </div>
               </div>
 
             </div>

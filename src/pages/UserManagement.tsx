@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { 
   UserPlus, UserMinus, Shield, Eye, EyeOff, Building, 
-  RefreshCw, CheckCircle, Trash2, AlertTriangle, Settings, Users
+  RefreshCw, CheckCircle, Trash2, AlertTriangle, Settings, Users,
+  Key, Lock, History, Search, ArrowUpDown, Clock, CheckCircle2, ShieldCheck, AlertCircle, FileText, X
 } from 'lucide-react';
 import { AdminAPI, DatabaseAPI } from '../services/api';
-import type { UserResponse, AuditLogResponse, LockoutResponse } from '../services/api';
+import type { UserResponse, AuditLogResponse, LockoutResponse, UserModifyPasswordStatus, ModifiedBatchLogResponse } from '../services/api';
 import { TableSkeleton } from '../components/TableSkeleton';
 
 interface UserManagementProps {
@@ -31,12 +32,31 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
   const [loadingAudit, setLoadingAudit] = useState(false);
   const [loadingLockouts, setLoadingLockouts] = useState(false);
   const [auditSearch, setAuditSearch] = useState('');
-  const [subView, setSubView] = useState<'registry' | 'lockouts' | 'audit'>('registry');
+  const [subView, setSubView] = useState<'registry' | 'batch_passwords' | 'modified_batches' | 'lockouts' | 'audit'>('registry');
+
+  // Batch Modification Passwords State
+  const [batchModifyStatuses, setBatchModifyStatuses] = useState<UserModifyPasswordStatus[]>([]);
+  const [loadingBatchModifyStatuses, setLoadingBatchModifyStatuses] = useState(false);
+  const [selectedUserForModifyPwd, setSelectedUserForModifyPwd] = useState('');
+  const [setModifyPwdInput, setSetModifyPwdInput] = useState('');
+  const [showSetModifyPwd, setShowSetModifyPwd] = useState(false);
+  const [modifyPwdModalOpen, setModifyPwdModalOpen] = useState(false);
+  const [savingModifyPwd, setSavingModifyPwd] = useState(false);
+
+  // Modified Batches Tracking State
+  const [modifiedBatchesList, setModifiedBatchesList] = useState<ModifiedBatchLogResponse[]>([]);
+  const [loadingModifiedBatches, setLoadingModifiedBatches] = useState(false);
+  const [modBatchesSearch, setModBatchesSearch] = useState('');
+  const [modBatchesTypeFilter, setModBatchesTypeFilter] = useState<'all' | 'lab_formulation' | 'rm_testing'>('all');
+  const [selectedModBatchDetail, setSelectedModBatchDetail] = useState<ModifiedBatchLogResponse | null>(null);
+  const [modBatchDetailModalOpen, setModBatchDetailModalOpen] = useState(false);
 
   // Create User State
   const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [newBatchModifyPassword, setNewBatchModifyPassword] = useState('');
+  const [showNewBatchModifyPassword, setShowNewBatchModifyPassword] = useState(false);
   const [createProducts, setCreateProducts] = useState<Record<string, boolean>>({});
   const [createRoles, setCreateRoles] = useState<Record<string, boolean>>({});
 
@@ -44,6 +64,8 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
   const [selectedUser, setSelectedUser] = useState('');
   const [updatePassword, setUpdatePassword] = useState('');
   const [showUpdatePassword, setShowUpdatePassword] = useState(false);
+  const [updateBatchModifyPassword, setUpdateBatchModifyPassword] = useState('');
+  const [showUpdateBatchModifyPassword, setShowUpdateBatchModifyPassword] = useState(false);
   const [updateProducts, setUpdateProducts] = useState<Record<string, boolean>>({});
   const [updateRoles, setUpdateRoles] = useState<Record<string, boolean>>({});
 
@@ -70,6 +92,28 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
       setLockouts(data);
     }
     setLoadingLockouts(false);
+  };
+
+  const fetchBatchModifyStatuses = async () => {
+    setLoadingBatchModifyStatuses(true);
+    const [success, data] = await AdminAPI.getBatchModifyPasswordStatuses();
+    if (success && Array.isArray(data)) {
+      setBatchModifyStatuses(data);
+    }
+    setLoadingBatchModifyStatuses(false);
+  };
+
+  const fetchModifiedBatches = async () => {
+    setLoadingModifiedBatches(true);
+    const [success, data] = await AdminAPI.getModifiedBatches(
+      undefined, 
+      modBatchesSearch.trim() || undefined, 
+      modBatchesTypeFilter !== 'all' ? modBatchesTypeFilter : undefined
+    );
+    if (success && Array.isArray(data)) {
+      setModifiedBatchesList(data);
+    }
+    setLoadingModifiedBatches(false);
   };
 
   const handleUnlock = async (identifier: string) => {
@@ -111,9 +155,11 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
       onShowToast('Failed to retrieve user database list.', 'error');
     }
     
-    // Fetch Audit Logs and Lockouts
+    // Fetch all management streams
     fetchAuditLogs();
     fetchLockouts();
+    fetchBatchModifyStatuses();
+    fetchModifiedBatches();
     
     setLoading(false);
   };
@@ -146,13 +192,40 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
     loadData();
   }, []);
 
+  const handleSaveBatchModifyPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUserForModifyPwd || !setModifyPwdInput.trim()) {
+      onShowToast('User and modification password are required.', 'warning');
+      return;
+    }
+
+    setSavingModifyPwd(true);
+    const [success, res] = await AdminAPI.setBatchModifyPassword(selectedUserForModifyPwd, setModifyPwdInput.trim());
+    setSavingModifyPwd(false);
+
+    if (success) {
+      onShowToast(`Batch modification password set for '${selectedUserForModifyPwd}' successfully!`, 'success');
+      setModifyPwdModalOpen(false);
+      setSetModifyPwdInput('');
+      fetchBatchModifyStatuses();
+    } else {
+      onShowToast(typeof res === 'string' ? res : 'Failed to update modification password.', 'error');
+    }
+  };
+
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     const username = newUsername.trim();
     const password = newPassword.trim();
+    const batchModifyPassword = newBatchModifyPassword.trim();
 
     if (!username || !password) {
-      onShowToast('Username and password are required.', 'warning');
+      onShowToast('Username and Login Password are required.', 'warning');
+      return;
+    }
+
+    if (!batchModifyPassword) {
+      onShowToast('Batch Modification Password is required for the new user profile.', 'warning');
       return;
     }
 
@@ -177,6 +250,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
     const [success, data] = await AdminAPI.createUser({
       username,
       password,
+      batch_modify_password: batchModifyPassword,
       access_control: accessControl
     });
     setLoading(false);
@@ -185,6 +259,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
       onShowToast(typeof data === 'string' ? data : ((data as Record<string, any>)?.message || 'User created successfully!'), 'success');
       setNewUsername('');
       setNewPassword('');
+      setNewBatchModifyPassword('');
       // Reset checklists
       const clearedProds = { ...createProducts };
       Object.keys(clearedProds).forEach(k => clearedProds[k] = false);
@@ -205,8 +280,9 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
     const user = consolidatedUsers.find(u => u.username === username);
     if (!user) return;
 
-    // Reset update password field
+    // Reset update password fields
     setUpdatePassword('');
+    setUpdateBatchModifyPassword('');
 
     // Pre-fill checkboxes
     const prodMap: Record<string, boolean> = {};
@@ -253,6 +329,9 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
     if (updatePassword.trim()) {
       payload.password = updatePassword.trim();
     }
+    if (updateBatchModifyPassword.trim()) {
+      payload.batch_modify_password = updateBatchModifyPassword.trim();
+    }
 
     setLoading(true);
     const [success, data] = await AdminAPI.updateUser(selectedUser, payload);
@@ -261,6 +340,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
     if (success) {
       onShowToast(typeof data === 'string' ? data : ((data as Record<string, any>)?.message || 'User credentials modified successfully!'), 'success');
       setUpdatePassword('');
+      setUpdateBatchModifyPassword('');
       loadData();
     } else {
       onShowToast(typeof data === 'string' ? data : 'Failed to update user profile.', 'error');
@@ -313,18 +393,19 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
       {/* Sub-Section Navigation Tabs */}
       <div style={{
         display: 'flex',
+        flexWrap: 'wrap',
         backgroundColor: '#0f172a',
         border: '1px solid rgba(255, 255, 255, 0.08)',
         borderRadius: '8px',
         padding: '6px',
-        gap: '8px',
+        gap: '6px',
         boxSizing: 'border-box'
       }}>
         <button
           onClick={() => setSubView('registry')}
           style={{
-            flex: 1,
-            padding: '12px 16px',
+            flex: '1 1 180px',
+            padding: '10px 14px',
             backgroundColor: subView === 'registry' ? '#7c3aed' : 'transparent',
             border: 'none',
             borderRadius: '6px',
@@ -334,16 +415,75 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
             cursor: 'pointer',
             transition: 'all 0.2s ease',
             opacity: subView === 'registry' ? 1 : 0.6,
-            outline: 'none'
+            outline: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px'
           }}
         >
           👤 User Credentials Registry
         </button>
         <button
-          onClick={() => setSubView('lockouts')}
+          onClick={() => {
+            setSubView('batch_passwords');
+            fetchBatchModifyStatuses();
+          }}
           style={{
-            flex: 1,
-            padding: '12px 16px',
+            flex: '1 1 180px',
+            padding: '10px 14px',
+            backgroundColor: subView === 'batch_passwords' ? '#7c3aed' : 'transparent',
+            border: 'none',
+            borderRadius: '6px',
+            color: '#ffffff',
+            fontWeight: 700,
+            fontSize: '0.85rem',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            opacity: subView === 'batch_passwords' ? 1 : 0.6,
+            outline: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px'
+          }}
+        >
+          🔑 Batch Modification Passwords
+        </button>
+        <button
+          onClick={() => {
+            setSubView('modified_batches');
+            fetchModifiedBatches();
+          }}
+          style={{
+            flex: '1 1 180px',
+            padding: '10px 14px',
+            backgroundColor: subView === 'modified_batches' ? '#7c3aed' : 'transparent',
+            border: 'none',
+            borderRadius: '6px',
+            color: '#ffffff',
+            fontWeight: 700,
+            fontSize: '0.85rem',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            opacity: subView === 'modified_batches' ? 1 : 0.6,
+            outline: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px'
+          }}
+        >
+          🔄 Modified Batches ({modifiedBatchesList.length})
+        </button>
+        <button
+          onClick={() => {
+            setSubView('lockouts');
+            fetchLockouts();
+          }}
+          style={{
+            flex: '1 1 160px',
+            padding: '10px 14px',
             backgroundColor: subView === 'lockouts' ? '#7c3aed' : 'transparent',
             border: 'none',
             borderRadius: '6px',
@@ -353,16 +493,23 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
             cursor: 'pointer',
             transition: 'all 0.2s ease',
             opacity: subView === 'lockouts' ? 1 : 0.6,
-            outline: 'none'
+            outline: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px'
           }}
         >
-          🔒 Active Security Lockouts ({lockouts.length})
+          🔒 Active Lockouts ({lockouts.length})
         </button>
         <button
-          onClick={() => setSubView('audit')}
+          onClick={() => {
+            setSubView('audit');
+            fetchAuditLogs();
+          }}
           style={{
-            flex: 1,
-            padding: '12px 16px',
+            flex: '1 1 180px',
+            padding: '10px 14px',
             backgroundColor: subView === 'audit' ? '#7c3aed' : 'transparent',
             border: 'none',
             borderRadius: '6px',
@@ -372,10 +519,14 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
             cursor: 'pointer',
             transition: 'all 0.2s ease',
             opacity: subView === 'audit' ? 1 : 0.6,
-            outline: 'none'
+            outline: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px'
           }}
         >
-          📋 System Audit Logs & Feed
+          📋 Audit Logs & Feed
         </button>
       </div>
 
@@ -404,7 +555,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
             </div>
 
             <div className="form-input-container">
-              <span className="form-label">Password</span>
+              <span className="form-label">Login Password</span>
               <div style={{ position: 'relative' }}>
                 <input 
                   type={showNewPassword ? 'text' : 'password'} 
@@ -422,6 +573,32 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
                   {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
+            </div>
+
+            <div className="form-input-container">
+              <span className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Key size={14} color="#7c3aed" /> Batch Modification Password <span style={{ color: '#ef4444', fontSize: '0.75rem', fontWeight: 600 }}>(Required)</span>
+              </span>
+              <div style={{ position: 'relative' }}>
+                <input 
+                  type={showNewBatchModifyPassword ? 'text' : 'password'} 
+                  className="field-input" 
+                  value={newBatchModifyPassword} 
+                  onChange={e => setNewBatchModifyPassword(e.target.value)} 
+                  placeholder="Set authorization password for modifying batches"
+                  required
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setShowNewBatchModifyPassword(!showNewBatchModifyPassword)}
+                  style={{ position: 'absolute', right: '12px', top: '11px', background: 'none', border: 'none', color: 'var(--text-light)', cursor: 'pointer' }}
+                >
+                  {showNewBatchModifyPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                Admin-mandated password required when this user modifies existing batches in Lab Formulations & RM Testing.
+              </span>
             </div>
 
             <div className="form-input-container">
@@ -508,6 +685,30 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
                   disabled={!selectedUser}
                 >
                   {showUpdatePassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            <div className="form-input-container">
+              <span className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Key size={14} color="#7c3aed" /> New Batch Modification Password (leave blank to keep current)
+              </span>
+              <div style={{ position: 'relative' }}>
+                <input 
+                  type={showUpdateBatchModifyPassword ? 'text' : 'password'} 
+                  className="field-input" 
+                  value={updateBatchModifyPassword} 
+                  onChange={e => setUpdateBatchModifyPassword(e.target.value)} 
+                  placeholder="Enter new modify password overwrite"
+                  disabled={!selectedUser}
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setShowUpdateBatchModifyPassword(!showUpdateBatchModifyPassword)}
+                  style={{ position: 'absolute', right: '12px', top: '11px', background: 'none', border: 'none', color: 'var(--text-light)', cursor: 'pointer' }}
+                  disabled={!selectedUser}
+                >
+                  {showUpdateBatchModifyPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
@@ -641,6 +842,285 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
         )}
       </div>
       </>
+      )}
+
+      {subView === 'batch_passwords' && (
+        <>
+          <div className="glass-card animated-fade" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
+              <div>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary-color)', margin: 0 }}>
+                  <Key size={20} />
+                  <span>Batch Modification Authorization Passwords</span>
+                </h3>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
+                  Assign and manage dedicated authorization passwords required when users modify existing batches in Past Formulations (Lab Formulations & RM Testing).
+                </p>
+              </div>
+              <button 
+                onClick={fetchBatchModifyStatuses} 
+                className="btn-secondary" 
+                style={{ padding: '8px 14px', gap: '6px', fontSize: '0.8rem' }}
+                disabled={loadingBatchModifyStatuses}
+              >
+                <RefreshCw size={13} className={loadingBatchModifyStatuses ? 'spin-loader' : ''} />
+                <span>Refresh Statuses</span>
+              </button>
+            </div>
+
+            {loadingBatchModifyStatuses ? (
+              <TableSkeleton rows={4} cols={4} />
+            ) : batchModifyStatuses.length === 0 ? (
+              <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-light)', fontStyle: 'italic' }}>
+                No registered users found.
+              </div>
+            ) : (
+              <div className="table-scroll-container" style={{ maxHeight: '500px' }}>
+                <table className="table-locked-header">
+                  <thead>
+                    <tr>
+                      <th style={{ width: '200px' }}>User Account</th>
+                      <th>Assigned Product Workspace(s)</th>
+                      <th style={{ width: '240px' }}>Modification Password Status</th>
+                      <th style={{ width: '180px', textAlign: 'center' }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {batchModifyStatuses.map(status => (
+                      <tr key={status.username}>
+                        <td style={{ fontWeight: 'bold', color: 'var(--primary-color)' }}>
+                          👤 {status.username}
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                            {status.accessible_products.map(p => (
+                              <span key={p} style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary-color)', fontSize: '0.75rem', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
+                                {p.toUpperCase()}
+                              </span>
+                            ))}
+                            {status.accessible_products.length === 0 && (
+                              <span style={{ fontSize: '0.75rem', color: 'var(--text-light)', fontStyle: 'italic' }}>All products</span>
+                            )}
+                          </div>
+                        </td>
+                        <td>
+                          {status.has_modify_password ? (
+                            <span style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              backgroundColor: '#dcfce7',
+                              color: '#15803d',
+                              border: '1px solid #86efac',
+                              padding: '4px 10px',
+                              borderRadius: '12px',
+                              fontWeight: 700,
+                              fontSize: '0.75rem'
+                            }}>
+                              <ShieldCheck size={14} /> Password Configured
+                            </span>
+                          ) : (
+                            <span style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              backgroundColor: '#fee2e2',
+                              color: '#b91c1c',
+                              border: '1px solid #fca5a5',
+                              padding: '4px 10px',
+                              borderRadius: '12px',
+                              fontWeight: 700,
+                              fontSize: '0.75rem'
+                            }}>
+                              <AlertCircle size={14} /> Not Configured
+                            </span>
+                          )}
+                        </td>
+                        <td style={{ textAlign: 'center' }}>
+                          <button
+                            onClick={() => {
+                              setSelectedUserForModifyPwd(status.username);
+                              setSetModifyPwdInput('');
+                              setShowSetModifyPwd(false);
+                              setModifyPwdModalOpen(true);
+                            }}
+                            className="btn-primary"
+                            style={{
+                              backgroundColor: '#7c3aed',
+                              padding: '6px 14px',
+                              fontSize: '0.8rem',
+                              fontWeight: 600,
+                              gap: '6px'
+                            }}
+                          >
+                            <Key size={13} />
+                            <span>{status.has_modify_password ? 'Update Password' : 'Set Password'}</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {subView === 'modified_batches' && (
+        <>
+          <div className="glass-card animated-fade" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px', flexWrap: 'wrap', gap: '12px' }}>
+              <div>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary-color)', margin: 0 }}>
+                  <History size={20} />
+                  <span>Modified Batches Audit Ledger</span>
+                </h3>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
+                  Real-time centralized ledger of all formulation batch modifications across all product databases with permanent static timestamps.
+                </p>
+              </div>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', backgroundColor: 'var(--input-bg)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '0 10px' }}>
+                  <Search size={14} color="var(--text-light)" />
+                  <input
+                    type="text"
+                    placeholder="Search batch, user, product..."
+                    value={modBatchesSearch}
+                    onChange={e => setModBatchesSearch(e.target.value)}
+                    style={{ border: 'none', background: 'transparent', padding: '8px 8px', fontSize: '0.85rem', color: 'var(--text-primary)', outline: 'none', width: '190px' }}
+                  />
+                </div>
+
+                <select
+                  value={modBatchesTypeFilter}
+                  onChange={e => setModBatchesTypeFilter(e.target.value as any)}
+                  className="field-input"
+                  style={{ padding: '8px 12px', fontSize: '0.85rem', cursor: 'pointer' }}
+                >
+                  <option value="all">All Formulations</option>
+                  <option value="lab_formulation">Lab Formulations</option>
+                  <option value="rm_testing">RM Testing</option>
+                </select>
+
+                <button 
+                  onClick={fetchModifiedBatches} 
+                  className="btn-secondary" 
+                  style={{ padding: '8px 14px', gap: '6px', fontSize: '0.8rem' }}
+                  disabled={loadingModifiedBatches}
+                >
+                  <RefreshCw size={13} className={loadingModifiedBatches ? 'spin-loader' : ''} />
+                  <span>Refresh Log</span>
+                </button>
+              </div>
+            </div>
+
+            {loadingModifiedBatches ? (
+              <TableSkeleton rows={5} cols={6} />
+            ) : modifiedBatchesList.length === 0 ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-light)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                <History size={36} style={{ opacity: 0.4 }} />
+                <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>No Batch Modifications Recorded Yet</span>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>
+                  When any user modifies an existing batch in Lab Formulations or RM Testing, it will automatically appear here in real-time.
+                </p>
+              </div>
+            ) : (
+              <div className="table-scroll-container" style={{ maxHeight: '550px' }}>
+                <table className="table-locked-header">
+                  <thead>
+                    <tr>
+                      <th style={{ width: '160px' }}>Modified At (Static)</th>
+                      <th style={{ width: '120px' }}>Product</th>
+                      <th style={{ width: '140px' }}>Batch No</th>
+                      <th style={{ width: '140px' }}>Module</th>
+                      <th style={{ width: '130px' }}>Modified By</th>
+                      <th>Summary of Changes</th>
+                      <th style={{ width: '90px', textAlign: 'center' }}>Details</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {modifiedBatchesList
+                      .filter(b => {
+                        const q = modBatchesSearch.toLowerCase();
+                        if (!q) return true;
+                        return (
+                          b.batch_no.toLowerCase().includes(q) ||
+                          b.modified_by.toLowerCase().includes(q) ||
+                          b.product_name.toLowerCase().includes(q) ||
+                          (b.changes_summary || '').toLowerCase().includes(q)
+                        );
+                      })
+                      .map(item => (
+                        <tr key={item.id} style={{ backgroundColor: 'rgba(239, 68, 68, 0.03)' }}>
+                          <td style={{ fontWeight: 600, color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                              <Clock size={13} color="#f87171" />
+                              <span>{item.formatted_timestamp}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <span style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary-color)', fontSize: '0.75rem', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
+                              {item.product_name.toUpperCase()}
+                            </span>
+                          </td>
+                          <td>
+                            <span style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              backgroundColor: '#fee2e2',
+                              color: '#991b1b',
+                              border: '1px solid #fca5a5',
+                              padding: '2px 8px',
+                              borderRadius: '4px',
+                              fontWeight: 700,
+                              fontSize: '0.8rem'
+                            }}>
+                              <AlertTriangle size={12} /> {item.batch_no}
+                            </span>
+                          </td>
+                          <td>
+                            <span style={{
+                              fontSize: '0.75rem',
+                              fontWeight: 600,
+                              color: item.formulation_type === 'lab_formulation' ? '#7c3aed' : '#2563eb',
+                              backgroundColor: item.formulation_type === 'lab_formulation' ? '#f5f3ff' : '#eff6ff',
+                              padding: '2px 8px',
+                              borderRadius: '6px'
+                            }}>
+                              {item.formulation_type === 'lab_formulation' ? 'Lab Formulation' : 'RM Testing'}
+                            </span>
+                          </td>
+                          <td style={{ fontWeight: 700, color: '#dc2626' }}>
+                            👤 {item.modified_by}
+                          </td>
+                          <td style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                            {item.changes_summary || 'Batch details updated'}
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <button
+                              onClick={() => {
+                                setSelectedModBatchDetail(item);
+                                setModBatchDetailModalOpen(true);
+                              }}
+                              className="btn-secondary"
+                              style={{ padding: '4px 10px', fontSize: '0.75rem', gap: '4px' }}
+                              title="View full modification payload snapshot"
+                            >
+                              <FileText size={13} />
+                              <span>View</span>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       {subView === 'lockouts' && (
@@ -874,6 +1354,201 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
                 }}
               >
                 Revoke Access
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Set Batch Modification Password Modal */}
+      {modifyPwdModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.75)',
+          backdropFilter: 'blur(6px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999
+        }}>
+          <div className="glass-card animated-scale" style={{
+            width: '100%',
+            maxWidth: '440px',
+            background: 'var(--bg-card)',
+            border: '1px solid rgba(124, 58, 237, 0.3)',
+            borderRadius: '16px',
+            padding: '26px',
+            color: 'var(--text-primary)',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 30px rgba(124, 58, 237, 0.15)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#a78bfa', marginBottom: '14px' }}>
+              <div style={{ backgroundColor: 'rgba(124, 58, 237, 0.2)', padding: '10px', borderRadius: '10px', color: '#a78bfa' }}>
+                <Key size={22} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0 }}>Configure Batch Modify Password</h3>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Target User: <strong>{selectedUserForModifyPwd}</strong></span>
+              </div>
+            </div>
+
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5', marginBottom: '18px' }}>
+              This authorization password will be required whenever <strong>{selectedUserForModifyPwd}</strong> attempts to modify an existing batch in Past Formulations.
+            </p>
+
+            <form onSubmit={handleSaveBatchModifyPassword}>
+              <div className="form-input-container" style={{ marginBottom: '20px' }}>
+                <span className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+                  New Batch Modification Password:
+                </span>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showSetModifyPwd ? 'text' : 'password'}
+                    className="field-input"
+                    value={setModifyPwdInput}
+                    onChange={e => setSetModifyPwdInput(e.target.value)}
+                    placeholder="Enter new modify password..."
+                    autoFocus
+                    required
+                    style={{ paddingRight: '40px', width: '100%', boxSizing: 'border-box' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowSetModifyPwd(!showSetModifyPwd)}
+                    style={{ position: 'absolute', right: '12px', top: '11px', background: 'none', border: 'none', color: 'var(--text-light)', cursor: 'pointer' }}
+                  >
+                    {showSetModifyPwd ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModifyPwdModalOpen(false);
+                    setSetModifyPwdInput('');
+                  }}
+                  className="btn-secondary"
+                  style={{ height: '38px', padding: '0 16px', fontSize: '0.85rem' }}
+                  disabled={savingModifyPwd}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  style={{ height: '38px', padding: '0 18px', fontSize: '0.85rem', backgroundColor: '#7c3aed', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}
+                  disabled={savingModifyPwd}
+                >
+                  {savingModifyPwd ? <RefreshCw size={14} className="spin-loader" /> : <ShieldCheck size={14} />}
+                  <span>Save Password</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modified Batch Full Details Modal */}
+      {modBatchDetailModalOpen && selectedModBatchDetail && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.75)',
+          backdropFilter: 'blur(6px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999
+        }}>
+          <div className="glass-card animated-scale" style={{
+            width: '100%',
+            maxWidth: '560px',
+            background: 'var(--bg-card)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            borderRadius: '16px',
+            padding: '24px',
+            color: 'var(--text-primary)',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 30px rgba(239, 68, 68, 0.15)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ backgroundColor: '#fee2e2', padding: '8px', borderRadius: '8px', color: '#dc2626' }}>
+                  <AlertTriangle size={20} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
+                    Batch #{selectedModBatchDetail.batch_no} Modification Detail
+                  </h3>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                    Product: {selectedModBatchDetail.product_name.toUpperCase()} | Module: {selectedModBatchDetail.formulation_type}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => setModBatchDetailModalOpen(false)}
+                style={{ background: 'none', border: 'none', color: 'var(--text-light)', cursor: 'pointer', padding: '4px' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.85rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '8px', backgroundColor: 'var(--input-bg)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>Modified By:</span>
+                <span style={{ fontWeight: 700, color: '#dc2626' }}>👤 {selectedModBatchDetail.modified_by}</span>
+                
+                <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>Timestamp:</span>
+                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>🕒 {selectedModBatchDetail.formatted_timestamp}</span>
+
+                <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>Changes:</span>
+                <span style={{ color: 'var(--text-primary)' }}>{selectedModBatchDetail.changes_summary || 'N/A'}</span>
+              </div>
+
+              {selectedModBatchDetail.full_details && (
+                <div>
+                  <span style={{ display: 'block', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px', fontSize: '0.8rem' }}>
+                    Raw Parameters Snapshot:
+                  </span>
+                  <pre style={{
+                    backgroundColor: '#090d16',
+                    color: '#38bdf8',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    fontSize: '0.75rem',
+                    maxHeight: '220px',
+                    overflowY: 'auto',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-all',
+                    margin: 0
+                  }}>
+                    {(() => {
+                      try {
+                        return JSON.stringify(JSON.parse(selectedModBatchDetail.full_details), null, 2);
+                      } catch {
+                        return selectedModBatchDetail.full_details;
+                      }
+                    })()}
+                  </pre>
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '18px' }}>
+              <button
+                onClick={() => setModBatchDetailModalOpen(false)}
+                className="btn-secondary"
+                style={{ height: '36px', padding: '0 16px', fontSize: '0.85rem' }}
+              >
+                Close
               </button>
             </div>
           </div>

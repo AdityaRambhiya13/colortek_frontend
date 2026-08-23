@@ -32,6 +32,23 @@ export interface LockoutResponse {
   lockout_until: string | null;
 }
 
+export interface UserModifyPasswordStatus {
+  username: string;
+  has_modify_password: boolean;
+  accessible_products: string[];
+}
+
+export interface ModifiedBatchLogResponse {
+  id: number;
+  product_name: string;
+  batch_no: string;
+  formulation_type: string;
+  modified_by: string;
+  formatted_timestamp: string;
+  changes_summary?: string | null;
+  full_details?: string | null;
+}
+
 // Base URL for the FastAPI backend (uses VITE_API_URL env variable with localhost fallback)
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -283,6 +300,13 @@ export const AuthAPI = {
     return handleResponse<any>(apiClient.get('/auth/verify-session'));
   },
 
+  verifyModifyPassword: async (username: string, password: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return handleResponse<any>(
+      apiClient.post('/auth/verify-modify-password', { username, password })
+    );
+  },
+
   // Silently refresh the access token using the HttpOnly refresh_token cookie
   refreshSession: async (): Promise<boolean> => {
     try {
@@ -335,6 +359,31 @@ export const AdminAPI = {
 
   unlockIdentifier: async (identifier: string) => {
     return handleResponse<GeneralResponse>(apiClient.delete(`/admin/lockouts/${identifier}`));
+  },
+
+  getBatchModifyPasswordStatuses: async () => {
+    return handleResponse<UserModifyPasswordStatus[]>(apiClient.get('/admin/batch-modify-passwords'));
+  },
+
+  setBatchModifyPassword: async (username: string, modifyPassword: string) => {
+    return handleResponse<GeneralResponse>(apiClient.post('/admin/batch-modify-password', {
+      username,
+      modify_password: modifyPassword
+    }));
+  },
+
+  getModifiedBatches: async (productName?: string, search?: string, formulationType?: string) => {
+    return handleResponse<ModifiedBatchLogResponse[]>(apiClient.get('/admin/modified-batches', {
+      params: {
+        ...(productName && { product_name: productName }),
+        ...(search && { search }),
+        ...(formulationType && { formulation_type: formulationType }),
+      }
+    }));
+  },
+
+  getModifiedBatchDetail: async (modId: number) => {
+    return handleResponse<ModifiedBatchLogResponse>(apiClient.get(`/admin/modified-batches/${modId}`));
   }
 };
 

@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Beaker, Search, Filter, RefreshCw, FileSpreadsheet, ArrowLeft, ArrowRight,
   AlertTriangle, Copy, Trash2, CheckCircle2, ChevronLeft, ChevronRight, HelpCircle, Building,
-  Edit3, ZoomIn, Bell, Info, Printer, Star
+  Edit3, ZoomIn, Bell, Info, Printer, Star, Lock, Key, ShieldCheck, Eye, EyeOff
 } from 'lucide-react';
-import { CMSAPI, LabPastFormulationsAPI, RMPastFormulationsAPI, LabFormulationsAPI, RMFormulationsAPI, RawMaterialAPI, RepairedFormulationsAPI, API_BASE_URL, NotificationsAPI } from '../services/api';
+import { CMSAPI, LabPastFormulationsAPI, RMPastFormulationsAPI, LabFormulationsAPI, RMFormulationsAPI, RawMaterialAPI, RepairedFormulationsAPI, API_BASE_URL, NotificationsAPI, AuthAPI } from '../services/api';
 import * as XLSX from '../xlsxWrapper';
 import { jsPDF } from 'jspdf';
 
@@ -149,6 +149,55 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
   const [imageReferences, setImageReferences] = useState<string[]>([]);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [complaintOriginInfo, setComplaintOriginInfo] = useState<any | null>(null);
+
+  // Batch modification authorization state
+  const [modifyAuthModalOpen, setModifyAuthModalOpen] = useState(false);
+  const [batchToModify, setBatchToModify] = useState<{ batchNo: string; side: 'left' | 'right'; isLab: boolean } | null>(null);
+  const [modifyPasswordInput, setModifyPasswordInput] = useState('');
+  const [showModifyPassword, setShowModifyPassword] = useState(false);
+  const [modifyPasswordError, setModifyPasswordError] = useState('');
+  const [modifyAuthLoading, setModifyAuthLoading] = useState(false);
+
+  const handleOpenModifyAuthModal = (batchNo: string, side: 'left' | 'right', isLab: boolean) => {
+    setBatchToModify({ batchNo, side, isLab });
+    setModifyPasswordInput('');
+    setModifyPasswordError('');
+    setShowModifyPassword(false);
+    setModifyAuthModalOpen(true);
+  };
+
+  const handleVerifyModifyPasswordAndLoad = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!batchToModify) return;
+
+    if (!modifyPasswordInput.trim()) {
+      setModifyPasswordError('Please enter your batch modification authorization password.');
+      return;
+    }
+
+    setModifyAuthLoading(true);
+    setModifyPasswordError('');
+
+    const currentUsername = sessionStorage.getItem('username') || '';
+    const [success, resData] = await AuthAPI.verifyModifyPassword(currentUsername, modifyPasswordInput.trim());
+    setModifyAuthLoading(false);
+
+    if (success) {
+      const targetSide = batchToModify.side;
+      const targetBatchNo = batchToModify.batchNo;
+      const isLab = batchToModify.isLab;
+      setModifyAuthModalOpen(false);
+      setBatchToModify(null);
+
+      onChangeView(isLab ? 'lab_formulations' : 'rm_testing');
+      setTimeout(() => {
+        loadBatchIntoPane(targetBatchNo, targetSide, isLab);
+        onShowToast(`Authorization verified. Batch ${targetBatchNo} loaded in ${targetSide.toUpperCase()} panel for modification.`, 'success');
+      }, 150);
+    } else {
+      setModifyPasswordError(typeof resData === 'string' ? resData : 'Incorrect modification password or access denied.');
+    }
+  };
 
   // 25 lines of material rows (matching Flet CMS config)
   const initializeRows = (): InventoryRow[] => 
@@ -4330,9 +4379,19 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                   const cardSolidity = (twNum > 0 ? ((tsqNum * 100) / twNum) : 0).toFixed(2);
 
                   return (
-                    <div key={b.id || b.batch_no} className="flet-report-card">
+                    <div 
+                      key={b.id || b.batch_no} 
+                      className="flet-report-card"
+                      style={{
+                        backgroundColor: b.is_modified ? '#fff1f2' : '#ffffff',
+                        borderColor: b.is_modified ? '#f87171' : '#cbd5e1',
+                        borderWidth: b.is_modified ? '1.5px' : '1px',
+                        borderStyle: 'solid',
+                        boxShadow: b.is_modified ? '0 4px 12px rgba(239, 68, 68, 0.12)' : undefined
+                      }}
+                    >
                       {/* Card Header Title */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #cbd5e1', paddingBottom: '6px', marginBottom: '8px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: b.is_modified ? '1px solid #fca5a5' : '1px solid #cbd5e1', paddingBottom: '6px', marginBottom: '8px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           {isLabCard && (
                             <input 
@@ -4358,7 +4417,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                               <Star size={16} fill={b.is_starred ? '#f59e0b' : 'none'} color="#f59e0b" />
                             </button>
                           )}
-                          <span style={{ fontWeight: 'bold', fontSize: '15px', color: 'var(--primary-color)' }}>
+                          <span style={{ fontWeight: 'bold', fontSize: '15px', color: b.is_modified ? '#b91c1c' : 'var(--primary-color)' }}>
                             Batch: {batchNo}
                           </span>
                           {b.is_starred && b.ok_rating && (
@@ -4366,19 +4425,41 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                               {b.ok_rating}
                             </span>
                           )}
+                          {b.is_modified && (
+                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#991b1b', backgroundColor: '#fee2e2', border: '1px solid #f87171', padding: '2px 8px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <AlertTriangle size={12} /> MODIFIED
+                            </span>
+                          )}
                         </div>
-                        <span style={{ fontSize: '11px', padding: '2px 6px', backgroundColor: '#e2e8f0', borderRadius: '2px', fontWeight: 'bold' }}>
+                        <span style={{ fontSize: '11px', padding: '2px 6px', backgroundColor: b.is_modified ? '#fee2e2' : '#e2e8f0', color: b.is_modified ? '#991b1b' : '#334155', borderRadius: '2px', fontWeight: 'bold' }}>
                           Ref: {refNo}
                         </span>
                       </div>
 
                       {/* 1. Batch Details Section */}
                       <div>
-                        <span style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: 'var(--primary-color)', marginBottom: '4px', textTransform: 'uppercase' }}>
+                        <span style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: b.is_modified ? '#b91c1c' : 'var(--primary-color)', marginBottom: '4px', textTransform: 'uppercase' }}>
                           Batch Details
                         </span>
-                        <table className="desktop-data-grid" style={{ marginBottom: '8px', border: '1px solid #cbd5e1' }}>
+                        <table className="desktop-data-grid" style={{ marginBottom: '8px', border: b.is_modified ? '1px solid #fca5a5' : '1px solid #cbd5e1' }}>
                           <tbody>
+                            {b.is_modified && (
+                              <>
+                                <tr style={{ backgroundColor: '#fee2e2' }}>
+                                  <td style={{ fontWeight: 'bold', color: '#991b1b', width: '35%' }}>Modified On</td>
+                                  <td style={{ fontWeight: 'bold', color: '#991b1b' }}>
+                                    {b.modified_at || '-'}
+                                    {b.modified_by && <span style={{ marginLeft: '6px', fontSize: '11px', color: '#7f1d1d', fontWeight: 600 }}>(by {b.modified_by})</span>}
+                                  </td>
+                                </tr>
+                                {b.modified_details && (
+                                  <tr style={{ backgroundColor: '#fef2f2' }}>
+                                    <td style={{ fontWeight: 'bold', color: '#991b1b', fontSize: '11px' }}>Change Details</td>
+                                    <td style={{ fontSize: '11px', color: '#7f1d1d' }}>{b.modified_details}</td>
+                                  </tr>
+                                )}
+                              </>
+                            )}
                             <tr>
                               <td style={{ fontWeight: 'bold', width: '35%' }}>Product</td><td>{productNameValue}</td>
                             </tr>
@@ -4418,10 +4499,10 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
                       {/* 2. Raw Materials Table */}
                       <div>
-                        <span style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: 'var(--primary-color)', marginBottom: '4px', textTransform: 'uppercase' }}>
+                        <span style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: b.is_modified ? '#b91c1c' : 'var(--primary-color)', marginBottom: '4px', textTransform: 'uppercase' }}>
                           Raw Materials
                         </span>
-                        <table className="desktop-data-grid" style={{ marginBottom: '8px', border: '1px solid #cbd5e1' }}>
+                        <table className="desktop-data-grid" style={{ marginBottom: '8px', border: b.is_modified ? '1px solid #fca5a5' : '1px solid #cbd5e1' }}>
                           <thead>
                             <tr>
                               <th style={{ width: '30px' }}>Sr</th>
@@ -4462,7 +4543,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                               {isLabCard && <td colSpan={2} style={{ textAlign: 'right', color: '#16a34a', fontWeight: 'bold' }}>Solid: {totalSolidQty}</td>}
                             </tr>
                             {isLabCard && (
-                              <tr className="total-row" style={{ borderTop: '1px solid #cbd5e1', backgroundColor: '#f8fafc' }}>
+                              <tr className="total-row" style={{ borderTop: '1px solid #cbd5e1', backgroundColor: b.is_modified ? '#fee2e2' : '#f8fafc' }}>
                                 <td colSpan={4} style={{ textAlign: 'right', fontWeight: 'bold', color: '#0f172a' }}>FORMULATION SOLID(100%)</td>
                                 <td style={{ textAlign: 'right', color: '#dc2626', fontWeight: 'bold' }}>{cardSolidity}%</td>
                               </tr>
@@ -4473,10 +4554,10 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
                       {/* 3. Test Results Table */}
                       <div>
-                        <span style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: 'var(--primary-color)', marginBottom: '4px', textTransform: 'uppercase' }}>
+                        <span style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: b.is_modified ? '#b91c1c' : 'var(--primary-color)', marginBottom: '4px', textTransform: 'uppercase' }}>
                           Test Results
                         </span>
-                        <table className="desktop-data-grid" style={{ marginBottom: '8px', border: '1px solid #cbd5e1' }}>
+                        <table className="desktop-data-grid" style={{ marginBottom: '8px', border: b.is_modified ? '1px solid #fca5a5' : '1px solid #cbd5e1' }}>
                           <thead>
                             <tr>
                               <th>Test Method</th>
@@ -4516,32 +4597,50 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
                       {/* Remarks */}
                       {b.remarks && (
-                        <div style={{ padding: '6px 8px', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)', fontSize: '11px', fontStyle: 'italic', marginBottom: '8px', color: 'var(--text-secondary)' }}>
+                        <div style={{ padding: '6px 8px', backgroundColor: b.is_modified ? '#fee2e2' : 'var(--bg-app)', border: b.is_modified ? '1px solid #fca5a5' : '1px solid var(--border-color)', fontSize: '11px', fontStyle: 'italic', marginBottom: '8px', color: b.is_modified ? '#991b1b' : 'var(--text-secondary)' }}>
                           Remarks: {b.remarks}
                         </div>
                       )}
 
-                      {/* Actions Footer */}
-                      <div style={{ display: 'flex', gap: '8px', marginTop: 'auto', paddingTop: '8px', borderTop: '1px solid #cbd5e1' }}>
+                      {/* Actions Footer: Modify Left & Modify Right */}
+                      <div style={{ display: 'flex', gap: '8px', marginTop: 'auto', paddingTop: '8px', borderTop: b.is_modified ? '1px solid #fca5a5' : '1px solid #cbd5e1' }}>
                         <button 
-                          onClick={() => {
-                            onChangeView(isLabCard ? 'lab_formulations' : 'rm_testing');
-                            setTimeout(() => loadBatchIntoPane(batchNo, 'left', isLabCard), 150);
-                          }}
+                          onClick={() => handleOpenModifyAuthModal(batchNo, 'left', isLabCard)}
                           className="flet-btn"
-                          style={{ flexGrow: 1 }}
+                          style={{ 
+                            flexGrow: 1, 
+                            backgroundColor: '#7c3aed', 
+                            color: '#ffffff', 
+                            border: 'none', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            gap: '6px',
+                            fontWeight: 'bold',
+                            padding: '6px 8px'
+                          }}
+                          title={`Modify batch ${batchNo} on Left spreadsheet`}
                         >
-                          <ArrowLeft size={12} /> Load Left
+                          <Lock size={12} /> Modify Left
                         </button>
                         <button 
-                          onClick={() => {
-                            onChangeView(isLabCard ? 'lab_formulations' : 'rm_testing');
-                            setTimeout(() => loadBatchIntoPane(batchNo, 'right', isLabCard), 150);
-                          }}
+                          onClick={() => handleOpenModifyAuthModal(batchNo, 'right', isLabCard)}
                           className="flet-btn"
-                          style={{ flexGrow: 1 }}
+                          style={{ 
+                            flexGrow: 1, 
+                            backgroundColor: '#2563eb', 
+                            color: '#ffffff', 
+                            border: 'none', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            gap: '6px',
+                            fontWeight: 'bold',
+                            padding: '6px 8px'
+                          }}
+                          title={`Modify batch ${batchNo} on Right spreadsheet`}
                         >
-                          Load Right <ArrowRight size={12} />
+                          Modify Right <Lock size={12} />
                         </button>
                       </div>
 
@@ -4650,6 +4749,107 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
           zIndex: 9999, cursor: 'zoom-out'
         }} onClick={() => setLightboxImage(null)}>
           <img src={lightboxImage} alt="Enlarged view" style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain', borderRadius: '4px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }} />
+        </div>
+      )}
+
+      {/* Batch Modification Authorization Password Modal */}
+      {modifyAuthModalOpen && batchToModify && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 10000
+        }}>
+          <div style={{
+            backgroundColor: '#ffffff', borderRadius: '12px', padding: '26px', width: '430px', maxWidth: '92vw',
+            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.25), 0 10px 10px -5px rgba(0,0,0,0.1)', border: '1px solid #cbd5e1'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px', borderBottom: '1px solid #f1f5f9', paddingBottom: '12px' }}>
+              <div style={{ backgroundColor: '#fee2e2', padding: '10px', borderRadius: '10px', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Lock size={22} />
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 700, color: '#0f172a' }}>
+                  Batch Modification Authorization
+                </h3>
+                <span style={{ fontSize: '12px', color: '#64748b' }}>
+                  Admin Authorization Gate for Past Batch Changes
+                </span>
+              </div>
+            </div>
+
+            <p style={{ fontSize: '13px', color: '#334155', lineHeight: '1.5', margin: '0 0 14px 0' }}>
+              You are requesting to modify <strong>Batch #{batchToModify.batchNo}</strong> on the <strong>{batchToModify.side.toUpperCase()}</strong> panel ({batchToModify.isLab ? 'Lab Formulation' : 'RM Testing'}).
+              <br />
+              Please enter your <strong>Batch Modification Password</strong> (set by the administrator) to proceed.
+            </p>
+
+            {modifyPasswordError && (
+              <div style={{
+                backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', padding: '10px 12px',
+                color: '#b91c1c', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px'
+              }}>
+                <AlertTriangle size={16} />
+                <span>{modifyPasswordError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleVerifyModifyPasswordAndLoad}>
+              <div style={{ marginBottom: '18px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                  Enter Modification Password:
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type={showModifyPassword ? 'text' : 'password'}
+                    className="field-input"
+                    style={{ width: '100%', padding: '9px 38px 9px 12px', fontSize: '14px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }}
+                    value={modifyPasswordInput}
+                    onChange={e => setModifyPasswordInput(e.target.value)}
+                    placeholder="Enter assigned batch modify password..."
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowModifyPassword(!showModifyPassword)}
+                    style={{ position: 'absolute', right: '10px', top: '9px', background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}
+                  >
+                    {showModifyPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModifyAuthModalOpen(false);
+                    setBatchToModify(null);
+                  }}
+                  className="flet-btn flet-btn-orange"
+                  style={{ padding: '8px 16px', borderRadius: '6px' }}
+                  disabled={modifyAuthLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flet-btn flet-btn-green"
+                  style={{ padding: '8px 18px', borderRadius: '6px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}
+                  disabled={modifyAuthLoading}
+                >
+                  {modifyAuthLoading ? (
+                    <>
+                      <RefreshCw size={14} className="spin-loader" /> Verifying...
+                    </>
+                  ) : (
+                    <>
+                      <ShieldCheck size={14} /> Unlock & Modify
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 

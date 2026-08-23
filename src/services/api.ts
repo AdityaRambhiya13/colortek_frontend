@@ -569,6 +569,11 @@ export const LabFormulationsAPI = {
     return handleResponse<any>(apiClient.get(`/lab_formulations/lmf/count/${productName}`));
   },
 
+  deleteLmfBatch: async (productName: string, batchNo: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return handleResponse<any>(apiClient.delete(`/lab_formulations/lmf/delete/${productName}/${batchNo}`));
+  },
+
   toggleStar: async (productName: string, batchNo: string, isStarred: boolean, okRating: string = '') => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/lab_formulations/toggle_star', {
@@ -714,6 +719,11 @@ export const MasterFormulationAPI = {
       product_name: productName,
       ...payload
     }));
+  },
+
+  deleteBatch: async (productName: string, batchNo: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return handleResponse<any>(apiClient.delete(`/mf/delete/${productName}/${batchNo}`));
   },
 
   uploadImage: async (file: File) => {

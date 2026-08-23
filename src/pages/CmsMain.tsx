@@ -573,7 +573,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     setDismissedDuplicatesRight(new Set());
   }, [rightForm.batchNo]);
 
-  // Excel-like Keyboard navigation logic (arrows and Enter)
+  // Excel-like Keyboard navigation logic (arrows, Tab, Shift+Tab, and Enter)
   const handleCellKeyDown = (
     e: React.KeyboardEvent<HTMLInputElement>, 
     side: 'left' | 'right', 
@@ -587,22 +587,22 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       if (rowIndex < rowsLength - 1) {
         const selector = `input[id="${side}-${colType}-${rowIndex + 1}"]`;
         const nextInput = document.querySelector(selector) as HTMLInputElement;
-        if (nextInput) nextInput.focus();
+        if (nextInput) { nextInput.focus(); nextInput.select(); }
       }
     } else if (e.key === 'ArrowDown' && rowIndex < rowsLength - 1) {
       e.preventDefault();
       const nextInput = document.querySelector(`input[id="${side}-${colType}-${rowIndex + 1}"]`) as HTMLInputElement;
-      if (nextInput) nextInput.focus();
+      if (nextInput) { nextInput.focus(); nextInput.select(); }
     } else if (e.key === 'ArrowUp' && rowIndex > 0) {
       e.preventDefault();
       const prevInput = document.querySelector(`input[id="${side}-${colType}-${rowIndex - 1}"]`) as HTMLInputElement;
-      if (prevInput) prevInput.focus();
+      if (prevInput) { prevInput.focus(); prevInput.select(); }
     } else if (e.key === 'Tab') {
       e.preventDefault();
       let selector = '';
       
       if (e.shiftKey) {
-        // Navigate backwards within table only
+        // Navigate backwards
         if (colType === 'solid') {
           selector = `input[id="${side}-qty-${rowIndex}"]`;
         } else if (colType === 'qty') {
@@ -614,16 +614,20 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
             selector = activeSubView === 'lab_formulations'
               ? `input[id="${side}-solid-${rowIndex - 1}"]`
               : `input[id="${side}-qty-${rowIndex - 1}"]`;
+          } else {
+            selector = `input[id="${side}-reportDate"]`;
           }
         } else if (colType === 'mr') {
           if (rowIndex > 0) {
             selector = activeSubView === 'lab_formulations'
               ? `input[id="${side}-solid-${rowIndex - 1}"]`
               : `input[id="${side}-qty-${rowIndex - 1}"]`;
+          } else {
+            selector = `input[id="${side}-reportDate"]`;
           }
         }
       } else {
-        // Navigate forwards within table only
+        // Navigate forwards
         if (colType === 'mr') {
           selector = `input[id="${side}-mat-${rowIndex}"]`;
         } else if (colType === 'mat') {
@@ -635,19 +639,28 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
             selector = activeSubView === 'rm_testing' 
               ? `input[id="${side}-mr-${rowIndex + 1}"]` 
               : `input[id="${side}-mat-${rowIndex + 1}"]`;
+          } else {
+            selector = `input[id="${side}-test-method-0"]`;
           }
         } else if (colType === 'solid') {
           if (rowIndex < rowsLength - 1) {
             selector = `input[id="${side}-mat-${rowIndex + 1}"]`;
+          } else {
+            selector = `input[id="${side}-test-method-0"]`;
           }
         }
       }
       
       if (selector) {
-        const nextInput = document.querySelector(selector) as HTMLInputElement;
+        let nextInput = document.querySelector(selector) as HTMLElement;
+        if (!nextInput && !e.shiftKey) {
+          nextInput = document.querySelector(`textarea[id="${side}-remarks"]`) as HTMLElement;
+        }
         if (nextInput) {
           nextInput.focus();
-          nextInput.select();
+          if ('select' in nextInput && typeof (nextInput as any).select === 'function') {
+            (nextInput as any).select();
+          }
         }
       }
     }
@@ -667,41 +680,72 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       if (rowIndex < rowsLength - 1) {
         const selector = `input[id="${side}-test-${colType}-${rowIndex + 1}"]`;
         const nextInput = document.querySelector(selector) as HTMLInputElement;
-        if (nextInput) nextInput.focus();
+        if (nextInput) { nextInput.focus(); nextInput.select(); }
       }
     } else if (e.key === 'ArrowDown' && rowIndex < rowsLength - 1) {
       e.preventDefault();
       const nextInput = document.querySelector(`input[id="${side}-test-${colType}-${rowIndex + 1}"]`) as HTMLInputElement;
-      if (nextInput) nextInput.focus();
+      if (nextInput) { nextInput.focus(); nextInput.select(); }
     } else if (e.key === 'ArrowUp' && rowIndex > 0) {
       e.preventDefault();
       const prevInput = document.querySelector(`input[id="${side}-test-${colType}-${rowIndex - 1}"]`) as HTMLInputElement;
-      if (prevInput) prevInput.focus();
+      if (prevInput) { prevInput.focus(); prevInput.select(); }
     } else if (e.key === 'Tab') {
       e.preventDefault();
       let selector = '';
       if (e.shiftKey) {
-        // Navigate backwards within table only
+        // Navigate backwards
         if (colType === 'result') {
           selector = `input[id="${side}-test-standard-${rowIndex}"]`;
         } else if (colType === 'standard') {
           selector = `input[id="${side}-test-method-${rowIndex}"]`;
-        } else if (colType === 'method' && rowIndex > 0) {
-          selector = `input[id="${side}-test-result-${rowIndex - 1}"]`;
+        } else if (colType === 'method') {
+          if (rowIndex > 0) {
+            selector = `input[id="${side}-test-result-${rowIndex - 1}"]`;
+          } else {
+            const rowsLength = (side === 'left' ? leftRows : rightRows).length;
+            selector = activeSubView === 'lab_formulations'
+              ? `input[id="${side}-solid-${rowsLength - 1}"]`
+              : `input[id="${side}-qty-${rowsLength - 1}"]`;
+          }
         }
       } else {
-        // Navigate forwards within table only
+        // Navigate forwards
         if (colType === 'method') {
           selector = `input[id="${side}-test-standard-${rowIndex}"]`;
         } else if (colType === 'standard') {
           selector = `input[id="${side}-test-result-${rowIndex}"]`;
-        } else if (colType === 'result' && rowIndex < rowsLength - 1) {
-          selector = `input[id="${side}-test-method-${rowIndex + 1}"]`;
+        } else if (colType === 'result') {
+          if (rowIndex < rowsLength - 1) {
+            selector = `input[id="${side}-test-method-${rowIndex + 1}"]`;
+          } else {
+            selector = `textarea[id="${side}-remarks"]`;
+          }
         }
       }
       if (selector) {
-        const nextInput = document.querySelector(selector) as HTMLInputElement;
-        if (nextInput) nextInput.focus();
+        const nextInput = document.querySelector(selector) as HTMLElement;
+        if (nextInput) {
+          nextInput.focus();
+          if ('select' in nextInput && typeof (nextInput as any).select === 'function') {
+            (nextInput as any).select();
+          }
+        }
+      }
+    }
+  };
+
+  const handleHeaderFieldKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, side: 'left' | 'right', fieldName: string) => {
+    if (e.key === 'Enter' || (e.key === 'Tab' && !e.shiftKey)) {
+      if (fieldName === 'reportDate') {
+        e.preventDefault();
+        const firstCell = document.querySelector(
+          activeSubView === 'rm_testing' ? `input[id="${side}-mr-0"]` : `input[id="${side}-mat-0"]`
+        ) as HTMLElement;
+        if (firstCell) {
+          firstCell.focus();
+          if ('select' in firstCell) (firstCell as any).select();
+        }
       }
     }
   };
@@ -3251,39 +3295,39 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginBottom: '8px', flexShrink: 0 }}>
                     <div className="form-input-container">
                       <span className="form-label">Ref No</span>
-                      <input type="text" className="field-input" value={leftForm.refNo} onChange={e => setLeftForm({...leftForm, refNo: e.target.value})} onFocus={e => e.target.select()} />
+                      <input id="left-refNo" type="text" className="field-input" value={leftForm.refNo} onChange={e => setLeftForm({...leftForm, refNo: e.target.value})} onFocus={e => e.target.select()} />
                     </div>
                     <div className="form-input-container">
                       <span className="form-label">Batch No</span>
-                      <input type="text" className="field-input" value={leftForm.batchNo} onChange={e => setLeftForm({...leftForm, batchNo: e.target.value})} onFocus={e => e.target.select()} />
+                      <input id="left-batchNo" type="text" className="field-input" value={leftForm.batchNo} onChange={e => setLeftForm({...leftForm, batchNo: e.target.value})} onFocus={e => e.target.select()} />
                     </div>
                     <div className="form-input-container">
                       <span className="form-label">Product Name</span>
-                      <input type="text" className="field-input" value={leftForm.product} readOnly style={{ backgroundColor: 'var(--bg-app)', cursor: 'not-allowed', opacity: 0.85 }} onChange={e => setLeftForm({...leftForm, product: e.target.value})} onFocus={e => e.target.select()} />
+                      <input id="left-product" type="text" className="field-input" value={leftForm.product} readOnly style={{ backgroundColor: 'var(--bg-app)', cursor: 'not-allowed', opacity: 0.85 }} onChange={e => setLeftForm({...leftForm, product: e.target.value})} onFocus={e => e.target.select()} />
                     </div>
                     {activeSubView === 'rm_testing' && (
                       <>
                         <div className="form-input-container">
                           <span className="form-label">RM Name</span>
-                          <input type="text" className="field-input" value={leftForm.rmName} onChange={e => setLeftForm({...leftForm, rmName: e.target.value})} onFocus={e => e.target.select()} />
+                          <input id="left-rmName" type="text" className="field-input" value={leftForm.rmName} onChange={e => setLeftForm({...leftForm, rmName: e.target.value})} onFocus={e => e.target.select()} />
                         </div>
                         <div className="form-input-container">
                           <span className="form-label">RM Lot No</span>
-                          <input type="text" className="field-input" value={leftForm.rmLot} onChange={e => setLeftForm({...leftForm, rmLot: e.target.value})} onFocus={e => e.target.select()} />
+                          <input id="left-rmLot" type="text" className="field-input" value={leftForm.rmLot} onChange={e => setLeftForm({...leftForm, rmLot: e.target.value})} onFocus={e => e.target.select()} />
                         </div>
                       </>
                     )}
                     <div className="form-input-container">
                       <span className="form-label">Formula Date</span>
-                      <input type="text" className="field-input" value={leftForm.formulaDate} onChange={e => setLeftForm({...leftForm, formulaDate: e.target.value})} onFocus={e => e.target.select()} />
+                      <input id="left-formulaDate" type="text" className="field-input" value={leftForm.formulaDate} onChange={e => setLeftForm({...leftForm, formulaDate: e.target.value})} onFocus={e => e.target.select()} />
                     </div>
                     <div className="form-input-container">
                       <span className="form-label">Test Date</span>
-                      <input type="text" className="field-input" value={leftForm.testDate} onChange={e => setLeftForm({...leftForm, testDate: e.target.value})} onFocus={e => e.target.select()} />
+                      <input id="left-testDate" type="text" className="field-input" value={leftForm.testDate} onChange={e => setLeftForm({...leftForm, testDate: e.target.value})} onFocus={e => e.target.select()} />
                     </div>
                     <div className="form-input-container">
                       <span className="form-label">Report Date</span>
-                      <input type="text" className="field-input" value={leftForm.reportDate} onChange={e => setLeftForm({...leftForm, reportDate: e.target.value})} onFocus={e => e.target.select()} />
+                      <input id="left-reportDate" type="text" className="field-input" value={leftForm.reportDate} onChange={e => setLeftForm({...leftForm, reportDate: e.target.value})} onKeyDown={e => handleHeaderFieldKeyDown(e, 'left', 'reportDate')} onFocus={e => e.target.select()} />
                     </div>
                     {activeSubView === 'lab_formulations' && (
                       <div style={{ display: 'flex', alignItems: 'flex-end' }}>
@@ -3615,6 +3659,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                     <div className="form-input-container" style={{ width: '100%' }}>
                       <span className="form-label">Remarks</span>
                       <textarea 
+                        id="left-remarks"
                         className="field-input" 
                         value={leftRemarks} 
                         onChange={e => setLeftRemarks(e.target.value)} 
@@ -3679,39 +3724,39 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginBottom: '8px', flexShrink: 0 }}>
                     <div className="form-input-container">
                       <span className="form-label">Ref No</span>
-                      <input type="text" className="field-input" value={rightForm.refNo} onChange={e => setRightForm({...rightForm, refNo: e.target.value})} onFocus={e => e.target.select()} />
+                      <input id="right-refNo" type="text" className="field-input" value={rightForm.refNo} onChange={e => setRightForm({...rightForm, refNo: e.target.value})} onFocus={e => e.target.select()} />
                     </div>
                     <div className="form-input-container">
                       <span className="form-label">Batch No</span>
-                      <input type="text" className="field-input" value={rightForm.batchNo} onChange={e => setRightForm({...rightForm, batchNo: e.target.value})} onFocus={e => e.target.select()} />
+                      <input id="right-batchNo" type="text" className="field-input" value={rightForm.batchNo} onChange={e => setRightForm({...rightForm, batchNo: e.target.value})} onFocus={e => e.target.select()} />
                     </div>
                     <div className="form-input-container">
                       <span className="form-label">Product Name</span>
-                      <input type="text" className="field-input" value={rightForm.product} readOnly style={{ backgroundColor: 'var(--bg-app)', cursor: 'not-allowed', opacity: 0.85 }} onChange={e => setRightForm({...rightForm, product: e.target.value})} onFocus={e => e.target.select()} />
+                      <input id="right-product" type="text" className="field-input" value={rightForm.product} readOnly style={{ backgroundColor: 'var(--bg-app)', cursor: 'not-allowed', opacity: 0.85 }} onChange={e => setRightForm({...rightForm, product: e.target.value})} onFocus={e => e.target.select()} />
                     </div>
                     {activeSubView === 'rm_testing' && (
                       <>
                         <div className="form-input-container">
                           <span className="form-label">RM Name</span>
-                          <input type="text" className="field-input" value={rightForm.rmName} onChange={e => setRightForm({...rightForm, rmName: e.target.value})} onFocus={e => e.target.select()} />
+                          <input id="right-rmName" type="text" className="field-input" value={rightForm.rmName} onChange={e => setRightForm({...rightForm, rmName: e.target.value})} onFocus={e => e.target.select()} />
                         </div>
                         <div className="form-input-container">
                           <span className="form-label">RM Lot No</span>
-                          <input type="text" className="field-input" value={rightForm.rmLot} onChange={e => setRightForm({...rightForm, rmLot: e.target.value})} onFocus={e => e.target.select()} />
+                          <input id="right-rmLot" type="text" className="field-input" value={rightForm.rmLot} onChange={e => setRightForm({...rightForm, rmLot: e.target.value})} onFocus={e => e.target.select()} />
                         </div>
                       </>
                     )}
                     <div className="form-input-container">
                       <span className="form-label">Formula Date</span>
-                      <input type="text" className="field-input" value={rightForm.formulaDate} onChange={e => setRightForm({...rightForm, formulaDate: e.target.value})} onFocus={e => e.target.select()} />
+                      <input id="right-formulaDate" type="text" className="field-input" value={rightForm.formulaDate} onChange={e => setRightForm({...rightForm, formulaDate: e.target.value})} onFocus={e => e.target.select()} />
                     </div>
                     <div className="form-input-container">
                       <span className="form-label">Test Date</span>
-                      <input type="text" className="field-input" value={rightForm.testDate} onChange={e => setRightForm({...rightForm, testDate: e.target.value})} onFocus={e => e.target.select()} />
+                      <input id="right-testDate" type="text" className="field-input" value={rightForm.testDate} onChange={e => setRightForm({...rightForm, testDate: e.target.value})} onFocus={e => e.target.select()} />
                     </div>
                     <div className="form-input-container">
                       <span className="form-label">Report Date</span>
-                      <input type="text" className="field-input" value={rightForm.reportDate} onChange={e => setRightForm({...rightForm, reportDate: e.target.value})} onFocus={e => e.target.select()} />
+                      <input id="right-reportDate" type="text" className="field-input" value={rightForm.reportDate} onChange={e => setRightForm({...rightForm, reportDate: e.target.value})} onKeyDown={e => handleHeaderFieldKeyDown(e, 'right', 'reportDate')} onFocus={e => e.target.select()} />
                     </div>
                     {activeSubView === 'lab_formulations' && (
                       <div style={{ display: 'flex', alignItems: 'flex-end' }}>
@@ -4049,6 +4094,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                     <div className="form-input-container" style={{ width: '100%' }}>
                       <span className="form-label">Remarks</span>
                       <textarea 
+                        id="right-remarks"
                         className="field-input" 
                         value={rightRemarks} 
                         onChange={e => setRightRemarks(e.target.value)} 

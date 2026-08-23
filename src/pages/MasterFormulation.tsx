@@ -4,7 +4,7 @@ import {
   Download, Edit3, CheckCircle, Scale, Eye, ChevronLeft, ChevronRight, Play, Info,
   Plus, Image as ImageIcon, ZoomIn, UploadCloud, Trash2
 } from 'lucide-react';
-import { MasterFormulationAPI, API_BASE_URL } from '../services/api';
+import { MasterFormulationAPI, LabFormulationsAPI, API_BASE_URL } from '../services/api';
 import { CreateMasterModal } from '../components/master_formulation/CreateMasterModal';
 import { generateAndDownloadMasterFormulationExcel } from '../utils/masterFormulationExcel';
 
@@ -35,14 +35,12 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
   const [detailData, setDetailData] = useState<any | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 
-  // Document Control (Matching Official Physical Specification Sheet)
+  // Field states for standard and lab master formulation
   const [docNo, setDocNo] = useState('DOC-MF-01');
   const [reviewNo, setReviewNo] = useState('03');
   const [reviewDate, setReviewDate] = useState('01.04.2025');
   const [issueNo, setIssueNo] = useState('01');
   const [issueDate, setIssueDate] = useState('01.04.2025');
-
-  // Formulation Identification
   const [customerName, setCustomerName] = useState('');
   const [refNo, setRefNo] = useState('');
   const [formulaDate, setFormulaDate] = useState('');
@@ -78,6 +76,78 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
   const [approving, setApproving] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+
+  // Deletion states
+  const [deletingBatch, setDeletingBatch] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteFormulation = (targetBatchNo?: string | null, e?: React.MouseEvent) => {
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+    const batchToDelete = typeof targetBatchNo === 'string' && targetBatchNo ? targetBatchNo : selectedBatch;
+    if (!batchToDelete) return;
+    setDeletingBatch(batchToDelete);
+  };
+
+  const confirmDeleteFormulation = async () => {
+    if (!deletingBatch) return;
+    setIsDeleting(true);
+    const isLabMf = viewMode === 'lab_master_formulation';
+    const deleteApi = isLabMf ? LabFormulationsAPI.deleteLmfBatch : MasterFormulationAPI.deleteBatch;
+    const [success, resDataOrMsg] = await deleteApi(productName, deletingBatch);
+    setIsDeleting(false);
+    
+    if (success) {
+      onShowToast(`Master formulation '${deletingBatch}' deleted successfully.`, 'success');
+      if (selectedBatch === deletingBatch) {
+        setSelectedBatch(null);
+        setDetailData(null);
+      }
+      setDeletingBatch(null);
+      loadMasterList();
+    } else {
+      const msg = typeof resDataOrMsg === 'string' ? resDataOrMsg : 'Failed to delete master formulation.';
+      onShowToast(msg, 'error');
+    }
+  };
+
+  const handleTableKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, idx: number, col: 'remarks' | 'rounded') => {
+    const len = localInventory.length;
+    if (e.key === 'Tab') {
+      if (e.shiftKey) {
+        if (col === 'rounded') {
+          e.preventDefault();
+          const prev = document.getElementById(`mf-remarks-${idx}`) as HTMLInputElement;
+          if (prev) { prev.focus(); prev.select(); }
+        } else if (col === 'remarks' && idx > 0) {
+          e.preventDefault();
+          const prev = document.getElementById(`mf-rounded-${idx - 1}`) as HTMLInputElement;
+          if (prev) { prev.focus(); prev.select(); }
+        }
+      } else {
+        if (col === 'remarks') {
+          e.preventDefault();
+          const next = document.getElementById(`mf-rounded-${idx}`) as HTMLInputElement;
+          if (next) { next.focus(); next.select(); }
+        } else if (col === 'rounded' && idx < len - 1) {
+          e.preventDefault();
+          const next = document.getElementById(`mf-remarks-${idx + 1}`) as HTMLInputElement;
+          if (next) { next.focus(); next.select(); }
+        }
+      }
+    } else if (e.key === 'ArrowDown' || e.key === 'Enter') {
+      if (idx < len - 1) {
+        e.preventDefault();
+        const next = document.getElementById(`mf-${col}-${idx + 1}`) as HTMLInputElement;
+        if (next) { next.focus(); next.select(); }
+      }
+    } else if (e.key === 'ArrowUp') {
+      if (idx > 0) {
+        e.preventDefault();
+        const prev = document.getElementById(`mf-${col}-${idx - 1}`) as HTMLInputElement;
+        if (prev) { prev.focus(); prev.select(); }
+      }
+    }
+  };
 
   const handleApproveFormulation = async (targetBatchNo?: string, e?: React.MouseEvent) => {
     if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
@@ -386,7 +456,9 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
         approval: currentParams.approval
       };
       
-      const [success, resDataOrMsg] = await MasterFormulationAPI.updateBatch(productName, selectedBatch, updatedPayload);
+      const isLabMf = viewMode === 'lab_master_formulation';
+      const updateApi = isLabMf ? LabFormulationsAPI.updateLmfBatch : MasterFormulationAPI.updateBatch;
+      const [success, resDataOrMsg] = await updateApi(productName, selectedBatch, updatedPayload);
       if (success) {
         setAutosaveStatus('✓ Recipe changes saved automatically');
         setTimeout(() => setAutosaveStatus(''), 3000);
@@ -514,7 +586,9 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
     };
 
     setLoading(true);
-    const [success, resDataOrMsg] = await MasterFormulationAPI.updateBatch(productName, selectedBatch, updatedPayload);
+    const isLabMf = viewMode === 'lab_master_formulation';
+    const updateApi = isLabMf ? LabFormulationsAPI.updateLmfBatch : MasterFormulationAPI.updateBatch;
+    const [success, resDataOrMsg] = await updateApi(productName, selectedBatch, updatedPayload);
     setLoading(false);
 
     if (success) {
@@ -771,35 +845,59 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                     {row.batch_no}
                   </div>
 
-                  {/* Bottom Row: View Chip & Approve Button */}
+                  {/* Bottom Row: View Chip & Approve / Delete Buttons */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '6px', marginTop: 'auto', paddingTop: '6px', borderTop: '1px solid #f1f5f9' }}>
                     <span className="batch-view-chip">
                       {viewMode === 'mf_production' ? 'Load Sheet' : 'View Details'}
                     </span>
-                    {isAdmin && !isApproved && viewMode === 'master_formulation' && (
-                      <button
-                        onClick={(e) => handleApproveFormulation(row.batch_no, e)}
-                        disabled={approving}
-                        style={{
-                          padding: '4px 10px',
-                          borderRadius: '6px',
-                          background: 'linear-gradient(135deg, #10b981, #059669)',
-                          color: '#ffffff',
-                          fontWeight: 700,
-                          fontSize: '0.75rem',
-                          border: 'none',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)',
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        <CheckCircle size={13} />
-                        {approving ? '...' : 'Approve'}
-                      </button>
-                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {viewMode !== 'mf_production' && (
+                        <button
+                          onClick={(e) => handleDeleteFormulation(row.batch_no, e)}
+                          title="Delete Formulation"
+                          style={{
+                            padding: '4px 8px',
+                            borderRadius: '6px',
+                            background: '#fee2e2',
+                            color: '#dc2626',
+                            fontWeight: 700,
+                            fontSize: '0.75rem',
+                            border: '1px solid #fca5a5',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '3px',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      )}
+                      {isAdmin && !isApproved && viewMode === 'master_formulation' && (
+                        <button
+                          onClick={(e) => handleApproveFormulation(row.batch_no, e)}
+                          disabled={approving}
+                          style={{
+                            padding: '4px 10px',
+                            borderRadius: '6px',
+                            background: 'linear-gradient(135deg, #10b981, #059669)',
+                            color: '#ffffff',
+                            fontWeight: 700,
+                            fontSize: '0.75rem',
+                            border: 'none',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          <CheckCircle size={13} />
+                          {approving ? '...' : 'Approve'}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
@@ -1274,7 +1372,9 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                     const itemQty = parseFloat(item.qty) || 0;
                     const itemFinalQty = totalQty > 0 ? (itemQty / totalQty) * parseFloat(grams || '100') : 0;
                     const defaultR = Math.round(itemFinalQty);
-                    return sum + (parseFloat(item.rounded_qty) || defaultR);
+                    const valStr = item.rounded_qty !== undefined && item.rounded_qty !== null ? item.rounded_qty : '';
+                    const valNum = valStr === '' ? defaultR : (parseFloat(valStr) || 0);
+                    return sum + valNum;
                   }, 0);
  
                   return (
@@ -1298,18 +1398,21 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                               const percent = totalQty > 0 ? ((qty / totalQty) * 100).toFixed(2) : '0.00';
                               const finalQty = totalQty > 0 ? ((qty / totalQty) * parseFloat(grams || '100')).toFixed(2) : '0.00';
                               const defaultRounded = Math.round(parseFloat(finalQty));
-                              const roundedQty = item.rounded_qty || String(defaultRounded);
+                              const roundedQty = item.rounded_qty !== undefined && item.rounded_qty !== null ? item.rounded_qty : String(defaultRounded);
 
                               return (
                                 <tr key={idx}>
                                   <td style={{ textAlign: 'center', color: '#64748b', fontWeight: 600, padding: '4px 8px', border: '1px solid #cbd5e1' }}>{idx + 1}</td>
                                   <td style={{ padding: '4px', border: '1px solid #cbd5e1' }}>
                                     <input 
+                                      id={`mf-remarks-${idx}`}
                                       type="text" 
                                       className="table-cell-input" 
                                       style={{ width: '100%', padding: '4px 8px', fontSize: '12px', height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', backgroundColor: '#ffffff' }}
                                       value={item.remarks || ''} 
                                       onChange={e => handleInventoryChange(idx, 'remarks', e.target.value)}
+                                      onKeyDown={e => handleTableKeyDown(e, idx, 'remarks')}
+                                      onFocus={e => e.target.select()}
                                     />
                                   </td>
                                   <td style={{ fontWeight: 600, color: '#1e293b', padding: '6px 10px', border: '1px solid #cbd5e1' }}>{item.material || item.raw_material || '-'}</td>
@@ -1318,11 +1421,14 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                                   <td style={{ textAlign: 'right', fontWeight: 700, color: '#1d4ed8', backgroundColor: '#f8fafc', padding: '6px 10px', border: '1px solid #cbd5e1' }}>{finalQty}</td>
                                   <td style={{ padding: '4px', border: '1px solid #cbd5e1' }}>
                                     <input 
+                                      id={`mf-rounded-${idx}`}
                                       type="text" 
                                       className="table-cell-input" 
                                       style={{ textAlign: 'center', width: '100%', padding: '4px 8px', fontSize: '12px', fontWeight: 'bold', height: '30px', color: '#1d4ed8', border: '1px solid #cbd5e1', borderRadius: '4px', backgroundColor: '#ffffff' }}
                                       value={roundedQty} 
                                       onChange={e => handleInventoryChange(idx, 'rounded_qty', e.target.value)}
+                                      onKeyDown={e => handleTableKeyDown(e, idx, 'rounded')}
+                                      onFocus={e => e.target.select()}
                                     />
                                   </td>
                                 </tr>
@@ -1388,12 +1494,59 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
               )}
  
               {!isEditing && (
-                <button onClick={() => setSelectedBatch(null)} className="flet-btn flet-btn-orange" style={{ padding: '0 20px', height: '38px', borderRadius: '8px', fontWeight: 600 }}>
-                  Close
-                </button>
+                <>
+                  <button
+                    onClick={() => handleDeleteFormulation(selectedBatch)}
+                    disabled={isDeleting}
+                    className="flet-btn flet-btn-red"
+                    style={{ padding: '0 16px', height: '38px', display: 'flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg, #ef4444, #dc2626)', border: 'none', borderRadius: '8px', color: '#ffffff', fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 10px rgba(239, 68, 68, 0.2)' }}
+                  >
+                    <Trash2 size={14} /> Delete Formulation
+                  </button>
+                  <button onClick={() => setSelectedBatch(null)} className="flet-btn flet-btn-orange" style={{ padding: '0 20px', height: '38px', borderRadius: '8px', fontWeight: 600 }}>
+                    Close
+                  </button>
+                </>
               )}
             </div>
  
+          </div>
+        </div>
+      )}
+
+      {/* Delete Master Formulation Confirmation Dialog */}
+      {deletingBatch && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, backdropFilter: 'blur(4px)' }}>
+          <div style={{ backgroundColor: '#ffffff', borderRadius: '14px', width: '90%', maxWidth: '440px', padding: '24px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)', border: '1px solid #e2e8f0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+              <div style={{ width: '42px', height: '42px', borderRadius: '50%', backgroundColor: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#dc2626', flexShrink: 0 }}>
+                <Trash2 size={22} />
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#1e293b' }}>Delete Master Formulation</h3>
+                <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#64748b' }}>This action cannot be undone.</p>
+              </div>
+            </div>
+            <p style={{ fontSize: '0.9rem', color: '#334155', lineHeight: 1.5, margin: '0 0 20px 0' }}>
+              Are you sure you want to permanently delete Master Formulation batch <strong>{deletingBatch}</strong>?
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button
+                onClick={() => setDeletingBatch(null)}
+                disabled={isDeleting}
+                style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: '#f8fafc', color: '#475569', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteFormulation}
+                disabled={isDeleting}
+                style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', backgroundColor: '#dc2626', color: '#ffffff', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                {isDeleting ? <RefreshCw size={14} className="spin-loader" /> : <Trash2 size={14} />}
+                {isDeleting ? 'Deleting...' : 'Yes, Delete'}
+              </button>
+            </div>
           </div>
         </div>
       )}

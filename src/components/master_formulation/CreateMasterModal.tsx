@@ -347,7 +347,15 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
         </div>
 
         {/* Scrollable Form Body */}
-        <form onSubmit={handleSave} style={{ flexGrow: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', backgroundColor: '#f8fafc' }}>
+        <form 
+          onSubmit={handleSave} 
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && (e.target as HTMLElement).tagName === 'INPUT') {
+              e.preventDefault();
+            }
+          }}
+          style={{ flexGrow: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', backgroundColor: '#f8fafc' }}
+        >
           
           {/* Top Section: Form Header, Target Quantity Recalculator, and Image Upload Box */}
           <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 0.9fr 1fr', gap: '16px' }}>

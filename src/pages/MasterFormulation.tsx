@@ -2046,6 +2046,11 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
             setBulkModalOpen(false);
             loadMasterList();
           }}
+          onOpenBatch={(batchNo) => {
+            setBulkModalOpen(false);
+            loadMasterList();
+            loadBatchDetails(batchNo);
+          }}
           onShowToast={onShowToast}
         />
       )}

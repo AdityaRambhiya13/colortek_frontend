@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { 
   UploadCloud, ZoomIn, ZoomOut, RotateCw, Maximize2, 
   ChevronLeft, ChevronRight, CheckCircle, AlertCircle, 
-  Trash2, FastForward, Sparkles, RefreshCw, X, Layers, Check
+  Trash2, FastForward, Sparkles, RefreshCw, X, Layers, Check, ExternalLink, Save
 } from 'lucide-react';
 import { MasterFormulationAPI, LabFormulationsAPI } from '../../services/api';
 
@@ -27,6 +27,7 @@ interface BulkMasterUploadModalProps {
   productName: string;
   onClose: () => void;
   onSuccess: () => void;
+  onOpenBatch?: (batchNo: string) => void;
   onShowToast: (msg: string, type: 'success' | 'error' | 'warning' | 'info') => void;
 }
 
@@ -35,6 +36,7 @@ export const BulkMasterUploadModal: React.FC<BulkMasterUploadModalProps> = ({
   productName,
   onClose,
   onSuccess,
+  onOpenBatch,
   onShowToast
 }) => {
   const [queue, setQueue] = useState<QueueItem[]>([]);
@@ -54,7 +56,7 @@ export const BulkMasterUploadModal: React.FC<BulkMasterUploadModalProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const viewerRef = useRef<HTMLDivElement>(null);
 
-  // Keyboard navigation callback (Hook at top level)
+  // Keyboard navigation callback
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (!isOpen) return;
 
@@ -67,14 +69,14 @@ export const BulkMasterUploadModal: React.FC<BulkMasterUploadModalProps> = ({
     }
   }, [isOpen, currentIndex, queue.length]);
 
-  // Initialize or update product name (Hook at top level)
+  // Initialize or update product name
   useEffect(() => {
     if (productName && !targetProductName) {
       setTargetProductName(productName);
     }
   }, [productName, targetProductName]);
 
-  // Focus batch number input when moving between images (Hook at top level)
+  // Focus batch number input when moving between images
   useEffect(() => {
     if (isOpen && queue.length > 0 && !isFinished) {
       const timer = setTimeout(() => {
@@ -88,14 +90,13 @@ export const BulkMasterUploadModal: React.FC<BulkMasterUploadModalProps> = ({
     }
   }, [currentIndex, isOpen, queue.length, isFinished]);
 
-  // Keyboard event listener (Hook at top level)
+  // Keyboard event listener
   useEffect(() => {
     if (!isOpen) return;
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, handleKeyDown]);
 
-  // If not open, return null AFTER all hooks are called
   if (!isOpen) return null;
 
   const currentItem = queue[currentIndex] || null;
@@ -185,8 +186,8 @@ export const BulkMasterUploadModal: React.FC<BulkMasterUploadModalProps> = ({
     }
   };
 
-  // Save current batch and advance
-  const handleSaveAndNext = async (e?: React.FormEvent) => {
+  // Save current batch
+  const handleSaveBatch = async (andAdvance: boolean = true, e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!currentItem) return;
 
@@ -258,7 +259,10 @@ export const BulkMasterUploadModal: React.FC<BulkMasterUploadModalProps> = ({
         } : q));
         
         onShowToast(`✓ Master formulation '${cleanBatchNo}' created with sheet attached!`, 'success');
-        advanceNext();
+
+        if (andAdvance) {
+          advanceNext();
+        }
       } else {
         const errorMsg = typeof saveRes === 'string' ? saveRes : 'Failed to save master formulation.';
         setQueue(prev => prev.map((q, idx) => idx === currentIndex ? { ...q, status: 'error', errorMsg } : q));
@@ -324,7 +328,8 @@ export const BulkMasterUploadModal: React.FC<BulkMasterUploadModalProps> = ({
     setIsPanning(false);
   };
 
-  const savedCount = queue.filter(q => q.status === 'saved').length;
+  const savedItems = queue.filter(q => q.status === 'saved');
+  const savedCount = savedItems.length;
   const skippedCount = queue.filter(q => q.status === 'skipped').length;
 
   return (
@@ -403,7 +408,7 @@ export const BulkMasterUploadModal: React.FC<BulkMasterUploadModalProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             {queue.length > 0 && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255, 255, 255, 0.08)', padding: '6px 14px', borderRadius: '8px', fontSize: '0.85rem' }}>
-                <span>Processed: <strong style={{ color: '#10b981' }}>{savedCount}</strong> / {queue.length}</span>
+                <span>Saved: <strong style={{ color: '#10b981' }}>{savedCount}</strong> / {queue.length}</span>
                 {skippedCount > 0 && <span style={{ color: '#94a3b8' }}>({skippedCount} skipped)</span>}
               </div>
             )}
@@ -522,21 +527,22 @@ export const BulkMasterUploadModal: React.FC<BulkMasterUploadModalProps> = ({
             </div>
           </div>
         ) : isFinished ? (
-          /* Finished Summary Screen */
+          /* Finished Summary Screen with Direct Batch List & View Links */
           <div style={{
             flex: 1,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '40px',
+            padding: '32px',
             backgroundColor: '#f8fafc',
             textAlign: 'center',
-            gap: '20px'
+            gap: '16px',
+            overflowY: 'auto'
           }}>
             <div style={{
-              width: '80px',
-              height: '80px',
+              width: '72px',
+              height: '72px',
               borderRadius: '50%',
               backgroundColor: '#dcfce7',
               display: 'flex',
@@ -544,31 +550,100 @@ export const BulkMasterUploadModal: React.FC<BulkMasterUploadModalProps> = ({
               justifyContent: 'center',
               color: '#16a34a'
             }}>
-              <Check size={44} />
+              <Check size={40} />
             </div>
             <div>
-              <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#1e293b', margin: 0 }}>
-                Batch Processing Complete!
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1e293b', margin: 0 }}>
+                Master Formulation Processing Complete!
               </h2>
-              <p style={{ fontSize: '1rem', color: '#64748b', margin: '8px 0 0' }}>
+              <p style={{ fontSize: '0.95rem', color: '#64748b', margin: '6px 0 0' }}>
                 Successfully created <strong>{savedCount}</strong> master formulation records with attached physical sheet photos.
               </p>
             </div>
 
-            <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
+            {/* List of Saved Batches */}
+            {savedItems.length > 0 && (
+              <div style={{
+                width: '100%',
+                maxWidth: '680px',
+                maxHeight: '260px',
+                overflowY: 'auto',
+                backgroundColor: '#ffffff',
+                borderRadius: '12px',
+                border: '1px solid #e2e8f0',
+                boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
+                padding: '12px'
+              }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569', textAlign: 'left', marginBottom: '8px', textTransform: 'uppercase' }}>
+                  Saved Formulations:
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {savedItems.map((item, i) => (
+                    <div
+                      key={item.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '8px 12px',
+                        backgroundColor: '#f8fafc',
+                        borderRadius: '8px',
+                        border: '1px solid #e2e8f0'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>#{i + 1}</span>
+                        <div style={{ textAlign: 'left' }}>
+                          <strong style={{ fontSize: '0.9rem', color: '#0f172a' }}>{item.batchNo}</strong>
+                          <span style={{ fontSize: '0.75rem', color: '#64748b', marginLeft: '8px' }}>({targetProductName || productName})</span>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#16a34a', background: '#dcfce7', padding: '2px 8px', borderRadius: '6px' }}>
+                          ✓ Saved in DB
+                        </span>
+                        {onOpenBatch && (
+                          <button
+                            type="button"
+                            onClick={() => onOpenBatch(item.batchNo)}
+                            style={{
+                              padding: '4px 10px',
+                              borderRadius: '6px',
+                              background: '#3b82f6',
+                              color: '#ffffff',
+                              border: 'none',
+                              fontSize: '0.75rem',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                          >
+                            <ExternalLink size={12} /> Open Batch
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
               <button
                 onClick={() => {
                   setIsFinished(false);
                   setCurrentIndex(0);
                 }}
                 style={{
-                  padding: '10px 20px',
+                  padding: '9px 18px',
                   borderRadius: '8px',
                   border: '1px solid #cbd5e1',
                   backgroundColor: '#ffffff',
                   color: '#334155',
                   fontWeight: 600,
-                  fontSize: '0.9rem',
+                  fontSize: '0.85rem',
                   cursor: 'pointer'
                 }}
               >
@@ -580,13 +655,13 @@ export const BulkMasterUploadModal: React.FC<BulkMasterUploadModalProps> = ({
                   onClose();
                 }}
                 style={{
-                  padding: '10px 24px',
+                  padding: '9px 22px',
                   borderRadius: '8px',
                   background: 'linear-gradient(135deg, #10b981, #059669)',
                   color: '#ffffff',
                   border: 'none',
                   fontWeight: 700,
-                  fontSize: '0.9rem',
+                  fontSize: '0.85rem',
                   cursor: 'pointer',
                   boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
                 }}
@@ -715,7 +790,7 @@ export const BulkMasterUploadModal: React.FC<BulkMasterUploadModalProps> = ({
               boxSizing: 'border-box'
             }}>
               {/* Form Scroll Container */}
-              <form onSubmit={handleSaveAndNext} style={{ flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <form onSubmit={(e) => handleSaveBatch(true, e)} style={{ flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 
                 {/* Progress Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
@@ -733,6 +808,50 @@ export const BulkMasterUploadModal: React.FC<BulkMasterUploadModalProps> = ({
                     {currentItem?.status === 'saved' ? '✓ Saved' : currentItem?.status === 'skipped' ? 'Skipped' : 'Active'}
                   </span>
                 </div>
+
+                {/* Saved Confirmation Banner if already saved */}
+                {currentItem?.status === 'saved' && (
+                  <div style={{
+                    padding: '12px 16px',
+                    borderRadius: '10px',
+                    background: '#f0fdf4',
+                    border: '1px solid #86efac',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#166534', fontWeight: 800, fontSize: '0.88rem' }}>
+                      <CheckCircle size={18} color="#16a34a" />
+                      <span>✓ Saved in Database: {currentItem.batchNo}</span>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '0.78rem', color: '#15803d' }}>
+                      This master formulation is permanently stored with its physical sheet photo attached.
+                    </p>
+                    {onOpenBatch && (
+                      <button
+                        type="button"
+                        onClick={() => onOpenBatch(currentItem.batchNo)}
+                        style={{
+                          marginTop: '4px',
+                          padding: '6px 12px',
+                          borderRadius: '6px',
+                          background: '#10b981',
+                          color: '#ffffff',
+                          border: 'none',
+                          fontSize: '0.8rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        <ExternalLink size={13} /> Open & View Specification
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 {/* AI Detection Card */}
                 <div style={{
@@ -901,6 +1020,8 @@ export const BulkMasterUploadModal: React.FC<BulkMasterUploadModalProps> = ({
 
                 {/* Actions Block */}
                 <div style={{ marginTop: 'auto', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  
+                  {/* Primary Save & Next Button */}
                   <button
                     type="submit"
                     disabled={currentItem?.status === 'saving'}
@@ -928,9 +1049,33 @@ export const BulkMasterUploadModal: React.FC<BulkMasterUploadModalProps> = ({
                       </>
                     ) : (
                       <>
-                        <CheckCircle size={18} /> Save Batch & Next ➔ (Enter ↵)
+                        <Save size={18} /> Save Batch & Next ➔ (Enter ↵)
                       </>
                     )}
+                  </button>
+
+                  {/* Secondary Save Only Button */}
+                  <button
+                    type="button"
+                    onClick={(e) => handleSaveBatch(false, e)}
+                    disabled={currentItem?.status === 'saving'}
+                    style={{
+                      width: '100%',
+                      height: '36px',
+                      borderRadius: '8px',
+                      background: '#f0fdf4',
+                      color: '#15803d',
+                      border: '1px solid #86efac',
+                      fontSize: '0.85rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <CheckCircle size={15} /> Save This Batch (Stay on Page)
                   </button>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
@@ -938,7 +1083,7 @@ export const BulkMasterUploadModal: React.FC<BulkMasterUploadModalProps> = ({
                       type="button"
                       onClick={handleSkip}
                       style={{
-                        height: '36px',
+                        height: '34px',
                         borderRadius: '8px',
                         border: '1px solid #cbd5e1',
                         backgroundColor: '#f8fafc',
@@ -958,7 +1103,7 @@ export const BulkMasterUploadModal: React.FC<BulkMasterUploadModalProps> = ({
                       type="button"
                       onClick={(e) => handleRemoveFromQueue(currentIndex, e)}
                       style={{
-                        height: '36px',
+                        height: '34px',
                         borderRadius: '8px',
                         border: '1px solid #fecaca',
                         backgroundColor: '#fff5f5',

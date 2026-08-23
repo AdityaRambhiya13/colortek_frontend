@@ -59,6 +59,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
   const [showNewBatchModifyPassword, setShowNewBatchModifyPassword] = useState(false);
   const [createProducts, setCreateProducts] = useState<Record<string, boolean>>({});
   const [createRoles, setCreateRoles] = useState<Record<string, boolean>>({});
+  const [createProductSearch, setCreateProductSearch] = useState('');
 
   // Update User State
   const [selectedUser, setSelectedUser] = useState('');
@@ -68,6 +69,19 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
   const [showUpdateBatchModifyPassword, setShowUpdateBatchModifyPassword] = useState(false);
   const [updateProducts, setUpdateProducts] = useState<Record<string, boolean>>({});
   const [updateRoles, setUpdateRoles] = useState<Record<string, boolean>>({});
+  const [updateProductSearch, setUpdateProductSearch] = useState('');
+
+  // User Registry Search State
+  const [userRegistrySearch, setUserRegistrySearch] = useState('');
+
+  // Filtered product lists for easy assigning
+  const filteredCreateProducts = productsList.filter(p =>
+    p.toLowerCase().includes(createProductSearch.toLowerCase().trim())
+  );
+
+  const filteredUpdateProducts = productsList.filter(p =>
+    p.toLowerCase().includes(updateProductSearch.toLowerCase().trim())
+  );
 
   // Delete User State
   const [deleteUsername, setDeleteUsername] = useState('');
@@ -173,9 +187,16 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
   const consolidateUsersList = (users: any[]) => {
     const map: Record<string, { products: Set<string>; roles: Set<string> }> = {};
     users.forEach(u => {
-      const username = u.username || 'N/A';
+      const username = (u.username || '').trim();
+      if (!username || username.startsWith('AES256$') || username.startsWith('ENC$') || username === '[Cipher Error]') {
+        return;
+      }
       const product = u.product || 'N/A';
-      const roles = (u.role || '').split(',').map((r: string) => r.trim()).filter(Boolean);
+      let rawRole = u.role || '';
+      if (rawRole.startsWith('AES256$') || rawRole.startsWith('ENC$')) {
+        rawRole = '';
+      }
+      const roles = rawRole.split(',').map((r: string) => r.trim()).filter(Boolean);
 
       if (!map[username]) {
         map[username] = { products: new Set(), roles: new Set() };
@@ -265,6 +286,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
       setNewUsername('');
       setNewPassword('');
       setNewBatchModifyPassword('');
+      setCreateProductSearch('');
       // Reset checklists
       const clearedProds = { ...createProducts };
       Object.keys(clearedProds).forEach(k => clearedProds[k] = false);
@@ -282,6 +304,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
 
   const handleUpdateUserSelected = (username: string) => {
     setSelectedUser(username);
+    setUpdateProductSearch('');
     const user = consolidatedUsers.find(u => u.username === username);
     if (!user) return;
 
@@ -354,6 +377,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
       onShowToast(typeof data === 'string' ? data : ((data as Record<string, any>)?.message || 'User credentials modified successfully!'), 'success');
       setUpdatePassword('');
       setUpdateBatchModifyPassword('');
+      setUpdateProductSearch('');
       loadData();
     } else {
       onShowToast(typeof data === 'string' ? data : 'Failed to update user profile.', 'error');
@@ -623,32 +647,76 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
                   <button 
                     type="button" 
                     onClick={() => {
-                      const all: Record<string, boolean> = {};
-                      productsList.forEach(p => all[p] = true);
-                      setCreateProducts(all);
+                      const updated = { ...createProducts };
+                      const targets = createProductSearch.trim() ? filteredCreateProducts : productsList;
+                      targets.forEach(p => updated[p] = true);
+                      setCreateProducts(updated);
                     }}
                     style={{ background: 'none', border: 'none', color: '#6366f1', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}
                   >
-                    Select All
+                    {createProductSearch.trim() ? `Select Filtered (${filteredCreateProducts.length})` : 'Select All'}
                   </button>
                   <button 
                     type="button" 
                     onClick={() => {
-                      const all: Record<string, boolean> = {};
-                      productsList.forEach(p => all[p] = false);
-                      setCreateProducts(all);
+                      const updated = { ...createProducts };
+                      const targets = createProductSearch.trim() ? filteredCreateProducts : productsList;
+                      targets.forEach(p => updated[p] = false);
+                      setCreateProducts(updated);
                     }}
                     style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}
                   >
-                    Clear
+                    {createProductSearch.trim() ? 'Clear Filtered' : 'Clear'}
                   </button>
                 </div>
               </div>
+
+              {/* Product Search Bar */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                backgroundColor: 'var(--input-bg)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '6px',
+                padding: '0 10px',
+                marginBottom: '6px',
+                height: '34px'
+              }}>
+                <Search size={14} color="var(--text-light)" />
+                <input 
+                  type="text"
+                  placeholder="Search products to assign..."
+                  value={createProductSearch}
+                  onChange={e => setCreateProductSearch(e.target.value)}
+                  style={{
+                    border: 'none',
+                    background: 'transparent',
+                    padding: '6px 8px',
+                    fontSize: '0.8rem',
+                    color: 'var(--text-primary)',
+                    outline: 'none',
+                    width: '100%'
+                  }}
+                />
+                {createProductSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setCreateProductSearch('')}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-light)', padding: 0 }}
+                    title="Clear search"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+
               <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px', maxHeight: '140px', overflowY: 'auto', backgroundColor: 'var(--input-bg)' }}>
                 {productsList.length === 0 ? (
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-light)', fontStyle: 'italic' }}>No active product databases created.</span>
+                ) : filteredCreateProducts.length === 0 ? (
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-light)', fontStyle: 'italic' }}>No products match "{createProductSearch}"</span>
                 ) : (
-                  productsList.map(p => (
+                  filteredCreateProducts.map(p => (
                     <label key={p} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 0', fontSize: '0.85rem', cursor: 'pointer' }}>
                       <input 
                         type="checkbox" 
@@ -792,40 +860,91 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
                     <button 
                       type="button" 
                       onClick={() => {
-                        const all: Record<string, boolean> = {};
-                        productsList.forEach(p => all[p] = true);
-                        setUpdateProducts(all);
+                        const updated = { ...updateProducts };
+                        const targets = updateProductSearch.trim() ? filteredUpdateProducts : productsList;
+                        targets.forEach(p => updated[p] = true);
+                        setUpdateProducts(updated);
                       }}
                       style={{ background: 'none', border: 'none', color: '#7c3aed', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}
                     >
-                      Select All
+                      {updateProductSearch.trim() ? `Select Filtered (${filteredUpdateProducts.length})` : 'Select All'}
                     </button>
                     <button 
                       type="button" 
                       onClick={() => {
-                        const all: Record<string, boolean> = {};
-                        productsList.forEach(p => all[p] = false);
-                        setUpdateProducts(all);
+                        const updated = { ...updateProducts };
+                        const targets = updateProductSearch.trim() ? filteredUpdateProducts : productsList;
+                        targets.forEach(p => updated[p] = false);
+                        setUpdateProducts(updated);
                       }}
                       style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}
                     >
-                      Clear
+                      {updateProductSearch.trim() ? 'Clear Filtered' : 'Clear'}
                     </button>
                   </div>
                 )}
               </div>
+
+              {/* Product Search Bar */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                backgroundColor: 'var(--input-bg)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '6px',
+                padding: '0 10px',
+                marginBottom: '6px',
+                height: '34px',
+                opacity: selectedUser ? 1 : 0.6
+              }}>
+                <Search size={14} color="var(--text-light)" />
+                <input 
+                  type="text"
+                  placeholder="Search products to assign..."
+                  value={updateProductSearch}
+                  onChange={e => setUpdateProductSearch(e.target.value)}
+                  disabled={!selectedUser}
+                  style={{
+                    border: 'none',
+                    background: 'transparent',
+                    padding: '6px 8px',
+                    fontSize: '0.8rem',
+                    color: 'var(--text-primary)',
+                    outline: 'none',
+                    width: '100%',
+                    cursor: selectedUser ? 'text' : 'not-allowed'
+                  }}
+                />
+                {updateProductSearch && selectedUser && (
+                  <button
+                    type="button"
+                    onClick={() => setUpdateProductSearch('')}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-light)', padding: 0 }}
+                    title="Clear search"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+
               <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px', maxHeight: '140px', overflowY: 'auto', backgroundColor: 'var(--input-bg)' }}>
-                {productsList.map(p => (
-                  <label key={p} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 0', fontSize: '0.85rem', cursor: selectedUser ? 'pointer' : 'not-allowed', opacity: selectedUser ? 1 : 0.6 }}>
-                    <input 
-                      type="checkbox" 
-                      checked={updateProducts[p] || false} 
-                      onChange={e => setUpdateProducts({ ...updateProducts, [p]: e.target.checked })}
-                      disabled={!selectedUser}
-                    />
-                    <span>{p.toUpperCase()}</span>
-                  </label>
-                ))}
+                {productsList.length === 0 ? (
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-light)', fontStyle: 'italic' }}>No active product databases created.</span>
+                ) : filteredUpdateProducts.length === 0 ? (
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-light)', fontStyle: 'italic' }}>No products match "{updateProductSearch}"</span>
+                ) : (
+                  filteredUpdateProducts.map(p => (
+                    <label key={p} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 0', fontSize: '0.85rem', cursor: selectedUser ? 'pointer' : 'not-allowed', opacity: selectedUser ? 1 : 0.6 }}>
+                      <input 
+                        type="checkbox" 
+                        checked={updateProducts[p] || false} 
+                        onChange={e => setUpdateProducts({ ...updateProducts, [p]: e.target.checked })}
+                        disabled={!selectedUser}
+                      />
+                      <span>{p.toUpperCase()}</span>
+                    </label>
+                  ))
+                )}
               </div>
             </div>
 
@@ -887,10 +1006,32 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
 
       {/* MASTER ACTIVE USERS LEDGER */}
       <div className="glass-card animated-fade" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        <h3 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px' }}>
-          <Shield size={18} color="var(--primary-color)" />
-          <span>Active User Credentials Registry</span>
-        </h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px', flexWrap: 'wrap', gap: '12px' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+            <Shield size={18} color="var(--primary-color)" />
+            <span>Active User Credentials Registry</span>
+          </h3>
+          <div style={{ display: 'flex', alignItems: 'center', backgroundColor: 'var(--input-bg)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '0 10px', height: '34px' }}>
+            <Search size={14} color="var(--text-light)" />
+            <input
+              type="text"
+              placeholder="Search user, product, role..."
+              value={userRegistrySearch}
+              onChange={e => setUserRegistrySearch(e.target.value)}
+              style={{ border: 'none', background: 'transparent', padding: '6px 8px', fontSize: '0.85rem', color: 'var(--text-primary)', outline: 'none', width: '200px' }}
+            />
+            {userRegistrySearch && (
+              <button
+                type="button"
+                onClick={() => setUserRegistrySearch('')}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-light)', padding: 0 }}
+                title="Clear search"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+        </div>
 
         {loading ? (
           <TableSkeleton rows={4} cols={4} />
@@ -925,7 +1066,17 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
                 </tr>
               </thead>
               <tbody>
-                {consolidatedUsers.map(user => (
+                {consolidatedUsers
+                  .filter(user => {
+                    const q = userRegistrySearch.toLowerCase().trim();
+                    if (!q) return true;
+                    return (
+                      user.username.toLowerCase().includes(q) ||
+                      user.products.some(p => p.toLowerCase().includes(q)) ||
+                      user.roles.some(r => r.toLowerCase().includes(q))
+                    );
+                  })
+                  .map(user => (
                   <tr key={user.username}>
                     <td style={{ fontWeight: 'bold', color: 'var(--primary-color)' }}>
                       👤 {user.username}

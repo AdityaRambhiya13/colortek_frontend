@@ -1500,7 +1500,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
               </button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.85rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.85rem', maxHeight: '65vh', overflowY: 'auto' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '8px', backgroundColor: 'var(--input-bg)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                 <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>Modified By:</span>
                 <span style={{ fontWeight: 700, color: '#dc2626' }}>👤 {selectedModBatchDetail.modified_by}</span>
@@ -1508,14 +1508,115 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
                 <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>Timestamp:</span>
                 <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>🕒 {selectedModBatchDetail.formatted_timestamp}</span>
 
-                <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>Changes:</span>
-                <span style={{ color: 'var(--text-primary)' }}>{selectedModBatchDetail.changes_summary || 'N/A'}</span>
+                <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>Summary:</span>
+                <span style={{ color: '#dc2626', fontWeight: 600 }}>{selectedModBatchDetail.changes_summary || 'N/A'}</span>
               </div>
+
+              {(() => {
+                let parsedDiff: any = null;
+                try {
+                  parsedDiff = typeof selectedModBatchDetail.full_details === 'string' 
+                    ? JSON.parse(selectedModBatchDetail.full_details) 
+                    : selectedModBatchDetail.full_details;
+                } catch {
+                  parsedDiff = null;
+                }
+
+                if (!parsedDiff) return null;
+
+                const hasFieldDiffs = parsedDiff.field_diffs && Object.keys(parsedDiff.field_diffs).length > 0;
+                const hasMatDiffs = parsedDiff.materials_diff && parsedDiff.materials_diff.some((m: any) => m.is_new || m.qty_changed || m.material_changed || m.solid_changed);
+                const hasTestDiffs = parsedDiff.tests_diff && parsedDiff.tests_diff.some((t: any) => t.is_new || t.result_changed || t.standard_changed);
+
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {hasFieldDiffs && (
+                      <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.05)', border: '1px solid #fca5a5', borderRadius: '8px', padding: '10px' }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#b91c1c', display: 'block', marginBottom: '6px' }}>
+                          🏷️ Changed Header Fields
+                        </span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          {Object.entries(parsedDiff.field_diffs).map(([fKey, fVal]: [string, any]) => (
+                            <div key={fKey} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem' }}>
+                              <span style={{ fontWeight: 600, textTransform: 'capitalize', color: 'var(--text-secondary)', minWidth: '110px' }}>{fKey.replace(/_/g, ' ')}:</span>
+                              <span style={{ color: '#64748b', textDecoration: 'line-through', fontSize: '0.75rem' }}>{fVal.old || '(empty)'}</span>
+                              <span style={{ color: '#dc2626', fontWeight: 700 }}>➔ {fVal.new || '(empty)'}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {hasMatDiffs && (
+                      <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.05)', border: '1px solid #fca5a5', borderRadius: '8px', padding: '10px' }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#b91c1c', display: 'block', marginBottom: '6px' }}>
+                          🧪 Raw Material Modifications
+                        </span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          {parsedDiff.materials_diff.filter((m: any) => m.is_new || m.qty_changed || m.material_changed || m.solid_changed).map((m: any, mIdx: number) => (
+                            <div key={mIdx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#fee2e2', padding: '6px 10px', borderRadius: '6px', fontSize: '0.8rem', border: '1px solid #fca5a5' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span style={{ fontWeight: 700, color: '#dc2626' }}>{m.raw_material}</span>
+                                {m.is_new && (
+                                  <span style={{ fontSize: '0.65rem', fontWeight: 800, backgroundColor: '#dc2626', color: '#fff', padding: '1px 5px', borderRadius: '3px' }}>
+                                    NEW MATERIAL ADDED
+                                  </span>
+                                )}
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                {m.qty_changed && (
+                                  <span style={{ fontWeight: 700, color: '#dc2626' }}>
+                                    Qty: {m.old_qty !== null ? `${m.old_qty} ➔ ` : ''}{m.new_qty}
+                                  </span>
+                                )}
+                                {m.solid_changed && (
+                                  <span style={{ fontSize: '0.75rem', color: '#991b1b' }}>
+                                    Solid%: {m.old_solid ?? '-'}% ➔ {m.new_solid ?? '-'}%
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {hasTestDiffs && (
+                      <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.05)', border: '1px solid #fca5a5', borderRadius: '8px', padding: '10px' }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#b91c1c', display: 'block', marginBottom: '6px' }}>
+                          📋 Test Specification Modifications
+                        </span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          {parsedDiff.tests_diff.filter((t: any) => t.is_new || t.result_changed || t.standard_changed).map((t: any, tIdx: number) => (
+                            <div key={tIdx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#fee2e2', padding: '6px 10px', borderRadius: '6px', fontSize: '0.8rem', border: '1px solid #fca5a5' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span style={{ fontWeight: 700, color: '#dc2626' }}>{t.method}</span>
+                                {t.is_new && (
+                                  <span style={{ fontSize: '0.65rem', fontWeight: 800, backgroundColor: '#dc2626', color: '#fff', padding: '1px 5px', borderRadius: '3px' }}>
+                                    NEW TEST
+                                  </span>
+                                )}
+                              </div>
+                              <div>
+                                {t.result_changed && (
+                                  <span style={{ fontWeight: 700, color: '#dc2626' }}>
+                                    Result: {t.old_result ? `"${t.old_result}" ➔ ` : ''}"{t.new_result}"
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {selectedModBatchDetail.full_details && (
                 <div>
                   <span style={{ display: 'block', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px', fontSize: '0.8rem' }}>
-                    Raw Parameters Snapshot:
+                    Full JSON Payload:
                   </span>
                   <pre style={{
                     backgroundColor: '#090d16',
@@ -1523,7 +1624,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
                     padding: '12px',
                     borderRadius: '8px',
                     fontSize: '0.75rem',
-                    maxHeight: '220px',
+                    maxHeight: '160px',
                     overflowY: 'auto',
                     border: '1px solid rgba(255, 255, 255, 0.08)',
                     whiteSpace: 'pre-wrap',

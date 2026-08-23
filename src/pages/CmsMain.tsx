@@ -4375,6 +4375,31 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                   const tsqNum = parseFloat(totalSolidQty);
                   const cardSolidity = (twNum > 0 ? ((tsqNum * 100) / twNum) : 0).toFixed(2);
 
+                  // Parse diff payload for modified batch granular red highlighting
+                  let diff: any = null;
+                  if (b.is_modified && b.modified_details) {
+                    if (typeof b.modified_details === 'object') {
+                      diff = b.modified_details;
+                    } else if (typeof b.modified_details === 'string') {
+                      try {
+                        diff = JSON.parse(b.modified_details);
+                      } catch {
+                        diff = null;
+                      }
+                    }
+                  }
+
+                  const isBatchNoChanged = !!diff?.field_diffs?.batch_no;
+                  const isRefNoChanged = !!diff?.field_diffs?.ref_no;
+                  const isFormulaDateChanged = !!diff?.field_diffs?.formula_date;
+                  const isTestDateChanged = !!diff?.field_diffs?.test_date;
+                  const isReportDateChanged = !!diff?.field_diffs?.report_date;
+                  const isRemarksChanged = !!diff?.field_diffs?.remarks;
+                  const isStatusChanged = !!diff?.field_diffs?.approval_status;
+                  const isApprovedByChanged = !!diff?.field_diffs?.approval_comments;
+                  const isRmNameChanged = !!diff?.field_diffs?.rm_name;
+                  const isRmLotChanged = !!diff?.field_diffs?.rm_lot_no;
+
                   return (
                     <div 
                       key={b.id || b.batch_no} 
@@ -4414,8 +4439,21 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                               <Star size={16} fill={b.is_starred ? '#f59e0b' : 'none'} color="#f59e0b" />
                             </button>
                           )}
-                          <span style={{ fontWeight: 'bold', fontSize: '15px', color: b.is_modified ? '#b91c1c' : 'var(--primary-color)' }}>
+                          <span style={{ 
+                            fontWeight: 'bold', 
+                            fontSize: '15px', 
+                            color: isBatchNoChanged ? '#dc2626' : (b.is_modified ? '#b91c1c' : 'var(--primary-color)'),
+                            backgroundColor: isBatchNoChanged ? '#fee2e2' : 'transparent',
+                            padding: isBatchNoChanged ? '2px 6px' : undefined,
+                            borderRadius: isBatchNoChanged ? '4px' : undefined,
+                            border: isBatchNoChanged ? '1px solid #fca5a5' : undefined
+                          }}>
                             Batch: {batchNo}
+                            {isBatchNoChanged && diff?.field_diffs?.batch_no?.old && (
+                              <span style={{ fontSize: '11px', color: '#991b1b', fontWeight: 600, marginLeft: '6px' }}>
+                                (was {diff.field_diffs.batch_no.old})
+                              </span>
+                            )}
                           </span>
                           {b.is_starred && b.ok_rating && (
                             <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#b45309', backgroundColor: '#fef3c7', border: '1px solid #fcd34d', padding: '1px 6px', borderRadius: '10px' }}>
@@ -4428,8 +4466,19 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                             </span>
                           )}
                         </div>
-                        <span style={{ fontSize: '11px', padding: '2px 6px', backgroundColor: b.is_modified ? '#fee2e2' : '#e2e8f0', color: b.is_modified ? '#991b1b' : '#334155', borderRadius: '2px', fontWeight: 'bold' }}>
+                        <span style={{ 
+                          fontSize: '11px', 
+                          padding: '2px 6px', 
+                          backgroundColor: isRefNoChanged ? '#fee2e2' : (b.is_modified ? '#fee2e2' : '#e2e8f0'), 
+                          color: isRefNoChanged ? '#dc2626' : (b.is_modified ? '#991b1b' : '#334155'), 
+                          border: isRefNoChanged ? '1px solid #fca5a5' : undefined,
+                          borderRadius: '2px', 
+                          fontWeight: 'bold' 
+                        }}>
                           Ref: {refNo}
+                          {isRefNoChanged && diff?.field_diffs?.ref_no?.old && (
+                            <span style={{ fontSize: '10px', color: '#991b1b', marginLeft: '4px' }}>(was {diff.field_diffs.ref_no.old})</span>
+                          )}
                         </span>
                       </div>
 
@@ -4449,10 +4498,12 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                                     {b.modified_by && <span style={{ marginLeft: '6px', fontSize: '11px', color: '#7f1d1d', fontWeight: 600 }}>(by {b.modified_by})</span>}
                                   </td>
                                 </tr>
-                                {b.modified_details && (
+                                {(diff?.summary_text || b.modified_details) && (
                                   <tr style={{ backgroundColor: '#fef2f2' }}>
-                                    <td style={{ fontWeight: 'bold', color: '#991b1b', fontSize: '11px' }}>Change Details</td>
-                                    <td style={{ fontSize: '11px', color: '#7f1d1d' }}>{b.modified_details}</td>
+                                    <td style={{ fontWeight: 'bold', color: '#dc2626', fontSize: '11px' }}>Changes (in Red)</td>
+                                    <td style={{ fontSize: '11px', color: '#b91c1c', fontWeight: 600 }}>
+                                      {diff?.summary_text || (typeof b.modified_details === 'string' ? b.modified_details : JSON.stringify(b.modified_details))}
+                                    </td>
                                   </tr>
                                 )}
                               </>
@@ -4463,30 +4514,50 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                             {!isLabCard && (
                               <>
                                 <tr>
-                                  <td style={{ fontWeight: 'bold' }}>RM Name</td><td>{rmNameValue}</td>
+                                  <td style={{ fontWeight: 'bold' }}>RM Name</td>
+                                  <td style={{ color: isRmNameChanged ? '#dc2626' : undefined, fontWeight: isRmNameChanged ? 'bold' : undefined, backgroundColor: isRmNameChanged ? '#fee2e2' : undefined }}>
+                                    {rmNameValue}
+                                  </td>
                                 </tr>
                                 <tr>
-                                  <td style={{ fontWeight: 'bold' }}>RM Lot No</td><td>{rmLotNoValue}</td>
+                                  <td style={{ fontWeight: 'bold' }}>RM Lot No</td>
+                                  <td style={{ color: isRmLotChanged ? '#dc2626' : undefined, fontWeight: isRmLotChanged ? 'bold' : undefined, backgroundColor: isRmLotChanged ? '#fee2e2' : undefined }}>
+                                    {rmLotNoValue}
+                                  </td>
                                 </tr>
                               </>
                             )}
                             <tr>
-                              <td style={{ fontWeight: 'bold' }}>Formula Date</td><td>{formulaDate}</td>
+                              <td style={{ fontWeight: 'bold' }}>Formula Date</td>
+                              <td style={{ color: isFormulaDateChanged ? '#dc2626' : undefined, fontWeight: isFormulaDateChanged ? 'bold' : undefined, backgroundColor: isFormulaDateChanged ? '#fee2e2' : undefined }}>
+                                {formulaDate}
+                              </td>
                             </tr>
                             <tr>
-                              <td style={{ fontWeight: 'bold' }}>Test Date</td><td>{testDate}</td>
+                              <td style={{ fontWeight: 'bold' }}>Test Date</td>
+                              <td style={{ color: isTestDateChanged ? '#dc2626' : undefined, fontWeight: isTestDateChanged ? 'bold' : undefined, backgroundColor: isTestDateChanged ? '#fee2e2' : undefined }}>
+                                {testDate}
+                              </td>
                             </tr>
                             <tr>
-                              <td style={{ fontWeight: 'bold' }}>Report Date</td><td>{reportDate}</td>
+                              <td style={{ fontWeight: 'bold' }}>Report Date</td>
+                              <td style={{ color: isReportDateChanged ? '#dc2626' : undefined, fontWeight: isReportDateChanged ? 'bold' : undefined, backgroundColor: isReportDateChanged ? '#fee2e2' : undefined }}>
+                                {reportDate}
+                              </td>
                             </tr>
                             {!isLabCard && (
                               <>
                                 <tr>
                                   <td style={{ fontWeight: 'bold' }}>Status</td>
-                                  <td style={{ fontWeight: 'bold', color: approvalStatus === 'OK' ? 'var(--color-success)' : 'var(--color-error)' }}>{approvalStatus}</td>
+                                  <td style={{ fontWeight: 'bold', color: isStatusChanged ? '#dc2626' : (approvalStatus === 'OK' ? 'var(--color-success)' : 'var(--color-error)'), backgroundColor: isStatusChanged ? '#fee2e2' : undefined }}>
+                                    {approvalStatus}
+                                  </td>
                                 </tr>
                                 <tr>
-                                  <td style={{ fontWeight: 'bold' }}>Approved By</td><td>{approvalComments}</td>
+                                  <td style={{ fontWeight: 'bold' }}>Approved By</td>
+                                  <td style={{ color: isApprovedByChanged ? '#dc2626' : undefined, fontWeight: isApprovedByChanged ? 'bold' : undefined, backgroundColor: isApprovedByChanged ? '#fee2e2' : undefined }}>
+                                    {approvalComments}
+                                  </td>
                                 </tr>
                               </>
                             )}
@@ -4523,14 +4594,79 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                               const sQtyCalc = (qVal * (sPct / 100)).toFixed(2);
                               const displaySolidLabel = rawS === '' ? '-' : (isNA ? (item.solid || '-') : `${sPct}%`);
 
+                              // Match material diff
+                              const matDiff = diff?.materials_diff?.find((m: any) => {
+                                if (m.index === idx) return true;
+                                const itemNorm = (mat || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                                const diffNorm = (m.raw_material || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                                return itemNorm && diffNorm && itemNorm === diffNorm;
+                              });
+
+                              const isNewMat = !!matDiff?.is_new;
+                              const isQtyDiff = !!matDiff?.qty_changed;
+                              const isMatNameDiff = !!matDiff?.material_changed;
+                              const isSolidDiff = !!matDiff?.solid_changed;
+
                               return (
-                                <tr key={idx}>
-                                  <td>{sr}</td>
-                                  {!isLabCard && <td>{mr || '-'}</td>}
-                                  <td style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '120px' }}>{mat}</td>
-                                  <td style={{ textAlign: 'right', fontWeight: 'bold' }}>{qty}</td>
-                                  {isLabCard && <td style={{ textAlign: 'right', color: '#64748b' }}>{displaySolidLabel}</td>}
-                                  {isLabCard && <td style={{ textAlign: 'right', fontWeight: 'bold', color: '#16a34a' }}>{sQtyCalc}</td>}
+                                <tr 
+                                  key={idx}
+                                  style={{
+                                    backgroundColor: isNewMat ? '#fee2e2' : undefined,
+                                    borderBottom: isNewMat ? '1.5px solid #f87171' : undefined
+                                  }}
+                                >
+                                  <td style={{ color: isNewMat ? '#b91c1c' : undefined, fontWeight: isNewMat ? 'bold' : undefined }}>{sr}</td>
+                                  {!isLabCard && <td style={{ color: isNewMat ? '#b91c1c' : undefined }}>{mr || '-'}</td>}
+                                  <td style={{ 
+                                    whiteSpace: 'nowrap', 
+                                    overflow: 'hidden', 
+                                    textOverflow: 'ellipsis', 
+                                    maxWidth: '120px',
+                                    color: (isNewMat || isMatNameDiff) ? '#dc2626' : undefined,
+                                    fontWeight: (isNewMat || isMatNameDiff) ? 'bold' : undefined,
+                                    backgroundColor: isMatNameDiff && !isNewMat ? '#fee2e2' : undefined
+                                  }}>
+                                    {mat}
+                                    {isNewMat && (
+                                      <span style={{ fontSize: '9px', fontWeight: 800, color: '#ffffff', backgroundColor: '#dc2626', padding: '1px 4px', borderRadius: '3px', marginLeft: '4px' }}>
+                                        NEW
+                                      </span>
+                                    )}
+                                    {isMatNameDiff && !isNewMat && matDiff.old_material && (
+                                      <span style={{ fontSize: '10px', color: '#991b1b', marginLeft: '4px' }}>(was {matDiff.old_material})</span>
+                                    )}
+                                  </td>
+                                  <td style={{ 
+                                    textAlign: 'right', 
+                                    fontWeight: 'bold',
+                                    color: (isNewMat || isQtyDiff) ? '#dc2626' : undefined,
+                                    backgroundColor: (isQtyDiff || isNewMat) ? '#fee2e2' : undefined,
+                                    border: (isQtyDiff && !isNewMat) ? '1px solid #fca5a5' : undefined,
+                                    borderRadius: (isQtyDiff && !isNewMat) ? '4px' : undefined
+                                  }}
+                                  title={isQtyDiff && matDiff?.old_qty !== undefined && matDiff?.old_qty !== null ? `Was: ${matDiff.old_qty}` : undefined}
+                                  >
+                                    {qty}
+                                  </td>
+                                  {isLabCard && (
+                                    <td style={{ 
+                                      textAlign: 'right', 
+                                      color: (isNewMat || isSolidDiff) ? '#dc2626' : '#64748b',
+                                      fontWeight: isSolidDiff ? 'bold' : undefined,
+                                      backgroundColor: isSolidDiff ? '#fee2e2' : undefined
+                                    }}>
+                                      {displaySolidLabel}
+                                    </td>
+                                  )}
+                                  {isLabCard && (
+                                    <td style={{ 
+                                      textAlign: 'right', 
+                                      fontWeight: 'bold', 
+                                      color: isNewMat ? '#dc2626' : '#16a34a' 
+                                    }}>
+                                      {sQtyCalc}
+                                    </td>
+                                  )}
                                 </tr>
                               );
                             })}
@@ -4570,11 +4706,52 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                               const method = test.method || (Array.isArray(test) ? test[0] : '-');
                               const standard = test.standard || (Array.isArray(test) ? test[1] : '-');
                               const result = test.result || (Array.isArray(test) ? test[2] : '-');
+
+                              const testDiff = diff?.tests_diff?.find((t: any) => {
+                                if (t.index === idx) return true;
+                                const itemNorm = (method || '').toLowerCase().trim();
+                                const diffNorm = (t.method || '').toLowerCase().trim();
+                                return itemNorm && diffNorm && itemNorm === diffNorm;
+                              });
+
+                              const isNewTest = !!testDiff?.is_new;
+                              const isResultDiff = !!testDiff?.result_changed;
+                              const isStdDiff = !!testDiff?.standard_changed;
+
                               return (
-                                <tr key={idx}>
-                                  <td>{method}</td>
-                                  <td>{standard}</td>
-                                  <td style={{ textAlign: 'right', fontWeight: 'bold' }}>{result}</td>
+                                <tr 
+                                  key={idx}
+                                  style={{
+                                    backgroundColor: isNewTest ? '#fee2e2' : undefined
+                                  }}
+                                >
+                                  <td style={{ color: isNewTest ? '#dc2626' : undefined, fontWeight: isNewTest ? 'bold' : undefined }}>
+                                    {method}
+                                    {isNewTest && (
+                                      <span style={{ fontSize: '9px', fontWeight: 800, color: '#ffffff', backgroundColor: '#dc2626', padding: '1px 4px', borderRadius: '3px', marginLeft: '4px' }}>
+                                        NEW
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td style={{ 
+                                    color: (isNewTest || isStdDiff) ? '#dc2626' : undefined,
+                                    fontWeight: isStdDiff ? 'bold' : undefined,
+                                    backgroundColor: isStdDiff ? '#fee2e2' : undefined
+                                  }}>
+                                    {standard}
+                                  </td>
+                                  <td style={{ 
+                                    textAlign: 'right', 
+                                    fontWeight: 'bold',
+                                    color: (isNewTest || isResultDiff) ? '#dc2626' : undefined,
+                                    backgroundColor: (isNewTest || isResultDiff) ? '#fee2e2' : undefined,
+                                    border: (isResultDiff && !isNewTest) ? '1px solid #fca5a5' : undefined,
+                                    borderRadius: (isResultDiff && !isNewTest) ? '4px' : undefined
+                                  }}
+                                  title={isResultDiff && testDiff?.old_result ? `Was: ${testDiff.old_result}` : undefined}
+                                  >
+                                    {result}
+                                  </td>
                                 </tr>
                               );
                             })}
@@ -4594,8 +4771,22 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
                       {/* Remarks */}
                       {b.remarks && (
-                        <div style={{ padding: '6px 8px', backgroundColor: b.is_modified ? '#fee2e2' : 'var(--bg-app)', border: b.is_modified ? '1px solid #fca5a5' : '1px solid var(--border-color)', fontSize: '11px', fontStyle: 'italic', marginBottom: '8px', color: b.is_modified ? '#991b1b' : 'var(--text-secondary)' }}>
+                        <div style={{ 
+                          padding: '6px 8px', 
+                          backgroundColor: isRemarksChanged ? '#fee2e2' : (b.is_modified ? '#fee2e2' : 'var(--bg-app)'), 
+                          border: (isRemarksChanged || b.is_modified) ? '1px solid #fca5a5' : '1px solid var(--border-color)', 
+                          fontSize: '11px', 
+                          fontStyle: 'italic', 
+                          marginBottom: '8px', 
+                          color: isRemarksChanged ? '#dc2626' : (b.is_modified ? '#991b1b' : 'var(--text-secondary)'),
+                          fontWeight: isRemarksChanged ? 'bold' : 'normal'
+                        }}>
                           Remarks: {b.remarks}
+                          {isRemarksChanged && diff?.field_diffs?.remarks?.old && (
+                            <span style={{ display: 'block', fontSize: '10px', color: '#991b1b', fontStyle: 'normal' }}>
+                              (Previous: "{diff.field_diffs.remarks.old}")
+                            </span>
+                          )}
                         </div>
                       )}
 

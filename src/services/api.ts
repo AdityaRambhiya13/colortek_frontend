@@ -509,7 +509,7 @@ export const LabFormulationsAPI = {
   },
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  saveMasterPayload: async (productName: string, batchNo: string, form: any, inventory: any[], tests: any[]) => {
+  saveMasterPayload: async (productName: string, batchNo: string, form: any, inventory: any[], tests: any[], originalBatchNo?: string) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/lab_formulations/save-master', {
@@ -519,11 +519,12 @@ export const LabFormulationsAPI = {
       form: form,
       inventory: inventory,
       tests: tests,
+      original_batch_no: originalBatchNo || undefined,
     }));
   },
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  saveFullBatch: async (productName: string, formFields: any[], materials: any[], tests: any[], remarks: string) => {
+  saveFullBatch: async (productName: string, formFields: any[], materials: any[], tests: any[], remarks: string, originalBatchNo?: string) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/lab_formulations/save-full', {
@@ -533,6 +534,7 @@ export const LabFormulationsAPI = {
       materials: materials,
       tests: tests,
       remarks: remarks,
+      original_batch_no: originalBatchNo || undefined,
     }));
   },
 
@@ -583,7 +585,7 @@ export const LabFormulationsAPI = {
 // ============================================================================
 export const RMFormulationsAPI = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  saveFullBatch: async (productName: string, formFields: any[], materials: any[], tests: any[], remarks: string, approvalStatus?: string, approvalComments?: string) => {
+  saveFullBatch: async (productName: string, formFields: any[], materials: any[], tests: any[], remarks: string, approvalStatus?: string, approvalComments?: string, originalBatchNo?: string) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.post('/rm_formulations/save-full', {
@@ -595,6 +597,7 @@ export const RMFormulationsAPI = {
       remarks: remarks,
       approval_status: approvalStatus || '',
       approval_comments: approvalComments || '',
+      original_batch_no: originalBatchNo || undefined,
     }));
   },
 

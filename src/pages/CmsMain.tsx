@@ -130,6 +130,8 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
   const activeProductFormatted = (sessionStorage.getItem('product_name') || '').replace(/_/g, ' ').toUpperCase();
   const [leftForm, setLeftForm] = useState<FormFields>({ refNo: '', batchNo: '', product: activeProductFormatted, rmLot: '', rmName: '', testDate: '', reportDate: '', formulaDate: '' });
   const [rightForm, setRightForm] = useState<FormFields>({ refNo: '', batchNo: '', product: activeProductFormatted, rmLot: '', rmName: '', testDate: '', reportDate: '', formulaDate: '' });
+  const [leftOriginalBatchNo, setLeftOriginalBatchNo] = useState<string>('');
+  const [rightOriginalBatchNo, setRightOriginalBatchNo] = useState<string>('');
   
   const [leftRemarks, setLeftRemarks] = useState('');
   const [rightRemarks, setRightRemarks] = useState('');
@@ -514,6 +516,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     // Reset spreadsheet states to prevent data bleeding between tabs (Lab Formulations vs RM Testing)
     const activeProd = (sessionStorage.getItem('product_name') || '').replace(/_/g, ' ').toUpperCase();
     setLeftForm({ refNo: '', batchNo: '', product: activeProd, rmLot: '', rmName: '', testDate: '', reportDate: '', formulaDate: '' });
+    setLeftOriginalBatchNo('');
     setLeftRows(initializeRows());
     setLeftTestRows(initializeTestRows());
     setLeftRemarks('');
@@ -521,6 +524,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     setLeftApprovedBy('');
 
     setRightForm({ refNo: '', batchNo: '', product: activeProd, rmLot: '', rmName: '', testDate: '', reportDate: '', formulaDate: '' });
+    setRightOriginalBatchNo('');
     setRightRows(initializeRows());
     setRightTestRows(initializeTestRows());
     setRightRemarks('');
@@ -961,6 +965,8 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     const activeProdFormatted = (sessionStorage.getItem('product_name') || '').replace(/_/g, ' ').toUpperCase();
 
     setForm({ refNo: '', batchNo: side === 'left' ? (lastNextBatchNo || '') : '', product: activeProdFormatted, rmLot: '', rmName: '', testDate: '', reportDate: '', formulaDate: '' });
+    if (side === 'left') setLeftOriginalBatchNo('');
+    else setRightOriginalBatchNo('');
     setRows(initializeRows());
     setTestRows(initializeTestRows());
     setRemarks('');
@@ -1154,11 +1160,14 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       'FORMULA DATE': form.formulaDate,
     };
 
+    const origBatchNo = side === 'left' ? leftOriginalBatchNo : rightOriginalBatchNo;
     setLoading(true);
-    const [success, data] = await LabFormulationsAPI.saveMasterPayload(productName, form.batchNo, formPayload, inventoryPayload, testPayload);
+    const [success, data] = await LabFormulationsAPI.saveMasterPayload(productName, form.batchNo, formPayload, inventoryPayload, testPayload, origBatchNo);
     setLoading(false);
 
     if (success) {
+      if (side === 'left') setLeftOriginalBatchNo(form.batchNo);
+      else setRightOriginalBatchNo(form.batchNo);
       onShowToast(`Master formulation saved for batch ${form.batchNo}`, 'success');
       NotificationsAPI.createNotification(
         "[SUCCESS] Batch Approved!",
@@ -1279,6 +1288,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
     const status = side === 'left' ? leftStatus : rightStatus;
     const approvedBy = side === 'left' ? leftApprovedBy : rightApprovedBy;
+    const origBatchNo = side === 'left' ? leftOriginalBatchNo : rightOriginalBatchNo;
 
     if (!form.batchNo) {
       onShowToast('Batch No is required to save full data.', 'warning');
@@ -1320,11 +1330,13 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     setLoading(true);
     const saveApi = isLab ? LabFormulationsAPI.saveFullBatch : RMFormulationsAPI.saveFullBatch;
     const [success, data] = isLab 
-      ? await saveApi(productName, formFieldsPayload, inventoryPayload, testPayload, remarks)
-      : await saveApi(productName, formFieldsPayload, inventoryPayload, testPayload, remarks, status, approvedBy);
+      ? await saveApi(productName, formFieldsPayload, inventoryPayload, testPayload, remarks, origBatchNo)
+      : await saveApi(productName, formFieldsPayload, inventoryPayload, testPayload, remarks, status, approvedBy, origBatchNo);
     setLoading(false);
 
     if (success) {
+      if (side === 'left') setLeftOriginalBatchNo(form.batchNo);
+      else setRightOriginalBatchNo(form.batchNo);
       onShowToast(`Full batch compilation successfully saved: ${form.batchNo}`, 'success');
       const nextBatch = getNextBatchNumber(form.batchNo);
       setLastNextBatchNo(nextBatch);
@@ -1376,6 +1388,9 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     setLoading(false);
 
     if (success && typeof data !== 'string') {
+      if (side === 'left') setLeftOriginalBatchNo(batchNo);
+      else setRightOriginalBatchNo(batchNo);
+
       const setForm = side === 'left' ? setLeftForm : setRightForm;
       const setRows = side === 'left' ? setLeftRows : setRightRows;
       const setTestRows = side === 'left' ? setLeftTestRows : setRightTestRows;
@@ -1387,24 +1402,24 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       const fd = data.form_data || [];
       if (isLab) {
         setForm({
-          refNo: fd[0] || '',
-          batchNo: batchNo,
-          product: activeSubView.includes('lab') ? (fd[2] || '') : productName,
+          refNo: data.ref_no || fd[0] || '',
+          batchNo: data.batch_no || batchNo,
+          product: data.product_name_field || (activeSubView.includes('lab') ? (fd[2] || '') : productName),
           rmLot: '', rmName: '',
-          testDate: activeSubView.includes('rm') ? (fd[5] || '') : (fd[3] || ''),
-          reportDate: activeSubView.includes('rm') ? (fd[6] || '') : (fd[4] || ''),
-          formulaDate: activeSubView.includes('rm') ? (fd[7] || '') : (fd[5] || ''),
+          testDate: data.test_date || (fd[3] || ''),
+          reportDate: data.report_date || (fd[4] || ''),
+          formulaDate: data.formula_date || (fd[5] || ''),
         });
       } else {
         setForm({
           refNo: data.ref_no || fd[0] || '',
-          batchNo: data.batch_no || fd[1] || '',
-          product: fd[2] || '',
-          rmLot: activeSubView.includes('rm') ? (fd[3] || '') : '',
-          rmName: activeSubView.includes('rm') ? (fd[4] || '') : '',
-          testDate: activeSubView.includes('rm') ? (fd[5] || '') : (fd[4] || ''),
-          reportDate: activeSubView.includes('rm') ? (fd[6] || '') : (fd[5] || ''),
-          formulaDate: activeSubView.includes('rm') ? (fd[7] || '') : (fd[6] || ''),
+          batchNo: data.batch_no || fd[1] || batchNo,
+          product: data.product_name_field || fd[2] || '',
+          rmLot: data.rm_name_lot_no || (fd.length === 8 ? (fd[3] || '') : (fd[3] || '')),
+          rmName: data.rm_name || (fd.length === 8 ? (fd[4] || '') : ''),
+          testDate: data.test_date || (fd.length === 8 ? (fd[5] || '') : (fd[4] || '')),
+          reportDate: data.report_date || (fd.length === 8 ? (fd[6] || '') : (fd[5] || '')),
+          formulaDate: data.formula_date || (fd.length === 8 ? (fd[7] || '') : (fd[6] || '')),
         });
       }
 
@@ -1711,11 +1726,11 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     const refNo = data.ref_no || fd[0] || 'N/A';
     const batchNo = data.batch_no || fd[1] || 'N/A';
     
-    const isLab = fd.length === 6;
-    const productNameField = fd[2] || data.product_name_field || data.product || 'N/A';
-    const testDate = isLab ? (fd[3] || 'N/A') : (fd[4] || 'N/A');
-    const reportDate = isLab ? (fd[4] || 'N/A') : (fd[5] || 'N/A');
-    const formulaDate = isLab ? (fd[5] || 'N/A') : (fd[6] || 'N/A');
+    const isLab = fd.length === 6 || activeSubView.includes('lab');
+    const productNameField = data.product_name_field || fd[2] || data.product || 'N/A';
+    const testDate = data.test_date || (isLab ? (fd[3] || 'N/A') : (fd.length === 8 ? (fd[5] || 'N/A') : (fd[4] || 'N/A')));
+    const reportDate = data.report_date || (isLab ? (fd[4] || 'N/A') : (fd.length === 8 ? (fd[6] || 'N/A') : (fd[5] || 'N/A')));
+    const formulaDate = data.formula_date || (isLab ? (fd[5] || 'N/A') : (fd.length === 8 ? (fd[7] || 'N/A') : (fd[6] || 'N/A')));
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const inventory = (data.inventory || []).map((i: any) => {
@@ -2041,12 +2056,12 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       const refNo = cardData.ref_no || fd[0] || 'N/A';
       const batchNo = cardData.batch_no || fd[1] || 'N/A';
       
-      const isLab = fd.length === 6;
-      const productNameField = fd[2] || cardData.product_name_field || cardData.product || 'N/A';
+      const isLab = fd.length === 6 || activeSubView.includes('lab');
+      const productNameField = cardData.product_name_field || fd[2] || cardData.product || 'N/A';
       
-      const testDate = formatDateDMY(isLab ? (fd[3] || 'N/A') : (fd[4] || 'N/A'));
-      const reportDate = formatDateDMY(isLab ? (fd[4] || 'N/A') : (fd[5] || 'N/A'));
-      const formulaDate = formatDateDMY(isLab ? (fd[5] || 'N/A') : (fd[6] || 'N/A'));
+      const testDate = formatDateDMY(cardData.test_date || (isLab ? (fd[3] || 'N/A') : (fd.length === 8 ? (fd[5] || 'N/A') : (fd[4] || 'N/A'))));
+      const reportDate = formatDateDMY(cardData.report_date || (isLab ? (fd[4] || 'N/A') : (fd.length === 8 ? (fd[6] || 'N/A') : (fd[5] || 'N/A'))));
+      const formulaDate = formatDateDMY(cardData.formula_date || (isLab ? (fd[5] || 'N/A') : (fd.length === 8 ? (fd[7] || 'N/A') : (fd[6] || 'N/A'))));
 
       // --- 1. CARD HEADER ---
       doc.setFont('Helvetica', 'bold');
@@ -2251,11 +2266,11 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
       const refNo = data.ref_no || fd[0] || 'N/A';
       const batchNo = data.batch_no || fd[1] || 'N/A';
       
-      const isLab = fd.length === 6;
-      const productNameField = fd[2] || data.product_name_field || data.product || 'N/A';
-      const testDate = isLab ? (fd[3] || 'N/A') : (fd[4] || 'N/A');
-      const reportDate = isLab ? (fd[4] || 'N/A') : (fd[5] || 'N/A');
-      const formulaDate = isLab ? (fd[5] || 'N/A') : (fd[6] || 'N/A');
+      const isLab = fd.length === 6 || activeSubView.includes('lab');
+      const productNameField = data.product_name_field || fd[2] || data.product || 'N/A';
+      const testDate = data.test_date || (isLab ? (fd[3] || 'N/A') : (fd.length === 8 ? (fd[5] || 'N/A') : (fd[4] || 'N/A')));
+      const reportDate = data.report_date || (isLab ? (fd[4] || 'N/A') : (fd.length === 8 ? (fd[6] || 'N/A') : (fd[5] || 'N/A')));
+      const formulaDate = data.formula_date || (isLab ? (fd[5] || 'N/A') : (fd.length === 8 ? (fd[7] || 'N/A') : (fd[6] || 'N/A')));
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const inventory = (data.inventory || []).map((i: any) => {
@@ -2531,14 +2546,15 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
   const parseDuplicateDetails = (data: any) => {
     if (!data) return null;
     const fd = data.form_data || [];
+    const isLab = (activeSubView === 'lab_formulations' || activeSubView === 'past_lab_formulations' || fd.length === 6);
     const metadata = {
-      refNo: data.ref_no || '',
-      batchNo: data.batch_no || '',
-      product: fd[2] || data.product_name || '',
-      rmLot: fd[3] || data.rm_name_lot_no || '',
-      testDate: fd[4] || data.test_date || '',
-      reportDate: fd[5] || data.report_date || '',
-      formulaDate: fd[6] || data.formula_date || '',
+      refNo: data.ref_no || fd[0] || '',
+      batchNo: data.batch_no || fd[1] || '',
+      product: data.product_name_field || fd[2] || data.product_name || '',
+      rmLot: isLab ? '' : (data.rm_name_lot_no || fd[3] || ''),
+      testDate: data.test_date || (isLab ? (fd[3] || '') : (fd.length === 8 ? (fd[5] || '') : (fd[4] || ''))),
+      reportDate: data.report_date || (isLab ? (fd[4] || '') : (fd.length === 8 ? (fd[6] || '') : (fd[5] || ''))),
+      formulaDate: data.formula_date || (isLab ? (fd[5] || '') : (fd.length === 8 ? (fd[7] || '') : (fd[6] || ''))),
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -4244,11 +4260,11 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                   const refNo = b.ref_no || '-';
                   const batchNo = b.batch_no || '-';
                   const productNameValue = b.product_name || (Array.isArray(b.form_data) ? b.form_data[2] : b.product || '-');
-                  const rmLotNoValue = b.rm_name_lot_no || (Array.isArray(b.form_data) ? b.form_data[3] : b.rm_lot || '-');
-                  const rmNameValue = b.rm_name || (Array.isArray(b.form_data) ? b.form_data[4] : b.rm_name || '-');
-                  const testDate = b.test_date || (Array.isArray(b.form_data) ? b.form_data[4] : '-');
-                  const reportDate = b.report_date || (Array.isArray(b.form_data) ? b.form_data[5] : '-');
-                  const formulaDate = b.formula_date || (Array.isArray(b.form_data) ? b.form_data[6] : '-');
+                  const rmLotNoValue = isLabCard ? '-' : (b.rm_name_lot_no || (Array.isArray(b.form_data) ? b.form_data[3] : b.rm_lot || '-'));
+                  const rmNameValue = isLabCard ? '-' : (b.rm_name || (Array.isArray(b.form_data) ? b.form_data[4] : b.rm_name || '-'));
+                  const testDate = b.test_date || (Array.isArray(b.form_data) ? (isLabCard ? (b.form_data[3] || '-') : (b.form_data.length === 8 ? (b.form_data[5] || '-') : (b.form_data[4] || '-'))) : '-');
+                  const reportDate = b.report_date || (Array.isArray(b.form_data) ? (isLabCard ? (b.form_data[4] || '-') : (b.form_data.length === 8 ? (b.form_data[6] || '-') : (b.form_data[5] || '-'))) : '-');
+                  const formulaDate = b.formula_date || (Array.isArray(b.form_data) ? (isLabCard ? (b.form_data[5] || '-') : (b.form_data.length === 8 ? (b.form_data[7] || '-') : (b.form_data[6] || '-'))) : '-');
                   const approvalStatus = b.approval_status || '-';
                   const approvalComments = b.approval_comments || '-';
 

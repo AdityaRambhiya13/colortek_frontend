@@ -320,7 +320,8 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
       const imgs: string[] = data.image_references || form.image_references || [];
       setAttachedImages(imgs);
     } else {
-      onShowToast('Could not load formulation details.', 'error');
+      const msg = typeof data === 'string' && data ? data : 'Could not load formulation details.';
+      onShowToast(msg, 'error');
     }
   };
 

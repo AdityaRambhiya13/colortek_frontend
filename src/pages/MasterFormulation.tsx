@@ -44,6 +44,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
   const [customerName, setCustomerName] = useState('');
   const [refNo, setRefNo] = useState('');
   const [formulaDate, setFormulaDate] = useState('');
+  const [formProductName, setFormProductName] = useState('');
 
   // Edit Field binds for all parameters in master formulation specification
   const [density, setDensity] = useState('');
@@ -285,6 +286,8 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
       setIssueDate(data.issue_date || form.issue_date || form['ISSUE DATE'] || form['issue_date'] || '01.04.2025');
 
       // Formulation Identification
+      const initialProd = data.product_name || form.product_name || form['PRODUCT NAME'] || form.product || getRecordValue('product_name', productName);
+      setFormProductName(initialProd);
       setCustomerName(data.customer_name || form.customer_name || form['CUSTOMER NAME'] || form.customer || '');
       setRefNo(data.ref_no || form.ref_no || form['REF NO'] || '');
       setFormulaDate(data.formula_date || form.formula_date || form['FORMULA DATE'] || data.date || form.date || '');
@@ -423,7 +426,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
   const triggerAutosave = (
     currentInv = localInventory,
     currentParams = { 
-      docNo, reviewNo, reviewDate, issueNo, issueDate, customerName, refNo, formulaDate,
+      docNo, reviewNo, reviewDate, issueNo, issueDate, customerName, refNo, formulaDate, formProductName,
       density, viscosity, refBookNo, packaging, date, time, ratio, filtration, remarks, sender, approval, grams 
     }
   ) => {
@@ -435,8 +438,13 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
     autosaveTimer.current = window.setTimeout(async () => {
       if (!selectedBatch || !detailData) return;
       
+      const cleanProdName = (viewMode === 'lab_master_formulation' && currentParams.formProductName ? currentParams.formProductName.trim() : '') || productName;
+
       const updatedForm = {
         ...(detailData.form || {}),
+        product_name: cleanProdName,
+        'PRODUCT NAME': cleanProdName,
+        'product': cleanProdName,
         doc_no: currentParams.docNo,
         'DOC #': currentParams.docNo,
         review_no: currentParams.reviewNo,
@@ -471,6 +479,8 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
 
       const updatedPayload = {
         form: updatedForm,
+        product_name: cleanProdName,
+        new_product_name: cleanProdName,
         inventory: currentInv.map(item => ({
           material: item.material || item.raw_material || '',
           qty: item.qty || 0,
@@ -520,12 +530,13 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
   // State changes for params trigger autosave
   const handleParamChange = (field: string, val: string) => {
     const params = { 
-      docNo, reviewNo, reviewDate, issueNo, issueDate, customerName, refNo, formulaDate,
+      docNo, reviewNo, reviewDate, issueNo, issueDate, customerName, refNo, formulaDate, formProductName,
       density, viscosity, refBookNo, packaging, date, time, ratio, filtration, remarks, sender, approval, grams 
     };
     params[field as keyof typeof params] = val;
     
-    if (field === 'docNo') setDocNo(val);
+    if (field === 'formProductName') setFormProductName(val);
+    else if (field === 'docNo') setDocNo(val);
     else if (field === 'reviewNo') setReviewNo(val);
     else if (field === 'reviewDate') setReviewDate(val);
     else if (field === 'issueNo') setIssueNo(val);
@@ -567,8 +578,13 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
       window.clearTimeout(autosaveTimer.current);
     }
     
+    const cleanProdName = (viewMode === 'lab_master_formulation' && formProductName ? formProductName.trim() : '') || productName;
+
     const updatedForm = {
       ...(detailData.form || {}),
+      product_name: cleanProdName,
+      'PRODUCT NAME': cleanProdName,
+      'product': cleanProdName,
       doc_no: docNo,
       'DOC #': docNo,
       review_no: reviewNo,
@@ -603,6 +619,8 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
 
     const updatedPayload = {
       form: updatedForm,
+      product_name: cleanProdName,
+      new_product_name: cleanProdName,
       inventory: localInventory.map(item => ({
         material: item.material || item.raw_material || '',
         qty: item.qty || 0,
@@ -664,7 +682,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
       issueDate,
       formulaDate: formulaDate || date,
       customerName,
-      productName: getRecordValue('product_name', productName),
+      productName: (viewMode === 'lab_master_formulation' && formProductName ? formProductName : getRecordValue('product_name', productName)),
       batchNo,
       refNo,
       refBookNo,
@@ -890,9 +908,16 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                     </span>
                   </div>
 
-                  {/* Middle Row: Batch Number */}
-                  <div className="batch-value" style={{ margin: '8px 0', fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>
-                    {row.batch_no}
+                  {/* Middle Row: Batch Number & Product Name */}
+                  <div style={{ margin: '8px 0' }}>
+                    <div className="batch-value" style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>
+                      {row.batch_no}
+                    </div>
+                    {viewMode === 'lab_master_formulation' && row.product_name && (
+                      <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#059669', marginTop: '2px', textTransform: 'capitalize' }}>
+                        📦 {row.product_name}
+                      </div>
+                    )}
                   </div>
 
                   {/* Bottom Row: View Chip & Approve / Delete Buttons */}
@@ -1265,7 +1290,21 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                     </div>
                     <div style={{ background: '#ecfdf5', padding: '8px 12px', borderRadius: '8px', border: '1px solid #a7f3d0', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                       <span className="premium-field-label" style={{ color: '#059669' }}>Product Name</span>
-                      <strong style={{ fontSize: '13px', color: '#1e293b' }}>{getRecordValue('product_name', productName)}</strong>
+                      {viewMode === 'lab_master_formulation' && isEditing ? (
+                        <input
+                          type="text"
+                          className="premium-field-input"
+                          value={formProductName}
+                          onChange={e => handleParamChange('formProductName', e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }}
+                          placeholder="Enter product name..."
+                          style={{ height: '28px', fontSize: '12px', fontWeight: 600, color: '#047857', borderColor: '#10b981' }}
+                        />
+                      ) : (
+                        <strong style={{ fontSize: '13px', color: '#1e293b' }}>
+                          {formProductName || detailData.product_name || getRecordValue('product_name', productName)}
+                        </strong>
+                      )}
                     </div>
                     <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                       <span className="premium-field-label">Customer Name</span>

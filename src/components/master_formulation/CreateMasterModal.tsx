@@ -42,6 +42,7 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
   const [issueDate, setIssueDate] = useState('01.04.2025');
 
   // Form Header Fields
+  const [formProductName, setFormProductName] = useState(productName || 'aquatrap');
   const [batchNo, setBatchNo] = useState('');
   const [refNo, setRefNo] = useState('');
   const [customerName, setCustomerName] = useState('');
@@ -185,10 +186,11 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
       return;
     }
 
-    setSaving(true);
+    const targetProdName = formProductName.trim() || productName.trim();
 
     const payload = {
       batch_no: cleanBatchNo,
+      product_name: targetProdName,
       doc_no: docNo.trim(),
       review_no: reviewNo.trim(),
       review_date: reviewDate.trim(),
@@ -231,7 +233,7 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
       image_references: uploadedImageFilename ? [uploadedImageFilename] : []
     };
 
-    const [success, res] = await MasterFormulationAPI.createBatch(productName, payload);
+    const [success, res] = await MasterFormulationAPI.createBatch(targetProdName, payload);
     setSaving(false);
 
     if (success) {
@@ -392,6 +394,17 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
                     value={batchNo} 
                     onChange={e => setBatchNo(e.target.value)} 
                     style={{ ...inputStyle, fontWeight: 700, borderColor: '#3b82f6' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#047857' }}>Product Name</label>
+                  <input 
+                    type="text" 
+                    value={formProductName} 
+                    onChange={e => setFormProductName(e.target.value)} 
+                    style={{ ...inputStyle, borderColor: '#10b981', fontWeight: 600, color: '#065f46' }}
+                    placeholder="Enter product name..."
                   />
                 </div>
 

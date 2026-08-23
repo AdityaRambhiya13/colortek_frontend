@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { 
   UploadCloud, ZoomIn, ZoomOut, RotateCw, Maximize2, 
-  ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, 
+  ChevronLeft, ChevronRight, CheckCircle, AlertCircle, 
   Trash2, FastForward, Sparkles, RefreshCw, X, Layers, Check
 } from 'lucide-react';
-import { MasterFormulationAPI, LabFormulationsAPI } from '../../services/api';
+import { MasterFormulationAPI, LabFormulationsAPI, API_BASE_URL } from '../../services/api';
 
 interface QueueItem {
   id: string;
@@ -64,7 +64,7 @@ export const BulkMasterUploadModal: React.FC<BulkMasterUploadModalProps> = ({
   // Focus batch number input when moving between images
   useEffect(() => {
     if (isOpen && queue.length > 0 && !isFinished) {
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         batchInputRef.current?.focus();
         batchInputRef.current?.select();
       }, 100);
@@ -72,6 +72,7 @@ export const BulkMasterUploadModal: React.FC<BulkMasterUploadModalProps> = ({
       setZoomLevel(1);
       setRotation(0);
       setPanOffset({ x: 0, y: 0 });
+      return () => clearTimeout(timer);
     }
   }, [currentIndex, isOpen, queue.length, isFinished]);
 
@@ -928,7 +929,7 @@ export const BulkMasterUploadModal: React.FC<BulkMasterUploadModalProps> = ({
                       </>
                     ) : (
                       <>
-                        <CheckCircle2 size={18} /> Save Batch & Next ➔ (Enter ↵)
+                        <CheckCircle size={18} /> Save Batch & Next ➔ (Enter ↵)
                       </>
                     )}
                   </button>

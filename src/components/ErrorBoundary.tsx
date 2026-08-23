@@ -51,9 +51,27 @@ export class ErrorBoundary extends React.Component<Props, State> {
           <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '8px' }}>
             Application Encounters an Issue
           </h2>
-          <p style={{ color: 'var(--text-secondary, #475569)', maxWidth: '480px', fontSize: '0.9rem', marginBottom: '24px' }}>
+          <p style={{ color: 'var(--text-secondary, #475569)', maxWidth: '480px', fontSize: '0.9rem', marginBottom: '16px' }}>
             A runtime error occurred. The details have been logged. You can reload the application to recover.
           </p>
+          {this.state.error && (
+            <div style={{
+              backgroundColor: '#fee2e2',
+              color: '#991b1b',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              maxWidth: '600px',
+              width: '100%',
+              fontSize: '0.85rem',
+              textAlign: 'left',
+              marginBottom: '20px',
+              border: '1px solid #fecaca',
+              overflowX: 'auto',
+              fontFamily: 'monospace'
+            }}>
+              <strong>Error:</strong> {this.state.error.message || String(this.state.error)}
+            </div>
+          )}
           <button
             onClick={() => window.location.reload()}
             style={{

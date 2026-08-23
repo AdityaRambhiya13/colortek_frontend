@@ -4,7 +4,7 @@ import {
   ChevronLeft, ChevronRight, CheckCircle, AlertCircle, 
   Trash2, FastForward, Sparkles, RefreshCw, X, Layers, Check
 } from 'lucide-react';
-import { MasterFormulationAPI, LabFormulationsAPI, API_BASE_URL } from '../../services/api';
+import { MasterFormulationAPI, LabFormulationsAPI } from '../../services/api';
 
 interface QueueItem {
   id: string;
@@ -54,21 +54,33 @@ export const BulkMasterUploadModal: React.FC<BulkMasterUploadModalProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const viewerRef = useRef<HTMLDivElement>(null);
 
-  // Initialize or update product name
+  // Keyboard navigation callback (Hook at top level)
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (!isOpen) return;
+
+    if (e.key === 'ArrowRight' && (e.ctrlKey || e.altKey)) {
+      e.preventDefault();
+      if (currentIndex < queue.length - 1) setCurrentIndex(currentIndex + 1);
+    } else if (e.key === 'ArrowLeft' && (e.ctrlKey || e.altKey)) {
+      e.preventDefault();
+      if (currentIndex > 0) setCurrentIndex(currentIndex - 1);
+    }
+  }, [isOpen, currentIndex, queue.length]);
+
+  // Initialize or update product name (Hook at top level)
   useEffect(() => {
     if (productName && !targetProductName) {
       setTargetProductName(productName);
     }
   }, [productName, targetProductName]);
 
-  // Focus batch number input when moving between images
+  // Focus batch number input when moving between images (Hook at top level)
   useEffect(() => {
     if (isOpen && queue.length > 0 && !isFinished) {
       const timer = setTimeout(() => {
         batchInputRef.current?.focus();
         batchInputRef.current?.select();
       }, 100);
-      // Reset pan/zoom on image change
       setZoomLevel(1);
       setRotation(0);
       setPanOffset({ x: 0, y: 0 });
@@ -76,6 +88,14 @@ export const BulkMasterUploadModal: React.FC<BulkMasterUploadModalProps> = ({
     }
   }, [currentIndex, isOpen, queue.length, isFinished]);
 
+  // Keyboard event listener (Hook at top level)
+  useEffect(() => {
+    if (!isOpen) return;
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, handleKeyDown]);
+
+  // If not open, return null AFTER all hooks are called
   if (!isOpen) return null;
 
   const currentItem = queue[currentIndex] || null;
@@ -150,6 +170,21 @@ export const BulkMasterUploadModal: React.FC<BulkMasterUploadModalProps> = ({
     }
   };
 
+  // Advance to next image in queue
+  const advanceNext = () => {
+    const nextIdx = queue.findIndex((q, i) => i > currentIndex && q.status === 'pending');
+    if (nextIdx !== -1) {
+      setCurrentIndex(nextIdx);
+    } else if (currentIndex < queue.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+    } else {
+      const anyPending = queue.some(q => q.status === 'pending');
+      if (!anyPending) {
+        setIsFinished(true);
+      }
+    }
+  };
+
   // Save current batch and advance
   const handleSaveAndNext = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -162,11 +197,10 @@ export const BulkMasterUploadModal: React.FC<BulkMasterUploadModalProps> = ({
       return;
     }
 
-    // Set status to saving
     setQueue(prev => prev.map((q, idx) => idx === currentIndex ? { ...q, status: 'saving' } : q));
 
     try {
-      // 1. Upload the image file to permanent store
+      // 1. Upload image file to permanent store
       const [imgSuccess, imgRes] = await MasterFormulationAPI.uploadImage(currentItem.file);
       if (!imgSuccess || !imgRes?.filename) {
         const errorMsg = typeof imgRes === 'string' ? imgRes : 'Image upload failed.';
@@ -224,8 +258,6 @@ export const BulkMasterUploadModal: React.FC<BulkMasterUploadModalProps> = ({
         } : q));
         
         onShowToast(`✓ Master formulation '${cleanBatchNo}' created with sheet attached!`, 'success');
-
-        // Advance to next pending image
         advanceNext();
       } else {
         const errorMsg = typeof saveRes === 'string' ? saveRes : 'Failed to save master formulation.';
@@ -244,21 +276,6 @@ export const BulkMasterUploadModal: React.FC<BulkMasterUploadModalProps> = ({
     setQueue(prev => prev.map((q, idx) => idx === currentIndex ? { ...q, status: 'skipped' } : q));
     onShowToast(`Skipped sheet #${currentIndex + 1}.`, 'info');
     advanceNext();
-  };
-
-  // Advance to next image in queue
-  const advanceNext = () => {
-    const nextIdx = queue.findIndex((q, i) => i > currentIndex && q.status === 'pending');
-    if (nextIdx !== -1) {
-      setCurrentIndex(nextIdx);
-    } else if (currentIndex < queue.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-    } else {
-      const anyPending = queue.some(q => q.status === 'pending');
-      if (!anyPending) {
-        setIsFinished(true);
-      }
-    }
   };
 
   // Go to previous image
@@ -290,7 +307,7 @@ export const BulkMasterUploadModal: React.FC<BulkMasterUploadModalProps> = ({
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.button !== 0) return; // Left mouse button only
+    if (e.button !== 0) return;
     setIsPanning(true);
     setDragStart({ x: e.clientX - panOffset.x, y: e.clientY - panOffset.y });
   };
@@ -306,24 +323,6 @@ export const BulkMasterUploadModal: React.FC<BulkMasterUploadModalProps> = ({
   const handleMouseUp = () => {
     setIsPanning(false);
   };
-
-  // Keyboard navigation
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (!isOpen) return;
-
-    if (e.key === 'ArrowRight' && (e.ctrlKey || e.altKey)) {
-      e.preventDefault();
-      if (currentIndex < queue.length - 1) setCurrentIndex(currentIndex + 1);
-    } else if (e.key === 'ArrowLeft' && (e.ctrlKey || e.altKey)) {
-      e.preventDefault();
-      if (currentIndex > 0) setCurrentIndex(currentIndex - 1);
-    }
-  }, [isOpen, currentIndex, queue.length]);
-
-  useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleKeyDown]);
 
   const savedCount = queue.filter(q => q.status === 'saved').length;
   const skippedCount = queue.filter(q => q.status === 'skipped').length;

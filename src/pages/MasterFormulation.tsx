@@ -2037,16 +2037,18 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
       />
 
       {/* Bulk Master Formulation Upload Studio Modal */}
-      <BulkMasterUploadModal
-        isOpen={bulkModalOpen}
-        productName={productName}
-        onClose={() => setBulkModalOpen(false)}
-        onSuccess={() => {
-          setBulkModalOpen(false);
-          loadMasterList();
-        }}
-        onShowToast={onShowToast}
-      />
+      {bulkModalOpen && (
+        <BulkMasterUploadModal
+          isOpen={bulkModalOpen}
+          productName={productName}
+          onClose={() => setBulkModalOpen(false)}
+          onSuccess={() => {
+            setBulkModalOpen(false);
+            loadMasterList();
+          }}
+          onShowToast={onShowToast}
+        />
+      )}
 
       {/* Zoom Modal for Attached Physical Sheet Images */}
       {zoomedImage && (

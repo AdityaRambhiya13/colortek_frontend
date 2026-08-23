@@ -2787,7 +2787,6 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
             
             {/* Matches Buttons/Chips Container */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', margin: '4px 0' }}>
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               {duplicateMatches.map((m: any, idx: number) => {
                 const isSelected = selectedBatchNo === m.batch_no;
                 return (
@@ -2919,7 +2918,6 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                     </tr>
                   </thead>
                   <tbody>
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     {parsed.inventory.map((row: any, idx: number) => (
                       <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
                         <td style={{ padding: '6px' }}>{row.sr}</td>
@@ -2947,7 +2945,6 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                       </tr>
                     </thead>
                     <tbody>
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
                       {parsed.tests.map((row: any, idx: number) => (
                         <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
                           <td style={{ padding: '6px' }}>{row.method}</td>

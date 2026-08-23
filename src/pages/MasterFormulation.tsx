@@ -851,10 +851,10 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                       {viewMode === 'mf_production' ? 'Load Sheet' : 'View Details'}
                     </span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      {viewMode !== 'mf_production' && (
+                      {viewMode === 'lab_master_formulation' && (
                         <button
                           onClick={(e) => handleDeleteFormulation(row.batch_no, e)}
-                          title="Delete Formulation"
+                          title="Delete Lab Master Formulation"
                           style={{
                             padding: '4px 8px',
                             borderRadius: '6px',
@@ -1495,14 +1495,16 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
  
               {!isEditing && (
                 <>
-                  <button
-                    onClick={() => handleDeleteFormulation(selectedBatch)}
-                    disabled={isDeleting}
-                    className="flet-btn flet-btn-red"
-                    style={{ padding: '0 16px', height: '38px', display: 'flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg, #ef4444, #dc2626)', border: 'none', borderRadius: '8px', color: '#ffffff', fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 10px rgba(239, 68, 68, 0.2)' }}
-                  >
-                    <Trash2 size={14} /> Delete Formulation
-                  </button>
+                  {viewMode === 'lab_master_formulation' && (
+                    <button
+                      onClick={() => handleDeleteFormulation(selectedBatch)}
+                      disabled={isDeleting}
+                      className="flet-btn flet-btn-red"
+                      style={{ padding: '0 16px', height: '38px', display: 'flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg, #ef4444, #dc2626)', border: 'none', borderRadius: '8px', color: '#ffffff', fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 10px rgba(239, 68, 68, 0.2)' }}
+                    >
+                      <Trash2 size={14} /> Delete Lab Formulation
+                    </button>
+                  )}
                   <button onClick={() => setSelectedBatch(null)} className="flet-btn flet-btn-orange" style={{ padding: '0 20px', height: '38px', borderRadius: '8px', fontWeight: 600 }}>
                     Close
                   </button>
@@ -1514,7 +1516,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
         </div>
       )}
 
-      {/* Delete Master Formulation Confirmation Dialog */}
+      {/* Delete Lab Master Formulation Confirmation Dialog */}
       {deletingBatch && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, backdropFilter: 'blur(4px)' }}>
           <div style={{ backgroundColor: '#ffffff', borderRadius: '14px', width: '90%', maxWidth: '440px', padding: '24px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)', border: '1px solid #e2e8f0' }}>
@@ -1523,12 +1525,12 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                 <Trash2 size={22} />
               </div>
               <div>
-                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#1e293b' }}>Delete Master Formulation</h3>
+                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#1e293b' }}>Delete Lab Master Formulation</h3>
                 <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#64748b' }}>This action cannot be undone.</p>
               </div>
             </div>
             <p style={{ fontSize: '0.9rem', color: '#334155', lineHeight: 1.5, margin: '0 0 20px 0' }}>
-              Are you sure you want to permanently delete Master Formulation batch <strong>{deletingBatch}</strong>?
+              Are you sure you want to permanently delete Lab Master Formulation batch <strong>{deletingBatch}</strong>?
             </p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
               <button

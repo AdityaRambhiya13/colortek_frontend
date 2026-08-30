@@ -4,10 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Chemical Archive ? Research & Compound Library</title>
+  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800;900&family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
+
   <style>
     :root {
       --paper-primary: #FAE8B4;
@@ -25,30 +27,49 @@
       --ink-subtle: rgba(87, 74, 36, 0.08);
       --ink-border: rgba(87, 74, 36, 0.28);
       --border-subtle: rgba(128, 119, 92, 0.24);
+
       --font-display: 'Cinzel', Georgia, serif;
       --font-serif: 'EB Garamond', Georgia, serif;
       --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
       --font-mono: 'Space Mono', monospace;
+
       --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px;
       --sp-6: 24px; --sp-8: 32px; --sp-12: 48px;
-      --sidebar-width: 310px; --header-height: 80px;
+      --sidebar-width: 300px; --header-height: 80px;
       --radius-sm: 2px;
       --ease-archival: cubic-bezier(0.2, 0.9, 0.3, 1);
       --duration-snappy: 200ms; --duration-smooth: 320ms;
     }
+
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
     body {
-      background-color: var(--paper-primary); color: var(--ink-primary); font-family: var(--font-sans);
-      font-size: 14px; line-height: 1.5; min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden;
+      background-color: var(--paper-primary);
+      color: var(--ink-primary);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
     }
+
     ::selection { background: var(--archival-beige); color: var(--ink-dark); }
     ::-webkit-scrollbar { width: 7px; height: 7px; }
     ::-webkit-scrollbar-track { background: var(--paper-primary); }
     ::-webkit-scrollbar-thumb { background: var(--archival-beige-dark); border-radius: 2px; }
 
     .archive-header {
-      height: var(--header-height); background-color: var(--paper-primary); border-bottom: 1px solid var(--border-subtle);
-      display: flex; align-items: center; justify-content: space-between; padding: 0 var(--sp-8); position: sticky; top: 0; z-index: 60;
+      height: var(--header-height);
+      background-color: var(--paper-primary);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 var(--sp-8);
+      position: sticky;
+      top: 0;
+      z-index: 60;
     }
     .header-left { display: flex; align-items: center; gap: var(--sp-6); }
     .brand-group { display: flex; align-items: center; gap: var(--sp-4); text-decoration: none; color: inherit; cursor: pointer; }
@@ -61,7 +82,7 @@
     .brand-text h1 { font-family: var(--font-display); font-size: 18px; font-weight: 800; letter-spacing: 2.2px; line-height: 1.15; color: var(--ink-primary); text-transform: uppercase; }
     .brand-text p { font-family: var(--font-serif); font-style: italic; font-size: 13px; color: var(--olive-muted); letter-spacing: 0.4px; }
 
-    .header-center { flex: 1; max-width: 520px; margin: 0 var(--sp-6); }
+    .header-center { flex: 1; max-width: 540px; margin: 0 var(--sp-8); }
     .search-container { position: relative; width: 100%; }
     .search-container i.search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--olive-muted); width: 16px; height: 16px; pointer-events: none; }
     .search-input {
@@ -71,16 +92,6 @@
     .search-input:focus { outline: none; border-color: var(--ink-primary); background-color: #FFFDF7; box-shadow: 0 2px 10px rgba(87, 74, 36, 0.08); }
     .search-clear-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--olive-muted); cursor: pointer; display: none; padding: 4px; }
     .search-clear-btn:hover { color: var(--ink-primary); }
-
-    .header-right { display: flex; align-items: center; gap: var(--sp-4); }
-    .view-switcher-group { display: flex; background: var(--archival-beige); padding: 3px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); }
-    .view-btn {
-      background: none; border: none; padding: 6px 12px; font-family: var(--font-sans); font-size: 11px; font-weight: 700;
-      letter-spacing: 1px; text-transform: uppercase; color: var(--olive-muted); cursor: pointer; display: flex; align-items: center; gap: 6px;
-      border-radius: var(--radius-sm); transition: all var(--duration-snappy) ease;
-    }
-    .view-btn.active { background: var(--paper-primary); color: var(--ink-primary); box-shadow: 0 1px 4px rgba(87, 74, 36, 0.12); }
-    .view-btn i { width: 14px; height: 14px; }
 
     .app-container { display: flex; flex: 1; position: relative; }
     .archive-sidebar {
@@ -92,25 +103,25 @@
       font-family: var(--font-sans); font-size: 10.5px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
       color: var(--olive-muted); padding: 0 var(--sp-6) var(--sp-3) var(--sp-6); display: flex; align-items: center; justify-content: space-between;
     }
-    .collection-nav { list-style: none; display: flex; flex-direction: column; gap: 2px; padding: 0 var(--sp-3); }
+    .collection-nav { list-style: none; display: flex; flex-direction: column; gap: 4px; padding: 0 var(--sp-3); }
     .collection-btn {
-      width: 100%; background: transparent; border: 1px solid transparent; padding: 10px 14px; text-align: left; cursor: pointer;
+      width: 100%; background: transparent; border: 1px solid transparent; padding: 12px 14px; text-align: left; cursor: pointer;
       display: flex; align-items: center; justify-content: space-between; border-radius: var(--radius-sm);
       transition: all var(--duration-snappy) var(--ease-archival); position: relative; color: var(--ink-primary);
     }
     .collection-btn::before {
-      content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 3px; height: 0;
+      content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 4px; height: 0;
       background-color: var(--ink-primary); transition: height var(--duration-snappy) var(--ease-archival);
     }
-    .collection-btn:hover { background-color: rgba(250, 232, 180, 0.45); padding-left: 17px; }
-    .collection-btn.active { background-color: var(--paper-primary); border-color: var(--border-subtle); box-shadow: 0 1px 5px rgba(87, 74, 36, 0.08); padding-left: 17px; }
-    .collection-btn.active::before { height: 70%; }
-    .coll-info { display: flex; flex-direction: column; gap: 1px; }
+    .collection-btn:hover { background-color: rgba(250, 232, 180, 0.6); padding-left: 18px; }
+    .collection-btn.active { background-color: var(--paper-primary); border-color: var(--ink-primary); box-shadow: 0 2px 6px rgba(87, 74, 36, 0.12); padding-left: 18px; }
+    .collection-btn.active::before { height: 75%; }
+    .coll-info { display: flex; flex-direction: column; gap: 2px; }
     .coll-title { font-family: var(--font-display); font-size: 13px; font-weight: 700; letter-spacing: 0.8px; color: var(--ink-primary); }
-    .coll-range { font-family: var(--font-mono); font-size: 10.5px; color: var(--olive-muted); letter-spacing: 0.4px; }
+    .coll-range { font-family: var(--font-mono); font-size: 11px; color: var(--olive-muted); letter-spacing: 0.4px; }
     .coll-count {
-      font-family: var(--font-mono); font-size: 11px; color: var(--olive-muted); background: rgba(128, 119, 92, 0.14);
-      padding: 2px 8px; border-radius: 2px; border: 1px solid rgba(128, 119, 92, 0.18);
+      font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--olive-muted); background: rgba(128, 119, 92, 0.14);
+      padding: 3px 8px; border-radius: 2px; border: 1px solid rgba(128, 119, 92, 0.2);
     }
     .collection-btn.active .coll-count { background: var(--ink-primary); color: var(--paper-primary); border-color: var(--ink-dark); }
 
@@ -133,7 +144,7 @@
     }
 
     .active-filter-strip { display: flex; align-items: center; gap: 8px; margin-bottom: var(--sp-6); flex-wrap: wrap; }
-    .filter-chip { background: var(--paper-surface); border: 1px solid var(--border-subtle); padding: 3px 10px; font-family: var(--font-mono); font-size: 11px; color: var(--ink-primary); display: flex; align-items: center; gap: 6px; border-radius: var(--radius-sm); }
+    .filter-chip { background: var(--paper-surface); border: 1px solid var(--border-subtle); padding: 4px 12px; font-family: var(--font-mono); font-size: 11px; color: var(--ink-primary); display: flex; align-items: center; gap: 8px; border-radius: var(--radius-sm); }
     .filter-chip button { background: none; border: none; color: var(--olive-muted); cursor: pointer; display: flex; align-items: center; }
     .filter-chip button:hover { color: var(--ink-primary); }
 
@@ -172,13 +183,6 @@
     .btn-page:hover:not(:disabled) { background: var(--paper-primary); border-color: var(--ink-primary); }
     .btn-page.active { background: var(--ink-primary); color: var(--paper-primary); border-color: var(--ink-dark); }
     .btn-page:disabled { opacity: 0.4; cursor: not-allowed; }
-
-    .archive-table-container { background: var(--paper-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); overflow-x: auto; box-shadow: 0 1px 4px rgba(87, 74, 36, 0.05); display: none; }
-    .archive-ledger-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
-    .archive-ledger-table th { background-color: var(--archival-beige); color: var(--ink-primary); font-family: var(--font-sans); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; padding: 14px 18px; border-bottom: 1px solid var(--ink-border); position: sticky; top: 0; z-index: 10; }
-    .archive-ledger-table td { padding: 16px 18px; border-bottom: 1px solid var(--border-subtle); color: var(--ink-primary); vertical-align: middle; }
-    .archive-ledger-table tr { cursor: pointer; }
-    .archive-ledger-table tr:hover td { background-color: rgba(250, 232, 180, 0.6); }
 
     .dossier-overlay { position: fixed; inset: 0; background: rgba(87, 74, 36, 0.45); backdrop-filter: blur(2px); z-index: 100; display: flex; justify-content: flex-end; opacity: 0; pointer-events: none; transition: opacity var(--duration-smooth) var(--ease-archival); }
     .dossier-overlay.open { opacity: 1; pointer-events: auto; }
@@ -231,15 +235,9 @@
       </div>
     </div>
 
-    <!-- Header Actions -->
     <div class="header-right">
-      <div class="view-switcher-group">
-        <button class="view-btn active" id="btnCardView" onclick="setViewMode('card')">
-          <i data-lucide="layout-grid"></i> ARCHIVE
-        </button>
-        <button class="view-btn" id="btnTableView" onclick="setViewMode('table')">
-          <i data-lucide="list"></i> TABLE
-        </button>
+      <div style="font-family:var(--font-mono); font-size:11px; color:var(--olive-muted); letter-spacing:0.5px;">
+        3,381 CATALOGED SPECIMENS
       </div>
     </div>
   </header>
@@ -264,7 +262,7 @@
           <div class="catalog-sub-count">
             <span id="recordCountLabel">3,381 CATALOGED CHEMICAL RECORDS</span>
             <span class="dot"></span>
-            <span id="purityStandardBadge">NIST VERIFIED</span>
+            <span>NIST VERIFIED ARCHIVE</span>
           </div>
         </div>
 
@@ -295,23 +293,6 @@
       <!-- Card Grid -->
       <div class="archive-grid" id="cardGrid"></div>
 
-      <!-- Table View -->
-      <div class="archive-table-container" id="tableContainer">
-        <table class="archive-ledger-table">
-          <thead>
-            <tr>
-              <th>Product Code</th>
-              <th>Product Name</th>
-              <th>Category</th>
-              <th>Archival Description</th>
-              <th>Location</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody id="tableBody"></tbody>
-        </table>
-      </div>
-
       <!-- Virtual Pagination Controls -->
       <div class="pagination-bar" id="paginationBar">
         <div class="pagination-info" id="paginationInfo">Showing 1 - 36 of 3,381 records</div>
@@ -335,7 +316,6 @@
     </div>
   </div>
 
-  <!-- External Cached Data JS -->
   <script src="./chemical_data.js"></script>
   <script>
     const COLLECTIONS = [
@@ -352,7 +332,6 @@
 
     let archiveRecords = window.RAW_SEED_DATA || [];
     let activeCollection = 'ALL';
-    let currentView = 'card';
     let searchQuery = '';
     let sortCriterion = 'code';
     let selectedRecordIndex = -1;
@@ -369,7 +348,7 @@
             archiveRecords = data;
             renderAll();
           })
-          .catch(err => console.error('Error loading data:', err));
+          .catch(err => console.error('Data load fallback error:', err));
       } else {
         renderAll();
       }
@@ -431,7 +410,7 @@
       });
 
       list.sort((a, b) => {
-        if (sortCriterion === 'code') return a.prefix.localeCompare(b.prefix) || parseInt(a.num) - parseInt(b.num);
+        if (sortCriterion === 'code') return a.prefix.localeCompare(b.prefix) || parseInt(a.num) - parseInt(a.num);
         if (sortCriterion === 'code_desc') return b.prefix.localeCompare(a.prefix) || parseInt(b.num) - parseInt(a.num);
         if (sortCriterion === 'name') return a.name.localeCompare(b.name);
         if (sortCriterion === 'category') return a.category.localeCompare(b.category);
@@ -469,55 +448,37 @@
 
       renderPaginationButtons(totalPages);
 
-      if (currentView === 'card') {
-        document.getElementById('cardGrid').style.display = 'grid';
-        document.getElementById('tableContainer').style.display = 'none';
-
-        if (pageRecords.length === 0) {
-          document.getElementById('cardGrid').innerHTML = `
-            <div style="grid-column: 1/-1; padding: 64px; text-align: center; border: 1px dashed var(--olive-muted); background: var(--paper-card);">
-              <h3 style="font-family: var(--font-display); font-size: 20px; color: var(--ink-primary); margin-bottom: 8px;">NO RECORD FOUND</h3>
-              <p style="font-family: var(--font-serif); font-style: italic; color: var(--olive-muted); font-size: 15px;">No chemical compound matches the search parameters.</p>
-              <button onclick="clearSearch()" style="margin-top: 18px; background: var(--ink-primary); color: var(--paper-primary); border: none; padding: 10px 20px; font-size: 11px; font-weight:700; cursor:pointer;">RESET SEARCH</button>
-            </div>
-          `;
-        } else {
-          document.getElementById('cardGrid').innerHTML = pageRecords.map((item, idx) => `
-            <div class="catalog-card" onclick="openDossierByGlobalId('${item.id}')">
-              <div>
-                <div class="card-top">
-                  <span class="card-call-number">${item.prefix} ? ${item.num}</span>
-                  <span class="card-archival-stamp">${item.drawer}</span>
-                </div>
-                <div class="card-product-name">${highlightMatch(item.name)}</div>
-                <div class="card-divider"></div>
-                <div class="card-meta-section">
-                  <div class="card-category-label">CATEGORY</div>
-                  <div class="card-category-value">${highlightMatch(item.category)}</div>
-                </div>
-                <div>
-                  <div class="card-desc-label">DESCRIPTION</div>
-                  <div class="card-desc-text">${highlightMatch(item.description)}</div>
-                </div>
-              </div>
-              <div class="card-footer">
-                <span class="card-view-link">VIEW DOSSIER ?</span>
-              </div>
-            </div>
-          `).join('');
-        }
+      if (pageRecords.length === 0) {
+        document.getElementById('cardGrid').innerHTML = `
+          <div style="grid-column: 1/-1; padding: 64px; text-align: center; border: 1px dashed var(--olive-muted); background: var(--paper-card);">
+            <h3 style="font-family: var(--font-display); font-size: 20px; color: var(--ink-primary); margin-bottom: 8px;">NO RECORD FOUND</h3>
+            <p style="font-family: var(--font-serif); font-style: italic; color: var(--olive-muted); font-size: 15px;">No chemical compound matches the search parameters.</p>
+            <button onclick="clearSearch()" style="margin-top: 18px; background: var(--ink-primary); color: var(--paper-primary); border: none; padding: 10px 20px; font-size: 11px; font-weight:700; cursor:pointer;">RESET SEARCH</button>
+          </div>
+        `;
       } else {
-        document.getElementById('cardGrid').style.display = 'none';
-        document.getElementById('tableContainer').style.display = 'block';
-        document.getElementById('tableBody').innerHTML = pageRecords.map(item => `
-          <tr onclick="openDossierByGlobalId('${item.id}')">
-            <td style="font-family:var(--font-display); font-weight:700; color:var(--ink-primary);">${item.prefix} ? ${item.num}</td>
-            <td style="font-family:var(--font-serif); font-size:15px; font-weight:600;">${highlightMatch(item.name)}</td>
-            <td style="font-size:12px; color:var(--olive-muted);">${highlightMatch(item.category)}</td>
-            <td style="font-family:var(--font-serif); font-size:13px; color:var(--olive-muted); max-width:400px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${highlightMatch(item.description)}</td>
-            <td style="font-family:var(--font-mono); font-size:11px;">${item.storage}</td>
-            <td><button class="btn-cancel" style="padding: 4px 10px; font-size: 10px;">INSPECT ?</button></td>
-          </tr>
+        document.getElementById('cardGrid').innerHTML = pageRecords.map((item, idx) => `
+          <div class="catalog-card" onclick="openDossierByGlobalId('${item.id}')">
+            <div>
+              <div class="card-top">
+                <span class="card-call-number">${item.prefix} ? ${item.num}</span>
+                <span class="card-archival-stamp">${item.drawer}</span>
+              </div>
+              <div class="card-product-name">${highlightMatch(item.name)}</div>
+              <div class="card-divider"></div>
+              <div class="card-meta-section">
+                <div class="card-category-label">CATEGORY</div>
+                <div class="card-category-value">${highlightMatch(item.category)}</div>
+              </div>
+              <div>
+                <div class="card-desc-label">DESCRIPTION</div>
+                <div class="card-desc-text">${highlightMatch(item.description)}</div>
+              </div>
+            </div>
+            <div class="card-footer">
+              <span class="card-view-link">VIEW DOSSIER ?</span>
+            </div>
+          </div>
         `).join('');
       }
       lucide.createIcons();
@@ -563,13 +524,6 @@
       const q = searchQuery.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const regex = new RegExp(`(${q})`, 'gi');
       return text.replace(regex, '<mark style="background:var(--archival-beige-light); color:var(--ink-dark); padding:0 2px;">$1</mark>');
-    }
-
-    function setViewMode(v) {
-      currentView = v;
-      document.getElementById('btnCardView').classList.toggle('active', v === 'card');
-      document.getElementById('btnTableView').classList.toggle('active', v === 'table');
-      renderLibraryRecords();
     }
 
     function handleSortChange(val) {

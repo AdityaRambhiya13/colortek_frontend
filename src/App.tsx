@@ -12,6 +12,7 @@ const RdMain = React.lazy(() => import('./pages/RdMain').then(m => ({ default: m
 const ComplaintsMain = React.lazy(() => import('./pages/ComplaintsMain').then(m => ({ default: m.ComplaintsMain })));
 const UserManagement = React.lazy(() => import('./pages/UserManagement').then(m => ({ default: m.UserManagement })));
 const DatabaseManagement = React.lazy(() => import('./pages/DatabaseManagement').then(m => ({ default: m.DatabaseManagement })));
+const ChemicalLibrary = React.lazy(() => import('./chemical_library').then(m => ({ default: m.ChemicalLibrary })));
 const ProductsMaster = React.lazy(() => import('./pages/ProductsMaster').then(m => ({ default: m.ProductsMaster })));
 import { AuthAPI } from './services/api';
 import { LogOut, Info as InfoIcon } from 'lucide-react';

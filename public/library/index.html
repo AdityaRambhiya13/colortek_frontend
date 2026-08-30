@@ -1043,7 +1043,6 @@
       <div class="edit-tab-body">
         <div>
           <h2 style="font-family:var(--font-display); font-size:20px; font-weight:700; color:var(--ink-primary); letter-spacing:1px;">RECORD SPECIFICATION</h2>
-          <p style="font-family:var(--font-serif); font-style:italic; font-size:13px; color:var(--olive-muted);">Click any field to edit. Changes auto-save automatically in real time.</p>
         </div>
 
         <div class="edit-field-group">
@@ -1225,17 +1224,17 @@
             <div>
               <div class="card-top">
                 <span class="card-call-number">${item.code || item.callNumber}</span>
-                <span class="card-archival-stamp">${item.drawer}</span>
+                ${item.drawer ? `<span class="card-archival-stamp">${item.drawer}</span>` : ''}
               </div>
-              <div class="card-product-name">${highlightMatch(item.name)}</div>
+              <div class="card-product-name" style="min-height:24px;">${item.name ? highlightMatch(item.name) : '<span style="color:var(--olive-muted); font-style:italic;">—</span>'}</div>
               <div class="card-divider"></div>
               <div class="card-meta-section">
                 <div class="card-category-label">CATEGORY</div>
-                <div class="card-category-value">${highlightMatch(item.category)}</div>
+                <div class="card-category-value">${item.category ? highlightMatch(item.category) : '<span style="color:var(--olive-muted);">—</span>'}</div>
               </div>
               <div>
                 <div class="card-desc-label">DESCRIPTION</div>
-                <div class="card-desc-text">${highlightMatch(item.description)}</div>
+                <div class="card-desc-text">${item.description ? highlightMatch(item.description) : '<span style="color:var(--olive-muted);">—</span>'}</div>
               </div>
             </div>
             <div style="display:flex; justify-content:flex-end; padding-top:12px; border-top:1px dashed rgba(128,119,92,0.3); margin-top:auto;">

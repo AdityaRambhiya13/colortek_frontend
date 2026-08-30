@@ -73,9 +73,6 @@ export const EditTabModal: React.FC<EditTabModalProps> = ({
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--lib-ink-primary)', letterSpacing: '1px' }}>
               RECORD SPECIFICATION
             </h2>
-            <p style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: '13px', color: 'var(--lib-olive-muted)' }}>
-              Edit values below. Changes auto-save in real-time.
-            </p>
           </div>
 
           {/* Product Code */}

@@ -70,14 +70,20 @@ export const CardGrid: React.FC<CardGridProps> = ({
           <div>
             <div className="chem-lib-card-top">
               <span className="chem-lib-card-code">{item.code || item.callNumber}</span>
-              <span className="chem-lib-card-drawer">{item.drawer}</span>
+              {item.drawer && <span className="chem-lib-card-drawer">{item.drawer}</span>}
             </div>
-            <div className="chem-lib-card-name">{highlightText(item.name)}</div>
+            <div className="chem-lib-card-name" style={{ minHeight: '24px' }}>
+              {item.name ? highlightText(item.name) : <span style={{ color: 'var(--lib-olive-muted)', fontStyle: 'italic' }}>—</span>}
+            </div>
             <div className="chem-lib-card-divider" />
             <div className="chem-lib-card-meta-label">CATEGORY</div>
-            <div className="chem-lib-card-category">{highlightText(item.category)}</div>
+            <div className="chem-lib-card-category">
+              {item.category ? highlightText(item.category) : <span style={{ color: 'var(--lib-olive-muted)' }}>—</span>}
+            </div>
             <div className="chem-lib-card-meta-label">DESCRIPTION</div>
-            <div className="chem-lib-card-desc">{highlightText(item.description)}</div>
+            <div className="chem-lib-card-desc">
+              {item.description ? highlightText(item.description) : <span style={{ color: 'var(--lib-olive-muted)' }}>—</span>}
+            </div>
           </div>
           <div className="chem-lib-card-footer">
             <span className="chem-lib-card-link">EDIT DETAILS ✎</span>

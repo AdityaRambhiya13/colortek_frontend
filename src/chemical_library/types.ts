@@ -7,19 +7,19 @@ export interface ChemicalRecord {
   name: string;
   category: string;
   description: string;
-  storage: string;
-  drawer: string;
-  formula: string;
-  mw: string;
-  cas: string;
-  grade: string;
-  hazard: string;
-  dateArchived: string;
-  accessionNumber: string;
-  stock: number;
-  unit: string;
-  status: string;
-  structureSvg: string;
+  storage?: string;
+  drawer?: string;
+  formula?: string;
+  mw?: string;
+  cas?: string;
+  grade?: string;
+  hazard?: string;
+  dateArchived?: string;
+  accessionNumber?: string;
+  stock?: number;
+  unit?: string;
+  status?: string;
+  structureSvg?: string;
 }
 
 export interface CollectionMeta {

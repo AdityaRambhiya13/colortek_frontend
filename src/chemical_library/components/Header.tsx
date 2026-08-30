@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, X, ShieldCheck, LogOut } from 'lucide-react';
+import { Search, X, ShieldCheck, LogOut, Settings } from 'lucide-react';
 
 interface HeaderProps {
   searchQuery: string;
@@ -8,6 +8,7 @@ interface HeaderProps {
   totalRecordsCount: number;
   onLogoClick: () => void;
   onLogout?: () => void;
+  onOpenAdmin?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -17,6 +18,7 @@ export const Header: React.FC<HeaderProps> = ({
   totalRecordsCount,
   onLogoClick,
   onLogout,
+  onOpenAdmin,
 }) => {
   return (
     <header className="chem-lib-header">
@@ -46,7 +48,7 @@ export const Header: React.FC<HeaderProps> = ({
         )}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <div
           style={{
             display: 'inline-flex',
@@ -68,6 +70,31 @@ export const Header: React.FC<HeaderProps> = ({
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--lib-olive-muted)' }}>
           {totalRecordsCount.toLocaleString()} SPECIMENS
         </div>
+
+        {onOpenAdmin && (
+          <button
+            onClick={onOpenAdmin}
+            style={{
+              background: '#574A24',
+              color: '#FAE8B4',
+              border: 'none',
+              padding: '6px 14px',
+              fontFamily: 'var(--font-display)',
+              fontSize: '11px',
+              fontWeight: 700,
+              letterSpacing: '1px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              borderRadius: '2px',
+              boxShadow: '0 2px 5px rgba(87,74,36,0.2)',
+            }}
+            title="Open Dedicated Library Admin Panel"
+          >
+            <Settings size={13} /> ADMIN PANEL
+          </button>
+        )}
 
         {onLogout && (
           <button

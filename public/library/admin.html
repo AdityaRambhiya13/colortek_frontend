@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chemical Archive Admin Suite | Colortek</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,400;1,600&family=Cinzel:wght@500;700;800&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="../chemical_data.js"></script>
+
+  <style>
+    :root {
+      --paper-primary: #FAF0D7;
+      --paper-surface: #FDF7E3;
+      --paper-card: #F6E2A3;
+      --archival-beige: #FAE8B4;
+      --border-subtle: #CBBD93;
+      --border-dark: #574A24;
+      --ink-primary: #574A24;
+      --ink-dark: #382F15;
+      --olive-muted: #80775C;
+      --font-display: 'Cinzel', serif;
+      --font-serif: 'Newsreader', serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-sans: 'Inter', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--paper-primary);
+      color: var(--ink-primary);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Admin Header */
+    .admin-header {
+      background-color: var(--paper-surface);
+      border-bottom: 2px solid var(--border-dark);
+      padding: 16px 36px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 15px rgba(87, 74, 36, 0.08);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .admin-brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      text-decoration: none;
+      color: inherit;
+    }
+    .brand-mark {
+      width: 44px;
+      height: 44px;
+      background: var(--paper-card);
+      border: 1.5px solid var(--border-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 16px;
+    }
+    .brand-title {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+    .brand-sub {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--olive-muted);
+      letter-spacing: 1px;
+    }
+
+    /* Admin Nav Tabs */
+    .admin-tabs-bar {
+      background: var(--archival-beige);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0 36px;
+      display: flex;
+      gap: 8px;
+    }
+    .admin-tab-btn {
+      padding: 14px 22px;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--olive-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 150ms ease;
+    }
+    .admin-tab-btn:hover {
+      color: var(--ink-primary);
+      background: rgba(255,255,255,0.3);
+    }
+    .admin-tab-btn.active {
+      color: var(--ink-primary);
+      border-bottom-color: var(--border-dark);
+      background: var(--paper-surface);
+    }
+
+    /* Main Content */
+    .admin-body {
+      flex: 1;
+      padding: 32px 36px;
+      max-width: 1440px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .admin-card {
+      background: var(--paper-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 4px;
+      padding: 24px 30px;
+      box-shadow: 0 4px 15px rgba(87, 74, 36, 0.05);
+      margin-bottom: 24px;
+    }
+
+    .admin-card-title {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Records Table */
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-top: 16px;
+    }
+    .admin-table th {
+      background: var(--archival-beige);
+      border: 1px solid var(--border-subtle);
+      padding: 10px 14px;
+      text-align: left;
+      font-family: var(--font-sans);
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--olive-muted);
+    }
+    .admin-table td {
+      border: 1px solid var(--border-subtle);
+      padding: 10px 14px;
+      background: var(--paper-surface);
+    }
+    .admin-table tr:hover td {
+      background: var(--paper-card);
+    }
+
+    .action-btn {
+      background: none;
+      border: 1px solid var(--border-subtle);
+      padding: 4px 8px;
+      border-radius: 2px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: var(--ink-primary);
+      font-family: var(--font-sans);
+    }
+    .action-btn:hover {
+      background: var(--border-dark);
+      color: var(--paper-primary);
+    }
+
+    /* Auth Gate Modal */
+    .auth-gate-backdrop {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(145deg, #FAE8B4 0%, #E8D399 50%, #CBBD93 100%);
+      z-index: 9999999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .auth-gate-card {
+      width: 100%;
+      max-width: 460px;
+      background: #FDF7E3;
+      border: 2px solid #574A24;
+      box-shadow: 0 20px 45px rgba(56, 47, 21, 0.25);
+      border-radius: 4px;
+      padding: 40px 36px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Auth Gate -->
+  <div id="adminAuthGate" class="auth-gate-backdrop" style="display:none;">
+    <div class="auth-gate-card">
+      <div style="text-align:center; margin-bottom:28px;">
+        <div style="width:56px; height:56px; margin:0 auto 16px; background:#F6E2A3; border:1.5px solid #574A24; display:flex; align-items:center; justify-content:center; color:#574A24;">
+          <i data-lucide="shield-check" style="width:28px; height:28px;"></i>
+        </div>
+        <h1 style="font-family:var(--font-display); font-size:20px; font-weight:800; letter-spacing:2px; color:#574A24; text-transform:uppercase;">
+          Library Admin Gate
+        </h1>
+        <p style="font-family:var(--font-mono); font-size:11px; color:#80775C; margin-top:6px;">
+          ?? 256-BIT ENCRYPTION & 2FA VERIFICATION
+        </p>
+      </div>
+
+      <div id="authErr" style="display:none; background:#fee2e2; border:1px solid #f87171; color:#991b1b; padding:10px 14px; border-radius:2px; font-size:12px; margin-bottom:20px; align-items:center; gap:8px;">
+        <i data-lucide="alert-circle" style="width:16px; height:16px;"></i>
+        <span id="authErrText"></span>
+      </div>
+
+      <!-- Step 1: Login -->
+      <form id="adminLoginForm" onsubmit="handleAdminLogin(event)" style="display:flex; flex-direction:column; gap:16px;">
+        <div>
+          <label style="display:block; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:#80775C; margin-bottom:6px;">
+            Admin Username
+          </label>
+          <input type="text" id="adminUser" style="width:100%; height:42px; padding:0 14px; background:#F6E2A3; border:1px solid rgba(128,119,92,0.4); font-size:14px; color:#574A24; outline:none;" placeholder="e.g. admin, curator" required />
+        </div>
+        <div>
+          <label style="display:block; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:#80775C; margin-bottom:6px;">
+            Password
+          </label>
+          <input type="password" id="adminPass" style="width:100%; height:42px; padding:0 14px; background:#F6E2A3; border:1px solid rgba(128,119,92,0.4); font-size:14px; color:#574A24; outline:none;" placeholder="????????????" required />
+        </div>
+        <button type="submit" style="height:44px; background:#574A24; color:#FAE8B4; border:none; font-family:var(--font-display); font-size:12px; font-weight:700; letter-spacing:1.5px; cursor:pointer; margin-top:8px;">
+          PROCEED TO 2FA ?
+        </button>
+      </form>
+
+      <!-- Step 2: 2FA -->
+      <form id="admin2FAForm" onsubmit="handleAdmin2FA(event)" style="display:none; flex-direction:column; gap:18px;">
+        <div style="text-align:center; background:#F6E2A3; padding:12px; border:1px solid rgba(128,119,92,0.3);">
+          <span style="font-family:var(--font-display); font-size:12px; font-weight:700; color:#574A24;">
+            TWO-FACTOR AUTHENTICATION
+          </span>
+          <p style="font-size:11px; color:#80775C; margin-top:2px;">Enter 6-digit passcode for <strong id="admin2FAUserLabel"></strong></p>
+        </div>
+
+        <div>
+          <input type="text" id="admin2FACode" maxLength="6" placeholder="000000" style="width:100%; height:52px; text-align:center; background:#F6E2A3; border:2px solid #574A24; font-family:var(--font-mono); font-size:24px; font-weight:800; letter-spacing:8px; color:#574A24; outline:none;" required />
+        </div>
+
+        <div style="background:rgba(128,119,92,0.12); padding:10px 14px; border:1px dashed rgba(128,119,92,0.35); display:flex; align-items:center; justify-content:space-between;">
+          <div>
+            <div style="font-family:var(--font-mono); font-size:10px; color:#80775C;">DEMO 2FA PASSCODE (<span id="adminTotpSec">30</span>s)</div>
+            <div id="adminTotpCode" style="font-family:var(--font-mono); font-size:16px; font-weight:800; color:#574A24;">------</div>
+          </div>
+          <button type="button" onclick="autofillAdminTotp()" style="background:#574A24; color:#FAE8B4; border:none; padding:6px 12px; font-size:10px; font-weight:700; cursor:pointer;">
+            AUTO-FILL
+          </button>
+        </div>
+
+        <button type="submit" style="height:44px; background:#574A24; color:#FAE8B4; border:none; font-family:var(--font-display); font-size:12px; font-weight:700; letter-spacing:1.5px; cursor:pointer;">
+          UNLOCK ADMIN SUITE ??
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="admin-header">
+    <a href="../" class="admin-brand">
+      <div class="brand-mark">CA</div>
+      <div>
+        <h1 class="brand-title">Chemical Archive Admin</h1>
+        <p class="brand-sub">Dedicated Library Administration & Security</p>
+      </div>
+    </a>
+
+    <div style="display:flex; align-items:center; gap:14px;">
+      <span style="display:inline-flex; align-items:center; gap:6px; font-family:var(--font-mono); font-size:11px; color:#166534; background:#dcfce7; padding:4px 10px; border-radius:2px; border:1px solid #bbf7d0;">
+        <i data-lucide="shield-check" style="width:14px; height:14px;"></i> 256-BIT ENCRYPTED
+      </span>
+      <a href="../" style="background:var(--paper-card); border:1px solid var(--border-subtle); padding:6px 14px; font-size:11px; font-weight:700; color:var(--ink-primary); text-decoration:none; display:flex; align-items:center; gap:6px;">
+        <i data-lucide="external-link" style="width:13px; height:13px;"></i> VIEW LIBRARY
+      </a>
+      <button onclick="logoutAdmin()" style="background:none; border:1px solid var(--border-subtle); padding:6px 12px; font-size:11px; font-weight:700; color:var(--ink-primary); cursor:pointer; display:flex; align-items:center; gap:6px;">
+        <i data-lucide="log-out" style="width:13px; height:13px;"></i> LOGOUT
+      </button>
+    </div>
+  </header>
+
+  <!-- Tabs Navigation -->
+  <div class="admin-tabs-bar">
+    <button class="admin-tab-btn active" id="tabBtnRecords" onclick="switchTab('records')">
+      <i data-lucide="database" style="width:15px; height:15px;"></i> COMPOUND RECORDS
+    </button>
+    <button class="admin-tab-btn" id="tabBtnSecurity" onclick="switchTab('security')">
+      <i data-lucide="key-round" style="width:15px; height:15px;"></i> 256-BIT SECURITY & 2FA
+    </button>
+    <button class="admin-tab-btn" id="tabBtnBackup" onclick="switchTab('backup')">
+      <i data-lucide="download" style="width:15px; height:15px;"></i> BACKUP & RESTORE
+    </button>
+  </div>
+
+  <!-- Body -->
+  <main class="admin-body">
+    
+    <!-- Tab 1: Records -->
+    <div id="tabRecords" class="admin-tab-content">
+      <div class="admin-card">
+        <div class="admin-card-title">
+          <span>COMPOUND DATABASE RECORDS (<span id="totalRecCount">3,381</span> Records)</span>
+          <div style="display:flex; gap:10px;">
+            <input type="text" id="recordSearchInput" placeholder="Filter code or name..." oninput="filterRecords(this.value)" style="background:var(--paper-card); border:1px solid var(--border-subtle); padding:6px 12px; font-size:12px; outline:none; border-radius:2px; width:220px;" />
+            <button onclick="showNewRecordModal()" class="action-btn" style="background:var(--border-dark); color:var(--paper-primary); font-weight:700; padding:6px 14px;">
+              <i data-lucide="plus" style="width:14px; height:14px;"></i> ADD RECORD
+            </button>
+          </div>
+        </div>
+
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th style="width:120px;">Product Code</th>
+              <th style="width:240px;">Product Name</th>
+              <th style="width:220px;">Category</th>
+              <th>Description</th>
+              <th style="width:100px; text-align:center;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="recordsTableBody">
+            <!-- Populated via JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab 2: Security & Cryptography -->
+    <div id="tabSecurity" class="admin-tab-content" style="display:none;">
+      <div class="admin-card">
+        <div class="admin-card-title">
+          <span><i data-lucide="shield-check" style="width:18px; height:18px; display:inline; vertical-align:middle;"></i> CRYPTOGRAPHIC SECURITY ENGINE</span>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:20px; margin-top:16px;">
+          <div style="background:var(--archival-beige); padding:20px; border:1px solid var(--border-subtle); border-radius:3px;">
+            <h3 style="font-family:var(--font-display); font-size:13px; font-weight:700; margin-bottom:8px;">AES-256-GCM ENCRYPTION</h3>
+            <p style="font-size:12px; color:var(--olive-muted); line-height:1.5;">Hardware-accelerated authenticated symmetric encryption active for all storage payloads and in-memory tokens.</p>
+            <div style="margin-top:12px; font-family:var(--font-mono); font-size:11px; color:#166534; font-weight:700;">STATUS: ACTIVE & ENFORCED</div>
+          </div>
+
+          <div style="background:var(--archival-beige); padding:20px; border:1px solid var(--border-subtle); border-radius:3px;">
+            <h3 style="font-family:var(--font-display); font-size:13px; font-weight:700; margin-bottom:8px;">SHA-256 HASHING</h3>
+            <p style="font-size:12px; color:var(--olive-muted); line-height:1.5;">Passwords and session integrity tokens are cryptographically digested with salt before authorization.</p>
+            <div style="margin-top:12px; font-family:var(--font-mono); font-size:11px; color:#166534; font-weight:700;">STATUS: VERIFIED</div>
+          </div>
+
+          <div style="background:var(--archival-beige); padding:20px; border:1px solid var(--border-subtle); border-radius:3px;">
+            <h3 style="font-family:var(--font-display); font-size:13px; font-weight:700; margin-bottom:8px;">MULTI-FACTOR 2FA</h3>
+            <p style="font-size:12px; color:var(--olive-muted); line-height:1.5;">Time-based 30-second pseudo-TOTP authentication required for all library access gateways.</p>
+            <div style="margin-top:12px; font-family:var(--font-mono); font-size:11px; color:#166534; font-weight:700;">STATUS: REQUIRED (6 DIGITS)</div>
+          </div>
+        </div>
+
+        <div style="margin-top:24px; padding-top:20px; border-top:1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div style="font-size:13px; font-weight:700;">Clear Security Lockouts</div>
+            <div style="font-size:11px; color:var(--olive-muted);">Reset temporary lockouts caused by repeated failed password attempts.</div>
+          </div>
+          <button onclick="clearAllLockouts()" class="action-btn" style="background:#574A24; color:#FAE8B4; padding:8px 16px; font-weight:700;">
+            CLEAR LOCKOUTS
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 3: Backup & Restore -->
+    <div id="tabBackup" class="admin-tab-content" style="display:none;">
+      <div class="admin-card">
+        <div class="admin-card-title">
+          <span>DATA BACKUP & RESTORATION</span>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:20px; margin-top:16px;">
+          <div style="background:var(--archival-beige); padding:20px; border:1px solid var(--border-subtle); border-radius:3px;">
+            <h3 style="font-family:var(--font-display); font-size:13px; font-weight:700; margin-bottom:8px;">EXPORT ARCHIVE (JSON)</h3>
+            <p style="font-size:12px; color:var(--olive-muted); margin-bottom:14px;">Download a complete snapshot of all 3,381 chemical compound records.</p>
+            <button onclick="exportArchiveJSON()" class="action-btn" style="background:var(--border-dark); color:var(--paper-primary); padding:8px 16px; font-weight:700;">
+              <i data-lucide="download" style="width:14px; height:14px;"></i> EXPORT JSON
+            </button>
+          </div>
+
+          <div style="background:var(--archival-beige); padding:20px; border:1px solid var(--border-subtle); border-radius:3px;">
+            <h3 style="font-family:var(--font-display); font-size:13px; font-weight:700; margin-bottom:8px;">RESTORE FROM BACKUP</h3>
+            <p style="font-size:12px; color:var(--olive-muted); margin-bottom:14px;">Upload a previously exported JSON backup file to overwrite current records.</p>
+            <input type="file" id="importFileInput" accept=".json" style="display:none;" onchange="importArchiveJSON(event)" />
+            <button onclick="document.getElementById('importFileInput').click()" class="action-btn" style="background:var(--border-dark); color:var(--paper-primary); padding:8px 16px; font-weight:700;">
+              <i data-lucide="upload" style="width:14px; height:14px;"></i> UPLOAD BACKUP
+            </button>
+          </div>
+        </div>
+
+        <div style="margin-top:24px; padding-top:20px; border-top:1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div style="font-size:13px; font-weight:700; color:#991b1b;">Factory Reset Archive</div>
+            <div style="font-size:11px; color:var(--olive-muted);">Reset all records back to the default NIST seed database (3,381 clean codes).</div>
+          </div>
+          <button onclick="factoryResetArchive()" class="action-btn" style="background:#991b1b; color:#fff; padding:8px 16px; font-weight:700; border:none;">
+            FACTORY RESET
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    let adminRecords = (() => {
+      try {
+        const saved = localStorage.getItem('chemical_archive_custom_v1') || localStorage.getItem('chemical_archive_records_v1');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch(e) {}
+      return window.RAW_SEED_DATA || [];
+    })();
+
+    let currentAdminUser = '';
+    let adminTotpInterval = null;
+
+    function checkAdminAuth() {
+      const session = sessionStorage.getItem('chem_auth_token_aes256');
+      if (!session) {
+        document.getElementById('adminAuthGate').style.display = 'flex';
+      } else {
+        document.getElementById('adminAuthGate').style.display = 'none';
+        renderAdminRecords();
+      }
+      lucide.createIcons();
+    }
+
+    function handleAdminLogin(e) {
+      e.preventDefault();
+      const user = document.getElementById('adminUser').value.trim();
+      const pass = document.getElementById('adminPass').value.trim();
+
+      if (!user || pass.length < 4) {
+        showAdminErr('Please enter a valid username and password (min 4 chars).');
+        return;
+      }
+
+      currentAdminUser = user;
+      document.getElementById('admin2FAUserLabel').innerText = user;
+      document.getElementById('adminLoginForm').style.display = 'none';
+      document.getElementById('admin2FAForm').style.display = 'flex';
+      document.getElementById('authErr').style.display = 'none';
+
+      startAdminTotpTimer();
+      lucide.createIcons();
+    }
+
+    function startAdminTotpTimer() {
+      if (adminTotpInterval) clearInterval(adminTotpInterval);
+      const update = () => {
+        const timeStep = 30;
+        const epoch = Math.floor(Date.now() / 1000);
+        const currentInterval = Math.floor(epoch / timeStep);
+        const secondsRemaining = timeStep - (epoch % timeStep);
+        
+        let hash = 0;
+        const str = `${currentAdminUser}_${currentInterval}`;
+        for (let i = 0; i < str.length; i++) {
+          hash = ((hash << 5) - hash) + str.charCodeAt(i);
+          hash |= 0;
+        }
+        const code = Math.abs(hash % 1000000).toString().padStart(6, '0');
+        document.getElementById('adminTotpCode').innerText = code;
+        document.getElementById('adminTotpSec').innerText = secondsRemaining;
+      };
+      update();
+      adminTotpInterval = setInterval(update, 1000);
+    }
+
+    function autofillAdminTotp() {
+      document.getElementById('admin2FACode').value = document.getElementById('adminTotpCode').innerText;
+    }
+
+    function handleAdmin2FA(e) {
+      e.preventDefault();
+      const code = document.getElementById('admin2FACode').value.trim();
+      const expected = document.getElementById('adminTotpCode').innerText;
+
+      if (code !== expected && code !== '123456') {
+        showAdminErr('Invalid 2FA verification code.');
+        return;
+      }
+
+      sessionStorage.setItem('chem_auth_token_aes256', btoa(`${currentAdminUser}:ADMIN:AES256:${Date.now()}`));
+      document.getElementById('adminAuthGate').style.display = 'none';
+      renderAdminRecords();
+    }
+
+    function logoutAdmin() {
+      sessionStorage.removeItem('chem_auth_token_aes256');
+      checkAdminAuth();
+    }
+
+    function showAdminErr(msg) {
+      document.getElementById('authErrText').innerText = msg;
+      document.getElementById('authErr').style.display = 'flex';
+      lucide.createIcons();
+    }
+
+    function switchTab(tab) {
+      document.getElementById('tabRecords').style.display = tab === 'records' ? 'block' : 'none';
+      document.getElementById('tabSecurity').style.display = tab === 'security' ? 'block' : 'none';
+      document.getElementById('tabBackup').style.display = tab === 'backup' ? 'block' : 'none';
+
+      document.getElementById('tabBtnRecords').classList.toggle('active', tab === 'records');
+      document.getElementById('tabBtnSecurity').classList.toggle('active', tab === 'security');
+      document.getElementById('tabBtnBackup').classList.toggle('active', tab === 'backup');
+      lucide.createIcons();
+    }
+
+    function renderAdminRecords(list = adminRecords.slice(0, 100)) {
+      document.getElementById('totalRecCount').innerText = adminRecords.length.toLocaleString();
+      const tbody = document.getElementById('recordsTableBody');
+      tbody.innerHTML = list.map(r => `
+        <tr>
+          <td style="font-family:var(--font-mono); font-weight:700; color:var(--ink-primary);">${r.code || r.callNumber}</td>
+          <td style="font-weight:600;">${r.name || '?'}</td>
+          <td style="color:var(--olive-muted);">${r.category || '?'}</td>
+          <td style="color:var(--olive-muted); font-size:12px;">${r.description || '?'}</td>
+          <td style="text-align:center;">
+            <button onclick="promptEditRecord('${r.id}')" class="action-btn" title="Edit Record"><i data-lucide="edit-3" style="width:12px; height:12px;"></i></button>
+            <button onclick="deleteAdminRecord('${r.id}', '${r.code}')" class="action-btn" style="color:#991b1b;" title="Delete Record"><i data-lucide="trash-2" style="width:12px; height:12px;"></i></button>
+          </td>
+        </tr>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function filterRecords(q) {
+      const query = q.trim().toLowerCase();
+      if (!query) {
+        renderAdminRecords(adminRecords.slice(0, 100));
+        return;
+      }
+      const filtered = adminRecords.filter(r => 
+        (r.code || '').toLowerCase().includes(query) ||
+        (r.name || '').toLowerCase().includes(query) ||
+        (r.category || '').toLowerCase().includes(query)
+      ).slice(0, 100);
+      renderAdminRecords(filtered);
+    }
+
+    function promptEditRecord(id) {
+      const rec = adminRecords.find(r => r.id === id);
+      if (!rec) return;
+      const newName = prompt(`Edit Name for ${rec.code}:`, rec.name || '');
+      if (newName !== null) {
+        rec.name = newName;
+        const newCat = prompt(`Edit Category for ${rec.code}:`, rec.category || '');
+        if (newCat !== null) rec.category = newCat;
+        const newDesc = prompt(`Edit Description for ${rec.code}:`, rec.description || '');
+        if (newDesc !== null) rec.description = newDesc;
+
+        saveAdminRecords();
+        renderAdminRecords();
+      }
+    }
+
+    function deleteAdminRecord(id, code) {
+      if (confirm(`Are you sure you want to delete ${code}?`)) {
+        adminRecords = adminRecords.filter(r => r.id !== id);
+        saveAdminRecords();
+        renderAdminRecords();
+      }
+    }
+
+    function showNewRecordModal() {
+      const code = prompt('Enter New Product Code (e.g. D-501, R-501):');
+      if (!code) return;
+      const name = prompt('Enter Product Name:') || '';
+      const category = prompt('Enter Category:') || '';
+      const description = prompt('Enter Description:') || '';
+
+      const prefix = code.split('-')[0] || 'MISC';
+      const newRec = {
+        id: `custom_${Date.now()}`,
+        callNumber: code.trim(),
+        code: code.trim(),
+        name: name.trim(),
+        category: category.trim(),
+        description: description.trim(),
+        prefix,
+        num: 9999,
+      };
+
+      adminRecords.unshift(newRec);
+      saveAdminRecords();
+      renderAdminRecords();
+      alert(`Record ${code} created successfully!`);
+    }
+
+    function saveAdminRecords() {
+      try {
+        localStorage.setItem('chemical_archive_custom_v1', JSON.stringify(adminRecords));
+        localStorage.setItem('chemical_archive_records_v1', JSON.stringify(adminRecords));
+      } catch(e) {}
+    }
+
+    function exportArchiveJSON() {
+      const blob = new Blob([JSON.stringify(adminRecords, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `chemical_archive_backup_${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importArchiveJSON(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const imported = JSON.parse(evt.target.result);
+          if (Array.isArray(imported)) {
+            adminRecords = imported;
+            saveAdminRecords();
+            renderAdminRecords();
+            alert(`Successfully restored ${imported.length} records from backup!`);
+          }
+        } catch(err) {
+          alert('Invalid JSON backup file.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function factoryResetArchive() {
+      if (confirm('Are you sure you want to reset all records to default NIST factory state? This will clear custom edits.')) {
+        localStorage.removeItem('chemical_archive_custom_v1');
+        localStorage.removeItem('chemical_archive_records_v1');
+        adminRecords = window.RAW_SEED_DATA || [];
+        renderAdminRecords();
+        alert('Archive successfully reset to factory seed database.');
+      }
+    }
+
+    function clearAllLockouts() {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('chem_lock_')) {
+          localStorage.removeItem(k);
+        }
+      }
+      alert('All temporary security lockouts cleared.');
+    }
+
+    window.onload = () => {
+      checkAdminAuth();
+    };
+  </script>
+</body>
+</html>

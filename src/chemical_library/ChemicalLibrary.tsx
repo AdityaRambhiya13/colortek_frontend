@@ -9,6 +9,7 @@ import { CardGrid } from './components/CardGrid';
 import { Pagination } from './components/Pagination';
 import { EditTabModal } from './components/EditTabModal';
 import { LibraryAuthGate } from './components/LibraryAuthGate';
+import { LibraryAdminPanel } from './components/LibraryAdminPanel';
 import { getActiveSession, terminateSession } from './security/cryptoEngine';
 
 const COLLECTIONS: CollectionMeta[] = [
@@ -28,6 +29,7 @@ const PAGE_SIZE = 36;
 export const ChemicalLibrary: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(true);
+  const [showAdminModal, setShowAdminModal] = useState<boolean>(false);
 
   // Check active cryptographic session
   useEffect(() => {
@@ -155,6 +157,7 @@ export const ChemicalLibrary: React.FC = () => {
         totalRecordsCount={allRecords.length}
         onLogoClick={() => handleCollectionChange('ALL')}
         onLogout={handleLogout}
+        onOpenAdmin={() => setShowAdminModal(true)}
       />
 
       <div className="chem-lib-layout">
@@ -230,6 +233,19 @@ export const ChemicalLibrary: React.FC = () => {
         onClose={() => setSelectedRecord(null)}
         onUpdateRecord={handleUpdateRecord}
       />
+
+      {showAdminModal && (
+        <LibraryAdminPanel
+          records={allRecords}
+          onUpdateRecords={(next) => {
+            setAllRecords(next);
+            try {
+              localStorage.setItem('chemical_archive_records_v1', JSON.stringify(next));
+            } catch {}
+          }}
+          onClose={() => setShowAdminModal(false)}
+        />
+      )}
     </div>
   );
 };

@@ -1,9 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  ShieldCheck, Database, KeyRound, Download, Upload, RotateCcw,
-  Plus, Search, Trash2, Edit3, CheckCircle2, AlertTriangle, FileText, Lock
+  Database, Download, Upload,
+  Plus, Search, Trash2, Edit3, CheckCircle2, Users, Activity, Eye, EyeOff
 } from 'lucide-react';
 import type { ChemicalRecord } from '../types';
+import {
+  getLibraryUsers,
+  createLibraryUser,
+  updateLibraryUser,
+  deleteLibraryUser,
+  getAuditLogs,
+  addAuditLog,
+  clearAuditLogs,
+  exportAuditLogsCSV,
+} from '../security/cryptoEngine';
+import type { LibraryUser, AuditLogEntry } from '../security/cryptoEngine';
 
 interface LibraryAdminPanelProps {
   records: ChemicalRecord[];
@@ -16,9 +27,26 @@ export const LibraryAdminPanel: React.FC<LibraryAdminPanelProps> = ({
   onUpdateRecords,
   onClose,
 }) => {
-  const [activeTab, setActiveTab] = useState<'records' | 'security' | 'import_export'>('records');
+  const [activeTab, setActiveTab] = useState<'records' | 'users' | 'audit' | 'backup'>('records');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusMsg, setStatusMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+
+  // Users State
+  const [users, setUsers] = useState<LibraryUser[]>([]);
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [newUsername, setNewUsername] = useState('');
+  const [newUserPass, setNewUserPass] = useState('');
+  const [newUserRole, setNewUserRole] = useState<'admin' | 'curator' | 'researcher'>('curator');
+  const [showUserPassToggle, setShowUserPassToggle] = useState(false);
+
+  // Edit User State
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [editUserPass, setEditUserPass] = useState('');
+  const [editUserRole, setEditUserRole] = useState<'admin' | 'curator' | 'researcher'>('curator');
+
+  // Audit Logs State
+  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
+  const [logSearch, setLogSearch] = useState('');
 
   // New Record Form
   const [newCode, setNewCode] = useState('');
@@ -27,16 +55,23 @@ export const LibraryAdminPanel: React.FC<LibraryAdminPanelProps> = ({
   const [newDesc, setNewDesc] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
 
-  // Editing existing record in table
+  // Inline editing
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
-  const [editFormData, setEditFormData] = useState<Partial<ChemicalRecord>>({});
+  const [editRecordName, setEditRecordName] = useState('');
+  const [editRecordCategory, setEditRecordCategory] = useState('');
+  const [editRecordDesc, setEditRecordDesc] = useState('');
+
+  useEffect(() => {
+    setUsers(getLibraryUsers());
+    setAuditLogs(getAuditLogs());
+  }, [activeTab]);
 
   const showNotification = (text: string, type: 'success' | 'error' = 'success') => {
     setStatusMsg({ text, type });
     setTimeout(() => setStatusMsg(null), 3500);
   };
 
-  // Filter records for the table
+  // Filter records
   const filteredRecords = records.filter(r => {
     const q = searchQuery.toLowerCase().trim();
     if (!q) return true;
@@ -45,7 +80,7 @@ export const LibraryAdminPanel: React.FC<LibraryAdminPanelProps> = ({
       (r.name || '').toLowerCase().includes(q) ||
       (r.category || '').toLowerCase().includes(q)
     );
-  }).slice(0, 100); // Top 100 in admin preview for high performance
+  }).slice(0, 100);
 
   // Add Single Record
   const handleAddRecord = (e: React.FormEvent) => {
@@ -70,6 +105,7 @@ export const LibraryAdminPanel: React.FC<LibraryAdminPanelProps> = ({
 
     const next = [newRec, ...records];
     onUpdateRecords(next);
+    addAuditLog('RECORD_CREATE', 'Admin', `Created chemical record ${newRec.code} (${newRec.name || 'Untitled'})`);
     setNewCode('');
     setNewName('');
     setNewCategory('');
@@ -78,13 +114,28 @@ export const LibraryAdminPanel: React.FC<LibraryAdminPanelProps> = ({
     showNotification(`Record ${newRec.code} successfully created!`);
   };
 
-  // Save Inline Edit
-  const handleSaveInlineEdit = (id: string) => {
-    const next = records.map(r => r.id === id ? { ...r, ...editFormData } : r);
+  // Inline Record Edit
+  const handleStartEditRecord = (r: ChemicalRecord) => {
+    setEditingRecordId(r.id);
+    setEditRecordName(r.name || '');
+    setEditRecordCategory(r.category || '');
+    setEditRecordDesc(r.description || '');
+  };
+
+  const handleSaveRecordEdit = (id: string, code: string) => {
+    const next = records.map(r => {
+      if (r.id !== id) return r;
+      return {
+        ...r,
+        name: editRecordName.trim(),
+        category: editRecordCategory.trim(),
+        description: editRecordDesc.trim(),
+      };
+    });
     onUpdateRecords(next);
+    addAuditLog('RECORD_EDIT', 'Admin', `Updated record details for ${code}`);
     setEditingRecordId(null);
-    setEditFormData({});
-    showNotification('Record updated successfully.');
+    showNotification(`Record ${code} updated successfully.`);
   };
 
   // Delete Record
@@ -92,269 +143,312 @@ export const LibraryAdminPanel: React.FC<LibraryAdminPanelProps> = ({
     if (confirm(`Are you sure you want to delete ${code}?`)) {
       const next = records.filter(r => r.id !== id);
       onUpdateRecords(next);
+      addAuditLog('RECORD_DELETE', 'Admin', `Deleted chemical record ${code}`);
       showNotification(`Record ${code} deleted.`);
     }
   };
 
-  // Export JSON
-  const handleExportJSON = () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(records, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `chemical_archive_backup_${new Date().toISOString().slice(0,10)}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-    showNotification(`Exported ${records.length} records to JSON.`);
-  };
+  // User Management Handlers
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUsername.trim() || !newUserPass.trim()) {
+      showNotification('Username and password are required.', 'error');
+      return;
+    }
+    if (newUserPass.length < 6) {
+      showNotification('Password must be at least 6 characters.', 'error');
+      return;
+    }
 
-  // Export CSV
-  const handleExportCSV = () => {
-    const headers = ["Product Code", "Name", "Category", "Description", "Prefix"];
-    const rows = records.map(r => [
-      `"${r.code || r.callNumber}"`,
-      `"${(r.name || '').replace(/"/g, '""')}"`,
-      `"${(r.category || '').replace(/"/g, '""')}"`,
-      `"${(r.description || '').replace(/"/g, '""')}"`,
-      `"${r.prefix}"`
-    ]);
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `chemical_archive_${new Date().toISOString().slice(0,10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    showNotification(`Exported ${records.length} records to CSV.`);
-  };
-
-  // Import JSON File
-  const handleImportJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const parsed = JSON.parse(event.target?.result as string);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          onUpdateRecords(parsed);
-          showNotification(`Successfully imported ${parsed.length} records!`);
-        } else {
-          showNotification('Invalid JSON format. Expected an array of chemical records.', 'error');
-        }
-      } catch {
-        showNotification('Error parsing JSON file.', 'error');
-      }
-    };
-    reader.readAsText(file);
-  };
-
-  // Reset to Baseline
-  const handleResetBaseline = () => {
-    if (confirm("WARNING: This will reset all records to the baseline product code catalog. Proceed?")) {
-      localStorage.removeItem('chemical_archive_records_v1');
-      window.location.reload();
+    try {
+      await createLibraryUser(newUsername, newUserPass, newUserRole, true);
+      setUsers(getLibraryUsers());
+      setAuditLogs(getAuditLogs());
+      setNewUsername('');
+      setNewUserPass('');
+      setShowAddUserModal(false);
+      showNotification(`User '${newUsername}' created successfully!`);
+    } catch (err: any) {
+      showNotification(err.message || 'Failed to create user', 'error');
     }
   };
+
+  const handleUpdateUser = async (id: string) => {
+    try {
+      await updateLibraryUser(id, {
+        password: editUserPass ? editUserPass : undefined,
+        role: editUserRole,
+      });
+      setUsers(getLibraryUsers());
+      setAuditLogs(getAuditLogs());
+      setEditingUserId(null);
+      setEditUserPass('');
+      showNotification('User profile updated successfully.');
+    } catch (err: any) {
+      showNotification(err.message || 'Failed to update user', 'error');
+    }
+  };
+
+  const handleDeleteUser = (id: string, username: string) => {
+    if (confirm(`Are you sure you want to delete user account '${username}'?`)) {
+      try {
+        deleteLibraryUser(id);
+        setUsers(getLibraryUsers());
+        setAuditLogs(getAuditLogs());
+        showNotification(`User '${username}' deleted.`);
+      } catch (err: any) {
+        showNotification(err.message || 'Cannot delete user', 'error');
+      }
+    }
+  };
+
+  // Filtered Audit Logs
+  const filteredAuditLogs = auditLogs.filter(l => {
+    const q = logSearch.toLowerCase().trim();
+    if (!q) return true;
+    return (
+      l.eventType.toLowerCase().includes(q) ||
+      l.user.toLowerCase().includes(q) ||
+      l.details.toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(56, 47, 21, 0.65)',
-        backdropFilter: 'blur(4px)',
-        zIndex: 999999,
+        backgroundColor: 'rgba(56, 47, 21, 0.65)',
+        backdropFilter: 'blur(3px)',
+        zIndex: 9999999,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '24px',
-        fontFamily: 'var(--font-sans)',
+        padding: '20px',
       }}
     >
       <div
         style={{
           width: '1200px',
           maxWidth: '96vw',
-          height: '90vh',
-          background: '#FDF7E3',
+          height: '92vh',
+          backgroundColor: '#FAF0D7',
           border: '2px solid #574A24',
-          boxShadow: '0 25px 60px rgba(0,0,0,0.4)',
+          boxShadow: '0 25px 60px rgba(56, 47, 21, 0.4)',
           borderRadius: '4px',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
+          fontFamily: 'var(--font-sans)',
         }}
       >
         {/* Header */}
         <div
           style={{
-            padding: '18px 28px',
-            background: '#F6E2A3',
-            borderBottom: '1.5px solid #574A24',
+            padding: '16px 28px',
+            backgroundColor: '#FDF7E3',
+            borderBottom: '2px solid #574A24',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
             <div
               style={{
-                width: '36px',
-                height: '36px',
-                background: '#574A24',
-                color: '#FAE8B4',
+                width: '40px',
+                height: '40px',
+                backgroundColor: '#F6E2A3',
+                border: '1.5px solid #574A24',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                borderRadius: '2px',
+                fontFamily: 'var(--font-display)',
+                fontWeight: 800,
+                fontSize: '15px',
+                color: '#574A24',
               }}
             >
-              <Database size={20} />
+              CA
             </div>
             <div>
-              <h2
+              <h1
                 style={{
                   fontFamily: 'var(--font-display)',
                   fontSize: '18px',
                   fontWeight: 800,
+                  letterSpacing: '1.5px',
                   color: '#574A24',
-                  letterSpacing: '1px',
+                  textTransform: 'uppercase',
                   margin: 0,
                 }}
               >
-                CHEMICAL ARCHIVE ADMIN PANEL
-              </h2>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: '#80775C' }}>
-                ADMINISTRATIVE CONTROL & DATABASE MANAGEMENT
-              </span>
+                Chemical Archive Administration
+              </h1>
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#80775C', margin: 0, letterSpacing: '1px' }}>
+                🔒 256-BIT ENCRYPTION • USER ACCESS MANAGEMENT • AUDIT LOGGING
+              </p>
             </div>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {statusMsg && (
+              <div
+                style={{
+                  padding: '6px 14px',
+                  backgroundColor: statusMsg.type === 'success' ? '#dcfce7' : '#fee2e2',
+                  color: statusMsg.type === 'success' ? '#166534' : '#991b1b',
+                  border: `1px solid ${statusMsg.type === 'success' ? '#bbf7d0' : '#f87171'}`,
+                  borderRadius: '2px',
+                  fontSize: '11px',
+                  fontFamily: 'var(--font-mono)',
+                  fontWeight: 700,
+                }}
+              >
+                {statusMsg.text}
+              </div>
+            )}
             <button
               onClick={onClose}
               style={{
                 background: '#574A24',
                 color: '#FAE8B4',
                 border: 'none',
-                padding: '8px 20px',
-                fontFamily: 'var(--font-sans)',
+                padding: '8px 18px',
+                fontFamily: 'var(--font-display)',
                 fontSize: '11px',
                 fontWeight: 700,
                 letterSpacing: '1px',
-                textTransform: 'uppercase',
                 cursor: 'pointer',
                 borderRadius: '2px',
               }}
             >
-              RETURN TO CATALOG ?
+              CLOSE SUITE ✕
             </button>
           </div>
         </div>
 
-        {/* Status notification */}
-        {statusMsg && (
-          <div
-            style={{
-              padding: '10px 24px',
-              background: statusMsg.type === 'success' ? '#dcfce7' : '#fee2e2',
-              color: statusMsg.type === 'success' ? '#166534' : '#991b1b',
-              borderBottom: `1px solid ${statusMsg.type === 'success' ? '#bbf7d0' : '#f87171'}`,
-              fontFamily: 'var(--font-mono)',
-              fontSize: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-            }}
-          >
-            {statusMsg.type === 'success' ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
-            <span>{statusMsg.text}</span>
-          </div>
-        )}
-
         {/* Tab Navigation */}
-        <div style={{ display: 'flex', borderBottom: '1px solid #CBBD93', background: '#E8D399' }}>
+        <div style={{ backgroundColor: '#FAE8B4', borderBottom: '1px solid #CBBD93', padding: '0 28px', display: 'flex', gap: '8px' }}>
           <button
             onClick={() => setActiveTab('records')}
             style={{
-              padding: '12px 24px',
+              padding: '12px 18px',
+              background: 'none',
               border: 'none',
-              background: activeTab === 'records' ? '#FDF7E3' : 'transparent',
+              borderBottom: activeTab === 'records' ? '3px solid #574A24' : '3px solid transparent',
+              backgroundColor: activeTab === 'records' ? '#FDF7E3' : 'transparent',
               fontFamily: 'var(--font-display)',
               fontSize: '12px',
               fontWeight: 700,
-              color: '#574A24',
+              letterSpacing: '1px',
+              color: activeTab === 'records' ? '#574A24' : '#80775C',
               cursor: 'pointer',
-              borderBottom: activeTab === 'records' ? '2px solid #574A24' : 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
             }}
           >
-            DATABASE RECORDS ({records.length})
+            <Database size={14} /> RECORDS MANAGER
           </button>
+
           <button
-            onClick={() => setActiveTab('import_export')}
+            onClick={() => setActiveTab('users')}
             style={{
-              padding: '12px 24px',
+              padding: '12px 18px',
+              background: 'none',
               border: 'none',
-              background: activeTab === 'import_export' ? '#FDF7E3' : 'transparent',
+              borderBottom: activeTab === 'users' ? '3px solid #574A24' : '3px solid transparent',
+              backgroundColor: activeTab === 'users' ? '#FDF7E3' : 'transparent',
               fontFamily: 'var(--font-display)',
               fontSize: '12px',
               fontWeight: 700,
-              color: '#574A24',
+              letterSpacing: '1px',
+              color: activeTab === 'users' ? '#574A24' : '#80775C',
               cursor: 'pointer',
-              borderBottom: activeTab === 'import_export' ? '2px solid #574A24' : 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
             }}
           >
-            IMPORT / EXPORT / BACKUP
+            <Users size={14} /> USERS & ACCESS ({users.length})
           </button>
+
           <button
-            onClick={() => setActiveTab('security')}
+            onClick={() => setActiveTab('audit')}
             style={{
-              padding: '12px 24px',
+              padding: '12px 18px',
+              background: 'none',
               border: 'none',
-              background: activeTab === 'security' ? '#FDF7E3' : 'transparent',
+              borderBottom: activeTab === 'audit' ? '3px solid #574A24' : '3px solid transparent',
+              backgroundColor: activeTab === 'audit' ? '#FDF7E3' : 'transparent',
               fontFamily: 'var(--font-display)',
               fontSize: '12px',
               fontWeight: 700,
-              color: '#574A24',
+              letterSpacing: '1px',
+              color: activeTab === 'audit' ? '#574A24' : '#80775C',
               cursor: 'pointer',
-              borderBottom: activeTab === 'security' ? '2px solid #574A24' : 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
             }}
           >
-            SECURITY & 2FA POLICIES
+            <Activity size={14} /> AUDIT LOGS & MONITORING
+          </button>
+
+          <button
+            onClick={() => setActiveTab('backup')}
+            style={{
+              padding: '12px 18px',
+              background: 'none',
+              border: 'none',
+              borderBottom: activeTab === 'backup' ? '3px solid #574A24' : '3px solid transparent',
+              backgroundColor: activeTab === 'backup' ? '#FDF7E3' : 'transparent',
+              fontFamily: 'var(--font-display)',
+              fontSize: '12px',
+              fontWeight: 700,
+              letterSpacing: '1px',
+              color: activeTab === 'backup' ? '#574A24' : '#80775C',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            <Download size={14} /> BACKUP & RESTORE
           </button>
         </div>
 
-        {/* Body Content */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
+        {/* Tab Content Body */}
+        <div style={{ flex: 1, padding: '24px 28px', overflowY: 'auto', backgroundColor: '#FDF7E3' }}>
+          
+          {/* TAB 1: RECORDS */}
           {activeTab === 'records' && (
             <div>
-              {/* Controls bar */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', gap: '16px' }}>
-                <div style={{ position: 'relative', flex: 1, maxWidth: '450px' }}>
-                  <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#80775C' }} />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search records in admin table..."
-                    style={{
-                      width: '100%',
-                      height: '38px',
-                      paddingLeft: '36px',
-                      paddingRight: '12px',
-                      background: '#F6E2A3',
-                      border: '1px solid #CBBD93',
-                      fontFamily: 'var(--font-sans)',
-                      fontSize: '13px',
-                      color: '#574A24',
-                      borderRadius: '2px',
-                      outline: 'none',
-                      boxSizing: 'border-box',
-                    }}
-                  />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ position: 'relative' }}>
+                    <Search size={14} style={{ position: 'absolute', left: '10px', top: '10px', color: '#80775C' }} />
+                    <input
+                      type="text"
+                      placeholder="Filter product code or name..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      style={{
+                        padding: '8px 12px 8px 30px',
+                        background: '#F6E2A3',
+                        border: '1px solid #CBBD93',
+                        borderRadius: '2px',
+                        fontSize: '12px',
+                        color: '#574A24',
+                        outline: 'none',
+                        width: '260px',
+                      }}
+                    />
+                  </div>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: '#80775C' }}>
+                    Showing {filteredRecords.length} of {records.length.toLocaleString()} records
+                  </span>
                 </div>
 
                 <button
@@ -363,344 +457,618 @@ export const LibraryAdminPanel: React.FC<LibraryAdminPanelProps> = ({
                     background: '#574A24',
                     color: '#FAE8B4',
                     border: 'none',
-                    padding: '9px 18px',
+                    padding: '8px 16px',
                     fontFamily: 'var(--font-sans)',
                     fontSize: '11px',
                     fontWeight: 700,
-                    letterSpacing: '1px',
                     cursor: 'pointer',
+                    borderRadius: '2px',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
-                    borderRadius: '2px',
                   }}
                 >
-                  <Plus size={15} /> {showAddForm ? 'CANCEL' : 'ADD NEW RECORD'}
+                  <Plus size={14} /> {showAddForm ? 'CANCEL' : 'ADD NEW RECORD'}
                 </button>
               </div>
 
-              {/* Add New Record Inline Form */}
+              {/* Add Form */}
               {showAddForm && (
                 <form
                   onSubmit={handleAddRecord}
                   style={{
                     background: '#F6E2A3',
-                    border: '1.5px solid #574A24',
-                    padding: '20px',
+                    border: '1px solid #574A24',
+                    padding: '18px 20px',
                     borderRadius: '2px',
-                    marginBottom: '24px',
+                    marginBottom: '20px',
                     display: 'grid',
                     gridTemplateColumns: 'repeat(4, 1fr)',
                     gap: '12px',
                   }}
                 >
                   <div>
-                    <label style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#80775C' }}>Product Code</label>
+                    <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#80775C', marginBottom: '4px' }}>
+                      Product Code *
+                    </label>
                     <input
                       type="text"
-                      placeholder="e.g. MISC-081, D-501"
+                      placeholder="e.g. D-501"
                       value={newCode}
                       onChange={(e) => setNewCode(e.target.value)}
                       required
-                      style={{ width: '100%', padding: '8px', marginTop: '4px', background: '#FDF7E3', border: '1px solid #CBBD93', boxSizing: 'border-box' }}
+                      style={{ width: '100%', padding: '6px 10px', background: '#FDF7E3', border: '1px solid #CBBD93', fontSize: '12px', outline: 'none' }}
                     />
                   </div>
                   <div>
-                    <label style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#80775C' }}>Product Name</label>
+                    <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#80775C', marginBottom: '4px' }}>
+                      Product Name
+                    </label>
                     <input
                       type="text"
-                      placeholder="Product title"
+                      placeholder="Compound name"
                       value={newName}
                       onChange={(e) => setNewName(e.target.value)}
-                      style={{ width: '100%', padding: '8px', marginTop: '4px', background: '#FDF7E3', border: '1px solid #CBBD93', boxSizing: 'border-box' }}
+                      style={{ width: '100%', padding: '6px 10px', background: '#FDF7E3', border: '1px solid #CBBD93', fontSize: '12px', outline: 'none' }}
                     />
                   </div>
                   <div>
-                    <label style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#80775C' }}>Category</label>
+                    <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#80775C', marginBottom: '4px' }}>
+                      Category
+                    </label>
                     <input
                       type="text"
                       placeholder="Category"
                       value={newCategory}
                       onChange={(e) => setNewCategory(e.target.value)}
-                      style={{ width: '100%', padding: '8px', marginTop: '4px', background: '#FDF7E3', border: '1px solid #CBBD93', boxSizing: 'border-box' }}
+                      style={{ width: '100%', padding: '6px 10px', background: '#FDF7E3', border: '1px solid #CBBD93', fontSize: '12px', outline: 'none' }}
                     />
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-                    <button
-                      type="submit"
-                      style={{
-                        width: '100%',
-                        height: '35px',
-                        background: '#574A24',
-                        color: '#FAE8B4',
-                        border: 'none',
-                        fontSize: '11px',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        borderRadius: '2px',
-                      }}
-                    >
-                      SAVE RECORD
-                    </button>
-                  </div>
-                  <div style={{ gridColumn: '1/-1' }}>
-                    <label style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#80775C' }}>Description</label>
-                    <textarea
-                      rows={2}
-                      placeholder="Product specification details..."
+                  <div>
+                    <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#80775C', marginBottom: '4px' }}>
+                      Description
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Short description"
                       value={newDesc}
                       onChange={(e) => setNewDesc(e.target.value)}
-                      style={{ width: '100%', padding: '8px', marginTop: '4px', background: '#FDF7E3', border: '1px solid #CBBD93', boxSizing: 'border-box' }}
+                      style={{ width: '100%', padding: '6px 10px', background: '#FDF7E3', border: '1px solid #CBBD93', fontSize: '12px', outline: 'none' }}
                     />
+                  </div>
+                  <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
+                    <button type="submit" style={{ background: '#574A24', color: '#FAE8B4', border: 'none', padding: '8px 20px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', borderRadius: '2px' }}>
+                      SAVE RECORD
+                    </button>
                   </div>
                 </form>
               )}
 
               {/* Records Table */}
-              <div style={{ border: '1px solid #CBBD93', borderRadius: '2px', overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
-                  <thead>
-                    <tr style={{ background: '#E8D399', borderBottom: '1px solid #CBBD93' }}>
-                      <th style={{ padding: '10px 14px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: '#574A24' }}>CODE</th>
-                      <th style={{ padding: '10px 14px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: '#574A24' }}>NAME</th>
-                      <th style={{ padding: '10px 14px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: '#574A24' }}>CATEGORY</th>
-                      <th style={{ padding: '10px 14px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: '#574A24' }}>DESCRIPTION</th>
-                      <th style={{ padding: '10px 14px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: '#574A24', textAlign: 'right' }}>ACTIONS</th>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                <thead>
+                  <tr style={{ background: '#FAE8B4', borderBottom: '1px solid #CBBD93' }}>
+                    <th style={{ padding: '8px 12px', textAlign: 'left', fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#80775C' }}>CODE</th>
+                    <th style={{ padding: '8px 12px', textAlign: 'left', fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#80775C' }}>NAME</th>
+                    <th style={{ padding: '8px 12px', textAlign: 'left', fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#80775C' }}>CATEGORY</th>
+                    <th style={{ padding: '8px 12px', textAlign: 'left', fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#80775C' }}>DESCRIPTION</th>
+                    <th style={{ padding: '8px 12px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#80775C', width: '100px' }}>ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredRecords.map((r) => (
+                    <tr key={r.id} style={{ borderBottom: '1px solid #CBBD93' }}>
+                      <td style={{ padding: '8px 12px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#574A24' }}>
+                        {r.code || r.callNumber}
+                      </td>
+                      <td style={{ padding: '8px 12px' }}>
+                        {editingRecordId === r.id ? (
+                          <input
+                            type="text"
+                            value={editRecordName}
+                            onChange={(e) => setEditRecordName(e.target.value)}
+                            style={{ width: '100%', padding: '4px', background: '#FFFDF7', border: '1px solid #574A24', fontSize: '12px' }}
+                          />
+                        ) : (
+                          r.name || '—'
+                        )}
+                      </td>
+                      <td style={{ padding: '8px 12px' }}>
+                        {editingRecordId === r.id ? (
+                          <input
+                            type="text"
+                            value={editRecordCategory}
+                            onChange={(e) => setEditRecordCategory(e.target.value)}
+                            style={{ width: '100%', padding: '4px', background: '#FFFDF7', border: '1px solid #574A24', fontSize: '12px' }}
+                          />
+                        ) : (
+                          r.category || '—'
+                        )}
+                      </td>
+                      <td style={{ padding: '8px 12px', color: '#80775C' }}>
+                        {editingRecordId === r.id ? (
+                          <input
+                            type="text"
+                            value={editRecordDesc}
+                            onChange={(e) => setEditRecordDesc(e.target.value)}
+                            style={{ width: '100%', padding: '4px', background: '#FFFDF7', border: '1px solid #574A24', fontSize: '12px' }}
+                          />
+                        ) : (
+                          r.description || '—'
+                        )}
+                      </td>
+                      <td style={{ padding: '8px 12px', textAlign: 'center' }}>
+                        {editingRecordId === r.id ? (
+                          <button
+                            onClick={() => handleSaveRecordEdit(r.id, r.code || r.callNumber)}
+                            style={{ background: '#166534', color: '#fff', border: 'none', padding: '4px 8px', fontSize: '10px', fontWeight: 700, cursor: 'pointer', borderRadius: '2px' }}
+                          >
+                            SAVE
+                          </button>
+                        ) : (
+                          <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
+                            <button
+                              onClick={() => handleStartEditRecord(r)}
+                              style={{ background: 'none', border: '1px solid #CBBD93', padding: '3px 6px', cursor: 'pointer', color: '#574A24', borderRadius: '2px' }}
+                              title="Edit Record"
+                            >
+                              <Edit3 size={12} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteRecord(r.id, r.code || r.callNumber)}
+                              style={{ background: 'none', border: '1px solid #CBBD93', padding: '3px 6px', cursor: 'pointer', color: '#991b1b', borderRadius: '2px' }}
+                              title="Delete Record"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+                        )}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {filteredRecords.map((item) => (
-                      <tr key={item.id} style={{ borderBottom: '1px solid #CBBD93', background: editingRecordId === item.id ? '#F6E2A3' : 'transparent' }}>
-                        <td style={{ padding: '10px 14px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#574A24' }}>
-                          {editingRecordId === item.id ? (
-                            <input
-                              type="text"
-                              value={editFormData.code ?? item.code ?? item.callNumber}
-                              onChange={(e) => setEditFormData({ ...editFormData, code: e.target.value, callNumber: e.target.value })}
-                              style={{ width: '90px', padding: '4px', background: '#FFF' }}
-                            />
-                          ) : (
-                            item.code || item.callNumber
-                          )}
-                        </td>
-                        <td style={{ padding: '10px 14px', color: '#574A24' }}>
-                          {editingRecordId === item.id ? (
-                            <input
-                              type="text"
-                              value={editFormData.name ?? item.name}
-                              onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
-                              style={{ width: '100%', padding: '4px', background: '#FFF' }}
-                            />
-                          ) : (
-                            item.name || '?'
-                          )}
-                        </td>
-                        <td style={{ padding: '10px 14px', color: '#80775C' }}>
-                          {editingRecordId === item.id ? (
-                            <input
-                              type="text"
-                              value={editFormData.category ?? item.category}
-                              onChange={(e) => setEditFormData({ ...editFormData, category: e.target.value })}
-                              style={{ width: '100%', padding: '4px', background: '#FFF' }}
-                            />
-                          ) : (
-                            item.category || '?'
-                          )}
-                        </td>
-                        <td style={{ padding: '10px 14px', color: '#80775C', maxWidth: '280px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {editingRecordId === item.id ? (
-                            <input
-                              type="text"
-                              value={editFormData.description ?? item.description}
-                              onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
-                              style={{ width: '100%', padding: '4px', background: '#FFF' }}
-                            />
-                          ) : (
-                            item.description || '?'
-                          )}
-                        </td>
-                        <td style={{ padding: '10px 14px', textAlign: 'right' }}>
-                          {editingRecordId === item.id ? (
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
-                              <button
-                                onClick={() => handleSaveInlineEdit(item.id)}
-                                style={{ background: '#166534', color: '#FFF', border: 'none', padding: '4px 8px', fontSize: '11px', cursor: 'pointer', borderRadius: '2px' }}
-                              >
-                                SAVE
-                              </button>
-                              <button
-                                onClick={() => { setEditingRecordId(null); setEditFormData({}); }}
-                                style={{ background: '#80775C', color: '#FFF', border: 'none', padding: '4px 8px', fontSize: '11px', cursor: 'pointer', borderRadius: '2px' }}
-                              >
-                                CANCEL
-                              </button>
-                            </div>
-                          ) : (
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
-                              <button
-                                onClick={() => { setEditingRecordId(item.id); setEditFormData(item); }}
-                                style={{ background: 'none', border: '1px solid #CBBD93', padding: '4px 8px', color: '#574A24', cursor: 'pointer', borderRadius: '2px' }}
-                                title="Edit Record"
-                              >
-                                <Edit3 size={13} />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteRecord(item.id, item.code || item.callNumber)}
-                                style={{ background: 'none', border: '1px solid #f87171', padding: '4px 8px', color: '#991b1b', cursor: 'pointer', borderRadius: '2px' }}
-                                title="Delete Record"
-                              >
-                                <Trash2 size={13} />
-                              </button>
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
 
-          {activeTab === 'import_export' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-              <div style={{ background: '#F6E2A3', border: '1px solid #CBBD93', padding: '24px', borderRadius: '2px' }}>
-                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '16px', color: '#574A24', marginTop: 0 }}>
-                  EXPORT & ARCHIVE BACKUP
-                </h3>
-                <p style={{ fontSize: '13px', color: '#80775C', lineHeight: '1.5' }}>
-                  Download the current state of the chemical library (all 3,381+ product codes and custom entered specifications) in standard portable formats.
-                </p>
-                <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
-                  <button
-                    onClick={handleExportJSON}
-                    style={{
-                      background: '#574A24',
-                      color: '#FAE8B4',
-                      border: 'none',
-                      padding: '10px 18px',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      borderRadius: '2px',
-                    }}
-                  >
-                    <Download size={14} /> EXPORT FULL JSON
-                  </button>
-                  <button
-                    onClick={handleExportCSV}
-                    style={{
-                      background: '#574A24',
-                      color: '#FAE8B4',
-                      border: 'none',
-                      padding: '10px 18px',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      borderRadius: '2px',
-                    }}
-                  >
-                    <FileText size={14} /> EXPORT CSV SPREADSHEET
-                  </button>
+          {/* TAB 2: USER MANAGEMENT */}
+          {activeTab === 'users' && (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+                <div>
+                  <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '16px', fontWeight: 800, color: '#574A24', margin: 0 }}>
+                    LIBRARY ACCESS USER ACCOUNTS
+                  </h2>
+                  <p style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: '#80775C', margin: '4px 0 0 0' }}>
+                    Dedicated library credentials with SHA-256 password hashing and role-based permissions.
+                  </p>
                 </div>
-              </div>
 
-              <div style={{ background: '#F6E2A3', border: '1px solid #CBBD93', padding: '24px', borderRadius: '2px' }}>
-                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '16px', color: '#574A24', marginTop: 0 }}>
-                  IMPORT & RESTORE
-                </h3>
-                <p style={{ fontSize: '13px', color: '#80775C', lineHeight: '1.5' }}>
-                  Upload a previously exported JSON archive backup to restore or batch-update records across all collections.
-                </p>
-                <div style={{ marginTop: '20px' }}>
-                  <label
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      background: '#574A24',
-                      color: '#FAE8B4',
-                      padding: '10px 18px',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      borderRadius: '2px',
-                    }}
-                  >
-                    <Upload size={14} /> CHOOSE BACKUP JSON
-                    <input type="file" accept=".json" onChange={handleImportJSON} style={{ display: 'none' }} />
-                  </label>
-                </div>
-              </div>
-
-              <div style={{ gridColumn: '1/-1', background: '#FDF7E3', border: '1px dashed #991b1b', padding: '20px', borderRadius: '2px' }}>
-                <h4 style={{ color: '#991b1b', margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <AlertTriangle size={18} /> RESET CATALOG TO NIST BASELINE
-                </h4>
-                <p style={{ fontSize: '13px', color: '#80775C', margin: 0 }}>
-                  Clears local storage overrides and re-initializes all 3,381 clean baseline product codes.
-                </p>
                 <button
-                  onClick={handleResetBaseline}
+                  onClick={() => setShowAddUserModal(!showAddUserModal)}
                   style={{
-                    marginTop: '12px',
-                    background: '#991b1b',
-                    color: '#FFF',
+                    background: '#574A24',
+                    color: '#FAE8B4',
                     border: 'none',
-                    padding: '8px 16px',
+                    padding: '8px 18px',
+                    fontFamily: 'var(--font-sans)',
                     fontSize: '11px',
                     fontWeight: 700,
                     cursor: 'pointer',
                     borderRadius: '2px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
                   }}
                 >
-                  RESET ARCHIVE DATABASE
+                  <Plus size={14} /> {showAddUserModal ? 'CANCEL' : 'CREATE USER'}
                 </button>
               </div>
+
+              {/* Create User Form */}
+              {showAddUserModal && (
+                <form
+                  onSubmit={handleCreateUser}
+                  style={{
+                    background: '#F6E2A3',
+                    border: '1.5px solid #574A24',
+                    padding: '20px',
+                    borderRadius: '4px',
+                    marginBottom: '24px',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gap: '16px',
+                  }}
+                >
+                  <div>
+                    <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#80775C', marginBottom: '4px' }}>
+                      Username *
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. curator_john"
+                      value={newUsername}
+                      onChange={(e) => setNewUsername(e.target.value)}
+                      required
+                      style={{ width: '100%', padding: '8px 12px', background: '#FDF7E3', border: '1px solid #CBBD93', fontSize: '13px', outline: 'none' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#80775C', marginBottom: '4px' }}>
+                      Password *
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type={showUserPassToggle ? 'text' : 'password'}
+                        placeholder="Min 6 characters"
+                        value={newUserPass}
+                        onChange={(e) => setNewUserPass(e.target.value)}
+                        required
+                        style={{ width: '100%', padding: '8px 36px 8px 12px', background: '#FDF7E3', border: '1px solid #CBBD93', fontSize: '13px', outline: 'none' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowUserPassToggle(!showUserPassToggle)}
+                        style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#80775C' }}
+                      >
+                        {showUserPassToggle ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#80775C', marginBottom: '4px' }}>
+                      Role
+                    </label>
+                    <select
+                      value={newUserRole}
+                      onChange={(e) => setNewUserRole(e.target.value as any)}
+                      style={{ width: '100%', padding: '8px 12px', background: '#FDF7E3', border: '1px solid #CBBD93', fontSize: '13px', outline: 'none' }}
+                    >
+                      <option value="admin">Administrator (Full Control)</option>
+                      <option value="curator">Curator (Edit & Catalog)</option>
+                      <option value="researcher">Researcher (Read-Only)</option>
+                    </select>
+                  </div>
+
+                  <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+                    <button type="submit" style={{ background: '#574A24', color: '#FAE8B4', border: 'none', padding: '10px 24px', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', cursor: 'pointer', borderRadius: '2px' }}>
+                      CREATE USER ACCOUNT
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* Users Table */}
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ background: '#FAE8B4', borderBottom: '1px solid #CBBD93' }}>
+                    <th style={{ padding: '10px 14px', textAlign: 'left', fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#80775C' }}>USERNAME</th>
+                    <th style={{ padding: '10px 14px', textAlign: 'left', fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#80775C' }}>ROLE</th>
+                    <th style={{ padding: '10px 14px', textAlign: 'left', fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#80775C' }}>2FA STATUS</th>
+                    <th style={{ padding: '10px 14px', textAlign: 'left', fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#80775C' }}>CREATED AT</th>
+                    <th style={{ padding: '10px 14px', textAlign: 'left', fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#80775C' }}>LAST LOGIN</th>
+                    <th style={{ padding: '10px 14px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#80775C', width: '140px' }}>ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((u) => (
+                    <tr key={u.id} style={{ borderBottom: '1px solid #CBBD93' }}>
+                      <td style={{ padding: '12px 14px', fontWeight: 700, color: '#574A24' }}>
+                        {u.username}
+                        {u.username.toLowerCase() === 'adi' && (
+                          <span style={{ marginLeft: '6px', fontSize: '9px', background: '#574A24', color: '#FAE8B4', padding: '1px 5px', borderRadius: '2px' }}>
+                            MASTER
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ padding: '12px 14px' }}>
+                        {editingUserId === u.id ? (
+                          <select
+                            value={editUserRole}
+                            onChange={(e) => setEditUserRole(e.target.value as any)}
+                            style={{ padding: '4px', background: '#FFFDF7', border: '1px solid #574A24', fontSize: '12px' }}
+                          >
+                            <option value="admin">Admin</option>
+                            <option value="curator">Curator</option>
+                            <option value="researcher">Researcher</option>
+                          </select>
+                        ) : (
+                          <span style={{ textTransform: 'uppercase', fontSize: '11px', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
+                            {u.role}
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ padding: '12px 14px' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#166534', fontSize: '11px', fontFamily: 'var(--font-mono)', background: '#dcfce7', padding: '2px 6px', borderRadius: '2px' }}>
+                          <CheckCircle2 size={12} /> 2FA ENFORCED
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 14px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: '#80775C' }}>
+                        {new Date(u.createdAt).toLocaleDateString()}
+                      </td>
+                      <td style={{ padding: '12px 14px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: '#80775C' }}>
+                        {u.lastLogin ? new Date(u.lastLogin).toLocaleTimeString() : 'Never'}
+                      </td>
+                      <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                        {editingUserId === u.id ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <input
+                              type="password"
+                              placeholder="New password (optional)"
+                              value={editUserPass}
+                              onChange={(e) => setEditUserPass(e.target.value)}
+                              style={{ padding: '3px 6px', fontSize: '11px', background: '#FFFDF7', border: '1px solid #574A24' }}
+                            />
+                            <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                              <button
+                                onClick={() => handleUpdateUser(u.id)}
+                                style={{ background: '#166534', color: '#fff', border: 'none', padding: '3px 8px', fontSize: '10px', fontWeight: 700, cursor: 'pointer', borderRadius: '2px' }}
+                              >
+                                SAVE
+                              </button>
+                              <button
+                                onClick={() => setEditingUserId(null)}
+                                style={{ background: '#CBBD93', color: '#574A24', border: 'none', padding: '3px 6px', fontSize: '10px', fontWeight: 700, cursor: 'pointer', borderRadius: '2px' }}
+                              >
+                                CANCEL
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
+                            <button
+                              onClick={() => {
+                                setEditingUserId(u.id);
+                                setEditUserRole(u.role);
+                                setEditUserPass('');
+                              }}
+                              style={{ background: 'none', border: '1px solid #CBBD93', padding: '4px 8px', cursor: 'pointer', color: '#574A24', borderRadius: '2px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                              title="Edit User / Change Password"
+                            >
+                              <Edit3 size={12} /> EDIT
+                            </button>
+                            {u.username.toLowerCase() !== 'adi' && (
+                              <button
+                                onClick={() => handleDeleteUser(u.id, u.username)}
+                                style={{ background: 'none', border: '1px solid #CBBD93', padding: '4px 8px', cursor: 'pointer', color: '#991b1b', borderRadius: '2px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                title="Delete User"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
 
-          {activeTab === 'security' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div style={{ background: '#F6E2A3', border: '1px solid #CBBD93', padding: '20px', borderRadius: '2px' }}>
-                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '16px', color: '#574A24', margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <ShieldCheck size={18} /> ACTIVE SECURITY SPECIFICATION
-                </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-                  <div style={{ background: '#FDF7E3', padding: '14px', border: '1px solid #CBBD93', borderRadius: '2px' }}>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#80775C' }}>ENCRYPTION STANDARD</div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '14px', fontWeight: 800, color: '#574A24', marginTop: '4px' }}>AES-256-GCM</div>
-                  </div>
-                  <div style={{ background: '#FDF7E3', padding: '14px', border: '1px solid #CBBD93', borderRadius: '2px' }}>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#80775C' }}>HASHING ALGORITHM</div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '14px', fontWeight: 800, color: '#574A24', marginTop: '4px' }}>SHA-256 (WebCrypto)</div>
-                  </div>
-                  <div style={{ background: '#FDF7E3', padding: '14px', border: '1px solid #CBBD93', borderRadius: '2px' }}>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#80775C' }}>2FA ROTATION WINDOW</div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '14px', fontWeight: 800, color: '#574A24', marginTop: '4px' }}>30 SECONDS</div>
-                  </div>
+          {/* TAB 3: AUDIT LOGS & MONITORING */}
+          {activeTab === 'audit' && (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+                <div>
+                  <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '16px', fontWeight: 800, color: '#574A24', margin: 0 }}>
+                    CRYPTOGRAPHIC AUDIT TRAIL & ACTIVITY LOGS
+                  </h2>
+                  <p style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: '#80775C', margin: '4px 0 0 0' }}>
+                    Immutable historical audit trail tracking logins, 2FA challenges, record edits, and security events.
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <input
+                    type="text"
+                    placeholder="Filter audit logs..."
+                    value={logSearch}
+                    onChange={(e) => setLogSearch(e.target.value)}
+                    style={{
+                      padding: '6px 12px',
+                      background: '#F6E2A3',
+                      border: '1px solid #CBBD93',
+                      borderRadius: '2px',
+                      fontSize: '12px',
+                      color: '#574A24',
+                      outline: 'none',
+                      width: '200px',
+                    }}
+                  />
+                  <button
+                    onClick={exportAuditLogsCSV}
+                    style={{
+                      background: '#574A24',
+                      color: '#FAE8B4',
+                      border: 'none',
+                      padding: '6px 14px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      borderRadius: '2px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    <Download size={13} /> EXPORT CSV
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (confirm('Clear audit logs history?')) {
+                        clearAuditLogs();
+                        setAuditLogs(getAuditLogs());
+                        showNotification('Audit logs cleared.');
+                      }
+                    }}
+                    style={{
+                      background: 'none',
+                      border: '1px solid #991b1b',
+                      color: '#991b1b',
+                      padding: '6px 12px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      borderRadius: '2px',
+                    }}
+                  >
+                    CLEAR LOGS
+                  </button>
                 </div>
               </div>
 
-              <div style={{ background: '#F6E2A3', border: '1px solid #CBBD93', padding: '20px', borderRadius: '2px' }}>
-                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '16px', color: '#574A24', margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Lock size={18} /> ACCESS POLICIES & LOCKOUT RULES
-                </h3>
-                <ul style={{ fontSize: '13px', color: '#574A24', lineHeight: '1.8', margin: 0, paddingLeft: '20px' }}>
-                  <li><strong>Maximum Failed Login Attempts:</strong> 5 attempts before automated 5-minute security lockout.</li>
-                  <li><strong>Session Duration:</strong> 2 Hours with automated AES-256 token expiration.</li>
-                  <li><strong>2-Factor Authentication:</strong> Required on every initial library session login.</li>
-                  <li><strong>Zero-Plaintext Storage:</strong> Passwords and credentials never stored in raw text.</li>
-                </ul>
+              {/* Logs Table */}
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                <thead>
+                  <tr style={{ background: '#FAE8B4', borderBottom: '1px solid #CBBD93' }}>
+                    <th style={{ padding: '8px 12px', textAlign: 'left', fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#80775C', width: '160px' }}>TIMESTAMP</th>
+                    <th style={{ padding: '8px 12px', textAlign: 'left', fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#80775C', width: '130px' }}>EVENT TYPE</th>
+                    <th style={{ padding: '8px 12px', textAlign: 'left', fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#80775C', width: '110px' }}>USER</th>
+                    <th style={{ padding: '8px 12px', textAlign: 'left', fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#80775C' }}>DETAILS</th>
+                    <th style={{ padding: '8px 12px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#80775C', width: '110px' }}>INTEGRITY HASH</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredAuditLogs.map((log) => {
+                    let badgeBg = '#dcfce7';
+                    let badgeColor = '#166534';
+                    if (log.eventType.includes('FAILED')) {
+                      badgeBg = '#fee2e2';
+                      badgeColor = '#991b1b';
+                    } else if (log.eventType.includes('EDIT') || log.eventType.includes('DELETE')) {
+                      badgeBg = '#fef3c7';
+                      badgeColor = '#92400e';
+                    }
+
+                    return (
+                      <tr key={log.id} style={{ borderBottom: '1px solid #CBBD93' }}>
+                        <td style={{ padding: '8px 12px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: '#80775C' }}>
+                          {new Date(log.timestamp).toLocaleString()}
+                        </td>
+                        <td style={{ padding: '8px 12px' }}>
+                          <span style={{ fontSize: '10px', fontFamily: 'var(--font-mono)', fontWeight: 700, background: badgeBg, color: badgeColor, padding: '2px 6px', borderRadius: '2px' }}>
+                            {log.eventType}
+                          </span>
+                        </td>
+                        <td style={{ padding: '8px 12px', fontWeight: 600, color: '#574A24' }}>
+                          {log.user}
+                        </td>
+                        <td style={{ padding: '8px 12px', color: '#574A24' }}>
+                          {log.details}
+                        </td>
+                        <td style={{ padding: '8px 12px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '11px', color: '#80775C' }}>
+                          <code>{log.encryptionHash || 'SHA256'}</code>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* TAB 4: BACKUP & RESTORE */}
+          {activeTab === 'backup' && (
+            <div>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '16px', fontWeight: 800, color: '#574A24', marginBottom: '16px' }}>
+                DATABASE BACKUP & RESTORATION
+              </h2>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                <div style={{ background: '#F6E2A3', padding: '20px', border: '1px solid #CBBD93', borderRadius: '4px' }}>
+                  <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '13px', fontWeight: 700, margin: '0 0 8px 0' }}>
+                    EXPORT COMPLETE ARCHIVE
+                  </h3>
+                  <p style={{ fontSize: '12px', color: '#80775C', margin: '0 0 14px 0' }}>
+                    Download a full snapshot of all {records.length.toLocaleString()} chemical records in JSON format.
+                  </p>
+                  <button
+                    onClick={() => {
+                      const blob = new Blob([JSON.stringify(records, null, 2)], { type: 'application/json' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `chemical_archive_backup_${new Date().toISOString().slice(0,10)}.json`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                      addAuditLog('BACKUP_EXPORT', 'Admin', `Exported full database backup (${records.length} records)`);
+                      showNotification('Backup exported successfully.');
+                    }}
+                    style={{
+                      background: '#574A24',
+                      color: '#FAE8B4',
+                      border: 'none',
+                      padding: '8px 16px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      borderRadius: '2px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    <Download size={13} /> EXPORT JSON BACKUP
+                  </button>
+                </div>
+
+                <div style={{ background: '#F6E2A3', padding: '20px', border: '1px solid #CBBD93', borderRadius: '4px' }}>
+                  <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '13px', fontWeight: 700, margin: '0 0 8px 0' }}>
+                    RESTORE FROM BACKUP
+                  </h3>
+                  <p style={{ fontSize: '12px', color: '#80775C', margin: '0 0 14px 0' }}>
+                    Upload a previously exported JSON backup file to restore records.
+                  </p>
+                  <input
+                    type="file"
+                    id="adminImportFile"
+                    accept=".json"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = (evt) => {
+                        try {
+                          const imported = JSON.parse(evt.target?.result as string);
+                          if (Array.isArray(imported)) {
+                            onUpdateRecords(imported);
+                            addAuditLog('BACKUP_RESTORE', 'Admin', `Restored ${imported.length} records from JSON backup`);
+                            showNotification(`Successfully restored ${imported.length} records!`);
+                          }
+                        } catch {
+                          showNotification('Invalid JSON backup file.', 'error');
+                        }
+                      };
+                      reader.readAsText(file);
+                    }}
+                  />
+                  <button
+                    onClick={() => document.getElementById('adminImportFile')?.click()}
+                    style={{
+                      background: '#574A24',
+                      color: '#FAE8B4',
+                      border: 'none',
+                      padding: '8px 16px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      borderRadius: '2px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    <Upload size={13} /> UPLOAD BACKUP FILE
+                  </button>
+                </div>
               </div>
             </div>
           )}
+
         </div>
       </div>
     </div>

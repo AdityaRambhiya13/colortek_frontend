@@ -8,6 +8,8 @@ import {
   recordFailedAttempt,
   clearFailedAttempts,
   createSecureSession,
+  verifyUserCredentials,
+  addAuditLog,
 } from '../security/cryptoEngine';
 
 interface LibraryAuthGateProps {
@@ -16,11 +18,12 @@ interface LibraryAuthGateProps {
 
 export const LibraryAuthGate: React.FC<LibraryAuthGateProps> = ({ onAuthSuccess }) => {
   const [step, setStep] = useState<'credentials' | '2fa'>('credentials');
-  const [username, setUsername] = useState('');
+  const [username, setUsername] = useState('Adi');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
+  const [authenticatedRole, setAuthenticatedRole] = useState<'admin' | 'curator' | 'researcher'>('admin');
 
   // 2FA state
   const [twoFactorCode, setTwoFactorCode] = useState('');
@@ -55,24 +58,21 @@ export const LibraryAuthGate: React.FC<LibraryAuthGateProps> = ({ onAuthSuccess 
     setLoading(true);
 
     try {
-      // Compute client-side SHA-256 hash
-      const hash = await sha256Hash(password);
-      console.log(`[Security Engine] SHA-256 hash computed: ${hash.slice(0, 16)}...`);
-
-      // Password requirements verification
-      if (password.length < 4) {
+      const verification = await verifyUserCredentials(username.trim(), password.trim());
+      if (!verification.success || !verification.user) {
         recordFailedAttempt(username.trim());
-        setErrorMsg('Invalid credentials. Password must be at least 4 characters.');
+        setErrorMsg(verification.message || 'Invalid Username or Password.');
         setLoading(false);
         return;
       }
 
-      // Successful Step 1 -> advance to 2FA Gate
       clearFailedAttempts(username.trim());
+      setAuthenticatedRole(verification.user.role);
       setStep('2fa');
       setLoading(false);
+      addAuditLog('2FA_VERIFY', username.trim(), 'Credentials verified. Challenged for 2FA authentication.');
     } catch {
-      setErrorMsg('Cryptographic hashing error.');
+      setErrorMsg('Cryptographic verification error.');
       setLoading(false);
     }
   };
@@ -93,11 +93,12 @@ export const LibraryAuthGate: React.FC<LibraryAuthGateProps> = ({ onAuthSuccess 
     if (!isValid) {
       setErrorMsg('Invalid 2FA verification code. Please check your authenticator or demo code.');
       setLoading(false);
+      addAuditLog('AUTH_FAILED', username.trim(), 'Failed 2FA passcode challenge.');
       return;
     }
 
     // Grant AES-256 session
-    await createSecureSession(username.trim(), 'archive_curator');
+    await createSecureSession(username.trim(), authenticatedRole);
     setLoading(false);
     onAuthSuccess();
   };

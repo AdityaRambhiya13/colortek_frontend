@@ -398,7 +398,7 @@
           <label style="display:block; font-family:var(--font-sans); font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:#80775C; margin-bottom:6px;">
             Library Access ID / Username
           </label>
-          <input type="text" id="authUsername" class="auth-input-field" placeholder="e.g. curator, admin, researcher" required />
+          <input type="text" id="authUsername" class="auth-input-field" placeholder="e.g. Adi" required />
         </div>
 
         <div>
@@ -1601,9 +1601,23 @@
       currentAuthUser = user;
       document.getElementById('twoFactorUsernameLabel').innerText = user;
 
-      // Hash with SHA-256
+      // Verify credentials with SHA-256 hash
       const hash = await computeSha256(pwd);
-      console.log('[Security Gate] Password SHA-256 verified:', hash.slice(0, 16));
+      const ADI_HASH = 'c8ee3e31cec5f7aa04d665319d60875ff3aaa1e543c67c1bb8c5d6e4689afb1a'; // Aditya@1234
+      
+      let users = [];
+      try {
+        users = JSON.parse(localStorage.getItem('chemical_archive_users_v1') || '[]');
+      } catch(e) {}
+      
+      const customUser = users.find(u => u.username.toLowerCase() === user.toLowerCase());
+      const isAdi = user.toLowerCase() === 'adi' && hash === ADI_HASH;
+      const isCustomValid = customUser && customUser.passwordHash === hash;
+      
+      if (!isAdi && !isCustomValid) {
+        showAuthError('Invalid Library Username or Password.');
+        return;
+      }
 
       // Advance to 2FA Form
       document.getElementById('credentialsForm').style.display = 'none';

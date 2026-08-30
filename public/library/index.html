@@ -270,87 +270,6 @@
         </div>
       </a>
 
-      <!-- Mode Switcher -->
-      <div class="mode-switch-pill">
-        <button class="mode-btn active" id="btnModeLibrary" onclick="switchMode('library')">
-          <i data-lucide="book-open"></i> LIBRARY
-        </button>
-        <button class="mode-btn" id="btnModeCms" onclick="switchMode('cms')">
-          <i data-lucide="feather"></i> CURATOR CMS
-        </button>
-      </div>
-    </div>
-
-    <!-- Search -->
-    <div class="header-center" id="headerSearchArea">
-      <div class="search-container">
-        <i data-lucide="search" class="search-icon"></i>
-        <input type="text" id="searchInput" class="search-input" placeholder="Search exact code (e.g. D-250, Tc-1000), name, category..." />
-        <span class="search-shortcut-badge">/</span>
-        <button id="searchClearBtn" class="search-clear-btn"><i data-lucide="x"></i></button>
-      </div>
-    </div>
-
-    <!-- Header Actions -->
-    <div class="header-right">
-      <div class="view-switcher-group" id="libraryViewSwitcher">
-        <button class="view-btn active" id="btnCardView" onclick="setViewMode('card')">
-          <i data-lucide="layout-grid"></i> ARCHIVE
-        </button>
-        <button class="view-btn" id="btnTableView" onclick="setViewMode('table')">
-          <i data-lucide="list"></i> TABLE
-        </button>
-      </div>
-      <button class="btn-new-record" onclick="openNewRecordModal()">
-        <i data-lucide="plus"></i> NEW RECORD
-      </button>
-    </div>
-  </header>
-
-  <!-- Body -->
-  <div class="app-container">
-
-    <!-- Left Sidebar: Complete Collection Index -->
-    <aside class="archive-sidebar" id="librarySidebar">
-      <div class="sidebar-heading">
-        <span>Collection Index</span>
-        <i data-lucide="archive" style="width:13px; height:13px;"></i>
-      </div>
-      <ul class="collection-nav" id="collectionNavList"></ul>
-
-      <div class="sidebar-supabase-card">
-        <div class="db-sync-badge">
-          <span class="db-sync-dot"></span> SUPABASE CLOUD ACTIVE
-        </div>
-        <div style="font-family:var(--font-mono); font-size:10px; color:var(--olive-muted);">
-          PostgreSQL Database Sync: 3,381 Records Online
-        </div>
-      </div>
-    </aside>
-
-    <!-- Main Public Library View -->
-    <main class="archive-main" id="libraryMainView">
-      <div class="catalog-title-strip">
-        <div class="catalog-title-left">
-          <h2 id="currentCollectionTitle">ALL RECORDS</h2>
-          <div class="catalog-sub-count">
-            <span id="recordCountLabel">3,381 CATALOGED CHEMICAL RECORDS</span>
-            <span class="dot"></span>
-            <span id="purityStandardBadge">NIST VERIFIED</span>
-          </div>
-        </div>
-
-        <div class="catalog-controls-right">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span style="font-family:var(--font-sans); font-size:10px; font-weight:700; text-transform:uppercase; color:var(--olive-muted);">Sort:</span>
-            <select class="form-select" id="sortSelect" style="width:auto; padding:6px 12px;" onchange="handleSortChange(this.value)">
-              <option value="code">Product Code (Ascending)</option>
-              <option value="code_desc">Product Code (Descending)</option>
-              <option value="name">Product Name (A-Z)</option>
-              <option value="category">Category</option>
-            </select>
-          </div>
-        </div>
       </div>
 
       <!-- Filing Index Tabs -->
@@ -391,44 +310,7 @@
       </div>
     </main>
 
-    <!-- Curator CMS Console -->
-    <main class="cms-view-container" id="cmsMainView">
-      <div class="cms-header-banner">
-        <div>
-          <h2 style="font-family:var(--font-display); font-size:22px; font-weight:800; letter-spacing:1.5px; color:var(--ink-primary);">CURATOR ACCESSION BENCH</h2>
-          <p style="font-family:var(--font-serif); font-style:italic; font-size:13.5px; color:var(--olive-muted);">Master ledger management & physical vault drawer allocations across all 3,381 records.</p>
-        </div>
-        <div style="display:flex; gap:10px;">
-          <button class="btn-cancel" onclick="exportDatabaseJson()"><i data-lucide="download"></i> EXPORT JSON</button>
-          <button class="btn-cancel" onclick="exportDatabaseCsv()"><i data-lucide="file-spreadsheet"></i> EXPORT CSV</button>
-          <button class="btn-new-record" onclick="openNewRecordModal()"><i data-lucide="plus"></i> ACCESSION RECORD</button>
-        </div>
-      </div>
-
-      <!-- CMS Stats -->
-      <div class="cms-stats-grid">
-        <div class="cms-stat-card"><div class="cms-stat-label">Total Defined Records</div><div class="cms-stat-val">3,381</div></div>
-        <div class="cms-stat-card"><div class="cms-stat-label">Collections</div><div class="cms-stat-val">8</div></div>
-        <div class="cms-stat-card"><div class="cms-stat-label">Supabase Sync Status</div><div class="cms-stat-val" style="color:#2E8B57; font-size:18px;">CONNECTED</div></div>
-        <div class="cms-stat-card"><div class="cms-stat-label">NIST Verification</div><div class="cms-stat-val">100%</div></div>
-      </div>
-
-      <!-- Vault Matrix -->
-      <div style="background:var(--paper-card); border:1px solid var(--border-subtle); padding:var(--sp-6); margin-bottom:var(--sp-8);">
-        <div style="font-family:var(--font-display); font-size:14px; font-weight:700; letter-spacing:1.5px; color:var(--ink-primary); margin-bottom:var(--sp-4);">PHYSICAL VAULT & DRAWER ALLOCATIONS (CLICK TO FILTER)</div>
-        <div class="vault-drawers-grid" id="vaultDrawersGrid"></div>
-      </div>
-
-      <!-- CMS Records Table -->
-      <div class="archive-table-container" style="display:block; margin-top:24px;">
-        <table class="archive-ledger-table">
-          <thead>
-            <tr><th>Call Code</th><th>Accession Number</th><th>Compound Name</th><th>Category</th><th>Storage Drawer</th><th>Stock</th><th>Status</th></tr>
-          </thead>
-          <tbody id="cmsTableBody"></tbody>
-        </table>
-      </div>
-    </main>
+    
 
   </div>
 
@@ -446,30 +328,7 @@
     </div>
   </div>
 
-  <!-- Add Record Modal -->
-  <div class="modal-backdrop" id="newRecordModal">
-    <div class="modal-dialog">
-      <h3 style="font-family:var(--font-display); font-size:20px; font-weight:700; color:var(--ink-primary); margin-bottom:16px;">ACCESSION NEW ARCHIVE RECORD</h3>
-      <form id="newRecordForm" onsubmit="handleNewRecordSubmit(event)">
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-          <div class="form-group">
-            <label>Collection</label>
-            <select class="form-select" id="formPrefix" required>
-              <option value="D">D Collection (D-001 ? D-500)</option>
-              <option value="R">R Collection (R-001 ? R-500)</option>
-              <option value="Tc">Tc Collection (Tc-001 ? Tc-1000)</option>
-              <option value="W">W Collection (W-001 ? W-100)</option>
-              <option value="B">B Collection (B-001 ? B-100)</option>
-              <option value="G">G Collection (G-100 ? G-200)</option>
-              <option value="Y">Y Collection (Y-001 ? Y-1000)</option>
-              <option value="MISC">MISC Collection (MISC-001 ? MISC-080)</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Code Number</label>
-            <input type="text" class="form-input" id="formCodeNumber" placeholder="e.g. 501" required />
-          </div>
-        </div>
+  
         <div class="form-group">
           <label>Product Name</label>
           <input type="text" class="form-input" id="formName" placeholder="Chemical name..." required />
@@ -74911,7 +74770,7 @@
       attachSearchListener();
       lucide.createIcons();
 
-      if (window.location.hash === '#cms') switchMode('cms');
+      
     }
 
     function switchMode(mode) {

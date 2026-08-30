@@ -1114,7 +1114,12 @@
             archiveRecords = data;
             renderAll();
           })
-          .catch(err => console.error('Fallback error:', err));
+          .catch(err => {
+            console.error('Fallback error:', err);
+            renderAll();
+          });
+      } else {
+        renderAll();
       }
       attachSearchListener();
       lucide.createIcons();
@@ -1216,20 +1221,25 @@
         `;
       } else {
         document.getElementById('cardGrid').innerHTML = pageRecords.map(item => `
-          <div class="catalog-card" onclick="openEditTab('${item.id}')" style="cursor:pointer;" title="Click to view and edit details">
-            <div class="card-top">
-              <span class="card-call-number">${item.code || item.callNumber}</span>
-              <span class="card-archival-stamp">${item.drawer}</span>
-            </div>
-            <div class="card-product-name">${highlightMatch(item.name)}</div>
-            <div class="card-divider"></div>
-            <div class="card-meta-section">
-              <div class="card-category-label">CATEGORY</div>
-              <div class="card-category-value">${highlightMatch(item.category)}</div>
-            </div>
+          <div class="catalog-card" onclick="openEditTab('${item.id}')" style="cursor:pointer;" title="Click to view and edit details in tab form">
             <div>
-              <div class="card-desc-label">DESCRIPTION</div>
-              <div class="card-desc-text">${highlightMatch(item.description)}</div>
+              <div class="card-top">
+                <span class="card-call-number">${item.code || item.callNumber}</span>
+                <span class="card-archival-stamp">${item.drawer}</span>
+              </div>
+              <div class="card-product-name">${highlightMatch(item.name)}</div>
+              <div class="card-divider"></div>
+              <div class="card-meta-section">
+                <div class="card-category-label">CATEGORY</div>
+                <div class="card-category-value">${highlightMatch(item.category)}</div>
+              </div>
+              <div>
+                <div class="card-desc-label">DESCRIPTION</div>
+                <div class="card-desc-text">${highlightMatch(item.description)}</div>
+              </div>
+            </div>
+            <div style="display:flex; justify-content:flex-end; padding-top:12px; border-top:1px dashed rgba(128,119,92,0.3); margin-top:auto;">
+              <span style="font-family:var(--font-sans); font-size:11px; font-weight:700; color:var(--ink-primary); letter-spacing:1px;">EDIT DETAILS ✎</span>
             </div>
           </div>
         `).join('');

@@ -67,16 +67,21 @@ export const CardGrid: React.FC<CardGridProps> = ({
           style={{ cursor: 'pointer' }}
           title="Click to edit and view details in tab form"
         >
-          <div className="chem-lib-card-top">
-            <span className="chem-lib-card-code">{item.code || item.callNumber}</span>
-            <span className="chem-lib-card-drawer">{item.drawer}</span>
+          <div>
+            <div className="chem-lib-card-top">
+              <span className="chem-lib-card-code">{item.code || item.callNumber}</span>
+              <span className="chem-lib-card-drawer">{item.drawer}</span>
+            </div>
+            <div className="chem-lib-card-name">{highlightText(item.name)}</div>
+            <div className="chem-lib-card-divider" />
+            <div className="chem-lib-card-meta-label">CATEGORY</div>
+            <div className="chem-lib-card-category">{highlightText(item.category)}</div>
+            <div className="chem-lib-card-meta-label">DESCRIPTION</div>
+            <div className="chem-lib-card-desc">{highlightText(item.description)}</div>
           </div>
-          <div className="chem-lib-card-name">{highlightText(item.name)}</div>
-          <div className="chem-lib-card-divider" />
-          <div className="chem-lib-card-meta-label">CATEGORY</div>
-          <div className="chem-lib-card-category">{highlightText(item.category)}</div>
-          <div className="chem-lib-card-meta-label">DESCRIPTION</div>
-          <div className="chem-lib-card-desc">{highlightText(item.description)}</div>
+          <div className="chem-lib-card-footer">
+            <span className="chem-lib-card-link">EDIT DETAILS ✎</span>
+          </div>
         </div>
       ))}
     </div>

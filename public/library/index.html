@@ -251,7 +251,98 @@
         <span>Collection Index</span>
         <i data-lucide="archive" style="width:13px; height:13px;"></i>
       </div>
-      <ul class="collection-nav" id="collectionNavList"></ul>
+      <ul class="collection-nav" id="collectionNavList">
+
+        <li>
+          <button class="collection-btn active" onclick="selectCollection('ALL')">
+            <div class="coll-info">
+              <span class="coll-title">ALL RECORDS</span>
+              <span class="coll-range">Entire Archive Index</span>
+            </div>
+            <span class="coll-count">3381</span>
+          </button>
+        </li>
+
+        <li>
+          <button class="collection-btn " onclick="selectCollection('D')">
+            <div class="coll-info">
+              <span class="coll-title">D COLLECTION</span>
+              <span class="coll-range">D-001 ? D-500</span>
+            </div>
+            <span class="coll-count">500</span>
+          </button>
+        </li>
+
+        <li>
+          <button class="collection-btn " onclick="selectCollection('R')">
+            <div class="coll-info">
+              <span class="coll-title">R COLLECTION</span>
+              <span class="coll-range">R-001 ? R-500</span>
+            </div>
+            <span class="coll-count">500</span>
+          </button>
+        </li>
+
+        <li>
+          <button class="collection-btn " onclick="selectCollection('Tc')">
+            <div class="coll-info">
+              <span class="coll-title">Tc COLLECTION</span>
+              <span class="coll-range">Tc-001 ? Tc-1000</span>
+            </div>
+            <span class="coll-count">1000</span>
+          </button>
+        </li>
+
+        <li>
+          <button class="collection-btn " onclick="selectCollection('W')">
+            <div class="coll-info">
+              <span class="coll-title">W COLLECTION</span>
+              <span class="coll-range">W-001 ? W-100</span>
+            </div>
+            <span class="coll-count">100</span>
+          </button>
+        </li>
+
+        <li>
+          <button class="collection-btn " onclick="selectCollection('B')">
+            <div class="coll-info">
+              <span class="coll-title">B COLLECTION</span>
+              <span class="coll-range">B-001 ? B-100</span>
+            </div>
+            <span class="coll-count">100</span>
+          </button>
+        </li>
+
+        <li>
+          <button class="collection-btn " onclick="selectCollection('G')">
+            <div class="coll-info">
+              <span class="coll-title">G COLLECTION</span>
+              <span class="coll-range">G-100 ? G-200</span>
+            </div>
+            <span class="coll-count">101</span>
+          </button>
+        </li>
+
+        <li>
+          <button class="collection-btn " onclick="selectCollection('Y')">
+            <div class="coll-info">
+              <span class="coll-title">Y COLLECTION</span>
+              <span class="coll-range">Y-001 ? Y-1000</span>
+            </div>
+            <span class="coll-count">1000</span>
+          </button>
+        </li>
+
+        <li>
+          <button class="collection-btn " onclick="selectCollection('MISC')">
+            <div class="coll-info">
+              <span class="coll-title">MISCELLANEOUS</span>
+              <span class="coll-range">MISC-001 ? MISC-080</span>
+            </div>
+            <span class="coll-count">80</span>
+          </button>
+        </li>
+</ul>
     </aside>
 
     <!-- Main Public Library View -->
@@ -280,7 +371,17 @@
       </div>
 
       <!-- Filing Index Tabs -->
-      <div class="library-index-tabs" id="libraryIndexTabs"></div>
+      <div class="library-index-tabs" id="libraryIndexTabs">
+<button class="index-tab-btn active" onclick="selectCollection('ALL')">[ ALL ]</button>
+<button class="index-tab-btn " onclick="selectCollection('D')">[ D ]</button>
+<button class="index-tab-btn " onclick="selectCollection('R')">[ R ]</button>
+<button class="index-tab-btn " onclick="selectCollection('Tc')">[ Tc ]</button>
+<button class="index-tab-btn " onclick="selectCollection('W')">[ W ]</button>
+<button class="index-tab-btn " onclick="selectCollection('B')">[ B ]</button>
+<button class="index-tab-btn " onclick="selectCollection('G')">[ G ]</button>
+<button class="index-tab-btn " onclick="selectCollection('Y')">[ Y ]</button>
+<button class="index-tab-btn " onclick="selectCollection('MISC')">[ MISC ]</button>
+</div>
 
       <!-- Active Filter Strip -->
       <div class="active-filter-strip" id="activeFilterStrip" style="display:none;">
@@ -291,12 +392,815 @@
       </div>
 
       <!-- Card Grid -->
-      <div class="archive-grid" id="cardGrid"></div>
+      <div class="archive-grid" id="cardGrid">
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-001')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 001</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Dinitrobenzene (Specimen #1)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-001. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-002')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 002</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Sulfonyl Chloride (Specimen #2)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-002. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-003')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 003</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Diazobicyclononane (Specimen #3)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-003. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-004')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 004</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Dicyclohexylcarbodiimide (Specimen #4)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-004. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-005')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 005</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Dimethylaminopyridine (Specimen #5)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-005. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-006')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 006</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Diisopropylethylamine (Specimen #6)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-006. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-007')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 007</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Dioxaborolane (Specimen #7)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-007. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-008')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 008</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Dibenzylideneacetone (Specimen #8)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-008. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-009')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 009</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Dichloromethane (Specimen #9)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-009. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-010')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 010</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Diethylformamide (Specimen #10)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-010. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-011')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 011</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Decanoic Acid (Specimen #11)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-011. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-012')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 012</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Dithiothreitol (Specimen #12)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-012. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-013')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 013</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Dimedone (Specimen #13)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-013. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-014')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 014</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Dithiazole (Specimen #14)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-014. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-015')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 015</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Dodecylbenzene (Specimen #15)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-015. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-016')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 016</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Diacetylmonoxime (Specimen #16)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-016. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-017')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 017</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Diphenylphosphinoferrocene (Specimen #17)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-017. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-018')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 018</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Dimethoxyethane (Specimen #18)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-018. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-019')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 019</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Dibromomalonamide (Specimen #19)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-019. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-020')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 020</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Diaza-crown Ether (Specimen #20)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-020. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-021')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 021</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Dinitrobenzene (Specimen #21)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-021. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-022')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 022</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Sulfonyl Chloride (Specimen #22)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-022. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-023')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 023</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Diazobicyclononane (Specimen #23)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-023. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-024')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 024</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Dicyclohexylcarbodiimide (Specimen #24)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-024. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-025')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 025</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Dimethylaminopyridine (Specimen #25)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-025. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-026')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 026</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Diisopropylethylamine (Specimen #26)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-026. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-027')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 027</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Dioxaborolane (Specimen #27)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-027. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-028')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 028</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Dibenzylideneacetone (Specimen #28)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-028. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-029')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 029</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Dichloromethane (Specimen #29)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-029. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-030')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 030</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Diethylformamide (Specimen #30)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-030. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-031')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 031</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Decanoic Acid (Specimen #31)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-031. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-032')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 032</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Dithiothreitol (Specimen #32)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-032. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-033')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 033</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Dimedone (Specimen #33)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-033. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-034')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 034</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Dithiazole (Specimen #34)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-034. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-035')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 035</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Dodecylbenzene (Specimen #35)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-035. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+
+      <div class="catalog-card" onclick="openDossierByGlobalId('d-036')">
+        <div>
+          <div class="card-top">
+            <span class="card-call-number">D ? 036</span>
+            <span class="card-archival-stamp">D-DRAWER-01</span>
+          </div>
+          <div class="card-product-name">Diacetylmonoxime (Specimen #36)</div>
+          <div class="card-divider"></div>
+          <div class="card-meta-section">
+            <div class="card-category-label">CATEGORY</div>
+            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+          </div>
+          <div>
+            <div class="card-desc-label">DESCRIPTION</div>
+            <div class="card-desc-text">Archival Grade Standard D-036. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-view-link">VIEW DOSSIER ?</span>
+        </div>
+      </div>
+</div>
 
       <!-- Virtual Pagination Controls -->
       <div class="pagination-bar" id="paginationBar">
         <div class="pagination-info" id="paginationInfo">Showing 1 - 36 of 3,381 records</div>
-        <div class="pagination-buttons" id="paginationButtons"></div>
+        <div class="pagination-buttons" id="paginationButtons">
+
+    <button class="btn-page" disabled onclick="goToPage(0)">PREV</button>
+    <button class="btn-page active" onclick="goToPage(1)">1</button>
+    <button class="btn-page" onclick="goToPage(2)">2</button>
+    <button class="btn-page" onclick="goToPage(3)">3</button>
+    <span style="font-family:var(--font-mono); padding:0 4px;">...</span>
+    <button class="btn-page" onclick="goToPage(94)">94</button>
+    <button class="btn-page" onclick="goToPage(2)">NEXT</button>
+
+</div>
       </div>
     </main>
 

@@ -1,5 +1,6 @@
 export interface ChemicalRecord {
   id: string;
+  code?: string;
   prefix: string;
   num: string;
   callNumber: string;
@@ -23,6 +24,7 @@ export interface ChemicalRecord {
 
 export interface CollectionMeta {
   id: string;
+  code?: string;
   label: string;
   range: string;
   count: number;

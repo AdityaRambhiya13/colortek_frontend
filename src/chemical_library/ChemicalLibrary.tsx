@@ -1,24 +1,23 @@
 import React, { useState, useMemo } from 'react';
 import './ChemicalLibrary.css';
-import type { ChemicalRecord, CollectionMeta, SortOrder } from './types';
+import type { CollectionMeta, SortOrder } from './types';
 import { CHEMICAL_DATA } from './chemicalData';
 import { Header } from './components/Header';
 import { CollectionSidebar } from './components/CollectionSidebar';
 import { IndexTabs } from './components/IndexTabs';
 import { CardGrid } from './components/CardGrid';
 import { Pagination } from './components/Pagination';
-import { DossierModal } from './components/DossierModal';
 
 const COLLECTIONS: CollectionMeta[] = [
   { id: 'ALL', label: 'ALL RECORDS', range: 'Entire Archive Index', count: 3381 },
-  { id: 'D', label: 'D COLLECTION', range: 'D-001 ? D-500', count: 500 },
-  { id: 'R', label: 'R COLLECTION', range: 'R-001 ? R-500', count: 500 },
-  { id: 'Tc', label: 'Tc COLLECTION', range: 'Tc-001 ? Tc-1000', count: 1000 },
-  { id: 'W', label: 'W COLLECTION', range: 'W-001 ? W-100', count: 100 },
-  { id: 'B', label: 'B COLLECTION', range: 'B-001 ? B-100', count: 100 },
-  { id: 'G', label: 'G COLLECTION', range: 'G-100 ? G-200', count: 101 },
-  { id: 'Y', label: 'Y COLLECTION', range: 'Y-001 ? Y-1000', count: 1000 },
-  { id: 'MISC', label: 'MISCELLANEOUS', range: 'MISC-001 ? MISC-080', count: 80 },
+  { id: 'D', label: 'D COLLECTION', range: 'D-001 to D-500', count: 500 },
+  { id: 'R', label: 'R COLLECTION', range: 'R-001 to R-500', count: 500 },
+  { id: 'Tc', label: 'Tc COLLECTION', range: 'Tc-001 to Tc-1000', count: 1000 },
+  { id: 'W', label: 'W COLLECTION', range: 'W-001 to W-100', count: 100 },
+  { id: 'B', label: 'B COLLECTION', range: 'B-001 to B-100', count: 100 },
+  { id: 'G', label: 'G COLLECTION', range: 'G-100 to G-200', count: 101 },
+  { id: 'Y', label: 'Y COLLECTION', range: 'Y-001 to Y-1000', count: 1000 },
+  { id: 'MISC', label: 'MISCELLANEOUS', range: 'MISC-001 to MISC-080', count: 80 },
 ];
 
 const PAGE_SIZE = 36;
@@ -28,7 +27,6 @@ export const ChemicalLibrary: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortCriterion, setSortCriterion] = useState<SortOrder>('code');
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [selectedRecordIndex, setSelectedRecordIndex] = useState<number>(-1);
 
   // Filtered & sorted records
   const filteredRecords = useMemo(() => {
@@ -36,17 +34,13 @@ export const ChemicalLibrary: React.FC = () => {
     const list = CHEMICAL_DATA.filter((item) => {
       if (activeCollection !== 'ALL' && item.prefix !== activeCollection) return false;
       if (!q) return true;
-      const fullCode = `${item.prefix}-${item.num}`.toLowerCase();
-      const callCode = `${item.prefix} ? ${item.num}`.toLowerCase();
+      const code = (item.code || '').toLowerCase();
       return (
-        fullCode === q ||
-        fullCode.includes(q) ||
-        callCode.includes(q) ||
+        code === q ||
+        code.includes(q) ||
         item.name.toLowerCase().includes(q) ||
         item.category.toLowerCase().includes(q) ||
-        item.description.toLowerCase().includes(q) ||
-        item.cas.toLowerCase().includes(q) ||
-        item.formula.toLowerCase().includes(q)
+        item.description.toLowerCase().includes(q)
       );
     });
 
@@ -89,23 +83,7 @@ export const ChemicalLibrary: React.FC = () => {
     window.scrollTo({ top: 80, behavior: 'smooth' });
   };
 
-  const handleCardClick = (record: ChemicalRecord) => {
-    const idx = CHEMICAL_DATA.findIndex((r) => r.id === record.id);
-    setSelectedRecordIndex(idx);
-  };
-
-  const handleCloseDossier = () => setSelectedRecordIndex(-1);
-
-  const handlePrevDossier = () => {
-    if (selectedRecordIndex > 0) setSelectedRecordIndex((prev) => prev - 1);
-  };
-
-  const handleNextDossier = () => {
-    if (selectedRecordIndex < CHEMICAL_DATA.length - 1) setSelectedRecordIndex((prev) => prev + 1);
-  };
-
   const currentCollMeta = COLLECTIONS.find((c) => c.id === activeCollection) || COLLECTIONS[0];
-  const activeDossierRecord = selectedRecordIndex >= 0 ? CHEMICAL_DATA[selectedRecordIndex] : null;
 
   return (
     <div className="chem-lib-root">
@@ -169,7 +147,6 @@ export const ChemicalLibrary: React.FC = () => {
 
           <CardGrid
             records={pageRecords}
-            onCardClick={handleCardClick}
             searchQuery={searchQuery}
             onClearSearch={handleClearSearch}
           />
@@ -184,13 +161,6 @@ export const ChemicalLibrary: React.FC = () => {
           />
         </main>
       </div>
-
-      <DossierModal
-        record={activeDossierRecord}
-        onClose={handleCloseDossier}
-        onPrev={handlePrevDossier}
-        onNext={handleNextDossier}
-      />
     </div>
   );
 };

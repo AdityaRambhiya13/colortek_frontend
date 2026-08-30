@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Chemical Archive ? Research & Compound Library</title>
-  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800;900&family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -24,8 +23,6 @@
       --olive-faint: rgba(128, 119, 92, 0.16);
       --ink-primary: #574A24;
       --ink-dark: #382F15;
-      --ink-subtle: rgba(87, 74, 36, 0.08);
-      --ink-border: rgba(87, 74, 36, 0.28);
       --border-subtle: rgba(128, 119, 92, 0.24);
 
       --font-display: 'Cinzel', Georgia, serif;
@@ -33,12 +30,8 @@
       --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
       --font-mono: 'Space Mono', monospace;
 
-      --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px;
-      --sp-6: 24px; --sp-8: 32px; --sp-12: 48px;
-      --sidebar-width: 300px; --header-height: 80px;
-      --radius-sm: 2px;
-      --ease-archival: cubic-bezier(0.2, 0.9, 0.3, 1);
-      --duration-snappy: 200ms; --duration-smooth: 320ms;
+      --sidebar-width: 300px;
+      --header-height: 80px;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
@@ -54,11 +47,11 @@
       overflow-x: hidden;
     }
 
-    ::selection { background: var(--archival-beige); color: var(--ink-dark); }
     ::-webkit-scrollbar { width: 7px; height: 7px; }
     ::-webkit-scrollbar-track { background: var(--paper-primary); }
     ::-webkit-scrollbar-thumb { background: var(--archival-beige-dark); border-radius: 2px; }
 
+    /* Header */
     .archive-header {
       height: var(--header-height);
       background-color: var(--paper-primary);
@@ -66,13 +59,13 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 var(--sp-8);
+      padding: 0 32px;
       position: sticky;
       top: 0;
       z-index: 60;
     }
-    .header-left { display: flex; align-items: center; gap: var(--sp-6); }
-    .brand-group { display: flex; align-items: center; gap: var(--sp-4); text-decoration: none; color: inherit; cursor: pointer; }
+    .header-left { display: flex; align-items: center; gap: 24px; }
+    .brand-group { display: flex; align-items: center; gap: 16px; text-decoration: none; color: inherit; cursor: pointer; }
     .brand-mark {
       width: 44px; height: 44px; border: 1px solid var(--ink-primary); background: var(--paper-surface);
       display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;
@@ -82,40 +75,37 @@
     .brand-text h1 { font-family: var(--font-display); font-size: 18px; font-weight: 800; letter-spacing: 2.2px; line-height: 1.15; color: var(--ink-primary); text-transform: uppercase; }
     .brand-text p { font-family: var(--font-serif); font-style: italic; font-size: 13px; color: var(--olive-muted); letter-spacing: 0.4px; }
 
-    .header-center { flex: 1; max-width: 540px; margin: 0 var(--sp-8); }
+    .header-center { flex: 1; max-width: 540px; margin: 0 32px; }
     .search-container { position: relative; width: 100%; }
     .search-container i.search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--olive-muted); width: 16px; height: 16px; pointer-events: none; }
     .search-input {
-      width: 100%; height: 42px; background-color: var(--paper-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm);
-      padding: 0 42px 0 42px; font-family: var(--font-sans); font-size: 13px; color: var(--ink-primary); transition: all var(--duration-snappy) var(--ease-archival);
+      width: 100%; height: 42px; background-color: var(--paper-surface); border: 1px solid var(--border-subtle); border-radius: 2px;
+      padding: 0 42px 0 42px; font-family: var(--font-sans); font-size: 13px; color: var(--ink-primary); outline: none;
     }
-    .search-input:focus { outline: none; border-color: var(--ink-primary); background-color: #FFFDF7; box-shadow: 0 2px 10px rgba(87, 74, 36, 0.08); }
+    .search-input:focus { border-color: var(--ink-primary); background-color: #FFFDF7; box-shadow: 0 2px 10px rgba(87, 74, 36, 0.08); }
     .search-clear-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--olive-muted); cursor: pointer; display: none; padding: 4px; }
-    .search-clear-btn:hover { color: var(--ink-primary); }
 
+    .header-right { font-family: var(--font-mono); font-size: 11px; color: var(--olive-muted); letter-spacing: 0.5px; }
+
+    /* Layout */
     .app-container { display: flex; flex: 1; position: relative; }
     .archive-sidebar {
       width: var(--sidebar-width); background-color: var(--archival-beige); border-right: 1px solid var(--border-subtle);
       display: flex; flex-direction: column; flex-shrink: 0; position: sticky; top: var(--header-height);
-      height: calc(100vh - var(--header-height)); overflow-y: auto; padding: var(--sp-6) 0; z-index: 40;
+      height: calc(100vh - var(--header-height)); overflow-y: auto; padding: 24px 0; z-index: 40;
     }
     .sidebar-heading {
       font-family: var(--font-sans); font-size: 10.5px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
-      color: var(--olive-muted); padding: 0 var(--sp-6) var(--sp-3) var(--sp-6); display: flex; align-items: center; justify-content: space-between;
+      color: var(--olive-muted); padding: 0 24px 12px 24px; display: flex; align-items: center; justify-content: space-between;
     }
-    .collection-nav { list-style: none; display: flex; flex-direction: column; gap: 4px; padding: 0 var(--sp-3); }
+    .collection-nav { list-style: none; display: flex; flex-direction: column; gap: 4px; padding: 0 12px; }
     .collection-btn {
       width: 100%; background: transparent; border: 1px solid transparent; padding: 12px 14px; text-align: left; cursor: pointer;
-      display: flex; align-items: center; justify-content: space-between; border-radius: var(--radius-sm);
-      transition: all var(--duration-snappy) var(--ease-archival); position: relative; color: var(--ink-primary);
-    }
-    .collection-btn::before {
-      content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 4px; height: 0;
-      background-color: var(--ink-primary); transition: height var(--duration-snappy) var(--ease-archival);
+      display: flex; align-items: center; justify-content: space-between; border-radius: 2px; transition: all 150ms ease; position: relative; color: var(--ink-primary);
     }
     .collection-btn:hover { background-color: rgba(250, 232, 180, 0.6); padding-left: 18px; }
     .collection-btn.active { background-color: var(--paper-primary); border-color: var(--ink-primary); box-shadow: 0 2px 6px rgba(87, 74, 36, 0.12); padding-left: 18px; }
-    .collection-btn.active::before { height: 75%; }
+    .collection-btn.active::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 4px; height: 75%; background-color: var(--ink-primary); }
     .coll-info { display: flex; flex-direction: column; gap: 2px; }
     .coll-title { font-family: var(--font-display); font-size: 13px; font-weight: 700; letter-spacing: 0.8px; color: var(--ink-primary); }
     .coll-range { font-family: var(--font-mono); font-size: 11px; color: var(--olive-muted); letter-spacing: 0.4px; }
@@ -125,17 +115,18 @@
     }
     .collection-btn.active .coll-count { background: var(--ink-primary); color: var(--paper-primary); border-color: var(--ink-dark); }
 
-    .archive-main { flex: 1; padding: var(--sp-8); max-width: 1440px; margin: 0 auto; width: 100%; min-height: calc(100vh - var(--header-height)); }
-    .catalog-title-strip { display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: var(--sp-4); margin-bottom: var(--sp-6); }
+    /* Main Area */
+    .archive-main { flex: 1; padding: 32px; max-width: 1440px; margin: 0 auto; width: 100%; min-height: calc(100vh - var(--header-height)); }
+    .catalog-title-strip { display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 16px; margin-bottom: 24px; }
     .catalog-title-left h2 { font-family: var(--font-display); font-size: 24px; font-weight: 700; letter-spacing: 2px; color: var(--ink-primary); }
     .catalog-sub-count { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--olive-muted); margin-top: 4px; display: flex; align-items: center; gap: 8px; }
     .catalog-sub-count span.dot { width: 4px; height: 4px; background-color: var(--olive-muted); border-radius: 50%; }
 
-    .library-index-tabs { display: flex; gap: 6px; overflow-x: auto; border-bottom: 1px solid var(--border-subtle); margin-bottom: var(--sp-6); padding-bottom: 1px; }
+    .library-index-tabs { display: flex; gap: 6px; overflow-x: auto; border-bottom: 1px solid var(--border-subtle); margin-bottom: 24px; padding-bottom: 1px; }
     .index-tab-btn {
       background: var(--archival-beige); border: 1px solid var(--border-subtle); border-bottom: none; padding: 8px 18px;
       font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: 1.5px; color: var(--olive-muted);
-      cursor: pointer; border-radius: 4px 4px 0 0; position: relative; bottom: -1px; transition: all var(--duration-snappy) ease; white-space: nowrap;
+      cursor: pointer; border-radius: 4px 4px 0 0; position: relative; bottom: -1px; transition: all 150ms ease; white-space: nowrap;
     }
     .index-tab-btn:hover { background: var(--archival-beige-light); color: var(--ink-primary); }
     .index-tab-btn.active {
@@ -143,37 +134,34 @@
       box-shadow: 0 -2px 5px rgba(87, 74, 36, 0.06); transform: translateY(-2px);
     }
 
-    .active-filter-strip { display: flex; align-items: center; gap: 8px; margin-bottom: var(--sp-6); flex-wrap: wrap; }
-    .filter-chip { background: var(--paper-surface); border: 1px solid var(--border-subtle); padding: 4px 12px; font-family: var(--font-mono); font-size: 11px; color: var(--ink-primary); display: flex; align-items: center; gap: 8px; border-radius: var(--radius-sm); }
+    .active-filter-strip { display: flex; align-items: center; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+    .filter-chip { background: var(--paper-surface); border: 1px solid var(--border-subtle); padding: 4px 12px; font-family: var(--font-mono); font-size: 11px; color: var(--ink-primary); display: flex; align-items: center; gap: 8px; border-radius: 2px; }
     .filter-chip button { background: none; border: none; color: var(--olive-muted); cursor: pointer; display: flex; align-items: center; }
-    .filter-chip button:hover { color: var(--ink-primary); }
 
-    .archive-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: var(--sp-6); }
+    /* Cards Grid */
+    .archive-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 24px; }
     .catalog-card {
-      background-color: var(--paper-card); border: 1px solid var(--border-subtle); padding: var(--sp-6); border-radius: var(--radius-sm);
-      display: flex; flex-direction: column; justify-content: space-between; min-height: 260px; cursor: pointer; position: relative;
-      box-shadow: 0 1px 3px rgba(87, 74, 36, 0.05); transition: transform var(--duration-smooth) var(--ease-archival), box-shadow var(--duration-smooth) var(--ease-archival), border-color var(--duration-smooth) var(--ease-archival), background-color var(--duration-smooth) var(--ease-archival);
+      background-color: var(--paper-card); border: 1px solid var(--border-subtle); padding: 24px; border-radius: 2px;
+      display: flex; flex-direction: column; justify-content: space-between; min-height: 240px; position: relative;
+      box-shadow: 0 1px 3px rgba(87, 74, 36, 0.05); transition: transform 200ms ease, box-shadow 200ms ease;
     }
-    .catalog-card::before { content: ''; position: absolute; bottom: 12px; left: 12px; width: 8px; height: 8px; border-radius: 50%; background-color: var(--paper-primary); border: 1px solid var(--border-subtle); opacity: 0.6; }
-    .catalog-card:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(87, 74, 36, 0.14); border-color: var(--ink-border); background-color: var(--paper-card-hover); }
-    .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--sp-3); }
+    .catalog-card:hover { transform: translateY(-3px); box-shadow: 0 6px 16px rgba(87, 74, 36, 0.12); border-color: var(--ink-primary); background-color: var(--paper-card-hover); }
+    .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
     .card-call-number { font-family: var(--font-display); font-size: 18px; font-weight: 800; letter-spacing: 1.5px; color: var(--ink-primary); border-bottom: 2px solid var(--ink-primary); padding-bottom: 2px; }
-    .card-archival-stamp { font-family: var(--font-mono); font-size: 10px; color: var(--olive-muted); border: 1px solid var(--olive-faint); padding: 1px 6px; border-radius: var(--radius-sm); }
-    .card-product-name { font-family: var(--font-serif); font-size: 18px; font-weight: 600; line-height: 1.25; color: var(--ink-primary); margin-bottom: var(--sp-3); }
-    .card-divider { height: 1px; background-color: var(--border-subtle); margin: var(--sp-3) 0; opacity: 0.6; }
-    .card-meta-section { display: flex; flex-direction: column; gap: 4px; margin-bottom: var(--sp-3); }
+    .card-archival-stamp { font-family: var(--font-mono); font-size: 10px; color: var(--olive-muted); border: 1px solid var(--olive-faint); padding: 1px 6px; border-radius: 2px; }
+    .card-product-name { font-family: var(--font-serif); font-size: 18px; font-weight: 600; line-height: 1.25; color: var(--ink-primary); margin-bottom: 12px; }
+    .card-divider { height: 1px; background-color: var(--border-subtle); margin: 12px 0; opacity: 0.6; }
+    .card-meta-section { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
     .card-category-label { font-family: var(--font-sans); font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--olive-muted); }
     .card-category-value { font-family: var(--font-sans); font-size: 12px; font-weight: 600; color: var(--ink-primary); }
     .card-desc-label { font-family: var(--font-sans); font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--olive-muted); margin-bottom: 2px; }
-    .card-desc-text { font-family: var(--font-serif); font-size: 13.5px; line-height: 1.45; color: var(--olive-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .card-footer { display: flex; align-items: center; justify-content: flex-end; padding-top: var(--sp-3); border-top: 1px dashed rgba(128, 119, 92, 0.3); margin-top: auto; }
-    .card-view-link { font-family: var(--font-sans); font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--olive-muted); display: inline-flex; align-items: center; gap: 6px; }
-    .catalog-card:hover .card-view-link { color: var(--ink-primary); transform: translateX(3px); }
+    .card-desc-text { font-family: var(--font-serif); font-size: 13.5px; line-height: 1.45; color: var(--olive-muted); }
 
+    /* Virtual Pagination */
     .pagination-bar {
-      margin-top: var(--sp-8); display: flex; align-items: center; justify-content: space-between;
-      background: var(--paper-surface); border: 1px solid var(--border-subtle); padding: var(--sp-4) var(--sp-6);
-      border-radius: var(--radius-sm); flex-wrap: wrap; gap: 12px;
+      margin-top: 32px; display: flex; align-items: center; justify-content: space-between;
+      background: var(--paper-surface); border: 1px solid var(--border-subtle); padding: 16px 24px;
+      border-radius: 2px; flex-wrap: wrap; gap: 12px;
     }
     .pagination-info { font-family: var(--font-mono); font-size: 12px; color: var(--ink-primary); }
     .pagination-buttons { display: flex; align-items: center; gap: 6px; }
@@ -183,33 +171,6 @@
     .btn-page:hover:not(:disabled) { background: var(--paper-primary); border-color: var(--ink-primary); }
     .btn-page.active { background: var(--ink-primary); color: var(--paper-primary); border-color: var(--ink-dark); }
     .btn-page:disabled { opacity: 0.4; cursor: not-allowed; }
-
-    .dossier-overlay { position: fixed; inset: 0; background: rgba(87, 74, 36, 0.45); backdrop-filter: blur(2px); z-index: 100; display: flex; justify-content: flex-end; opacity: 0; pointer-events: none; transition: opacity var(--duration-smooth) var(--ease-archival); }
-    .dossier-overlay.open { opacity: 1; pointer-events: auto; }
-    .dossier-panel { width: 760px; max-width: 95vw; height: 100vh; background-color: var(--paper-primary); border-left: 2px solid var(--ink-primary); box-shadow: -10px 0 35px rgba(56, 47, 21, 0.35); display: flex; flex-direction: column; transform: translateX(100%); transition: transform var(--duration-smooth) var(--ease-archival); overflow-y: auto; }
-    .dossier-overlay.open .dossier-panel { transform: translateX(0); }
-    .dossier-header { padding: var(--sp-6) var(--sp-8); background-color: var(--archival-beige); border-bottom: 1px solid var(--ink-border); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
-    .btn-back-link { background: none; border: none; font-family: var(--font-sans); font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ink-primary); cursor: pointer; display: flex; align-items: center; gap: 8px; }
-    .btn-dossier-nav { background: var(--paper-primary); border: 1px solid var(--border-subtle); color: var(--ink-primary); padding: 6px 12px; font-size: 11px; font-weight: 700; font-family: var(--font-sans); cursor: pointer; border-radius: var(--radius-sm); display: flex; align-items: center; gap: 4px; }
-    .dossier-body { padding: var(--sp-8); display: flex; flex-direction: column; gap: var(--sp-6); }
-    .dossier-callout-code { font-family: var(--font-display); font-size: 32px; font-weight: 800; letter-spacing: 2px; color: var(--ink-primary); border-bottom: 3px double var(--ink-primary); padding-bottom: 6px; display: inline-block; }
-    .dossier-product-title { font-family: var(--font-serif); font-size: 28px; font-weight: 700; color: var(--ink-dark); line-height: 1.2; margin-top: var(--sp-2); }
-    .chem-vector-box { background: var(--paper-card); border: 1px solid var(--border-subtle); padding: var(--sp-4); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 140px; }
-    .chem-vector-box svg { max-width: 180px; max-height: 120px; }
-    .dossier-grid-meta { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); background: var(--paper-surface); padding: var(--sp-6); border: 1px solid var(--border-subtle); }
-    .dossier-meta-item label { font-family: var(--font-sans); font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--olive-muted); display: block; margin-bottom: 2px; }
-    .dossier-meta-item span { font-family: var(--font-mono); font-size: 13px; color: var(--ink-primary); font-weight: 600; }
-    .dossier-desc-text { font-family: var(--font-serif); font-size: 16px; line-height: 1.6; color: var(--ink-primary); text-align: justify; }
-
-    .btn-cancel { background: none; border: 1px solid var(--border-subtle); padding: 8px 16px; font-size: 11px; font-weight: 700; font-family: var(--font-sans); letter-spacing: 1px; text-transform: uppercase; cursor: pointer; color: var(--olive-muted); border-radius: var(--radius-sm); }
-    .btn-cancel:hover { background: var(--archival-beige); color: var(--ink-primary); }
-
-    @media print {
-      body * { visibility: hidden; }
-      #dossierPanel, #dossierPanel * { visibility: visible; }
-      #dossierPanel { position: absolute; left: 0; top: 0; width: 100%; border: 2px solid #000; box-shadow: none; background: #FFF; }
-      .dossier-header, .btn-dossier-nav, .btn-back-link { display: none !important; }
-    }
   </style>
 </head>
 <body>
@@ -236,9 +197,7 @@
     </div>
 
     <div class="header-right">
-      <div style="font-family:var(--font-mono); font-size:11px; color:var(--olive-muted); letter-spacing:0.5px;">
-        3,381 CATALOGED SPECIMENS
-      </div>
+      3,381 CATALOGED SPECIMENS
     </div>
   </header>
 
@@ -252,97 +211,88 @@
         <i data-lucide="archive" style="width:13px; height:13px;"></i>
       </div>
       <ul class="collection-nav" id="collectionNavList">
-
-        <li>
-          <button class="collection-btn active" onclick="selectCollection('ALL')">
-            <div class="coll-info">
-              <span class="coll-title">ALL RECORDS</span>
-              <span class="coll-range">Entire Archive Index</span>
-            </div>
-            <span class="coll-count">3381</span>
-          </button>
-        </li>
-
-        <li>
-          <button class="collection-btn " onclick="selectCollection('D')">
-            <div class="coll-info">
-              <span class="coll-title">D COLLECTION</span>
-              <span class="coll-range">D-001 ? D-500</span>
-            </div>
-            <span class="coll-count">500</span>
-          </button>
-        </li>
-
-        <li>
-          <button class="collection-btn " onclick="selectCollection('R')">
-            <div class="coll-info">
-              <span class="coll-title">R COLLECTION</span>
-              <span class="coll-range">R-001 ? R-500</span>
-            </div>
-            <span class="coll-count">500</span>
-          </button>
-        </li>
-
-        <li>
-          <button class="collection-btn " onclick="selectCollection('Tc')">
-            <div class="coll-info">
-              <span class="coll-title">Tc COLLECTION</span>
-              <span class="coll-range">Tc-001 ? Tc-1000</span>
-            </div>
-            <span class="coll-count">1000</span>
-          </button>
-        </li>
-
-        <li>
-          <button class="collection-btn " onclick="selectCollection('W')">
-            <div class="coll-info">
-              <span class="coll-title">W COLLECTION</span>
-              <span class="coll-range">W-001 ? W-100</span>
-            </div>
-            <span class="coll-count">100</span>
-          </button>
-        </li>
-
-        <li>
-          <button class="collection-btn " onclick="selectCollection('B')">
-            <div class="coll-info">
-              <span class="coll-title">B COLLECTION</span>
-              <span class="coll-range">B-001 ? B-100</span>
-            </div>
-            <span class="coll-count">100</span>
-          </button>
-        </li>
-
-        <li>
-          <button class="collection-btn " onclick="selectCollection('G')">
-            <div class="coll-info">
-              <span class="coll-title">G COLLECTION</span>
-              <span class="coll-range">G-100 ? G-200</span>
-            </div>
-            <span class="coll-count">101</span>
-          </button>
-        </li>
-
-        <li>
-          <button class="collection-btn " onclick="selectCollection('Y')">
-            <div class="coll-info">
-              <span class="coll-title">Y COLLECTION</span>
-              <span class="coll-range">Y-001 ? Y-1000</span>
-            </div>
-            <span class="coll-count">1000</span>
-          </button>
-        </li>
-
-        <li>
-          <button class="collection-btn " onclick="selectCollection('MISC')">
-            <div class="coll-info">
-              <span class="coll-title">MISCELLANEOUS</span>
-              <span class="coll-range">MISC-001 ? MISC-080</span>
-            </div>
-            <span class="coll-count">80</span>
-          </button>
-        </li>
-</ul>
+<li>
+      <button class="collection-btn active" onclick="selectCollection('ALL')">
+        <div class="coll-info">
+          <span class="coll-title">ALL RECORDS</span>
+          <span class="coll-range">Entire Archive Index</span>
+        </div>
+        <span class="coll-count">3381</span>
+      </button>
+    </li>
+<li>
+      <button class="collection-btn " onclick="selectCollection('D')">
+        <div class="coll-info">
+          <span class="coll-title">D COLLECTION</span>
+          <span class="coll-range">D-001 to D-500</span>
+        </div>
+        <span class="coll-count">500</span>
+      </button>
+    </li>
+<li>
+      <button class="collection-btn " onclick="selectCollection('R')">
+        <div class="coll-info">
+          <span class="coll-title">R COLLECTION</span>
+          <span class="coll-range">R-001 to R-500</span>
+        </div>
+        <span class="coll-count">500</span>
+      </button>
+    </li>
+<li>
+      <button class="collection-btn " onclick="selectCollection('Tc')">
+        <div class="coll-info">
+          <span class="coll-title">Tc COLLECTION</span>
+          <span class="coll-range">Tc-001 to Tc-1000</span>
+        </div>
+        <span class="coll-count">1000</span>
+      </button>
+    </li>
+<li>
+      <button class="collection-btn " onclick="selectCollection('W')">
+        <div class="coll-info">
+          <span class="coll-title">W COLLECTION</span>
+          <span class="coll-range">W-001 to W-100</span>
+        </div>
+        <span class="coll-count">100</span>
+      </button>
+    </li>
+<li>
+      <button class="collection-btn " onclick="selectCollection('B')">
+        <div class="coll-info">
+          <span class="coll-title">B COLLECTION</span>
+          <span class="coll-range">B-001 to B-100</span>
+        </div>
+        <span class="coll-count">100</span>
+      </button>
+    </li>
+<li>
+      <button class="collection-btn " onclick="selectCollection('G')">
+        <div class="coll-info">
+          <span class="coll-title">G COLLECTION</span>
+          <span class="coll-range">G-100 to G-200</span>
+        </div>
+        <span class="coll-count">101</span>
+      </button>
+    </li>
+<li>
+      <button class="collection-btn " onclick="selectCollection('Y')">
+        <div class="coll-info">
+          <span class="coll-title">Y COLLECTION</span>
+          <span class="coll-range">Y-001 to Y-1000</span>
+        </div>
+        <span class="coll-count">1000</span>
+      </button>
+    </li>
+<li>
+      <button class="collection-btn " onclick="selectCollection('MISC')">
+        <div class="coll-info">
+          <span class="coll-title">MISCELLANEOUS</span>
+          <span class="coll-range">MISC-001 to MISC-080</span>
+        </div>
+        <span class="coll-count">80</span>
+      </button>
+    </li>
+      </ul>
     </aside>
 
     <!-- Main Public Library View -->
@@ -357,16 +307,14 @@
           </div>
         </div>
 
-        <div class="catalog-controls-right">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span style="font-family:var(--font-sans); font-size:10px; font-weight:700; text-transform:uppercase; color:var(--olive-muted);">Sort:</span>
-            <select class="form-select" id="sortSelect" style="background:var(--paper-surface); border:1px solid var(--border-subtle); padding:6px 12px; font-family:var(--font-sans); font-size:12px; color:var(--ink-primary); border-radius:2px;" onchange="handleSortChange(this.value)">
-              <option value="code">Product Code (Ascending)</option>
-              <option value="code_desc">Product Code (Descending)</option>
-              <option value="name">Product Name (A-Z)</option>
-              <option value="category">Category</option>
-            </select>
-          </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-family:var(--font-sans); font-size:10px; font-weight:700; text-transform:uppercase; color:var(--olive-muted);">Sort:</span>
+          <select id="sortSelect" style="background:var(--paper-surface); border:1px solid var(--border-subtle); padding:6px 12px; font-family:var(--font-sans); font-size:12px; color:var(--ink-primary); border-radius:2px;" onchange="handleSortChange(this.value)">
+            <option value="code">Product Code (Ascending)</option>
+            <option value="code_desc">Product Code (Descending)</option>
+            <option value="name">Product Name (A-Z)</option>
+            <option value="category">Category</option>
+          </select>
         </div>
       </div>
 
@@ -381,7 +329,7 @@
 <button class="index-tab-btn " onclick="selectCollection('G')">[ G ]</button>
 <button class="index-tab-btn " onclick="selectCollection('Y')">[ Y ]</button>
 <button class="index-tab-btn " onclick="selectCollection('MISC')">[ MISC ]</button>
-</div>
+      </div>
 
       <!-- Active Filter Strip -->
       <div class="active-filter-strip" id="activeFilterStrip" style="display:none;">
@@ -393,799 +341,583 @@
 
       <!-- Card Grid -->
       <div class="archive-grid" id="cardGrid">
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-001')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 001</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Dinitrobenzene (Specimen #1)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-001. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-001</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-002')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 002</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Sulfonyl Chloride (Specimen #2)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-002. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+      <div class="card-product-name">Dinitrobenzene (Specimen #1)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-003')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 003</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Diazobicyclononane (Specimen #3)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-003. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-001. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-004')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 004</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Dicyclohexylcarbodiimide (Specimen #4)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-004. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-002</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-005')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 005</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Dimethylaminopyridine (Specimen #5)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-005. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+      <div class="card-product-name">Sulfonyl Chloride (Specimen #2)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-006')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 006</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Diisopropylethylamine (Specimen #6)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-006. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-002. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-007')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 007</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Dioxaborolane (Specimen #7)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-007. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-003</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-008')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 008</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Dibenzylideneacetone (Specimen #8)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-008. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+      <div class="card-product-name">Diazobicyclononane (Specimen #3)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-009')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 009</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Dichloromethane (Specimen #9)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-009. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-003. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-010')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 010</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Diethylformamide (Specimen #10)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-010. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-004</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-011')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 011</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Decanoic Acid (Specimen #11)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-011. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+      <div class="card-product-name">Dicyclohexylcarbodiimide (Specimen #4)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-012')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 012</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Dithiothreitol (Specimen #12)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-012. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-004. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-013')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 013</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Dimedone (Specimen #13)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-013. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-005</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-014')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 014</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Dithiazole (Specimen #14)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-014. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+      <div class="card-product-name">Dimethylaminopyridine (Specimen #5)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-015')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 015</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Dodecylbenzene (Specimen #15)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-015. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-005. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-016')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 016</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Diacetylmonoxime (Specimen #16)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-016. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-006</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-017')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 017</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Diphenylphosphinoferrocene (Specimen #17)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-017. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+      <div class="card-product-name">Diisopropylethylamine (Specimen #6)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-018')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 018</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Dimethoxyethane (Specimen #18)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-018. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-006. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-019')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 019</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Dibromomalonamide (Specimen #19)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-019. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-007</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-020')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 020</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Diaza-crown Ether (Specimen #20)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-020. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+      <div class="card-product-name">Dioxaborolane (Specimen #7)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-021')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 021</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Dinitrobenzene (Specimen #21)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-021. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-007. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-022')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 022</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Sulfonyl Chloride (Specimen #22)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-022. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-008</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-023')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 023</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Diazobicyclononane (Specimen #23)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-023. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+      <div class="card-product-name">Dibenzylideneacetone (Specimen #8)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-024')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 024</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Dicyclohexylcarbodiimide (Specimen #24)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-024. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-008. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-025')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 025</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Dimethylaminopyridine (Specimen #25)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-025. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-009</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-026')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 026</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Diisopropylethylamine (Specimen #26)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-026. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+      <div class="card-product-name">Dichloromethane (Specimen #9)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-027')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 027</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Dioxaborolane (Specimen #27)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-027. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-009. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-028')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 028</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Dibenzylideneacetone (Specimen #28)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-028. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-010</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-029')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 029</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Dichloromethane (Specimen #29)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-029. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+      <div class="card-product-name">Diethylformamide (Specimen #10)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-030')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 030</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Diethylformamide (Specimen #30)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-030. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-010. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-031')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 031</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Decanoic Acid (Specimen #31)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-031. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-011</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-032')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 032</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Dithiothreitol (Specimen #32)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-032. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+      <div class="card-product-name">Decanoic Acid (Specimen #11)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-033')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 033</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Dimedone (Specimen #33)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-033. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-011. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-034')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 034</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Dithiazole (Specimen #34)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-034. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-012</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-035')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 035</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Dodecylbenzene (Specimen #35)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-035. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+      <div class="card-product-name">Dithiothreitol (Specimen #12)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
       </div>
-
-      <div class="catalog-card" onclick="openDossierByGlobalId('d-036')">
-        <div>
-          <div class="card-top">
-            <span class="card-call-number">D ? 036</span>
-            <span class="card-archival-stamp">D-DRAWER-01</span>
-          </div>
-          <div class="card-product-name">Diacetylmonoxime (Specimen #36)</div>
-          <div class="card-divider"></div>
-          <div class="card-meta-section">
-            <div class="card-category-label">CATEGORY</div>
-            <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-          </div>
-          <div>
-            <div class="card-desc-label">DESCRIPTION</div>
-            <div class="card-desc-text">Archival Grade Standard D-036. Certified reference compound utilized for quantitative spectrometry, coordination catalysis, and NIST traceable stoichiometric validation. Preserved under nitrogen gas blanket in Cabinet D-Vault.</div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-view-link">VIEW DOSSIER ?</span>
-        </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-012. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
       </div>
-</div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-013</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
+      </div>
+      <div class="card-product-name">Dimedone (Specimen #13)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+      </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-013. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
+      </div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-014</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
+      </div>
+      <div class="card-product-name">Dithiazole (Specimen #14)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+      </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-014. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
+      </div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-015</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
+      </div>
+      <div class="card-product-name">Dodecylbenzene (Specimen #15)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+      </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-015. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
+      </div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-016</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
+      </div>
+      <div class="card-product-name">Diacetylmonoxime (Specimen #16)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+      </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-016. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
+      </div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-017</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
+      </div>
+      <div class="card-product-name">Diphenylphosphinoferrocene (Specimen #17)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+      </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-017. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
+      </div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-018</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
+      </div>
+      <div class="card-product-name">Dimethoxyethane (Specimen #18)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+      </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-018. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
+      </div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-019</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
+      </div>
+      <div class="card-product-name">Dibromomalonamide (Specimen #19)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+      </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-019. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
+      </div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-020</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
+      </div>
+      <div class="card-product-name">Diaza-crown Ether (Specimen #20)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+      </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-020. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
+      </div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-021</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
+      </div>
+      <div class="card-product-name">Dinitrobenzene (Specimen #21)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+      </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-021. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
+      </div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-022</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
+      </div>
+      <div class="card-product-name">Sulfonyl Chloride (Specimen #22)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+      </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-022. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
+      </div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-023</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
+      </div>
+      <div class="card-product-name">Diazobicyclononane (Specimen #23)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+      </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-023. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
+      </div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-024</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
+      </div>
+      <div class="card-product-name">Dicyclohexylcarbodiimide (Specimen #24)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+      </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-024. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
+      </div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-025</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
+      </div>
+      <div class="card-product-name">Dimethylaminopyridine (Specimen #25)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+      </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-025. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
+      </div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-026</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
+      </div>
+      <div class="card-product-name">Diisopropylethylamine (Specimen #26)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+      </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-026. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
+      </div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-027</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
+      </div>
+      <div class="card-product-name">Dioxaborolane (Specimen #27)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+      </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-027. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
+      </div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-028</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
+      </div>
+      <div class="card-product-name">Dibenzylideneacetone (Specimen #28)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+      </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-028. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
+      </div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-029</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
+      </div>
+      <div class="card-product-name">Dichloromethane (Specimen #29)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+      </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-029. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
+      </div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-030</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
+      </div>
+      <div class="card-product-name">Diethylformamide (Specimen #30)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+      </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-030. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
+      </div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-031</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
+      </div>
+      <div class="card-product-name">Decanoic Acid (Specimen #31)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+      </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-031. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
+      </div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-032</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
+      </div>
+      <div class="card-product-name">Dithiothreitol (Specimen #32)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+      </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-032. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
+      </div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-033</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
+      </div>
+      <div class="card-product-name">Dimedone (Specimen #33)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+      </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-033. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
+      </div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-034</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
+      </div>
+      <div class="card-product-name">Dithiazole (Specimen #34)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+      </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-034. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
+      </div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-035</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
+      </div>
+      <div class="card-product-name">Dodecylbenzene (Specimen #35)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+      </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-035. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
+      </div>
+    </div>
+<div class="catalog-card">
+      <div class="card-top">
+        <span class="card-call-number">D-036</span>
+        <span class="card-archival-stamp">D-DRAWER-01</span>
+      </div>
+      <div class="card-product-name">Diacetylmonoxime (Specimen #36)</div>
+      <div class="card-divider"></div>
+      <div class="card-meta-section">
+        <div class="card-category-label">CATEGORY</div>
+        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
+      </div>
+      <div>
+        <div class="card-desc-label">DESCRIPTION</div>
+        <div class="card-desc-text">Archival Chemical Record D-036. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
+      </div>
+    </div>
+      </div>
 
       <!-- Virtual Pagination Controls -->
       <div class="pagination-bar" id="paginationBar">
@@ -1200,47 +932,31 @@
     <button class="btn-page" onclick="goToPage(94)">94</button>
     <button class="btn-page" onclick="goToPage(2)">NEXT</button>
 
-</div>
+        </div>
       </div>
     </main>
 
   </div>
 
-  <!-- Record Detail Dossier -->
-  <div class="dossier-overlay" id="dossierOverlay">
-    <div class="dossier-panel" id="dossierPanel">
-      <div class="dossier-header">
-        <button class="btn-back-link" onclick="closeDossier()"><i data-lucide="arrow-left"></i> BACK TO COLLECTION</button>
-        <div style="display:flex; gap:8px;">
-          <button class="btn-dossier-nav" onclick="navDossier(-1)"><i data-lucide="chevron-left"></i> PREV</button>
-          <button class="btn-dossier-nav" onclick="navDossier(1)">NEXT <i data-lucide="chevron-right"></i></button>
-        </div>
-      </div>
-      <div class="dossier-body" id="dossierContent"></div>
-    </div>
-  </div>
-
   <script src="./chemical_data.js"></script>
+
   <script>
     const COLLECTIONS = [
       { id: 'ALL', label: 'ALL RECORDS', range: 'Entire Archive Index', count: 3381 },
-      { id: 'D', label: 'D COLLECTION', range: 'D-001 ? D-500', count: 500 },
-      { id: 'R', label: 'R COLLECTION', range: 'R-001 ? R-500', count: 500 },
-      { id: 'Tc', label: 'Tc COLLECTION', range: 'Tc-001 ? Tc-1000', count: 1000 },
-      { id: 'W', label: 'W COLLECTION', range: 'W-001 ? W-100', count: 100 },
-      { id: 'B', label: 'B COLLECTION', range: 'B-001 ? B-100', count: 100 },
-      { id: 'G', label: 'G COLLECTION', range: 'G-100 ? G-200', count: 101 },
-      { id: 'Y', label: 'Y COLLECTION', range: 'Y-001 ? Y-1000', count: 1000 },
-      { id: 'MISC', label: 'MISCELLANEOUS', range: 'MISC-001 ? MISC-080', count: 80 }
+      { id: 'D', label: 'D COLLECTION', range: 'D-001 to D-500', count: 500 },
+      { id: 'R', label: 'R COLLECTION', range: 'R-001 to R-500', count: 500 },
+      { id: 'Tc', label: 'Tc COLLECTION', range: 'Tc-001 to Tc-1000', count: 1000 },
+      { id: 'W', label: 'W COLLECTION', range: 'W-001 to W-100', count: 100 },
+      { id: 'B', label: 'B COLLECTION', range: 'B-001 to B-100', count: 100 },
+      { id: 'G', label: 'G COLLECTION', range: 'G-100 to G-200', count: 101 },
+      { id: 'Y', label: 'Y COLLECTION', range: 'Y-001 to Y-1000', count: 1000 },
+      { id: 'MISC', label: 'MISCELLANEOUS', range: 'MISC-001 to MISC-080', count: 80 }
     ];
 
     let archiveRecords = window.RAW_SEED_DATA || [];
     let activeCollection = 'ALL';
     let searchQuery = '';
     let sortCriterion = 'code';
-    let selectedRecordIndex = -1;
-
-    // Virtual Pagination settings
     const PAGE_SIZE = 36;
     let currentPage = 1;
 
@@ -1252,9 +968,7 @@
             archiveRecords = data;
             renderAll();
           })
-          .catch(err => console.error('Data load fallback error:', err));
-      } else {
-        renderAll();
+          .catch(err => console.error('Fallback error:', err));
       }
       attachSearchListener();
       lucide.createIcons();
@@ -1301,20 +1015,16 @@
       let list = archiveRecords.filter(item => {
         if (activeCollection !== 'ALL' && item.prefix !== activeCollection) return false;
         if (!q) return true;
-        const fullCode = `${item.prefix}-${item.num}`.toLowerCase();
-        const callCode = `${item.prefix} ? ${item.num}`.toLowerCase();
-        return fullCode === q ||
-               fullCode.includes(q) ||
-               callCode.includes(q) ||
+        const code = (item.code || '').toLowerCase();
+        return code === q ||
+               code.includes(q) ||
                (item.name && item.name.toLowerCase().includes(q)) ||
                (item.category && item.category.toLowerCase().includes(q)) ||
-               (item.description && item.description.toLowerCase().includes(q)) ||
-               (item.cas && item.cas.toLowerCase().includes(q)) ||
-               (item.formula && item.formula.toLowerCase().includes(q));
+               (item.description && item.description.toLowerCase().includes(q));
       });
 
       list.sort((a, b) => {
-        if (sortCriterion === 'code') return a.prefix.localeCompare(b.prefix) || parseInt(a.num) - parseInt(a.num);
+        if (sortCriterion === 'code') return a.prefix.localeCompare(b.prefix) || parseInt(a.num) - parseInt(b.num);
         if (sortCriterion === 'code_desc') return b.prefix.localeCompare(a.prefix) || parseInt(b.num) - parseInt(a.num);
         if (sortCriterion === 'name') return a.name.localeCompare(b.name);
         if (sortCriterion === 'category') return a.category.localeCompare(b.category);
@@ -1338,14 +1048,12 @@
         filterStrip.style.display = 'none';
       }
 
-      // Calculate Virtual Pagination
       const totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
       if (currentPage > totalPages) currentPage = totalPages;
       const startIndex = (currentPage - 1) * PAGE_SIZE;
       const endIndex = Math.min(startIndex + PAGE_SIZE, filtered.length);
       const pageRecords = filtered.slice(startIndex, endIndex);
 
-      // Render Pagination Info
       document.getElementById('paginationInfo').innerText = filtered.length > 0 
         ? `Showing ${startIndex + 1} - ${endIndex} of ${filtered.length} records (Page ${currentPage} of ${totalPages})`
         : `No matching records found in archive`;
@@ -1361,26 +1069,21 @@
           </div>
         `;
       } else {
-        document.getElementById('cardGrid').innerHTML = pageRecords.map((item, idx) => `
-          <div class="catalog-card" onclick="openDossierByGlobalId('${item.id}')">
-            <div>
-              <div class="card-top">
-                <span class="card-call-number">${item.prefix} ? ${item.num}</span>
-                <span class="card-archival-stamp">${item.drawer}</span>
-              </div>
-              <div class="card-product-name">${highlightMatch(item.name)}</div>
-              <div class="card-divider"></div>
-              <div class="card-meta-section">
-                <div class="card-category-label">CATEGORY</div>
-                <div class="card-category-value">${highlightMatch(item.category)}</div>
-              </div>
-              <div>
-                <div class="card-desc-label">DESCRIPTION</div>
-                <div class="card-desc-text">${highlightMatch(item.description)}</div>
-              </div>
+        document.getElementById('cardGrid').innerHTML = pageRecords.map(item => `
+          <div class="catalog-card">
+            <div class="card-top">
+              <span class="card-call-number">${item.code}</span>
+              <span class="card-archival-stamp">${item.drawer}</span>
             </div>
-            <div class="card-footer">
-              <span class="card-view-link">VIEW DOSSIER ?</span>
+            <div class="card-product-name">${highlightMatch(item.name)}</div>
+            <div class="card-divider"></div>
+            <div class="card-meta-section">
+              <div class="card-category-label">CATEGORY</div>
+              <div class="card-category-value">${highlightMatch(item.category)}</div>
+            </div>
+            <div>
+              <div class="card-desc-label">DESCRIPTION</div>
+              <div class="card-desc-text">${highlightMatch(item.description)}</div>
             </div>
           </div>
         `).join('');
@@ -1420,7 +1123,7 @@
     function goToPage(p) {
       currentPage = p;
       renderLibraryRecords();
-      window.scrollTo({ top: 120, behavior: 'smooth' });
+      window.scrollTo({ top: 80, behavior: 'smooth' });
     }
 
     function highlightMatch(text) {
@@ -1433,65 +1136,6 @@
     function handleSortChange(val) {
       sortCriterion = val;
       renderLibraryRecords();
-    }
-
-    function openDossierByGlobalId(id) {
-      const idx = archiveRecords.findIndex(r => r.id === id);
-      if (idx !== -1) openDossier(idx);
-    }
-
-    function openDossier(idx) {
-      selectedRecordIndex = idx;
-      const item = archiveRecords[idx];
-      if (!item) return;
-
-      document.getElementById('dossierContent').innerHTML = `
-        <div>
-          <span class="dossier-callout-code">${item.prefix} ? ${item.num}</span>
-          <h2 class="dossier-product-title">${item.name}</h2>
-        </div>
-
-        <div class="chem-vector-box">
-          ${item.structureSvg || ''}
-          <span style="font-family:var(--font-mono); font-size:10px; color:var(--olive-muted); margin-top:8px;">2D COORDINATION / VECTOR RENDERING</span>
-        </div>
-
-        <div class="dossier-grid-meta">
-          <div class="dossier-meta-item"><label>Product Category</label><span>${item.category}</span></div>
-          <div class="dossier-meta-item"><label>CAS Registry Number</label><span>${item.cas}</span></div>
-          <div class="dossier-meta-item"><label>Molecular Formula</label><span>${item.formula}</span></div>
-          <div class="dossier-meta-item"><label>Molecular Weight</label><span>${item.mw}</span></div>
-          <div class="dossier-meta-item"><label>Storage Location</label><span>${item.storage}</span></div>
-          <div class="dossier-meta-item"><label>Assay Purity Standard</label><span>${item.grade}</span></div>
-          <div class="dossier-meta-item"><label>Hazard Classification</label><span>${item.hazard}</span></div>
-          <div class="dossier-meta-item"><label>Archived Date</label><span>${item.dateArchived}</span></div>
-        </div>
-
-        <div>
-          <div style="font-family: var(--font-sans); font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--olive-muted); margin-bottom: 8px;">
-            DETAILED ARCHIVAL SPECIFICATION
-          </div>
-          <div class="dossier-desc-text">${item.description}</div>
-        </div>
-
-        <div style="border-top: 1px solid var(--border-subtle); padding-top: 20px; display: flex; gap: 12px; justify-content: flex-end; margin-top: 12px;">
-          <button class="btn-cancel" onclick="window.print()"><i data-lucide="printer"></i> PRINT CALL SLIP</button>
-        </div>
-      `;
-
-      document.getElementById('dossierOverlay').classList.add('open');
-      lucide.createIcons();
-    }
-
-    function closeDossier() {
-      document.getElementById('dossierOverlay').classList.remove('open');
-    }
-
-    function navDossier(dir) {
-      const newIdx = selectedRecordIndex + dir;
-      if (newIdx >= 0 && newIdx < archiveRecords.length) {
-        openDossier(newIdx);
-      }
     }
 
     function attachSearchListener() {

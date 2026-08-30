@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import './ChemicalLibrary.css';
 import type { ChemicalRecord, CollectionMeta, SortOrder } from './types';
 import { CHEMICAL_DATA } from './chemicalData';
@@ -8,6 +8,8 @@ import { IndexTabs } from './components/IndexTabs';
 import { CardGrid } from './components/CardGrid';
 import { Pagination } from './components/Pagination';
 import { EditTabModal } from './components/EditTabModal';
+import { LibraryAuthGate } from './components/LibraryAuthGate';
+import { getActiveSession, terminateSession } from './security/cryptoEngine';
 
 const COLLECTIONS: CollectionMeta[] = [
   { id: 'ALL', label: 'ALL RECORDS', range: 'Entire Archive Index', count: 3381 },
@@ -24,6 +26,19 @@ const COLLECTIONS: CollectionMeta[] = [
 const PAGE_SIZE = 36;
 
 export const ChemicalLibrary: React.FC = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(true);
+
+  // Check active cryptographic session
+  useEffect(() => {
+    getActiveSession().then((session) => {
+      if (session) {
+        setIsAuthenticated(true);
+      }
+      setIsCheckingAuth(false);
+    });
+  }, []);
+
   const [allRecords, setAllRecords] = useState<ChemicalRecord[]>(() => {
     try {
       const saved = localStorage.getItem('chemical_archive_records_v1');
@@ -42,6 +57,11 @@ export const ChemicalLibrary: React.FC = () => {
   const [sortCriterion, setSortCriterion] = useState<SortOrder>('code');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [selectedRecord, setSelectedRecord] = useState<ChemicalRecord | null>(null);
+
+  const handleLogout = () => {
+    terminateSession();
+    setIsAuthenticated(false);
+  };
 
   // Auto-save handler
   const handleUpdateRecord = (updated: ChemicalRecord) => {
@@ -114,6 +134,18 @@ export const ChemicalLibrary: React.FC = () => {
 
   const currentCollMeta = COLLECTIONS.find((c) => c.id === activeCollection) || COLLECTIONS[0];
 
+  if (isCheckingAuth) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FAE8B4', fontFamily: 'var(--font-mono)', fontSize: '12px', color: '#574A24' }}>
+        VERIFYING AES-256 SESSION...
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <LibraryAuthGate onAuthSuccess={() => setIsAuthenticated(true)} />;
+  }
+
   return (
     <div className="chem-lib-root">
       <Header
@@ -122,6 +154,7 @@ export const ChemicalLibrary: React.FC = () => {
         onSearchClear={handleClearSearch}
         totalRecordsCount={allRecords.length}
         onLogoClick={() => handleCollectionChange('ALL')}
+        onLogout={handleLogout}
       />
 
       <div className="chem-lib-layout">

@@ -5,12 +5,14 @@ interface CardGridProps {
   records: ChemicalRecord[];
   searchQuery: string;
   onClearSearch: () => void;
+  onCardClick: (record: ChemicalRecord) => void;
 }
 
 export const CardGrid: React.FC<CardGridProps> = ({
   records,
   searchQuery,
   onClearSearch,
+  onCardClick,
 }) => {
   const highlightText = (text: string) => {
     if (!text || !searchQuery.trim()) return text;
@@ -58,7 +60,13 @@ export const CardGrid: React.FC<CardGridProps> = ({
   return (
     <div className="chem-lib-grid">
       {records.map((item) => (
-        <div key={item.id} className="chem-lib-card">
+        <div
+          key={item.id}
+          className="chem-lib-card"
+          onClick={() => onCardClick(item)}
+          style={{ cursor: 'pointer' }}
+          title="Click to edit and view details in tab form"
+        >
           <div className="chem-lib-card-top">
             <span className="chem-lib-card-code">{item.code || item.callNumber}</span>
             <span className="chem-lib-card-drawer">{item.drawer}</span>

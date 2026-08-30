@@ -1,12 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import './ChemicalLibrary.css';
-import type { CollectionMeta, SortOrder } from './types';
+import type { ChemicalRecord, CollectionMeta, SortOrder } from './types';
 import { CHEMICAL_DATA } from './chemicalData';
 import { Header } from './components/Header';
 import { CollectionSidebar } from './components/CollectionSidebar';
 import { IndexTabs } from './components/IndexTabs';
 import { CardGrid } from './components/CardGrid';
 import { Pagination } from './components/Pagination';
+import { EditTabModal } from './components/EditTabModal';
 
 const COLLECTIONS: CollectionMeta[] = [
   { id: 'ALL', label: 'ALL RECORDS', range: 'Entire Archive Index', count: 3381 },
@@ -23,18 +24,46 @@ const COLLECTIONS: CollectionMeta[] = [
 const PAGE_SIZE = 36;
 
 export const ChemicalLibrary: React.FC = () => {
+  const [allRecords, setAllRecords] = useState<ChemicalRecord[]>(() => {
+    try {
+      const saved = localStorage.getItem('chemical_archive_records_v1');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {
+      // Fallback
+    }
+    return CHEMICAL_DATA;
+  });
+
   const [activeCollection, setActiveCollection] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortCriterion, setSortCriterion] = useState<SortOrder>('code');
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [selectedRecord, setSelectedRecord] = useState<ChemicalRecord | null>(null);
+
+  // Auto-save handler
+  const handleUpdateRecord = (updated: ChemicalRecord) => {
+    setAllRecords((prev) => {
+      const next = prev.map((r) => (r.id === updated.id ? updated : r));
+      try {
+        localStorage.setItem('chemical_archive_records_v1', JSON.stringify(next));
+      } catch {
+        // LocalStorage quota fallback
+      }
+      return next;
+    });
+    setSelectedRecord(updated);
+  };
 
   // Filtered & sorted records
   const filteredRecords = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    const list = CHEMICAL_DATA.filter((item) => {
+    const list = allRecords.filter((item) => {
       if (activeCollection !== 'ALL' && item.prefix !== activeCollection) return false;
       if (!q) return true;
-      const code = (item.code || '').toLowerCase();
+      const code = (item.code || item.callNumber || '').toLowerCase();
       return (
         code === q ||
         code.includes(q) ||
@@ -53,7 +82,7 @@ export const ChemicalLibrary: React.FC = () => {
     });
 
     return list;
-  }, [activeCollection, searchQuery, sortCriterion]);
+  }, [allRecords, activeCollection, searchQuery, sortCriterion]);
 
   // Virtual pagination slice
   const totalPages = Math.ceil(filteredRecords.length / PAGE_SIZE) || 1;
@@ -91,7 +120,7 @@ export const ChemicalLibrary: React.FC = () => {
         searchQuery={searchQuery}
         onSearchChange={handleSearchChange}
         onSearchClear={handleClearSearch}
-        totalRecordsCount={CHEMICAL_DATA.length}
+        totalRecordsCount={allRecords.length}
         onLogoClick={() => handleCollectionChange('ALL')}
       />
 
@@ -149,6 +178,7 @@ export const ChemicalLibrary: React.FC = () => {
             records={pageRecords}
             searchQuery={searchQuery}
             onClearSearch={handleClearSearch}
+            onCardClick={(record) => setSelectedRecord(record)}
           />
 
           <Pagination
@@ -161,6 +191,12 @@ export const ChemicalLibrary: React.FC = () => {
           />
         </main>
       </div>
+
+      <EditTabModal
+        record={selectedRecord}
+        onClose={() => setSelectedRecord(null)}
+        onUpdateRecord={handleUpdateRecord}
+      />
     </div>
   );
 };

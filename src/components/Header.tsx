@@ -153,12 +153,53 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="header-bar">
       {/* Title & View Indicator */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 600, margin: 0 }}>
           {currentView === 'welcome'
             ? `Welcome, ${username}`
             : getHeaderTitle()}
         </h2>
+        {productName && productName !== 'No Workspace Selected' && (
+          <button
+            onClick={() => onChangeView('welcome')}
+            title="Click to Switch Product Workspace"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '4px 12px',
+              borderRadius: '999px',
+              background: 'var(--primary-light, #ede9fe)',
+              color: 'var(--primary-color, #6366f1)',
+              border: '1px solid rgba(99, 102, 241, 0.25)',
+              fontSize: '0.78rem',
+              fontWeight: 700,
+              letterSpacing: '0.04em',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              textTransform: 'uppercase',
+              outline: 'none',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)';
+              (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 2px 4px rgba(99,102,241,0.15)';
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)';
+              (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 1px 2px rgba(0,0,0,0.04)';
+            }}
+          >
+            <span style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              backgroundColor: '#10b981',
+              display: 'inline-block'
+            }} />
+            <span>Workspace: {productName.replace(/_/g, ' ')}</span>
+          </button>
+        )}
       </div>
 
       {/* Control Actions Panel */}

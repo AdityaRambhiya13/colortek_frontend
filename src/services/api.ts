@@ -295,9 +295,18 @@ export const AuthAPI = {
     return [success, data] as [boolean, any];
   },
 
+  getAccessibleProducts: async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return handleResponse<{ products: string[] }>(apiClient.get('/auth/user-products'));
+  },
+
   verifySession: async () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return handleResponse<any>(apiClient.get('/auth/verify-session'));
+    const [success, data] = await handleResponse<any>(apiClient.get('/auth/verify-session'));
+    if (success && typeof data !== 'string' && data?.accessible_products && Array.isArray(data.accessible_products) && data.accessible_products.length > 0) {
+      sessionStorage.setItem('available_products', JSON.stringify(data.accessible_products));
+    }
+    return [success, data] as [boolean, any];
   },
 
   verifyModifyPassword: async (username: string, password: string) => {

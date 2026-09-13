@@ -14,12 +14,17 @@ const UserManagement = React.lazy(() => import('./pages/UserManagement').then(m 
 const DatabaseManagement = React.lazy(() => import('./pages/DatabaseManagement').then(m => ({ default: m.DatabaseManagement })));
 const ProductsMaster = React.lazy(() => import('./pages/ProductsMaster').then(m => ({ default: m.ProductsMaster })));
 import { AuthAPI } from './services/api';
-import { LogOut, Info as InfoIcon } from 'lucide-react';
+import { LogOut, Info as InfoIcon, RefreshCw } from 'lucide-react';
 
 
 export const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [sessionLoading, setSessionLoading] = useState(true);
+  const [availableProducts, setAvailableProducts] = useState<string[]>(() => {
+    const raw = sessionStorage.getItem('available_products');
+    return raw ? JSON.parse(raw) : [];
+  });
+  const [refreshingProducts, setRefreshingProducts] = useState(false);
   const [currentView, setCurrentView] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get('view') || 'welcome';
@@ -111,6 +116,12 @@ export const App: React.FC = () => {
           if (data.role) {
             sessionStorage.setItem('user_roles', data.role);
             setActiveRoles(data.role.split(',').map((s: string) => s.trim().toLowerCase()).filter(Boolean));
+          }
+          if (data.accessible_products && Array.isArray(data.accessible_products) && data.accessible_products.length > 0) {
+            setAvailableProducts(data.accessible_products);
+            sessionStorage.setItem('available_products', JSON.stringify(data.accessible_products));
+          } else {
+            refreshAvailableProducts();
           }
           const cachedView = sessionStorage.getItem('active_view');
           if (cachedView) {
@@ -221,9 +232,45 @@ export const App: React.FC = () => {
     }, 4000);
   };
 
+  const refreshAvailableProducts = async (showNotification = false) => {
+    setRefreshingProducts(true);
+    try {
+      const [success, data] = await AuthAPI.getAccessibleProducts();
+      if (success && typeof data !== 'string' && data && Array.isArray(data.products)) {
+        setAvailableProducts(data.products);
+        sessionStorage.setItem('available_products', JSON.stringify(data.products));
+        if (showNotification) {
+          showToast(`Synced ${data.products.length} product workspaces.`, 'info');
+        }
+      }
+    } catch (err) {
+      console.error('Failed to refresh accessible products:', err);
+    } finally {
+      setRefreshingProducts(false);
+    }
+  };
+
+  // Listen for background product updates from anywhere in the app
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const handleRefresh = () => {
+      refreshAvailableProducts();
+    };
+    window.addEventListener('refresh-user-products', handleRefresh);
+    return () => window.removeEventListener('refresh-user-products', handleRefresh);
+  }, [isAuthenticated]);
+
+  // Dynamically refresh accessible products whenever visiting the Dashboard (welcome)
+  useEffect(() => {
+    if (isAuthenticated && currentView === 'welcome') {
+      refreshAvailableProducts();
+    }
+  }, [currentView, isAuthenticated]);
+
   const handleLogout = () => {
     AuthAPI.logout();
     sessionStorage.removeItem('available_products');
+    setAvailableProducts([]);
     setIsAuthenticated(false);
     setCurrentView('welcome');
     showToast('Logged out successfully', 'success');
@@ -236,6 +283,11 @@ export const App: React.FC = () => {
 
   const handleLoginSuccess = () => {
     setIsAuthenticated(true);
+    const raw = sessionStorage.getItem('available_products');
+    if (raw) {
+      try { setAvailableProducts(JSON.parse(raw)); } catch {}
+    }
+    refreshAvailableProducts();
     const cachedView = sessionStorage.getItem('active_view');
     const params = new URLSearchParams(window.location.search);
     const urlView = params.get('view');
@@ -335,8 +387,6 @@ export const App: React.FC = () => {
       // Fallback Welcome Dashboard
       case 'welcome':
       default: {
-        const availableProductsRaw = sessionStorage.getItem('available_products');
-        const availableProducts: string[] = availableProductsRaw ? JSON.parse(availableProductsRaw) : [];
         const activeProduct = sessionStorage.getItem('product_name') || '';
         const username = sessionStorage.getItem('username') || '';
 
@@ -371,19 +421,64 @@ export const App: React.FC = () => {
             </div>
 
             {/* Product Switcher Grid — available products */}
-            {availableProducts.length > 0 && (
-              <div style={{ width: '100%', maxWidth: '1320px', padding: '0 12px', boxSizing: 'border-box' }}>
+            <div style={{ width: '100%', maxWidth: '1320px', padding: '0 12px', boxSizing: 'border-box' }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '12px',
+                marginBottom: '16px'
+              }}>
                 <p style={{
                   fontSize: '0.85rem',
                   fontWeight: 700,
                   letterSpacing: '0.12em',
                   textTransform: 'uppercase',
                   color: 'var(--text-secondary)',
-                  marginBottom: '16px',
+                  margin: 0,
                   textAlign: 'center'
                 }}>
                   Switch Product Workspace ({availableProducts.length})
                 </p>
+                <button
+                  id="btn-sync-workspaces"
+                  onClick={() => refreshAvailableProducts(true)}
+                  disabled={refreshingProducts}
+                  title="Refresh Workspaces List from Database"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '4px 10px',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    borderRadius: '999px',
+                    border: '1px solid var(--border-color, #cbd5e1)',
+                    background: 'var(--card-bg, #f8fafc)',
+                    color: 'var(--text-secondary)',
+                    cursor: refreshingProducts ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                  }}
+                  onMouseEnter={e => {
+                    if (!refreshingProducts) {
+                      (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--primary-color)';
+                      (e.currentTarget as HTMLButtonElement).style.color = 'var(--primary-color)';
+                    }
+                  }}
+                  onMouseLeave={e => {
+                    if (!refreshingProducts) {
+                      (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-color, #cbd5e1)';
+                      (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)';
+                    }
+                  }}
+                >
+                  <RefreshCw size={12} style={{ animation: refreshingProducts ? 'spin 1s linear infinite' : 'none' }} />
+                  <span>{refreshingProducts ? 'Syncing...' : 'Sync'}</span>
+                </button>
+              </div>
+
+              {availableProducts.length > 0 ? (
                 <div style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(6, minmax(0, 1fr))',
@@ -448,8 +543,19 @@ export const App: React.FC = () => {
                     );
                   })}
                 </div>
-              </div>
-            )}
+              ) : (
+                <div style={{
+                  padding: '32px',
+                  background: 'var(--card-bg, #f8fafc)',
+                  borderRadius: '12px',
+                  border: '1px dashed var(--border-color, #cbd5e1)',
+                  color: 'var(--text-secondary)',
+                  fontSize: '0.9rem'
+                }}>
+                  No product workspaces assigned yet. Click "Sync" above to check for available workspaces.
+                </div>
+              )}
+            </div>
 
 
           </div>

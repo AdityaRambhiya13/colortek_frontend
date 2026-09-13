@@ -282,6 +282,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
     setLoading(false);
 
     if (success) {
+      window.dispatchEvent(new Event('refresh-user-products'));
       onShowToast(typeof data === 'string' ? data : ((data as Record<string, any>)?.message || 'User created successfully!'), 'success');
       setNewUsername('');
       setNewPassword('');
@@ -374,6 +375,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
     setLoading(false);
 
     if (success) {
+      window.dispatchEvent(new Event('refresh-user-products'));
       onShowToast(typeof data === 'string' ? data : ((data as Record<string, any>)?.message || 'User credentials modified successfully!'), 'success');
       setUpdatePassword('');
       setUpdateBatchModifyPassword('');

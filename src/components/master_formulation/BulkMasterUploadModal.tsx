@@ -258,6 +258,7 @@ export const BulkMasterUploadModal: React.FC<BulkMasterUploadModalProps> = ({
           errorMsg: undefined 
         } : q));
         
+        window.dispatchEvent(new Event('refresh-user-products'));
         onShowToast(`✓ Master formulation '${cleanBatchNo}' created with sheet attached!`, 'success');
 
         if (andAdvance) {

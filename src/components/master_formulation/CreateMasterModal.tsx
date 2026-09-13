@@ -346,6 +346,18 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
     setSaving(false);
 
     if (success) {
+      // Immediately register target product in available_products if missing
+      try {
+        const rawProds = sessionStorage.getItem('available_products');
+        const prods: string[] = rawProds ? JSON.parse(rawProds) : [];
+        const normTarget = targetProdName.trim().toLowerCase().replace(/\s+/g, '_');
+        if (!prods.some(p => p.trim().toLowerCase().replace(/\s+/g, '_') === normTarget)) {
+          prods.push(normTarget);
+          sessionStorage.setItem('available_products', JSON.stringify(prods));
+        }
+      } catch {}
+      window.dispatchEvent(new Event('refresh-user-products'));
+
       onShowToast(`Master formulation ${cleanBatchNo} created successfully!`, 'success');
       onSuccess(cleanBatchNo, targetProdName);
       resetForm();

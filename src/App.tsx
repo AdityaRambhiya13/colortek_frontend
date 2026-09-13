@@ -11,6 +11,7 @@ const ProductionMain = React.lazy(() => import('./pages/ProductionMain').then(m 
 const RdMain = React.lazy(() => import('./pages/RdMain').then(m => ({ default: m.RdMain })));
 const ComplaintsMain = React.lazy(() => import('./pages/ComplaintsMain').then(m => ({ default: m.ComplaintsMain })));
 const UserManagement = React.lazy(() => import('./pages/UserManagement').then(m => ({ default: m.UserManagement })));
+const GeofenceManagement = React.lazy(() => import('./pages/GeofenceManagement').then(m => ({ default: m.GeofenceManagement })));
 const DatabaseManagement = React.lazy(() => import('./pages/DatabaseManagement').then(m => ({ default: m.DatabaseManagement })));
 const ProductsMaster = React.lazy(() => import('./pages/ProductsMaster').then(m => ({ default: m.ProductsMaster })));
 import { AuthAPI } from './services/api';
@@ -303,7 +304,7 @@ export const App: React.FC = () => {
     const isMasterAdmin = sessionStorage.getItem('product_name') === 'System Admin';
     let targetView = urlView || cachedView || 'welcome';
     
-    if (isMasterAdmin && !['user_management', 'database_management', 'products_master'].includes(targetView)) {
+    if (isMasterAdmin && !['user_management', 'geofence_management', 'database_management', 'products_master'].includes(targetView)) {
       targetView = 'user_management';
     }
 
@@ -387,6 +388,8 @@ export const App: React.FC = () => {
       // System Administration Routes
       case 'user_management':
         return <UserManagement onShowToast={showToast} />;
+      case 'geofence_management':
+        return <GeofenceManagement onShowToast={showToast} />;
       case 'database_management':
         return <DatabaseManagement onShowToast={showToast} />;
       case 'products_master':
@@ -690,6 +693,23 @@ export const App: React.FC = () => {
             }}
           >
             User Management
+          </button>
+          <button
+            onClick={() => handleViewChange('geofence_management')}
+            style={{
+              padding: '16px 20px',
+              backgroundColor: 'transparent',
+              border: 'none',
+              borderBottom: currentView === 'geofence_management' ? '3px solid #10b981' : '3px solid transparent',
+              color: currentView === 'geofence_management' ? '#ffffff' : '#94a3b8',
+              fontWeight: currentView === 'geofence_management' ? 700 : 600,
+              fontSize: '0.9rem',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              outline: 'none'
+            }}
+          >
+            📍 Geofence Control
           </button>
           <button
             onClick={() => handleViewChange('database_management')}

@@ -11,7 +11,8 @@ import {
   Beaker,
   Layers,
   Settings,
-  Database
+  Database,
+  MapPin
 } from 'lucide-react';
 // Note: We'll map appropriate Lucide icons for high visual fidelity
 
@@ -294,6 +295,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <Settings size={18} />,
           <>
             {renderLink('user_management', 'User Management', <ChevronRight size={14} />, true)}
+            {renderLink('geofence_management', 'Geofence Control', <MapPin size={14} />, true)}
             {renderLink('database_management', 'Database Manager', <Database size={14} />, true)}
             {renderLink('products_master', 'Products Master', <Layers size={14} />, true)}
           </>

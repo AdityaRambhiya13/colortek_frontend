@@ -274,7 +274,11 @@ export const AuthAPI = {
       sessionStorage.setItem('user_roles', data.roles.join(','));
       sessionStorage.setItem('username_cache', username);
       sessionStorage.setItem('product_name_cache', productName);
-      const isUserAdmin = Boolean(data.is_admin || (Array.isArray(data.roles) && data.roles.includes('admin')) || ['admin', 'aditya'].includes(username.toLowerCase()));
+      const isUserAdmin = Boolean(
+        data.is_admin === true || 
+        (Array.isArray(data.roles) && (data.roles.includes('admin') || data.roles.includes('all'))) ||
+        sessionStorage.getItem('is_admin') === 'true'
+      );
       if (isUserAdmin) {
         sessionStorage.setItem('is_admin', 'true');
       } else {
@@ -328,8 +332,11 @@ export const AuthAPI = {
       sessionStorage.setItem('product_name_cache', productName);
       // Also remove stale active_view so welcome page re-renders with new context
       sessionStorage.setItem('active_view', 'welcome');
-      const currentStoredUser = (sessionStorage.getItem('username') || '').toLowerCase();
-      const isUserAdmin = Boolean(data.is_admin || (Array.isArray(data.roles) && data.roles.includes('admin')) || ['admin', 'aditya'].includes(currentStoredUser));
+      const isUserAdmin = Boolean(
+        data.is_admin === true || 
+        (Array.isArray(data.roles) && (data.roles.includes('admin') || data.roles.includes('all'))) ||
+        sessionStorage.getItem('is_admin') === 'true'
+      );
       if (isUserAdmin) {
         sessionStorage.setItem('is_admin', 'true');
       } else {
@@ -338,6 +345,13 @@ export const AuthAPI = {
     }
 
     return [success, data] as [boolean, any];
+  },
+
+  checkAdminStatus: async (username: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return handleResponse<{ username: string; is_admin: boolean }>(
+      axios.get(`${API_BASE_URL}/auth/check-admin-status`, { params: { username } })
+    );
   },
 
   getAccessibleProducts: async () => {

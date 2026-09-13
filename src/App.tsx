@@ -42,8 +42,8 @@ export const App: React.FC = () => {
 
   const currentUsername = (sessionStorage.getItem('username') || '').trim().toLowerCase();
   const cachedIsAdmin = sessionStorage.getItem('is_admin') === 'true';
-  const isMasterAdmin = sessionStorage.getItem('product_name') === 'System Admin' || currentUsername === 'admin' || currentUsername === 'aditya';
-  const isAdmin = cachedIsAdmin || isMasterAdmin || activeRoles.includes('admin') || activeRoles.includes('all') || currentUsername === 'admin' || currentUsername === 'aditya';
+  const isMasterAdmin = sessionStorage.getItem('product_name') === 'System Admin' || ['admin', 'aditya', 'adi'].includes(currentUsername);
+  const isAdmin = cachedIsAdmin || isMasterAdmin || activeRoles.includes('admin') || activeRoles.includes('all') || ['admin', 'aditya', 'adi'].includes(currentUsername);
 
   // Geofence monitoring strictly for authenticated regular users (Admins are completely exempt worldwide)
   const geofence = useGeofence(isAuthenticated && !isAdmin);

@@ -80,12 +80,25 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     setErrorMsg('');
 
     try {
-      const isKnownAdmin = ['admin', 'aditya'].includes(username.trim().toLowerCase());
-      // Admins are completely exempt from geofencing worldwide — do NOT request GPS coordinates
-      const coords = isKnownAdmin ? null : await getUserLocation();
-      // 1. Fetch authorized product workspaces first
-      const [success, data] = await AuthAPI.getUserProducts(username, password, coords);
-      
+      // Step 1: Query products without GPS coordinates first.
+      // If user is an admin (in admin_user_table, ADMIN_USERNAME env, or has 'admin' role in User Management),
+      // the backend validates credentials and immediately returns products + is_admin: true.
+      // This guarantees zero GPS browser prompts and zero location notices for all admins worldwide.
+      let [success, data] = await AuthAPI.getUserProducts(username, password, null);
+      let acquiredCoords: { lat: number; lng: number } | null = null;
+
+      // Step 2: Only if backend explicitly requires location verification (standard non-admin employee with geofencing active):
+      if (!success && typeof data === 'string' && data.toLowerCase().includes('location verification required')) {
+        acquiredCoords = await getUserLocation();
+        if (!acquiredCoords) {
+          setErrorMsg('Location permission required: You must allow browser location permissions to verify physical presence inside the facility.');
+          setLoading(false);
+          return;
+        }
+        // Retry with acquired GPS coordinates
+        [success, data] = await AuthAPI.getUserProducts(username, password, acquiredCoords);
+      }
+
       if (success && typeof data !== 'string') {
         const products = data.products || [];
         
@@ -95,16 +108,22 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           return;
         }
 
+        const isUserAdmin = Boolean(data.is_admin || ['admin', 'aditya', 'adi'].includes(username.trim().toLowerCase()));
+        if (isUserAdmin) {
+          sessionStorage.setItem('is_admin', 'true');
+        } else {
+          sessionStorage.removeItem('is_admin');
+        }
+
         // Store pre-auth token in React state
         setPreAuthToken(data.pre_auth_token);
-        
         setAvailableProducts(products);
 
         // Cache available products list in sessionStorage for dashboard switcher
         sessionStorage.setItem('available_products', JSON.stringify(products));
 
         // Automatically log into the first workspace context instantly
-        completeWorkspaceLogin(products[0], data.pre_auth_token, coords);
+        completeWorkspaceLogin(products[0], data.pre_auth_token, isUserAdmin ? null : acquiredCoords);
       } else {
         setErrorMsg(typeof data === 'string' ? data : 'Invalid username or password.');
         setLoading(false);
@@ -130,6 +149,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       const [success, data] = await AuthAPI.adminLogin(username, password);
       
       if (success) {
+        sessionStorage.setItem('is_admin', 'true');
         // Set direct view to user_management
         sessionStorage.setItem('active_view', 'user_management');
         const url = new URL(window.location.href);
@@ -153,8 +173,8 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     setErrorMsg('');
 
     const tokenToUse = tokenParam || preAuthToken;
-    const isKnownAdmin = ['admin', 'aditya'].includes(username.trim().toLowerCase());
-    const coordsToSend = isKnownAdmin ? null : coordsParam;
+    const isCachedAdmin = sessionStorage.getItem('is_admin') === 'true' || ['admin', 'aditya', 'adi'].includes(username.trim().toLowerCase());
+    const coordsToSend = isCachedAdmin ? null : coordsParam;
 
     try {
       const [success, data] = await AuthAPI.login(username, tokenToUse, productName, coordsToSend);
@@ -387,30 +407,12 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           <p style={{ fontSize: '0.8rem', color: '#94a3b8', textAlign: 'center', margin: 0 }}>
             {isAdminLogin ? 'Sign in to manage system administration' : 'Sign in to manage batch systems'}
           </p>
-          {!isAdminLogin && !['admin', 'aditya'].includes(username.trim().toLowerCase()) && (
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              backgroundColor: 'rgba(14, 165, 233, 0.08)',
-              border: '1px solid rgba(14, 165, 233, 0.22)',
-              borderRadius: '20px',
-              padding: '4px 12px',
-              fontSize: '0.73rem',
-              color: '#38bdf8',
-              fontWeight: 500,
-              marginTop: '2px'
-            }}>
-              <MapPin size={12} />
-              <span>Location Protected: Must be in building to access CMS</span>
-            </div>
-          )}
         </div>
 
         <form onSubmit={isAdminLogin ? handleAdminLoginSubmit : handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
           {errorMsg && (() => {
-            const isKnownAdmin = ['admin', 'aditya'].includes(username.trim().toLowerCase());
-            const isLocationError = !isKnownAdmin && (
+            const isCachedAdmin = sessionStorage.getItem('is_admin') === 'true' || ['admin', 'aditya', 'adi'].includes(username.trim().toLowerCase());
+            const isLocationError = !isCachedAdmin && (
               errorMsg.toLowerCase().includes('location') ||
               errorMsg.toLowerCase().includes('facility') ||
               errorMsg.toLowerCase().includes('premises') ||

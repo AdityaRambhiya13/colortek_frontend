@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { 
-  Archive,
   ChevronRight, 
   ChevronDown, 
   Menu, 
@@ -194,9 +193,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div style={{ flexGrow: 1, padding: '16px 0', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
         {/* Welcome Dashboard Link */}
         {renderLink('welcome', 'Dashboard', <Layers size={18} />)}
-
-        {/* Chemical Archive Library */}
-        {renderLink('chemical_library', 'Chemical Archive', <Archive size={18} />)}
 
         {/* CMS / LAB Role */}
         {(roles.includes('cms') || roles.includes('all')) && renderFolder(

@@ -7,7 +7,6 @@ import {
 import { AdminAPI, DatabaseAPI } from '../services/api';
 import type { UserResponse, AuditLogResponse, LockoutResponse, UserModifyPasswordStatus, ModifiedBatchLogResponse } from '../services/api';
 import { TableSkeleton } from '../components/TableSkeleton';
-import { GeofenceManagement } from './GeofenceManagement';
 
 interface UserManagementProps {
   onShowToast: (msg: string, type: 'success' | 'error' | 'warning' | 'info') => void;
@@ -33,7 +32,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
   const [loadingAudit, setLoadingAudit] = useState(false);
   const [loadingLockouts, setLoadingLockouts] = useState(false);
   const [auditSearch, setAuditSearch] = useState('');
-  const [subView, setSubView] = useState<'registry' | 'batch_passwords' | 'modified_batches' | 'lockouts' | 'audit' | 'geofence'>('registry');
+  const [subView, setSubView] = useState<'registry' | 'batch_passwords' | 'modified_batches' | 'lockouts' | 'audit'>('registry');
 
   // Batch Modification Passwords State
   const [batchModifyStatuses, setBatchModifyStatuses] = useState<UserModifyPasswordStatus[]>([]);
@@ -567,29 +566,6 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
           }}
         >
           📋 Audit Logs & Feed
-        </button>
-        <button
-          onClick={() => setSubView('geofence')}
-          style={{
-            flex: '1 1 160px',
-            padding: '10px 14px',
-            backgroundColor: subView === 'geofence' ? '#0d9488' : 'transparent',
-            border: 'none',
-            borderRadius: '6px',
-            color: '#ffffff',
-            fontWeight: 700,
-            fontSize: '0.85rem',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            opacity: subView === 'geofence' ? 1 : 0.6,
-            outline: 'none',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '6px'
-          }}
-        >
-          📍 Geofencing
         </button>
       </div>
 
@@ -1959,12 +1935,6 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
               </button>
             </div>
           </div>
-        </div>
-      )}
-
-      {subView === 'geofence' && (
-        <div className="animated-fade" style={{ marginTop: '8px' }}>
-          <GeofenceManagement onShowToast={onShowToast} />
         </div>
       )}
 

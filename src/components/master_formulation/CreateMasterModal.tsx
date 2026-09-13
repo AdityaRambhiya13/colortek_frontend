@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Scale, Image as ImageIcon, Trash2, Plus, RefreshCw, CheckCircle2, 
   UploadCloud, ZoomIn, FileText
@@ -93,6 +93,59 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
 
   const [saving, setSaving] = useState(false);
 
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
+    setImagePreviewUrl(null);
+    setUploadedImageFilename(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const resetForm = () => {
+    setDocNo('DOC-MF-01');
+    setReviewNo('03');
+    setReviewDate('01.04.2025');
+    setIssueNo('01');
+    setIssueDate('01.04.2025');
+    setFormProductName(productName || 'aquatrap');
+    setBatchNo('');
+    setRefNo('');
+    setCustomerName('');
+    setFormulaDate(new Date().toISOString().split('T')[0]);
+    setRefBookNo('');
+    setGrams('100');
+    setPackaging('');
+    setViscosity('');
+    setDensity('');
+    setRatio('');
+    setFiltration('');
+    setRemarks('');
+    setSender('');
+    setApproval('');
+    setDate(new Date().toISOString().split('T')[0]);
+    const d = new Date();
+    setTime(d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+    handleRemoveImage();
+    setInventory([
+      { sr: '1', remarks: '', material: '', qty: '', rounded_qty: '' },
+      { sr: '2', remarks: '', material: '', qty: '', rounded_qty: '' },
+      { sr: '3', remarks: '', material: '', qty: '', rounded_qty: '' },
+      { sr: '4', remarks: '', material: '', qty: '', rounded_qty: '' },
+      { sr: '5', remarks: '', material: '', qty: '', rounded_qty: '' },
+    ]);
+    setTests([
+      { method: 'Viscosity', standard: '', result: '' },
+      { method: 'Density', standard: '', result: '' },
+      { method: 'Solid Content', standard: '', result: '' },
+    ]);
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      resetForm();
+    }
+  }, [isOpen, productName]);
+
   if (!isOpen) return null;
 
   // Handle Image Selection and Auto-Upload
@@ -115,14 +168,6 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
     } else {
       onShowToast(typeof res === 'string' ? res : 'Failed to upload sheet image.', 'error');
     }
-  };
-
-  const handleRemoveImage = () => {
-    setImageFile(null);
-    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
-    setImagePreviewUrl(null);
-    setUploadedImageFilename(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   // Inventory Table helpers
@@ -247,45 +292,6 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
     return sum + (parseFloat(item.rounded_qty) || 0);
   }, 0);
 
-  const resetForm = () => {
-    setDocNo('DOC-MF-01');
-    setReviewNo('03');
-    setReviewDate('01.04.2025');
-    setIssueNo('01');
-    setIssueDate('01.04.2025');
-    setFormProductName(productName || 'aquatrap');
-    setBatchNo('');
-    setRefNo('');
-    setCustomerName('');
-    setFormulaDate(new Date().toISOString().split('T')[0]);
-    setRefBookNo('');
-    setGrams('100');
-    setPackaging('');
-    setViscosity('');
-    setDensity('');
-    setRatio('');
-    setFiltration('');
-    setRemarks('');
-    setSender('');
-    setApproval('');
-    setDate(new Date().toISOString().split('T')[0]);
-    const d = new Date();
-    setTime(d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-    handleRemoveImage();
-    setInventory([
-      { sr: '1', remarks: '', material: '', qty: '', rounded_qty: '' },
-      { sr: '2', remarks: '', material: '', qty: '', rounded_qty: '' },
-      { sr: '3', remarks: '', material: '', qty: '', rounded_qty: '' },
-      { sr: '4', remarks: '', material: '', qty: '', rounded_qty: '' },
-      { sr: '5', remarks: '', material: '', qty: '', rounded_qty: '' },
-    ]);
-    setTests([
-      { method: 'Viscosity', standard: '', result: '' },
-      { method: 'Density', standard: '', result: '' },
-      { method: 'Solid Content', standard: '', result: '' },
-    ]);
-  };
-
   // Form Submit
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -296,10 +302,14 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
     }
 
     const targetProdName = formProductName.trim() || productName.trim();
+    const currentProdNorm = productName.trim().toLowerCase().replace(/\s+/g, '_');
+    const targetProdNorm = targetProdName.trim().toLowerCase().replace(/\s+/g, '_');
+    const isCrossProduct = targetProdNorm !== currentProdNorm;
 
     const payload = {
       batch_no: cleanBatchNo,
       product_name: targetProdName,
+      origin_workspace: productName.trim(),
       doc_no: docNo.trim(),
       review_no: reviewNo.trim(),
       review_date: reviewDate.trim(),
@@ -342,23 +352,26 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
       image_references: uploadedImageFilename ? [uploadedImageFilename] : []
     };
 
+    setSaving(true);
     const [success, res] = await MasterFormulationAPI.createBatch(targetProdName, payload);
     setSaving(false);
 
     if (success) {
-      // Immediately register target product in available_products if missing
-      try {
-        const rawProds = sessionStorage.getItem('available_products');
-        const prods: string[] = rawProds ? JSON.parse(rawProds) : [];
-        const normTarget = targetProdName.trim().toLowerCase().replace(/\s+/g, '_');
-        if (!prods.some(p => p.trim().toLowerCase().replace(/\s+/g, '_') === normTarget)) {
-          prods.push(normTarget);
-          sessionStorage.setItem('available_products', JSON.stringify(prods));
-        }
-      } catch {}
-      window.dispatchEvent(new Event('refresh-user-products'));
+      if (!isCrossProduct) {
+        try {
+          const rawProds = sessionStorage.getItem('available_products');
+          const prods: string[] = rawProds ? JSON.parse(rawProds) : [];
+          if (!prods.some(p => p.trim().toLowerCase().replace(/\s+/g, '_') === targetProdNorm)) {
+            prods.push(targetProdNorm);
+            sessionStorage.setItem('available_products', JSON.stringify(prods));
+          }
+        } catch {}
+        window.dispatchEvent(new Event('refresh-user-products'));
+        onShowToast(`Master formulation '${cleanBatchNo}' created successfully!`, 'success');
+      } else {
+        onShowToast(`Master formulation '${cleanBatchNo}' created for ${targetProdName.toUpperCase()}! Temporarily visible in this workspace for 3 hours (or until logout).`, 'success');
+      }
 
-      onShowToast(`Master formulation ${cleanBatchNo} created successfully!`, 'success');
       onSuccess(cleanBatchNo, targetProdName);
       resetForm();
       onClose();

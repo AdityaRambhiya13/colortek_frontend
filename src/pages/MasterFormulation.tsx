@@ -921,25 +921,40 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                   }}
                   className="mf-batch-card"
                   style={{
-                    borderLeft: viewMode === 'lab_master_formulation' ? '4px solid #3b82f6' : isApproved ? '4px solid #10b981' : '4px solid #f59e0b',
+                    borderLeft: row.is_temporary ? '4px solid #f59e0b' : viewMode === 'lab_master_formulation' ? '4px solid #3b82f6' : isApproved ? '4px solid #10b981' : '4px solid #f59e0b',
                     position: 'relative'
                   }}
                 >
                   {/* Top Row: Label & Status Chip */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '6px' }}>
                     <span className="batch-label" style={{ whiteSpace: 'nowrap' }}>BATCH NO</span>
-                    <span style={{
-                      fontSize: '0.68rem',
-                      fontWeight: 700,
-                      padding: '2px 8px',
-                      borderRadius: '12px',
-                      whiteSpace: 'nowrap',
-                      background: viewMode === 'lab_master_formulation' ? '#eff6ff' : isApproved ? '#dcfce7' : '#fef9c3',
-                      color: viewMode === 'lab_master_formulation' ? '#1d4ed8' : isApproved ? '#166534' : '#854d0e',
-                      border: viewMode === 'lab_master_formulation' ? '1px solid #bfdbfe' : isApproved ? '1px solid #86efac' : '1px solid #fde047'
-                    }}>
-                      {viewMode === 'lab_master_formulation' ? '🟢 Active' : isApproved ? '🟢 Approved' : '🟡 Pending Approval'}
-                    </span>
+                    {row.is_temporary ? (
+                      <span style={{
+                        fontSize: '0.68rem',
+                        fontWeight: 700,
+                        padding: '2px 8px',
+                        borderRadius: '12px',
+                        whiteSpace: 'nowrap',
+                        background: '#fef3c7',
+                        color: '#b45309',
+                        border: '1px solid #fcd34d'
+                      }}>
+                        ⏳ Temp Buffer (3h)
+                      </span>
+                    ) : (
+                      <span style={{
+                        fontSize: '0.68rem',
+                        fontWeight: 700,
+                        padding: '2px 8px',
+                        borderRadius: '12px',
+                        whiteSpace: 'nowrap',
+                        background: viewMode === 'lab_master_formulation' ? '#eff6ff' : isApproved ? '#dcfce7' : '#fef9c3',
+                        color: viewMode === 'lab_master_formulation' ? '#1d4ed8' : isApproved ? '#166534' : '#854d0e',
+                        border: viewMode === 'lab_master_formulation' ? '1px solid #bfdbfe' : isApproved ? '1px solid #86efac' : '1px solid #fde047'
+                      }}>
+                        {viewMode === 'lab_master_formulation' ? '🟢 Active' : isApproved ? '🟢 Approved' : '🟡 Pending Approval'}
+                      </span>
+                    )}
                   </div>
 
                   {/* Middle Row: Batch Number & Product Name */}
@@ -947,10 +962,16 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                     <div className="batch-value" style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>
                       {row.batch_no}
                     </div>
-                    {viewMode === 'lab_master_formulation' && row.product_name && (
-                      <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#059669', marginTop: '2px', textTransform: 'capitalize' }}>
-                        📦 {row.product_name}
+                    {row.is_temporary ? (
+                      <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#b45309', marginTop: '2px' }}>
+                        Created for: <span style={{ textTransform: 'capitalize' }}>{row.product_name}</span> (Temporary)
                       </div>
+                    ) : (
+                      viewMode === 'lab_master_formulation' && row.product_name && (
+                        <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#059669', marginTop: '2px', textTransform: 'capitalize' }}>
+                          📦 {row.product_name}
+                        </div>
+                      )
                     )}
                   </div>
 
@@ -2060,11 +2081,10 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
           productName={productName}
           onClose={() => setCreateModalOpen(false)}
           onSuccess={(createdBatch, createdProduct) => {
-            if (createdProduct && createdProduct.trim().toLowerCase() !== productName.trim().toLowerCase()) {
-              onShowToast(`✓ Master formulation '${createdBatch}' created under product '${createdProduct.toUpperCase()}'! Switch to that product from top bar to view.`, 'success');
-            } else {
-              loadMasterList();
-              loadBatchDetails(createdBatch);
+            loadMasterList();
+            loadBatchDetails(createdBatch);
+            if (createdProduct && createdProduct.trim().toLowerCase().replace(/\s+/g, '_') !== productName.trim().toLowerCase().replace(/\s+/g, '_')) {
+              onShowToast(`Master formulation '${createdBatch}' created for '${createdProduct.toUpperCase()}'. Temporarily visible and editable in this workspace for 3 hours.`, 'info');
             }
           }}
           onShowToast={onShowToast}

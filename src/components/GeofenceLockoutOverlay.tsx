@@ -82,10 +82,10 @@ export const GeofenceLockoutOverlay: React.FC<GeofenceLockoutOverlayProps> = ({
 
         <div>
           <h2 style={{ fontSize: '1.45rem', fontWeight: 800, color: '#ffffff', marginBottom: '8px', letterSpacing: '-0.01em' }}>
-            Location Access Restricted
+            You Must Be in the Building to Access CMS
           </h2>
-          <p style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: '1.5' }}>
-            This application is geofenced for security. Non-admin users are strictly restricted to the authorized facility perimeter.
+          <p style={{ color: '#cbd5e1', fontSize: '0.9rem', lineHeight: '1.5' }}>
+            Access to <strong>Colortek CMS</strong> is strictly geofenced to authorized company premises. You must be physically inside the building to access the app or else login and system usage are blocked.
           </p>
         </div>
 

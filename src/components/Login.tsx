@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Key, Eye, EyeOff, Building, Compass, Sparkles } from 'lucide-react';
+import { Shield, Key, Eye, EyeOff, Building, Compass, Sparkles, MapPin, AlertTriangle } from 'lucide-react';
 import { AuthAPI } from '../services/api';
 
 interface LoginProps {
@@ -363,25 +363,85 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           <h2 style={{ fontSize: '1.4rem', fontWeight: 700, letterSpacing: '0.01em', marginTop: '12px', textAlign: 'center' }}>
             {isAdminLogin ? 'Colortek Admin Panel' : 'Colortek Secure Portal'}
           </h2>
-          <p style={{ fontSize: '0.8rem', color: '#94a3b8', textAlign: 'center' }}>
+          <p style={{ fontSize: '0.8rem', color: '#94a3b8', textAlign: 'center', margin: 0 }}>
             {isAdminLogin ? 'Sign in to manage system administration' : 'Sign in to manage batch systems'}
           </p>
+          {!isAdminLogin && (
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              backgroundColor: 'rgba(14, 165, 233, 0.08)',
+              border: '1px solid rgba(14, 165, 233, 0.22)',
+              borderRadius: '20px',
+              padding: '4px 12px',
+              fontSize: '0.73rem',
+              color: '#38bdf8',
+              fontWeight: 500,
+              marginTop: '2px'
+            }}>
+              <MapPin size={12} />
+              <span>Location Protected: Must be in building to access CMS</span>
+            </div>
+          )}
         </div>
 
         <form onSubmit={isAdminLogin ? handleAdminLoginSubmit : handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-          {errorMsg && (
-            <div style={{
-              backgroundColor: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.2)',
-              color: '#fca5a5',
-              padding: '10px 14px',
-              borderRadius: '8px',
-              fontSize: '0.8rem',
-              textAlign: 'center'
-            }}>
-              {errorMsg}
-            </div>
-          )}
+          {errorMsg && (() => {
+            const isLocationError = (
+              errorMsg.toLowerCase().includes('location') ||
+              errorMsg.toLowerCase().includes('facility') ||
+              errorMsg.toLowerCase().includes('premises') ||
+              errorMsg.toLowerCase().includes('building') ||
+              errorMsg.toLowerCase().includes('outside') ||
+              errorMsg.toLowerCase().includes('geofence') ||
+              errorMsg.toLowerCase().includes('meters')
+            );
+
+            return (
+              <div style={{
+                backgroundColor: isLocationError ? 'rgba(239, 68, 68, 0.15)' : 'rgba(239, 68, 68, 0.1)',
+                border: isLocationError ? '1px solid rgba(239, 68, 68, 0.45)' : '1px solid rgba(239, 68, 68, 0.2)',
+                borderRadius: '10px',
+                padding: isLocationError ? '14px 16px' : '10px 14px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                textAlign: isLocationError ? 'left' : 'center',
+                boxShadow: isLocationError ? '0 4px 16px rgba(239, 68, 68, 0.2)' : 'none'
+              }}>
+                {isLocationError ? (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#f87171', fontWeight: 700, fontSize: '0.88rem' }}>
+                      <MapPin size={18} style={{ flexShrink: 0 }} />
+                      <span>You Must Be in the Building to Access CMS</span>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '0.82rem', color: '#fecaca', lineHeight: 1.45 }}>
+                      You must be physically present inside the building to access the app or else the app won&apos;t let you login.
+                    </p>
+                    <div style={{
+                      padding: '8px 10px',
+                      borderRadius: '6px',
+                      backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                      border: '1px solid rgba(239, 68, 68, 0.2)',
+                      fontSize: '0.76rem',
+                      color: '#fca5a5',
+                      lineHeight: 1.4
+                    }}>
+                      {errorMsg}
+                    </div>
+                    <div style={{ fontSize: '0.72rem', color: '#cbd5e1', marginTop: '2px' }}>
+                      💡 Please ensure you are inside the facility, connect to company Wi-Fi, allow browser location permissions, and try again.
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ color: '#fca5a5', fontSize: '0.8rem' }}>
+                    {errorMsg}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Username Box */}
           <div className="form-input-container">

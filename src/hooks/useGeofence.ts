@@ -71,23 +71,23 @@ export function useGeofence(enabled: boolean = true): GeofenceState {
       setError(null);
     } else {
       setIsInside(false);
-      setError(`You are ${roundedDist}m away from ${cfg.name || 'the authorized premises'} (allowed: ${Math.round(cfg.radius_meters)}m).`);
+      setError(`You are ~${roundedDist}m away from ${cfg.name || 'the authorized premises'} (allowed: ${Math.round(cfg.radius_meters)}m). You must be inside the building to access Colortek CMS.`);
     }
     setIsChecking(false);
   }, []);
 
   const evaluateError = useCallback((err: GeolocationPositionError) => {
     setIsChecking(false);
-    let msg = 'Unable to determine your physical location.';
+    let msg = 'Unable to determine your physical location. You must be in the building to access Colortek CMS.';
     switch (err.code) {
       case err.PERMISSION_DENIED:
-        msg = 'Location access is denied. Please enable location permissions in your browser to verify on-site presence.';
+        msg = 'Location access is denied. Please enable location permissions in your browser to verify that you are inside the building.';
         break;
       case err.POSITION_UNAVAILABLE:
-        msg = 'GPS/Location information is currently unavailable on your device.';
+        msg = 'GPS/Location signal unavailable. Connect to company Wi-Fi or step near a window inside the facility.';
         break;
       case err.TIMEOUT:
-        msg = 'Location request timed out. Please click Refresh Location.';
+        msg = 'Location request timed out. Please click "Refresh Location" while inside the building.';
         break;
     }
     setError(msg);

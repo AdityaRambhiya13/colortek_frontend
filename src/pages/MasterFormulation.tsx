@@ -2,11 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   BookOpen, Search, Calendar, RefreshCw, 
   Download, Edit3, CheckCircle, Scale, Eye, ChevronLeft, ChevronRight, Play, Info,
-  Plus, Image as ImageIcon, ZoomIn, UploadCloud, Trash2, Layers
+  Plus, Image as ImageIcon, ZoomIn, UploadCloud, Trash2, Layers, History
 } from 'lucide-react';
 import { MasterFormulationAPI, LabFormulationsAPI, API_BASE_URL } from '../services/api';
 import { CreateMasterModal } from '../components/master_formulation/CreateMasterModal';
 import { BulkMasterUploadModal } from '../components/master_formulation/BulkMasterUploadModal';
+import { MyEntryLogModal } from '../components/master_formulation/MyEntryLogModal';
 import { generateAndDownloadMasterFormulationExcel } from '../utils/masterFormulationExcel';
 
 interface MasterFormulationProps {
@@ -21,6 +22,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
   const [batches, setBatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [entryLogOpen, setEntryLogOpen] = useState(false);
   
   // Date Filters
   const [fromDate, setFromDate] = useState('');
@@ -805,6 +807,27 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                   title="Upload multiple physical sheet photos and review them sequentially"
                 >
                   <Layers size={14} /> Bulk Upload Studio
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEntryLogOpen(true)}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '8px',
+                    background: '#f8fafc',
+                    color: '#334155',
+                    fontWeight: 700,
+                    fontSize: '12px',
+                    border: '1px solid #cbd5e1',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
+                  }}
+                  title="View your personal data entry audit receipt ledger"
+                >
+                  <History size={14} color="#64748b" /> My Entry Log
                 </button>
               </div>
             )}
@@ -2107,6 +2130,14 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
             loadBatchDetails(batchNo);
           }}
           onShowToast={onShowToast}
+        />
+      )}
+
+      {/* Personal Entry Log Ledger Modal */}
+      {entryLogOpen && (
+        <MyEntryLogModal
+          isOpen={entryLogOpen}
+          onClose={() => setEntryLogOpen(false)}
         />
       )}
 

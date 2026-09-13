@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Scale, Image as ImageIcon, Trash2, Plus, RefreshCw, CheckCircle2, 
-  UploadCloud, ZoomIn, FileText
+  UploadCloud, ZoomIn, FileText, History, Clock
 } from 'lucide-react';
 import { MasterFormulationAPI } from '../../services/api';
+import { MyEntryLogModal, type EntryLogRecord } from './MyEntryLogModal';
 
 interface InventoryItem {
   sr: string;
@@ -92,6 +93,10 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
   ]);
 
   const [saving, setSaving] = useState(false);
+  const [entryLogOpen, setEntryLogOpen] = useState(false);
+  const [lastSavedRecord, setLastSavedRecord] = useState<EntryLogRecord | null>(null);
+  const [duplicateError, setDuplicateError] = useState<string | null>(null);
+  const [checkingDuplicate, setCheckingDuplicate] = useState(false);
 
   const handleRemoveImage = () => {
     setImageFile(null);
@@ -99,6 +104,15 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
     setImagePreviewUrl(null);
     setUploadedImageFilename(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const fetchLastSaved = async () => {
+    try {
+      const [success, res] = await MasterFormulationAPI.getMyEntries(1);
+      if (success && res && res.last_entry) {
+        setLastSavedRecord(res.last_entry);
+      }
+    } catch {}
   };
 
   const resetForm = () => {
@@ -126,6 +140,7 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
     const d = new Date();
     setTime(d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
     handleRemoveImage();
+    setDuplicateError(null);
     setInventory([
       { sr: '1', remarks: '', material: '', qty: '', rounded_qty: '' },
       { sr: '2', remarks: '', material: '', qty: '', rounded_qty: '' },
@@ -143,8 +158,32 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       resetForm();
+      fetchLastSaved();
     }
   }, [isOpen, productName]);
+
+  // Real-time pre-save duplicate check (debounced)
+  useEffect(() => {
+    const cleanBatch = batchNo.trim();
+    const targetProd = (formProductName || productName || '').trim();
+    if (!cleanBatch || !targetProd) {
+      setDuplicateError(null);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setCheckingDuplicate(true);
+      const [success, res] = await MasterFormulationAPI.checkBatchExists(targetProd, cleanBatch);
+      setCheckingDuplicate(false);
+      if (success && res?.exists) {
+        setDuplicateError(`⚠️ Batch '${cleanBatch}' already exists for product '${targetProd.toUpperCase()}'!`);
+      } else {
+        setDuplicateError(null);
+      }
+    }, 450);
+
+    return () => clearTimeout(timer);
+  }, [batchNo, formProductName, productName]);
 
   if (!isOpen) return null;
 
@@ -301,6 +340,11 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
       return;
     }
 
+    if (duplicateError) {
+      onShowToast(duplicateError, 'error');
+      return;
+    }
+
     const targetProdName = formProductName.trim() || productName.trim();
     const currentProdNorm = productName.trim().toLowerCase().replace(/\s+/g, '_');
     const targetProdNorm = targetProdName.trim().toLowerCase().replace(/\s+/g, '_');
@@ -357,6 +401,14 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
     setSaving(false);
 
     if (success) {
+      setLastSavedRecord({
+        batch_no: cleanBatchNo,
+        product_name: targetProdName,
+        created_at: new Date().toISOString(),
+        origin_workspace: productName.trim(),
+        is_active_temporary: isCrossProduct
+      });
+
       if (!isCrossProduct) {
         try {
           const rawProds = sessionStorage.getItem('available_products');
@@ -471,14 +523,37 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
               </span>
             </div>
           </div>
-          <button 
-            type="button"
-            onClick={onClose} 
-            className="modal-close-btn"
-            style={{ color: '#94a3b8', fontSize: '24px', background: 'none', border: 'none', cursor: 'pointer' }}
-          >
-            &times;
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button
+              type="button"
+              onClick={() => setEntryLogOpen(true)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                border: '1px solid #38bdf8',
+                borderRadius: '6px',
+                color: '#38bdf8',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+              title="View your personal data entry audit receipt ledger"
+            >
+              <History size={14} />
+              My Entry Log
+            </button>
+            <button 
+              type="button"
+              onClick={onClose} 
+              className="modal-close-btn"
+              style={{ color: '#94a3b8', fontSize: '24px', background: 'none', border: 'none', cursor: 'pointer' }}
+            >
+              &times;
+            </button>
+          </div>
         </div>
 
         {/* Scrollable Form Body */}
@@ -491,6 +566,67 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
           }}
           style={{ flexGrow: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', backgroundColor: '#f8fafc' }}
         >
+          {/* Top Sticky Banner: Last Entry Saved By You */}
+          {lastSavedRecord && (
+            <div style={{
+              backgroundColor: '#ffffff',
+              border: '1px solid #bbf7d0',
+              borderLeft: '5px solid #16a34a',
+              padding: '10px 16px',
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+              flexShrink: 0
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <span style={{
+                  background: '#dcfce7',
+                  color: '#166534',
+                  padding: '3px 8px',
+                  borderRadius: '12px',
+                  fontWeight: 700,
+                  fontSize: '0.72rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}>
+                  <CheckCircle2 size={13} color="#16a34a" />
+                  LAST SAVED ENTRY BY YOU
+                </span>
+                <span style={{ fontSize: '13px', color: '#64748b' }}>Batch No:</span>
+                <span style={{ fontSize: '14px', fontFamily: 'monospace', fontWeight: 800, color: '#0f172a' }}>
+                  {lastSavedRecord.batch_no}
+                </span>
+                <span style={{ color: '#cbd5e1' }}>•</span>
+                <span style={{ fontSize: '13px', color: '#64748b' }}>Product:</span>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: '#15803d', textTransform: 'uppercase' }}>
+                  {lastSavedRecord.product_name}
+                </span>
+                <span style={{ color: '#cbd5e1' }}>•</span>
+                <span style={{ fontSize: '12px', color: '#64748b' }}>
+                  <Clock size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: '-1px' }} />
+                  {new Date(lastSavedRecord.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEntryLogOpen(true)}
+                style={{
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: '#2563eb',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textDecoration: 'underline'
+                }}
+              >
+                View Full Entry Log →
+              </button>
+            </div>
+          )}
           
           {/* Top Section: Form Header, Target Quantity Recalculator, and Image Upload Box */}
           <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 0.9fr 1fr', gap: '16px' }}>
@@ -530,14 +666,29 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#1e293b' }}>Batch No *</label>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label style={{ fontSize: '12px', fontWeight: 700, color: duplicateError ? '#dc2626' : '#1e293b' }}>
+                      Batch No *
+                    </label>
+                    {checkingDuplicate && <span style={{ fontSize: '10px', color: '#64748b' }}>Checking duplicate...</span>}
+                  </div>
                   <input 
                     type="text" 
                     required 
                     value={batchNo} 
                     onChange={e => setBatchNo(e.target.value)} 
-                    style={{ ...inputStyle, fontWeight: 700, borderColor: '#3b82f6' }}
+                    style={{ 
+                      ...inputStyle, 
+                      fontWeight: 700, 
+                      borderColor: duplicateError ? '#ef4444' : '#3b82f6',
+                      backgroundColor: duplicateError ? '#fef2f2' : '#ffffff'
+                    }}
                   />
+                  {duplicateError && (
+                    <span style={{ fontSize: '11px', fontWeight: 600, color: '#dc2626', marginTop: '2px' }}>
+                      {duplicateError}
+                    </span>
+                  )}
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -1117,6 +1268,14 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
               </button>
             </div>
           </div>
+        )}
+
+        {/* Personal Entry Log Ledger Modal */}
+        {entryLogOpen && (
+          <MyEntryLogModal 
+            isOpen={entryLogOpen} 
+            onClose={() => setEntryLogOpen(false)} 
+          />
         )}
 
       </div>

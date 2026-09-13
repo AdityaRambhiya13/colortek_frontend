@@ -838,6 +838,18 @@ export const MasterFormulationAPI = {
         'Content-Type': 'multipart/form-data',
       },
     }));
+  },
+
+  getMyEntries: async (limit: number = 50) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return handleResponse<any>(apiClient.get('/mf/my-entries', {
+      params: { limit }
+    }));
+  },
+
+  checkBatchExists: async (productName: string, batchNo: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return handleResponse<any>(apiClient.get(`/mf/check-exists/${encodeURIComponent(productName)}/${encodeURIComponent(batchNo)}`));
   }
 };
 

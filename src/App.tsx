@@ -621,16 +621,18 @@ export const App: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '12px 24px',
+          padding: '12px 18px',
           background: '#0b0f19',
           borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-          height: '60px',
-          boxSizing: 'border-box'
+          minHeight: '60px',
+          boxSizing: 'border-box',
+          flexWrap: 'wrap',
+          gap: '10px'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{
               fontWeight: 700,
-              fontSize: '1.2rem',
+              fontSize: '1.15rem',
               letterSpacing: '0.03em',
               background: 'linear-gradient(135deg, #c084fc, #818cf8)',
               WebkitBackgroundClip: 'text',
@@ -640,8 +642,8 @@ export const App: React.FC = () => {
             </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.82rem', color: '#94a3b8' }}>
               Logged in as <strong style={{ color: '#ffffff' }}>{sessionStorage.getItem('username')}</strong>
             </span>
             <button
@@ -651,14 +653,15 @@ export const App: React.FC = () => {
                 color: '#ffffff',
                 border: 'none',
                 borderRadius: '6px',
-                padding: '8px 16px',
-                fontSize: '0.85rem',
+                padding: '6px 14px',
+                fontSize: '0.82rem',
                 fontWeight: 600,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
-                transition: 'all 0.2s ease'
+                transition: 'all 0.2s ease',
+                minHeight: '34px'
               }}
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#b91c1c'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
@@ -669,27 +672,33 @@ export const App: React.FC = () => {
           </div>
         </header>
 
-        {/* Tab Selector Bar */}
+        {/* Tab Selector Bar (Horizontally scrollable on mobile) */}
         <div style={{
           display: 'flex',
           backgroundColor: '#0f172a',
           borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-          padding: '0 24px',
-          boxSizing: 'border-box'
+          padding: '0 16px',
+          boxSizing: 'border-box',
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'none',
+          gap: '4px'
         }}>
           <button
             onClick={() => handleViewChange('user_management')}
             style={{
-              padding: '16px 20px',
+              padding: '14px 18px',
               backgroundColor: 'transparent',
               border: 'none',
               borderBottom: currentView === 'user_management' ? '3px solid #c084fc' : '3px solid transparent',
               color: currentView === 'user_management' ? '#ffffff' : '#94a3b8',
               fontWeight: currentView === 'user_management' ? 700 : 600,
-              fontSize: '0.9rem',
+              fontSize: '0.88rem',
               cursor: 'pointer',
               transition: 'all 0.2s ease',
-              outline: 'none'
+              outline: 'none',
+              whiteSpace: 'nowrap',
+              flexShrink: 0
             }}
           >
             User Management
@@ -697,16 +706,21 @@ export const App: React.FC = () => {
           <button
             onClick={() => handleViewChange('geofence_management')}
             style={{
-              padding: '16px 20px',
+              padding: '14px 18px',
               backgroundColor: 'transparent',
               border: 'none',
               borderBottom: currentView === 'geofence_management' ? '3px solid #10b981' : '3px solid transparent',
               color: currentView === 'geofence_management' ? '#ffffff' : '#94a3b8',
               fontWeight: currentView === 'geofence_management' ? 700 : 600,
-              fontSize: '0.9rem',
+              fontSize: '0.88rem',
               cursor: 'pointer',
               transition: 'all 0.2s ease',
-              outline: 'none'
+              outline: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              whiteSpace: 'nowrap',
+              flexShrink: 0
             }}
           >
             📍 Geofence Control
@@ -714,16 +728,18 @@ export const App: React.FC = () => {
           <button
             onClick={() => handleViewChange('database_management')}
             style={{
-              padding: '16px 20px',
+              padding: '14px 18px',
               backgroundColor: 'transparent',
               border: 'none',
               borderBottom: currentView === 'database_management' ? '3px solid #c084fc' : '3px solid transparent',
               color: currentView === 'database_management' ? '#ffffff' : '#94a3b8',
               fontWeight: currentView === 'database_management' ? 700 : 600,
-              fontSize: '0.9rem',
+              fontSize: '0.88rem',
               cursor: 'pointer',
               transition: 'all 0.2s ease',
-              outline: 'none'
+              outline: 'none',
+              whiteSpace: 'nowrap',
+              flexShrink: 0
             }}
           >
             Database Management
@@ -731,27 +747,29 @@ export const App: React.FC = () => {
           <button
             onClick={() => handleViewChange('products_master')}
             style={{
-              padding: '16px 20px',
+              padding: '14px 18px',
               backgroundColor: 'transparent',
               border: 'none',
               borderBottom: currentView === 'products_master' ? '3px solid #c084fc' : '3px solid transparent',
               color: currentView === 'products_master' ? '#ffffff' : '#94a3b8',
               fontWeight: currentView === 'products_master' ? 700 : 600,
-              fontSize: '0.9rem',
+              fontSize: '0.88rem',
               cursor: 'pointer',
               transition: 'all 0.2s ease',
-              outline: 'none'
+              outline: 'none',
+              whiteSpace: 'nowrap',
+              flexShrink: 0
             }}
           >
             Products Master
           </button>
         </div>
 
-        {/* Admin Content Area */}
+        {/* Admin Content Area (Responsive Padding) */}
         <main style={{
           flex: 1,
           overflowY: 'auto',
-          padding: '24px',
+          padding: '18px 16px',
           boxSizing: 'border-box',
           backgroundColor: '#090c15'
         }}>

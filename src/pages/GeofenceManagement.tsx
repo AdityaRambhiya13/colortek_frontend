@@ -2,17 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { 
   MapPin, 
   Navigation, 
-  Compass, 
   Globe, 
   ShieldCheck, 
   Settings, 
   RefreshCw, 
-  CheckCircle2, 
-  AlertCircle, 
   Sliders, 
-  Radio, 
   Crosshair,
-  ExternalLink
+  ExternalLink,
+  Laptop,
+  Smartphone
 } from 'lucide-react';
 import { AdminAPI } from '../services/api';
 
@@ -178,63 +176,391 @@ export const GeofenceManagement: React.FC<GeofenceManagementProps> = ({ onShowTo
   const isInside = adminLiveDistance !== null && adminLiveDistance <= parsedRadius;
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '24px',
-      maxWidth: '1400px',
-      margin: '0 auto',
-      color: '#f8fafc',
-      fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-    }}>
-      {/* Top Banner Header */}
-      <div style={{
-        background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.8) 100%)',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
-        borderRadius: '16px',
-        padding: '24px 28px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: '20px',
-        boxShadow: '0 10px 30px -10px rgba(0, 0, 0, 0.5)',
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
-        {/* Accent gradient line */}
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: '3px',
-          background: geofenceEnabled 
-            ? 'linear-gradient(90deg, #10b981, #06b6d4)' 
-            : 'linear-gradient(90deg, #64748b, #475569)'
-        }} />
+    <div className="geofence-wrapper">
+      {/* Dynamic Responsive Styles for Laptop & Mobile viewports */}
+      <style>{`
+        .geofence-wrapper {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+          max-width: 1400px;
+          margin: 0 auto;
+          color: #f8fafc;
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+          width: 100%;
+          box-sizing: border-box;
+        }
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
-          <div style={{
-            width: '54px',
-            height: '54px',
-            borderRadius: '14px',
-            background: geofenceEnabled 
-              ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(6, 182, 212, 0.15) 100%)' 
-              : 'rgba(100, 116, 139, 0.15)',
-            border: `1px solid ${geofenceEnabled ? 'rgba(16, 185, 129, 0.4)' : 'rgba(100, 116, 139, 0.25)'}`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: geofenceEnabled ? '#34d399' : '#94a3b8',
-            boxShadow: geofenceEnabled ? '0 0 25px rgba(16, 185, 129, 0.2)' : 'none'
-          }}>
-            <MapPin size={28} />
+        .geofence-header-banner {
+          background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.85) 100%);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 16px;
+          padding: 22px 26px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 16px;
+          box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .geofence-header-accent {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 3px;
+          background: ${geofenceEnabled ? 'linear-gradient(90deg, #10b981, #06b6d4)' : 'linear-gradient(90deg, #64748b, #475569)'};
+        }
+
+        .geofence-header-content {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+
+        .geofence-header-icon {
+          width: 52px;
+          height: 52px;
+          border-radius: 14px;
+          background: ${geofenceEnabled ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(6, 182, 212, 0.15) 100%)' : 'rgba(100, 116, 139, 0.15)'};
+          border: 1px solid ${geofenceEnabled ? 'rgba(16, 185, 129, 0.4)' : 'rgba(100, 116, 139, 0.25)'};
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: ${geofenceEnabled ? '#34d399' : '#94a3b8'};
+          flex-shrink: 0;
+          box-shadow: ${geofenceEnabled ? '0 0 20px rgba(16, 185, 129, 0.2)' : 'none'};
+        }
+
+        .geofence-header-title {
+          font-size: 1.35rem;
+          font-weight: 800;
+          margin: 0;
+          color: #ffffff;
+          letter-spacing: -0.01em;
+        }
+
+        .geofence-refresh-btn {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 10px 18px;
+          border-radius: 10px;
+          background-color: rgba(255, 255, 255, 0.06);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          color: #e2e8f0;
+          font-weight: 600;
+          font-size: 0.85rem;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          min-height: 40px;
+        }
+        .geofence-refresh-btn:hover {
+          background-color: rgba(255, 255, 255, 0.12);
+          color: #ffffff;
+        }
+
+        .geofence-admin-banner {
+          background: linear-gradient(135deg, rgba(79, 70, 229, 0.12) 0%, rgba(124, 58, 237, 0.08) 100%);
+          border: 1px solid rgba(129, 140, 248, 0.28);
+          border-radius: 14px;
+          padding: 16px 20px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          flex-wrap: wrap;
+          gap: 12px;
+        }
+
+        /* 2-column on laptop, 1-column on mobile */
+        .geofence-main-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+          gap: 20px;
+          width: 100%;
+          box-sizing: border-box;
+        }
+
+        .geofence-card {
+          background: rgba(15, 23, 42, 0.75);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 16px;
+          padding: 24px;
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+          box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+          box-sizing: border-box;
+          width: 100%;
+        }
+
+        .geofence-coords-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+          width: 100%;
+          box-sizing: border-box;
+        }
+
+        .geofence-input {
+          width: 100%;
+          background-color: rgba(15, 23, 42, 0.85);
+          border: 1px solid rgba(255, 255, 255, 0.14);
+          border-radius: 10px;
+          padding: 12px 14px;
+          color: #ffffff;
+          font-size: 0.92rem;
+          outline: none;
+          box-sizing: border-box;
+          transition: border-color 0.2s ease;
+        }
+        .geofence-input:focus {
+          border-color: #38bdf8;
+          box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+        }
+
+        .geofence-gps-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 7px 14px;
+          border-radius: 8px;
+          background-color: rgba(14, 165, 233, 0.15);
+          border: 1px solid rgba(14, 165, 233, 0.35);
+          color: #38bdf8;
+          font-weight: 700;
+          font-size: 0.8rem;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          min-height: 36px;
+        }
+        .geofence-gps-btn:hover:not(:disabled) {
+          background-color: rgba(14, 165, 233, 0.28);
+          color: #ffffff;
+        }
+
+        .geofence-presets-container {
+          display: grid;
+          grid-template-columns: repeat(5, 1fr);
+          gap: 8px;
+          width: 100%;
+          box-sizing: border-box;
+        }
+
+        .geofence-preset-btn {
+          padding: 8px 6px;
+          border-radius: 8px;
+          cursor: pointer;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 3px;
+          transition: all 0.15s ease;
+          min-height: 52px;
+          justify-content: center;
+          box-sizing: border-box;
+        }
+
+        .geofence-submit-bar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding-top: 14px;
+          border-top: 1px solid rgba(255, 255, 255, 0.08);
+          gap: 12px;
+          flex-wrap: wrap;
+        }
+
+        .geofence-submit-btn {
+          padding: 12px 28px;
+          border-radius: 10px;
+          background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+          border: none;
+          color: #ffffff;
+          font-weight: 700;
+          font-size: 0.92rem;
+          cursor: pointer;
+          box-shadow: 0 4px 20px rgba(2, 132, 199, 0.35);
+          transition: all 0.2s ease;
+          min-height: 44px;
+        }
+        .geofence-submit-btn:hover:not(:disabled) {
+          transform: translateY(-1px);
+          box-shadow: 0 6px 24px rgba(2, 132, 199, 0.45);
+        }
+
+        .geofence-radar-box {
+          position: relative;
+          width: 100%;
+          height: 230px;
+          background-color: #090d16;
+          border-radius: 12px;
+          border: 1px solid rgba(14, 165, 233, 0.25);
+          overflow: hidden;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .geofence-action-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 12px 16px;
+          border-radius: 10px;
+          background-color: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          color: #f8fafc;
+          font-weight: 700;
+          font-size: 0.88rem;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          min-height: 44px;
+          width: 100%;
+          box-sizing: border-box;
+        }
+        .geofence-action-btn:hover:not(:disabled) {
+          background-color: rgba(255, 255, 255, 0.14);
+          color: #ffffff;
+        }
+
+        /* Device indicator pill */
+        .geofence-device-indicator {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 0.72rem;
+          color: #94a3b8;
+          background: rgba(255, 255, 255, 0.05);
+          padding: 3px 8px;
+          border-radius: 6px;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* MOBILE & SMALL TABLET OPTIMIZATIONS (< 768px) */
+        @media (max-width: 768px) {
+          .geofence-wrapper {
+            gap: 16px;
+          }
+
+          .geofence-main-grid {
+            grid-template-columns: 1fr !important;
+            gap: 16px;
+          }
+
+          .geofence-header-banner {
+            padding: 16px 14px !important;
+            border-radius: 12px !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 14px !important;
+          }
+
+          .geofence-header-content {
+            align-items: flex-start !important;
+            gap: 12px !important;
+          }
+
+          .geofence-header-icon {
+            width: 44px !important;
+            height: 44px !important;
+            border-radius: 10px !important;
+          }
+
+          .geofence-header-title {
+            font-size: 1.2rem !important;
+          }
+
+          .geofence-refresh-btn {
+            width: 100% !important;
+            justify-content: center !important;
+            height: 42px !important;
+          }
+
+          .geofence-admin-banner {
+            padding: 14px 12px !important;
+            border-radius: 12px !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 12px !important;
+          }
+
+          .geofence-card {
+            padding: 18px 14px !important;
+            border-radius: 12px !important;
+            gap: 16px !important;
+          }
+
+          .geofence-coords-grid {
+            grid-template-columns: 1fr !important;
+            gap: 10px !important;
+          }
+
+          .geofence-coords-top-row {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 8px !important;
+          }
+
+          .geofence-gps-btn {
+            width: 100% !important;
+            justify-content: center !important;
+            height: 40px !important;
+          }
+
+          .geofence-presets-container {
+            grid-template-columns: repeat(3, 1fr) !important;
+            gap: 6px !important;
+          }
+
+          .geofence-preset-btn {
+            min-height: 48px !important;
+            padding: 6px 4px !important;
+          }
+
+          .geofence-submit-bar {
+            flex-direction: column-reverse !important;
+            align-items: stretch !important;
+            gap: 12px !important;
+          }
+
+          .geofence-submit-btn {
+            width: 100% !important;
+            height: 46px !important;
+            font-size: 0.95rem !important;
+          }
+
+          .geofence-radar-box {
+            height: 185px !important;
+          }
+        }
+
+        /* EXTRA NARROW MOBILE SCREENS (< 420px) */
+        @media (max-width: 420px) {
+          .geofence-presets-container {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+        }
+      `}</style>
+
+      {/* Top Banner Header */}
+      <div className="geofence-header-banner">
+        <div className="geofence-header-accent" />
+
+        <div className="geofence-header-content">
+          <div className="geofence-header-icon">
+            <MapPin size={26} />
           </div>
 
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <h2 style={{ fontSize: '1.45rem', fontWeight: 800, margin: 0, color: '#ffffff', letterSpacing: '-0.01em' }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <h2 className="geofence-header-title">
                 Geofence Perimeter Control
               </h2>
               <span style={{
@@ -243,7 +569,7 @@ export const GeofenceManagement: React.FC<GeofenceManagementProps> = ({ onShowTo
                 gap: '6px',
                 fontSize: '0.72rem',
                 fontWeight: 700,
-                padding: '4px 10px',
+                padding: '3px 9px',
                 borderRadius: '20px',
                 backgroundColor: geofenceEnabled ? 'rgba(16, 185, 129, 0.18)' : 'rgba(100, 116, 139, 0.18)',
                 color: geofenceEnabled ? '#34d399' : '#94a3b8',
@@ -259,7 +585,7 @@ export const GeofenceManagement: React.FC<GeofenceManagementProps> = ({ onShowTo
                 {geofenceEnabled ? 'ACTIVE / ENFORCED' : 'DISABLED'}
               </span>
             </div>
-            <p style={{ color: '#94a3b8', fontSize: '0.88rem', margin: '6px 0 0 0' }}>
+            <p style={{ color: '#94a3b8', fontSize: '0.84rem', margin: '4px 0 0 0', lineHeight: 1.4 }}>
               Restricts application access for standard users to the designated physical facility.
             </p>
           </div>
@@ -268,20 +594,8 @@ export const GeofenceManagement: React.FC<GeofenceManagementProps> = ({ onShowTo
         <button
           onClick={fetchGeofenceConfig}
           disabled={loading}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '10px 18px',
-            borderRadius: '10px',
-            backgroundColor: 'rgba(255, 255, 255, 0.06)',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
-            color: '#e2e8f0',
-            fontWeight: 600,
-            fontSize: '0.85rem',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease'
-          }}
+          className="geofence-refresh-btn"
+          title="Reload geofence parameters from server"
         >
           <RefreshCw size={15} className={loading ? 'spin' : ''} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
           <span>{loading ? 'Refreshing...' : 'Refresh Status'}</span>
@@ -289,81 +603,67 @@ export const GeofenceManagement: React.FC<GeofenceManagementProps> = ({ onShowTo
       </div>
 
       {/* Admin Exemption Royal Banner */}
-      <div style={{
-        background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.12) 0%, rgba(124, 58, 237, 0.08) 100%)',
-        border: '1px solid rgba(129, 140, 248, 0.28)',
-        borderRadius: '14px',
-        padding: '16px 22px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '14px'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+      <div className="geofence-admin-banner">
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
           <div style={{
-            width: '40px',
-            height: '40px',
+            width: '38px',
+            height: '38px',
             borderRadius: '10px',
             backgroundColor: 'rgba(99, 102, 241, 0.2)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             color: '#a5b4fc',
-            flexShrink: 0
+            flexShrink: 0,
+            marginTop: '2px'
           }}>
             <ShieldCheck size={22} />
           </div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: '0.92rem', color: '#ffffff' }}>
+            <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#ffffff' }}>
               Administrator Privilege: Unrestricted Anywhere Access
             </div>
-            <div style={{ color: '#c7d2fe', fontSize: '0.82rem', marginTop: '2px', lineHeight: '1.4' }}>
-              As an Administrator, you can access all modules from <strong>any location worldwide</strong> (office, home, or travelling). Geofencing strictly governs non-admin employee accounts.
+            <div style={{ color: '#c7d2fe', fontSize: '0.8rem', marginTop: '2px', lineHeight: '1.4' }}>
+              As an Administrator, you can access all modules from <strong>any location worldwide</strong> (office, home, or traveling). Geofencing strictly governs standard employee accounts.
             </div>
           </div>
         </div>
 
-        <span style={{
-          fontSize: '0.78rem',
-          fontWeight: 700,
-          color: '#818cf8',
-          backgroundColor: 'rgba(99, 102, 241, 0.15)',
-          padding: '6px 14px',
-          borderRadius: '20px',
-          border: '1px solid rgba(99, 102, 241, 0.3)'
-        }}>
-          Admin Exemption Active
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <span style={{
+            fontSize: '0.75rem',
+            fontWeight: 700,
+            color: '#818cf8',
+            backgroundColor: 'rgba(99, 102, 241, 0.15)',
+            padding: '5px 12px',
+            borderRadius: '20px',
+            border: '1px solid rgba(99, 102, 241, 0.3)',
+            whiteSpace: 'nowrap'
+          }}>
+            Admin Exemption Active
+          </span>
+          <span className="geofence-device-indicator">
+            <Laptop size={12} />
+            <span>Laptop</span>
+            <span>+</span>
+            <Smartphone size={12} />
+            <span>Mobile</span>
+          </span>
+        </div>
       </div>
 
-      {/* Main Grid: Form + Live Radar/Inspector */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(460px, 1fr))',
-        gap: '24px'
-      }}>
+      {/* Main Grid: Form (Left) + Live Radar & Distance Inspector (Right) */}
+      <div className="geofence-main-grid">
         {/* Left Column: Settings Configuration Form */}
-        <form 
-          onSubmit={handleSaveGeofence}
-          style={{
-            background: 'rgba(15, 23, 42, 0.75)',
-            backdropFilter: 'blur(16px)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: '16px',
-            padding: '28px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '22px',
-            boxShadow: '0 20px 40px -15px rgba(0, 0, 0, 0.5)'
-          }}
-        >
+        <form onSubmit={handleSaveGeofence} className="geofence-card">
           <div style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-            paddingBottom: '14px'
+            paddingBottom: '12px',
+            flexWrap: 'wrap',
+            gap: '8px'
           }}>
             <h3 style={{
               fontSize: '1.05rem',
@@ -379,7 +679,7 @@ export const GeofenceManagement: React.FC<GeofenceManagementProps> = ({ onShowTo
             </h3>
 
             {geofenceUpdatedAt && (
-              <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+              <span style={{ fontSize: '0.74rem', color: '#64748b' }}>
                 Synced: {new Date(geofenceUpdatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
             )}
@@ -390,24 +690,25 @@ export const GeofenceManagement: React.FC<GeofenceManagementProps> = ({ onShowTo
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '16px 20px',
+            padding: '14px 16px',
             backgroundColor: geofenceEnabled ? 'rgba(16, 185, 129, 0.08)' : 'rgba(0, 0, 0, 0.25)',
             border: `1px solid ${geofenceEnabled ? 'rgba(16, 185, 129, 0.3)' : 'rgba(255, 255, 255, 0.08)'}`,
             borderRadius: '12px',
-            transition: 'all 0.3s ease'
+            transition: 'all 0.3s ease',
+            gap: '12px'
           }}>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#ffffff' }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 700, fontSize: '0.92rem', color: '#ffffff' }}>
                 Enforce Geofencing for Regular Users
               </div>
-              <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '3px' }}>
+              <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: '2px' }}>
                 {geofenceEnabled 
                   ? 'Active: Users outside the perimeter cannot access data' 
                   : 'Disabled: All users can log in from any location'}
               </div>
             </div>
 
-            <label style={{ position: 'relative', display: 'inline-block', width: '52px', height: '28px', cursor: 'pointer' }}>
+            <label style={{ position: 'relative', display: 'inline-block', width: '50px', height: '28px', cursor: 'pointer', flexShrink: 0 }}>
               <input
                 type="checkbox"
                 checked={geofenceEnabled}
@@ -430,7 +731,7 @@ export const GeofenceManagement: React.FC<GeofenceManagementProps> = ({ onShowTo
                   position: 'absolute',
                   height: '22px',
                   width: '22px',
-                  left: geofenceEnabled ? '26px' : '3px',
+                  left: geofenceEnabled ? '25px' : '3px',
                   bottom: '3px',
                   backgroundColor: '#ffffff',
                   transition: '0.25s',
@@ -442,9 +743,9 @@ export const GeofenceManagement: React.FC<GeofenceManagementProps> = ({ onShowTo
           </div>
 
           {/* Facility Name */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{ fontSize: '0.82rem', fontWeight: 600, color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Facility / Facility Premises Name
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Facility / Premises Name
             </label>
             <input
               type="text"
@@ -452,55 +753,33 @@ export const GeofenceManagement: React.FC<GeofenceManagementProps> = ({ onShowTo
               onChange={(e) => setGeofenceName(e.target.value)}
               placeholder="e.g. Colortek Factory & Laboratory"
               required
-              style={{
-                width: '100%',
-                backgroundColor: 'rgba(15, 23, 42, 0.8)',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
-                borderRadius: '10px',
-                padding: '12px 14px',
-                color: '#ffffff',
-                fontSize: '0.9rem',
-                outline: 'none',
-                boxSizing: 'border-box'
-              }}
+              className="geofence-input"
             />
           </div>
 
           {/* Location Coordinates Setup (Dual-Mode) */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label style={{ fontSize: '0.82rem', fontWeight: 600, color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Center GPS Coordinates
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div className="geofence-coords-top-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Center Coordinates
               </label>
               
               <button
                 type="button"
                 onClick={handleUseCurrentLocation}
                 disabled={detectingAdminLocation}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '6px 14px',
-                  borderRadius: '8px',
-                  backgroundColor: 'rgba(14, 165, 233, 0.15)',
-                  border: '1px solid rgba(14, 165, 233, 0.35)',
-                  color: '#38bdf8',
-                  fontWeight: 700,
-                  fontSize: '0.8rem',
-                  cursor: detectingAdminLocation ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
+                className="geofence-gps-btn"
+                title="Capture GPS coordinates of your current phone or laptop location"
               >
                 <Crosshair size={14} className={detectingAdminLocation ? 'spin' : ''} style={{ animation: detectingAdminLocation ? 'spin 1s linear infinite' : 'none' }} />
-                <span>{detectingAdminLocation ? 'Detecting GPS...' : '📍 Use My Current Location'}</span>
+                <span>{detectingAdminLocation ? 'Detecting GPS...' : '📍 Auto-Detect My Location'}</span>
               </button>
             </div>
 
             {/* Latitude & Longitude Inputs */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>Latitude</span>
+            <div className="geofence-coords-grid">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '0.76rem', color: '#94a3b8' }}>Latitude</span>
                 <input
                   type="number"
                   step="0.000001"
@@ -508,21 +787,12 @@ export const GeofenceManagement: React.FC<GeofenceManagementProps> = ({ onShowTo
                   onChange={(e) => setGeofenceLat(e.target.value)}
                   placeholder="e.g. 19.076090"
                   required
-                  style={{
-                    backgroundColor: 'rgba(15, 23, 42, 0.8)',
-                    border: '1px solid rgba(255, 255, 255, 0.12)',
-                    borderRadius: '10px',
-                    padding: '12px 14px',
-                    color: '#ffffff',
-                    fontSize: '0.9rem',
-                    outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
+                  className="geofence-input"
                 />
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>Longitude</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '0.76rem', color: '#94a3b8' }}>Longitude</span>
                 <input
                   type="number"
                   step="0.000001"
@@ -530,37 +800,49 @@ export const GeofenceManagement: React.FC<GeofenceManagementProps> = ({ onShowTo
                   onChange={(e) => setGeofenceLon(e.target.value)}
                   placeholder="e.g. 72.877426"
                   required
-                  style={{
-                    backgroundColor: 'rgba(15, 23, 42, 0.8)',
-                    border: '1px solid rgba(255, 255, 255, 0.12)',
-                    borderRadius: '10px',
-                    padding: '12px 14px',
-                    color: '#ffffff',
-                    fontSize: '0.9rem',
-                    outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
+                  className="geofence-input"
                 />
               </div>
             </div>
 
-            <div style={{ fontSize: '0.78rem', color: '#94a3b8', lineHeight: '1.4' }}>
-              💡 <strong>Two Ways to Set:</strong> Click <em>&ldquo;Use My Current Location&rdquo;</em> while inside the building, or right-click your building on <strong>Google Maps</strong> and paste the coordinates above.
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', fontSize: '0.76rem', color: '#94a3b8' }}>
+              <span>💡 Right-click your building on Google Maps to copy exact numbers, or click &ldquo;Auto-Detect&rdquo;.</span>
+              {parseFloat(geofenceLat) !== 0 && parseFloat(geofenceLon) !== 0 && (
+                <a
+                  href={`https://www.google.com/maps?q=${geofenceLat},${geofenceLon}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    color: '#38bdf8',
+                    textDecoration: 'none',
+                    fontWeight: 600,
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    backgroundColor: 'rgba(56, 189, 248, 0.1)'
+                  }}
+                >
+                  <ExternalLink size={12} />
+                  <span>View in Google Maps</span>
+                </a>
+              )}
             </div>
           </div>
 
           {/* Allowed Radius Configuration */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label style={{ fontSize: '0.82rem', fontWeight: 600, color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Authorized Radius
               </label>
               <span style={{
-                fontSize: '0.9rem',
+                fontSize: '0.88rem',
                 fontWeight: 800,
                 color: '#38bdf8',
                 backgroundColor: 'rgba(14, 165, 233, 0.1)',
-                padding: '3px 10px',
+                padding: '2px 10px',
                 borderRadius: '6px',
                 border: '1px solid rgba(14, 165, 233, 0.25)'
               }}>
@@ -575,21 +857,11 @@ export const GeofenceManagement: React.FC<GeofenceManagementProps> = ({ onShowTo
               value={geofenceRadius}
               onChange={(e) => setGeofenceRadius(e.target.value)}
               required
-              style={{
-                width: '100%',
-                backgroundColor: 'rgba(15, 23, 42, 0.8)',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
-                borderRadius: '10px',
-                padding: '12px 14px',
-                color: '#ffffff',
-                fontSize: '0.9rem',
-                outline: 'none',
-                boxSizing: 'border-box'
-              }}
+              className="geofence-input"
             />
 
-            {/* Quick Radius Presets */}
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {/* Quick Radius Presets (Responsive Grid) */}
+            <div className="geofence-presets-container">
               {radiusPresets.map((preset) => {
                 const active = geofenceRadius === preset.val;
                 return (
@@ -597,23 +869,15 @@ export const GeofenceManagement: React.FC<GeofenceManagementProps> = ({ onShowTo
                     key={preset.val}
                     type="button"
                     onClick={() => setGeofenceRadius(preset.val)}
+                    className="geofence-preset-btn"
                     style={{
-                      flex: '1 1 80px',
-                      padding: '8px 10px',
-                      borderRadius: '8px',
                       backgroundColor: active ? '#0284c7' : 'rgba(255, 255, 255, 0.05)',
                       border: `1px solid ${active ? '#38bdf8' : 'rgba(255, 255, 255, 0.1)'}`,
                       color: active ? '#ffffff' : '#cbd5e1',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '2px',
-                      transition: 'all 0.15s ease'
                     }}
                   >
                     <span style={{ fontSize: '0.82rem', fontWeight: 700 }}>{preset.label}</span>
-                    <span style={{ fontSize: '0.68rem', color: active ? '#e0f2fe' : '#94a3b8' }}>{preset.desc}</span>
+                    <span style={{ fontSize: '0.66rem', color: active ? '#e0f2fe' : '#94a3b8', textAlign: 'center' }}>{preset.desc}</span>
                   </button>
                 );
               })}
@@ -621,84 +885,44 @@ export const GeofenceManagement: React.FC<GeofenceManagementProps> = ({ onShowTo
           </div>
 
           {/* Submit Action */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            paddingTop: '12px',
-            borderTop: '1px solid rgba(255, 255, 255, 0.08)'
-          }}>
-            <span style={{ fontSize: '0.78rem', color: '#64748b' }}>
-              {geofenceUpdatedBy ? `Last saved by ${geofenceUpdatedBy}` : 'Ready to save'}
+          <div className="geofence-submit-bar">
+            <span style={{ fontSize: '0.76rem', color: '#64748b' }}>
+              {geofenceUpdatedBy ? `Last saved by ${geofenceUpdatedBy}` : 'Changes saved immediately to cloud'}
             </span>
 
             <button
               type="submit"
               disabled={saving}
-              style={{
-                padding: '12px 28px',
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, #0284c7 0%, #2563eb 100%)',
-                border: 'none',
-                color: '#ffffff',
-                fontWeight: 700,
-                fontSize: '0.9rem',
-                cursor: saving ? 'not-allowed' : 'pointer',
-                boxShadow: '0 4px 20px rgba(2, 132, 199, 0.35)',
-                transition: 'all 0.2s ease',
-                opacity: saving ? 0.7 : 1
-              }}
+              className="geofence-submit-btn"
             >
-              {saving ? 'Saving Settings...' : '💾 Save Geofence Settings'}
+              {saving ? 'Saving...' : '💾 Save Geofence Settings'}
             </button>
           </div>
         </form>
 
         {/* Right Column: Live Radar Preview & Distance Inspector */}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '22px'
-        }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>
           {/* Radar & Perimeter Graphic Card */}
-          <div style={{
-            background: 'rgba(15, 23, 42, 0.75)',
-            backdropFilter: 'blur(16px)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: '16px',
-            padding: '28px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '20px',
-            boxShadow: '0 20px 40px -15px rgba(0, 0, 0, 0.5)'
-          }}>
-            <h3 style={{
-              fontSize: '1.05rem',
-              fontWeight: 700,
-              color: '#38bdf8',
-              margin: 0,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
-              <Globe size={18} />
-              <span>Perimeter Visualizer & Inspector</span>
-            </h3>
+          <div className="geofence-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+              <h3 style={{
+                fontSize: '1.05rem',
+                fontWeight: 700,
+                color: '#38bdf8',
+                margin: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <Globe size={18} />
+                <span>Perimeter Visualizer & Inspector</span>
+              </h3>
+              <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Real-time GPS Radar</span>
+            </div>
 
-            {/* Radar Animation Container */}
-            <div style={{
-              position: 'relative',
-              width: '100%',
-              height: '240px',
-              backgroundColor: '#090d16',
-              borderRadius: '12px',
-              border: '1px solid rgba(14, 165, 233, 0.2)',
-              overflow: 'hidden',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              {/* Grid lines */}
+            {/* Radar Graphic Container */}
+            <div className="geofence-radar-box">
+              {/* Grid lines background */}
               <div style={{
                 position: 'absolute',
                 inset: 0,
@@ -706,26 +930,26 @@ export const GeofenceManagement: React.FC<GeofenceManagementProps> = ({ onShowTo
                 backgroundSize: '24px 24px'
               }} />
 
-              {/* Concentric rings */}
+              {/* Concentric radar rings */}
               <div style={{
                 position: 'absolute',
-                width: '190px',
-                height: '190px',
+                width: '180px',
+                height: '180px',
                 borderRadius: '50%',
                 border: '1px dashed rgba(14, 165, 233, 0.25)'
               }} />
               <div style={{
                 position: 'absolute',
-                width: '130px',
-                height: '130px',
+                width: '120px',
+                height: '120px',
                 borderRadius: '50%',
                 border: '1px solid rgba(14, 165, 233, 0.35)',
                 backgroundColor: 'rgba(14, 165, 233, 0.03)'
               }} />
               <div style={{
                 position: 'absolute',
-                width: '70px',
-                height: '70px',
+                width: '65px',
+                height: '65px',
                 borderRadius: '50%',
                 border: '1px solid rgba(14, 165, 233, 0.5)'
               }} />
@@ -740,8 +964,8 @@ export const GeofenceManagement: React.FC<GeofenceManagementProps> = ({ onShowTo
                 gap: '4px'
               }}>
                 <div style={{
-                  width: '36px',
-                  height: '36px',
+                  width: '34px',
+                  height: '34px',
                   borderRadius: '50%',
                   backgroundColor: '#0284c7',
                   border: '3px solid #ffffff',
@@ -750,7 +974,7 @@ export const GeofenceManagement: React.FC<GeofenceManagementProps> = ({ onShowTo
                   justifyContent: 'center',
                   boxShadow: '0 0 20px rgba(14, 165, 233, 0.6)'
                 }}>
-                  <MapPin size={18} color="#ffffff" />
+                  <MapPin size={17} color="#ffffff" />
                 </div>
                 <span style={{
                   fontSize: '0.72rem',
@@ -759,21 +983,25 @@ export const GeofenceManagement: React.FC<GeofenceManagementProps> = ({ onShowTo
                   backgroundColor: 'rgba(15, 23, 42, 0.9)',
                   padding: '2px 8px',
                   borderRadius: '6px',
-                  border: '1px solid rgba(255, 255, 255, 0.15)'
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  maxWidth: '180px',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
                 }}>
                   {geofenceName || 'Center'}
                 </span>
               </div>
 
-              {/* Radius Label */}
+              {/* Radius Badge overlay */}
               <div style={{
                 position: 'absolute',
-                bottom: '12px',
-                right: '14px',
-                fontSize: '0.75rem',
+                bottom: '10px',
+                right: '12px',
+                fontSize: '0.74rem',
                 color: '#38bdf8',
-                backgroundColor: 'rgba(15, 23, 42, 0.85)',
-                padding: '4px 10px',
+                backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                padding: '3px 8px',
                 borderRadius: '6px',
                 border: '1px solid rgba(14, 165, 233, 0.3)'
               }}>
@@ -786,21 +1014,21 @@ export const GeofenceManagement: React.FC<GeofenceManagementProps> = ({ onShowTo
               backgroundColor: 'rgba(0, 0, 0, 0.35)',
               border: '1px solid rgba(255, 255, 255, 0.08)',
               borderRadius: '12px',
-              padding: '18px 20px',
+              padding: '16px',
               display: 'flex',
               flexDirection: 'column',
               gap: '12px'
             }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: '#94a3b8', fontSize: '0.84rem' }}>Center Target:</span>
-                <span style={{ fontWeight: 600, color: '#f1f5f9', fontSize: '0.88rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
+                <span style={{ color: '#94a3b8', fontSize: '0.82rem' }}>Configured Target:</span>
+                <span style={{ fontWeight: 600, color: '#f1f5f9', fontSize: '0.86rem' }}>
                   {geofenceLat}, {geofenceLon}
                 </span>
               </div>
 
               {adminLiveDistance !== null && (
                 <div style={{
-                  padding: '12px 16px',
+                  padding: '12px 14px',
                   borderRadius: '10px',
                   backgroundColor: isInside ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
                   border: `1px solid ${isInside ? 'rgba(16, 185, 129, 0.35)' : 'rgba(239, 68, 68, 0.35)'}`,
@@ -808,10 +1036,10 @@ export const GeofenceManagement: React.FC<GeofenceManagementProps> = ({ onShowTo
                   flexDirection: 'column',
                   gap: '4px'
                 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#e2e8f0' }}>Your Current Distance:</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#e2e8f0' }}>Your Device Distance:</span>
                     <span style={{
-                      fontSize: '1.1rem',
+                      fontSize: '1.05rem',
                       fontWeight: 800,
                       color: isInside ? '#34d399' : '#f87171'
                     }}>
@@ -819,13 +1047,13 @@ export const GeofenceManagement: React.FC<GeofenceManagementProps> = ({ onShowTo
                     </span>
                   </div>
                   <div style={{
-                    fontSize: '0.8rem',
+                    fontSize: '0.78rem',
                     fontWeight: 600,
                     color: isInside ? '#34d399' : '#f87171'
                   }}>
                     {isInside 
-                      ? '✅ Within perimeter (standard users would be allowed access)' 
-                      : '📍 Outside perimeter (standard users would be locked out)'}
+                      ? '✅ Inside perimeter — Employees permitted access' 
+                      : '📍 Outside perimeter — Employees locked out'}
                   </div>
                 </div>
               )}
@@ -834,22 +1062,7 @@ export const GeofenceManagement: React.FC<GeofenceManagementProps> = ({ onShowTo
                 type="button"
                 onClick={handleTestAdminDistance}
                 disabled={detectingAdminLocation}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  padding: '12px',
-                  borderRadius: '10px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                  border: '1px solid rgba(255, 255, 255, 0.15)',
-                  color: '#f8fafc',
-                  fontWeight: 700,
-                  fontSize: '0.88rem',
-                  cursor: detectingAdminLocation ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s ease',
-                  marginTop: '4px'
-                }}
+                className="geofence-action-btn"
               >
                 <Navigation size={16} className={detectingAdminLocation ? 'spin' : ''} style={{ animation: detectingAdminLocation ? 'spin 1s linear infinite' : 'none' }} />
                 <span>{detectingAdminLocation ? 'Measuring Distance...' : '📡 Measure Distance From My Location'}</span>

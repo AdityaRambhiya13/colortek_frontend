@@ -36,6 +36,22 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     }
   }, []);
 
+  const getUserLocation = async (): Promise<{ lat: number; lng: number } | null> => {
+    if (!('geolocation' in navigator)) return null;
+    return new Promise((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          sessionStorage.setItem('user_lat', String(coords.lat));
+          sessionStorage.setItem('user_lng', String(coords.lng));
+          resolve(coords);
+        },
+        () => resolve(null),
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 10000 }
+      );
+    });
+  };
+
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username || !password) {
@@ -47,8 +63,9 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     setErrorMsg('');
 
     try {
+      const coords = await getUserLocation();
       // 1. Fetch authorized product workspaces first
-      const [success, data] = await AuthAPI.getUserProducts(username, password);
+      const [success, data] = await AuthAPI.getUserProducts(username, password, coords);
       
       if (success && typeof data !== 'string') {
         const products = data.products || [];
@@ -68,7 +85,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         sessionStorage.setItem('available_products', JSON.stringify(products));
 
         // Automatically log into the first workspace context instantly
-        completeWorkspaceLogin(products[0], data.pre_auth_token);
+        completeWorkspaceLogin(products[0], data.pre_auth_token, coords);
       } else {
         setErrorMsg(typeof data === 'string' ? data : 'Invalid username or password.');
         setLoading(false);
@@ -112,14 +129,14 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     }
   };
 
-  const completeWorkspaceLogin = async (productName: string, tokenParam?: string) => {
+  const completeWorkspaceLogin = async (productName: string, tokenParam?: string, coordsParam?: { lat: number; lng: number } | null) => {
     setLoading(true);
     setErrorMsg('');
 
     const tokenToUse = tokenParam || preAuthToken;
 
     try {
-      const [success, data] = await AuthAPI.login(username, tokenToUse, productName);
+      const [success, data] = await AuthAPI.login(username, tokenToUse, productName, coordsParam);
       
       if (success) {
         // Clear temporary pre-auth token state

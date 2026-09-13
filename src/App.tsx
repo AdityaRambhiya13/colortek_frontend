@@ -15,6 +15,8 @@ const DatabaseManagement = React.lazy(() => import('./pages/DatabaseManagement')
 const ProductsMaster = React.lazy(() => import('./pages/ProductsMaster').then(m => ({ default: m.ProductsMaster })));
 import { AuthAPI } from './services/api';
 import { LogOut, Info as InfoIcon, RefreshCw } from 'lucide-react';
+import { useGeofence } from './hooks/useGeofence';
+import { GeofenceLockoutOverlay } from './components/GeofenceLockoutOverlay';
 
 
 export const App: React.FC = () => {
@@ -31,6 +33,17 @@ export const App: React.FC = () => {
   });
   const [sidebarMini, setSidebarMini] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  const [activeRoles, setActiveRoles] = useState<string[]>(() => {
+    const r = sessionStorage.getItem('user_roles');
+    return r ? r.split(',').map(s => s.trim().toLowerCase()).filter(Boolean) : [];
+  });
+
+  const isMasterAdmin = sessionStorage.getItem('product_name') === 'System Admin';
+  const isAdmin = isMasterAdmin || activeRoles.includes('admin') || activeRoles.includes('all');
+
+  // Geofence monitoring for authenticated regular users (Admins are completely exempt)
+  const geofence = useGeofence(isAuthenticated && !isAdmin);
 
   // Toast Notification System State
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info' } | null>(null);
@@ -275,11 +288,6 @@ export const App: React.FC = () => {
     setCurrentView('welcome');
     showToast('Logged out successfully', 'success');
   };
-
-  const [activeRoles, setActiveRoles] = useState<string[]>(() => {
-    const r = sessionStorage.getItem('user_roles');
-    return r ? r.split(',').map(s => s.trim().toLowerCase()).filter(Boolean) : [];
-  });
 
   const handleLoginSuccess = () => {
     setIsAuthenticated(true);
@@ -595,8 +603,6 @@ export const App: React.FC = () => {
     return <Login onLoginSuccess={handleLoginSuccess} />;
   }
 
-  const isMasterAdmin = sessionStorage.getItem('product_name') === 'System Admin';
-
   if (isMasterAdmin) {
     return (
       <div className="dark-theme" data-theme="dark" style={{
@@ -758,6 +764,19 @@ export const App: React.FC = () => {
 
   return (
     <div className="app-container">
+      {/* Geofence Lockout Overlay for regular users outside perimeter */}
+      {isAuthenticated && !isAdmin && geofence.isGeofenceActive && !geofence.isInside && (
+        <GeofenceLockoutOverlay
+          locationName={geofence.locationName}
+          allowedRadius={geofence.allowedRadius}
+          distance={geofence.distance}
+          error={geofence.error}
+          isChecking={geofence.isChecking}
+          onRefresh={geofence.refreshLocation}
+          onLogout={handleLogout}
+        />
+      )}
+
       {/* Dynamic Sidebar Navigation */}
       <Sidebar
         currentView={currentView}

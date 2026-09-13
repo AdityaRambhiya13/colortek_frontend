@@ -49,6 +49,16 @@ export interface ModifiedBatchLogResponse {
   full_details?: string | null;
 }
 
+export interface GeofenceConfig {
+  is_enabled: boolean;
+  name: string;
+  latitude: number;
+  longitude: number;
+  radius_meters: number;
+  updated_at?: string | null;
+  updated_by?: string | null;
+}
+
 // Base URL for the FastAPI backend (uses VITE_API_URL env variable with localhost fallback)
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -113,6 +123,13 @@ apiClient.interceptors.request.use(
           if ('csrfToken' in config.data) config.data.csrfToken = csrfToken;
         }
       }
+    }
+
+    const userLat = sessionStorage.getItem('user_lat');
+    const userLng = sessionStorage.getItem('user_lng');
+    if (userLat && userLng) {
+      config.headers['X-User-Latitude'] = userLat;
+      config.headers['X-User-Longitude'] = userLng;
     }
 
     return config;
@@ -211,29 +228,43 @@ export const AuthAPI = {
       // Ignore background ping errors
     }
   },
-  getUserProducts: async (username: string, password: string) => {
+  getGeofenceConfig: async () => {
+    return handleResponse<GeofenceConfig>(axios.get(`${API_BASE_URL}/auth/geofence-config`));
+  },
+
+  getUserProducts: async (username: string, password: string, coords?: { lat: number; lng: number } | null) => {
     const formData = new FormData();
     formData.append('username', username);
     formData.append('password', password);
+    const headers: Record<string, string> = { 'Content-Type': 'multipart/form-data' };
+    const lat = coords?.lat ?? sessionStorage.getItem('user_lat');
+    const lng = coords?.lng ?? sessionStorage.getItem('user_lng');
+    if (lat && lng) {
+      headers['X-User-Latitude'] = String(lat);
+      headers['X-User-Longitude'] = String(lng);
+    }
     
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(
-      axios.post(`${API_BASE_URL}/auth/products`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+      axios.post(`${API_BASE_URL}/auth/products`, formData, { headers })
     );
   },
 
-  login: async (username: string, preAuthToken: string, productName: string) => {
+  login: async (username: string, preAuthToken: string, productName: string, coords?: { lat: number; lng: number } | null) => {
     const formData = new FormData();
     formData.append('pre_auth_token', preAuthToken);
     formData.append('product_name', productName);
+    const headers: Record<string, string> = { 'Content-Type': 'multipart/form-data' };
+    const lat = coords?.lat ?? sessionStorage.getItem('user_lat');
+    const lng = coords?.lng ?? sessionStorage.getItem('user_lng');
+    if (lat && lng) {
+      headers['X-User-Latitude'] = String(lat);
+      headers['X-User-Longitude'] = String(lng);
+    }
     
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [success, data] = await handleResponse<any>(
-      axios.post(`${API_BASE_URL}/auth/login`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+      axios.post(`${API_BASE_URL}/auth/login`, formData, { headers })
     );
 
     if (success && typeof data !== 'string') {
@@ -393,6 +424,20 @@ export const AdminAPI = {
 
   getModifiedBatchDetail: async (modId: number) => {
     return handleResponse<ModifiedBatchLogResponse>(apiClient.get(`/admin/modified-batches/${modId}`));
+  },
+
+  getGeofenceConfig: async () => {
+    return handleResponse<GeofenceConfig>(apiClient.get('/admin/geofence'));
+  },
+
+  updateGeofenceConfig: async (payload: {
+    is_enabled: boolean;
+    name: string;
+    latitude: number;
+    longitude: number;
+    radius_meters: number;
+  }) => {
+    return handleResponse<GeofenceConfig>(apiClient.post('/admin/geofence', payload));
   }
 };
 

@@ -2026,20 +2026,22 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
       `}</style>
 
       {/* Create Master Formulation Modal */}
-      <CreateMasterModal
-        isOpen={createModalOpen}
-        productName={productName}
-        onClose={() => setCreateModalOpen(false)}
-        onSuccess={(createdBatch, createdProduct) => {
-          if (createdProduct && createdProduct.trim().toLowerCase() !== productName.trim().toLowerCase()) {
-            onShowToast(`✓ Master formulation '${createdBatch}' created under product '${createdProduct.toUpperCase()}'! Switch to that product from top bar to view.`, 'success');
-          } else {
-            loadMasterList();
-            loadBatchDetails(createdBatch);
-          }
-        }}
-        onShowToast={onShowToast}
-      />
+      {createModalOpen && (
+        <CreateMasterModal
+          isOpen={createModalOpen}
+          productName={productName}
+          onClose={() => setCreateModalOpen(false)}
+          onSuccess={(createdBatch, createdProduct) => {
+            if (createdProduct && createdProduct.trim().toLowerCase() !== productName.trim().toLowerCase()) {
+              onShowToast(`✓ Master formulation '${createdBatch}' created under product '${createdProduct.toUpperCase()}'! Switch to that product from top bar to view.`, 'success');
+            } else {
+              loadMasterList();
+              loadBatchDetails(createdBatch);
+            }
+          }}
+          onShowToast={onShowToast}
+        />
+      )}
 
       {/* Bulk Master Formulation Upload Studio Modal */}
       {bulkModalOpen && (

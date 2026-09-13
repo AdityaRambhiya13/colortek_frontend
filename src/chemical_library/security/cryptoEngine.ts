@@ -362,7 +362,8 @@ export function verify2FACode(inputCode: string, secretSeed: string = 'ARCHIVE_2
   }
   const prevCode = Math.abs(hashPrev % 1000000).toString().padStart(6, '0');
 
-  return trimmed === currentCode || trimmed === prevCode || trimmed === '123456';
+  // Only accept the live time-window codes — no static bypasses
+  return trimmed === currentCode || trimmed === prevCode;
 }
 
 // 8. Lockout / Brute Force Prevention

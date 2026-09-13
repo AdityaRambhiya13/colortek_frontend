@@ -247,6 +247,45 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
     return sum + (parseFloat(item.rounded_qty) || 0);
   }, 0);
 
+  const resetForm = () => {
+    setDocNo('DOC-MF-01');
+    setReviewNo('03');
+    setReviewDate('01.04.2025');
+    setIssueNo('01');
+    setIssueDate('01.04.2025');
+    setFormProductName(productName || 'aquatrap');
+    setBatchNo('');
+    setRefNo('');
+    setCustomerName('');
+    setFormulaDate(new Date().toISOString().split('T')[0]);
+    setRefBookNo('');
+    setGrams('100');
+    setPackaging('');
+    setViscosity('');
+    setDensity('');
+    setRatio('');
+    setFiltration('');
+    setRemarks('');
+    setSender('');
+    setApproval('');
+    setDate(new Date().toISOString().split('T')[0]);
+    const d = new Date();
+    setTime(d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+    handleRemoveImage();
+    setInventory([
+      { sr: '1', remarks: '', material: '', qty: '', rounded_qty: '' },
+      { sr: '2', remarks: '', material: '', qty: '', rounded_qty: '' },
+      { sr: '3', remarks: '', material: '', qty: '', rounded_qty: '' },
+      { sr: '4', remarks: '', material: '', qty: '', rounded_qty: '' },
+      { sr: '5', remarks: '', material: '', qty: '', rounded_qty: '' },
+    ]);
+    setTests([
+      { method: 'Viscosity', standard: '', result: '' },
+      { method: 'Density', standard: '', result: '' },
+      { method: 'Solid Content', standard: '', result: '' },
+    ]);
+  };
+
   // Form Submit
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -309,6 +348,7 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
     if (success) {
       onShowToast(`Master formulation ${cleanBatchNo} created successfully!`, 'success');
       onSuccess(cleanBatchNo, targetProdName);
+      resetForm();
       onClose();
     } else {
       const errMsg = typeof res === 'string' ? res : 'Failed to create master formulation.';
@@ -966,6 +1006,28 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
             paddingTop: '16px',
             marginTop: '8px'
           }}>
+            <button 
+              type="button" 
+              onClick={() => {
+                resetForm();
+                onShowToast('All fields reset to blank.', 'info');
+              }}
+              className="btn-secondary"
+              style={{
+                padding: '10px 18px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                border: '1px solid #fed7aa',
+                backgroundColor: '#fff7ed',
+                color: '#ea580c',
+                fontWeight: 600,
+                fontSize: '13px'
+              }}
+              disabled={saving}
+              title="Clear all fields to start fresh"
+            >
+              Clear All
+            </button>
             <button 
               type="button" 
               onClick={onClose}

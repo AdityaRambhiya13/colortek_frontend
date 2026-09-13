@@ -1259,8 +1259,8 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     setLoading(false);
 
     if (success) {
-      if (side === 'left') setLeftOriginalBatchNo(form.batchNo);
-      else setRightOriginalBatchNo(form.batchNo);
+      if (side === 'left') setLeftOriginalBatchNo('');
+      else setRightOriginalBatchNo('');
       onShowToast(`Master formulation saved for batch ${form.batchNo}`, 'success');
       NotificationsAPI.createNotification(
         "[SUCCESS] Batch Approved!",
@@ -1268,6 +1268,34 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
         "success",
         ["production", "mf"]
       );
+
+      // Reset all fields so new entries can be made cleanly without manual clearing
+      const setForm = side === 'left' ? setLeftForm : setRightForm;
+      const setRows = side === 'left' ? setLeftRows : setRightRows;
+      const setTestRows = side === 'left' ? setLeftTestRows : setRightTestRows;
+      const setRemarks = side === 'left' ? setLeftRemarks : setRightRemarks;
+      const setStatus = side === 'left' ? setLeftStatus : setRightStatus;
+      const setApprovedBy = side === 'left' ? setLeftApprovedBy : setRightApprovedBy;
+      const activeProdFormatted = (sessionStorage.getItem('product_name') || '').replace(/_/g, ' ').toUpperCase();
+
+      setForm({ refNo: '', batchNo: '', product: activeProdFormatted, rmLot: '', rmName: '', testDate: '', reportDate: '', formulaDate: '' });
+      setRows(initializeRows());
+      setTestRows(initializeTestRows());
+      setRemarks('');
+      setStatus('Select');
+      setApprovedBy('');
+
+      if (side === 'left') {
+        setDuplicateMatchesLeft([]);
+        setDuplicateDetailsLeft(null);
+        setSelectedDuplicateBatchNoLeft(null);
+        setLastCheckedLeftKey('');
+      } else {
+        setDuplicateMatchesRight([]);
+        setDuplicateDetailsRight(null);
+        setSelectedDuplicateBatchNoRight(null);
+        setLastCheckedRightKey('');
+      }
     } else {
       onShowToast(typeof data === 'string' ? data : 'Failed to save master.', 'error');
     }

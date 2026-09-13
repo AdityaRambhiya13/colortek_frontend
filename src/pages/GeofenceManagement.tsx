@@ -151,9 +151,9 @@ export const GeofenceManagement: React.FC<GeofenceManagementProps> = ({ onShowTo
         setAdminLocationAccuracy(Math.round(pos.coords.accuracy));
         const rad = parseFloat(geofenceRadius) || 200;
         if (dist <= rad) {
-          onShowToast(`Distance: ${dist}m — Inside authorized perimeter (${rad}m) ✅`, 'success');
+          onShowToast(`Position verified: ~${dist}m from center — Safely inside authorized perimeter (${rad}m) ✅`, 'success');
         } else {
-          onShowToast(`Distance: ${dist}m — Outside perimeter (${rad}m) 📍`, 'info');
+          onShowToast(`Position: ~${dist}m from center — Outside perimeter by ~${dist - rad}m (${rad}m allowed) 📍`, 'info');
         }
       },
       () => {
@@ -1037,13 +1037,13 @@ export const GeofenceManagement: React.FC<GeofenceManagementProps> = ({ onShowTo
                   gap: '4px'
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#e2e8f0' }}>Your Device Distance:</span>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#e2e8f0' }}>Distance from Center Pin:</span>
                     <span style={{
                       fontSize: '1.05rem',
                       fontWeight: 800,
                       color: isInside ? '#34d399' : '#f87171'
                     }}>
-                      ~{adminLiveDistance} meters away
+                      {adminLiveDistance === 0 ? '0m (Exact center coordinate)' : `~${adminLiveDistance}m from center`}
                     </span>
                   </div>
                   <div style={{
@@ -1052,8 +1052,8 @@ export const GeofenceManagement: React.FC<GeofenceManagementProps> = ({ onShowTo
                     color: isInside ? '#34d399' : '#f87171'
                   }}>
                     {isInside 
-                      ? '✅ Inside perimeter — Employees permitted access' 
-                      : '📍 Outside perimeter — Employees locked out'}
+                      ? `✅ Safely inside building perimeter (${adminLiveDistance}m from center, allowed: ${parsedRadius}m)` 
+                      : `📍 Outside building perimeter (${adminLiveDistance}m away, exceeds ${parsedRadius}m radius limit)`}
                   </div>
                 </div>
               )}

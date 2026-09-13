@@ -40,6 +40,8 @@ export function useGeofence(enabled: boolean = true): GeofenceState {
 
   const geofenceConfigRef = useRef<GeofenceConfig | null>(null);
   const watchIdRef = useRef<number | null>(null);
+  const lastVerifiedInsideRef = useRef<number>(0);
+  const consecutiveFailuresRef = useRef<number>(0);
 
   const evaluatePosition = useCallback((position: GeolocationPosition) => {
     const coords = position.coords;
@@ -50,6 +52,7 @@ export function useGeofence(enabled: boolean = true): GeofenceState {
     // Cache in sessionStorage for Axios request headers
     sessionStorage.setItem('user_lat', String(lat));
     sessionStorage.setItem('user_lng', String(lng));
+    sessionStorage.setItem('user_loc_time', String(Date.now()));
 
     const cfg = geofenceConfigRef.current;
     if (!cfg || !cfg.is_enabled) {
@@ -66,32 +69,52 @@ export function useGeofence(enabled: boolean = true): GeofenceState {
     setAllowedRadius(cfg.radius_meters);
     setLocationName(cfg.name || 'Company Premises');
 
-    if (dist <= cfg.radius_meters) {
+    // Add tolerance buffer for indoor GPS noise / accuracy radius (up to 20m)
+    const accuracyNoiseBuffer = Math.min(position.coords.accuracy || 0, 20);
+    const effectiveRadius = Number(cfg.radius_meters) + accuracyNoiseBuffer;
+
+    if (dist <= effectiveRadius) {
       setIsInside(true);
       setError(null);
+      lastVerifiedInsideRef.current = Date.now();
+      consecutiveFailuresRef.current = 0;
     } else {
       setIsInside(false);
-      setError(`You are ~${roundedDist}m away from ${cfg.name || 'the authorized premises'} (allowed: ${Math.round(cfg.radius_meters)}m). You must be inside the building to access Colortek CMS.`);
+      setError(`You are ~${roundedDist}m from the center of ${cfg.name || 'the facility'} (allowed radius: ${Math.round(cfg.radius_meters)}m). You must be inside the building to access Colortek CMS.`);
     }
     setIsChecking(false);
   }, []);
 
   const evaluateError = useCallback((err: GeolocationPositionError) => {
     setIsChecking(false);
-    let msg = 'Unable to determine your physical location. You must be in the building to access Colortek CMS.';
-    switch (err.code) {
-      case err.PERMISSION_DENIED:
-        msg = 'Location access is denied. Please enable location permissions in your browser to verify that you are inside the building.';
-        break;
-      case err.POSITION_UNAVAILABLE:
-        msg = 'GPS/Location signal unavailable. Connect to company Wi-Fi or step near a window inside the facility.';
-        break;
-      case err.TIMEOUT:
-        msg = 'Location request timed out. Please click "Refresh Location" while inside the building.';
-        break;
+
+    // If permission explicitly denied, lock out immediately
+    if (err.code === err.PERMISSION_DENIED) {
+      setError('Location access is denied. Please enable location permissions in your browser to verify that you are inside the building.');
+      setIsInside(false);
+      return;
     }
-    setError(msg);
-    setIsInside(false);
+
+    // For transient indoor GPS timeouts or weak satellite signals:
+    // Check if user was verified inside within the last 5 minutes (grace period for indoor desk work)
+    const now = Date.now();
+    const lastInside = lastVerifiedInsideRef.current;
+    if (lastInside && (now - lastInside < 300000)) {
+      // Keep user inside under grace period; do not disrupt work with false alarm
+      return;
+    }
+
+    consecutiveFailuresRef.current += 1;
+    if (consecutiveFailuresRef.current >= 3) {
+      let msg = 'Unable to determine your physical location. You must be in the building to access Colortek CMS.';
+      if (err.code === err.POSITION_UNAVAILABLE) {
+        msg = 'GPS signal unavailable indoors. Please connect to company Wi-Fi or step near a window.';
+      } else if (err.code === err.TIMEOUT) {
+        msg = 'Location request timed out. Please click "Refresh Location" while inside the building.';
+      }
+      setError(msg);
+      setIsInside(false);
+    }
   }, []);
 
   const refreshLocation = useCallback(async () => {

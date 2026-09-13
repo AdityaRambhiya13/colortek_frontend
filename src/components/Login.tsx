@@ -39,15 +39,32 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const getUserLocation = async (): Promise<{ lat: number; lng: number } | null> => {
     if (!('geolocation' in navigator)) return null;
     return new Promise((resolve) => {
+      const cachedLat = sessionStorage.getItem('user_lat');
+      const cachedLng = sessionStorage.getItem('user_lng');
+      const cachedTime = sessionStorage.getItem('user_loc_time');
+      const now = Date.now();
+      if (cachedLat && cachedLng && cachedTime && (now - Number(cachedTime) < 180000)) {
+        resolve({ lat: Number(cachedLat), lng: Number(cachedLng) });
+        return;
+      }
+
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
           sessionStorage.setItem('user_lat', String(coords.lat));
           sessionStorage.setItem('user_lng', String(coords.lng));
+          sessionStorage.setItem('user_loc_time', String(Date.now()));
           resolve(coords);
         },
-        () => resolve(null),
-        { enableHighAccuracy: true, timeout: 8000, maximumAge: 10000 }
+        (err) => {
+          console.warn('Geolocation acquisition error during login:', err.message);
+          if (cachedLat && cachedLng) {
+            resolve({ lat: Number(cachedLat), lng: Number(cachedLng) });
+          } else {
+            resolve(null);
+          }
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
       );
     });
   };

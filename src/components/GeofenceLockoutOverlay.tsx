@@ -124,10 +124,10 @@ export const GeofenceLockoutOverlay: React.FC<GeofenceLockoutOverlayProps> = ({
           {distance !== null && (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '6px', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
               <span style={{ fontSize: '0.8rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Your Current Distance
+                Distance from Center
               </span>
-              <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ef4444' }}>
-                ~{distance} meters away
+              <span style={{ fontSize: '0.92rem', fontWeight: 700, color: distance <= allowedRadius ? '#34d399' : '#ef4444' }}>
+                ~{distance}m {distance <= allowedRadius ? '(Inside Allowed Radius ✅)' : `(Exceeds Radius by ~${distance - allowedRadius}m 📍)`}
               </span>
             </div>
           )}

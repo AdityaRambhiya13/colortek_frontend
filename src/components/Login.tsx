@@ -108,7 +108,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           return;
         }
 
-        const isUserAdmin = Boolean(data.is_admin || ['admin', 'aditya', 'adi'].includes(username.trim().toLowerCase()));
+        const isUserAdmin = Boolean(data.is_admin);
         if (isUserAdmin) {
           sessionStorage.setItem('is_admin', 'true');
         } else {
@@ -173,7 +173,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     setErrorMsg('');
 
     const tokenToUse = tokenParam || preAuthToken;
-    const isCachedAdmin = sessionStorage.getItem('is_admin') === 'true' || ['admin', 'aditya', 'adi'].includes(username.trim().toLowerCase());
+    const isCachedAdmin = sessionStorage.getItem('is_admin') === 'true';
     const coordsToSend = isCachedAdmin ? null : coordsParam;
 
     try {
@@ -407,11 +407,29 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           <p style={{ fontSize: '0.8rem', color: '#94a3b8', textAlign: 'center', margin: 0 }}>
             {isAdminLogin ? 'Sign in to manage system administration' : 'Sign in to manage batch systems'}
           </p>
+          {!isAdminLogin && (
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              backgroundColor: 'rgba(14, 165, 233, 0.08)',
+              border: '1px solid rgba(14, 165, 233, 0.22)',
+              borderRadius: '20px',
+              padding: '4px 12px',
+              fontSize: '0.73rem',
+              color: '#38bdf8',
+              fontWeight: 500,
+              marginTop: '2px'
+            }}>
+              <MapPin size={12} />
+              <span>Location Protected: Must be in building to access CMS</span>
+            </div>
+          )}
         </div>
 
         <form onSubmit={isAdminLogin ? handleAdminLoginSubmit : handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
           {errorMsg && (() => {
-            const isCachedAdmin = sessionStorage.getItem('is_admin') === 'true' || ['admin', 'aditya', 'adi'].includes(username.trim().toLowerCase());
+            const isCachedAdmin = sessionStorage.getItem('is_admin') === 'true';
             const isLocationError = !isCachedAdmin && (
               errorMsg.toLowerCase().includes('location') ||
               errorMsg.toLowerCase().includes('facility') ||

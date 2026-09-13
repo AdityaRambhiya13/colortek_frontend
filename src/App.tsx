@@ -40,10 +40,12 @@ export const App: React.FC = () => {
     return r ? r.split(',').map(s => s.trim().toLowerCase()).filter(Boolean) : [];
   });
 
-  const isMasterAdmin = sessionStorage.getItem('product_name') === 'System Admin';
-  const isAdmin = isMasterAdmin || activeRoles.includes('admin') || activeRoles.includes('all');
+  const currentUsername = (sessionStorage.getItem('username') || '').trim().toLowerCase();
+  const cachedIsAdmin = sessionStorage.getItem('is_admin') === 'true';
+  const isMasterAdmin = sessionStorage.getItem('product_name') === 'System Admin' || currentUsername === 'admin' || currentUsername === 'aditya';
+  const isAdmin = cachedIsAdmin || isMasterAdmin || activeRoles.includes('admin') || activeRoles.includes('all') || currentUsername === 'admin' || currentUsername === 'aditya';
 
-  // Geofence monitoring for authenticated regular users (Admins are completely exempt)
+  // Geofence monitoring strictly for authenticated regular users (Admins are completely exempt worldwide)
   const geofence = useGeofence(isAuthenticated && !isAdmin);
 
   // Toast Notification System State

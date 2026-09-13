@@ -80,7 +80,9 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     setErrorMsg('');
 
     try {
-      const coords = await getUserLocation();
+      const isKnownAdmin = ['admin', 'aditya'].includes(username.trim().toLowerCase());
+      // Admins are completely exempt from geofencing worldwide — do NOT request GPS coordinates
+      const coords = isKnownAdmin ? null : await getUserLocation();
       // 1. Fetch authorized product workspaces first
       const [success, data] = await AuthAPI.getUserProducts(username, password, coords);
       
@@ -151,9 +153,11 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     setErrorMsg('');
 
     const tokenToUse = tokenParam || preAuthToken;
+    const isKnownAdmin = ['admin', 'aditya'].includes(username.trim().toLowerCase());
+    const coordsToSend = isKnownAdmin ? null : coordsParam;
 
     try {
-      const [success, data] = await AuthAPI.login(username, tokenToUse, productName, coordsParam);
+      const [success, data] = await AuthAPI.login(username, tokenToUse, productName, coordsToSend);
       
       if (success) {
         // Clear temporary pre-auth token state
@@ -383,7 +387,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           <p style={{ fontSize: '0.8rem', color: '#94a3b8', textAlign: 'center', margin: 0 }}>
             {isAdminLogin ? 'Sign in to manage system administration' : 'Sign in to manage batch systems'}
           </p>
-          {!isAdminLogin && (
+          {!isAdminLogin && !['admin', 'aditya'].includes(username.trim().toLowerCase()) && (
             <div style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -405,7 +409,8 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
         <form onSubmit={isAdminLogin ? handleAdminLoginSubmit : handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
           {errorMsg && (() => {
-            const isLocationError = (
+            const isKnownAdmin = ['admin', 'aditya'].includes(username.trim().toLowerCase());
+            const isLocationError = !isKnownAdmin && (
               errorMsg.toLowerCase().includes('location') ||
               errorMsg.toLowerCase().includes('facility') ||
               errorMsg.toLowerCase().includes('premises') ||

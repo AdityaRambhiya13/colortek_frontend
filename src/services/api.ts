@@ -274,6 +274,12 @@ export const AuthAPI = {
       sessionStorage.setItem('user_roles', data.roles.join(','));
       sessionStorage.setItem('username_cache', username);
       sessionStorage.setItem('product_name_cache', productName);
+      const isUserAdmin = Boolean(data.is_admin || (Array.isArray(data.roles) && data.roles.includes('admin')) || ['admin', 'aditya'].includes(username.toLowerCase()));
+      if (isUserAdmin) {
+        sessionStorage.setItem('is_admin', 'true');
+      } else {
+        sessionStorage.removeItem('is_admin');
+      }
     }
 
     return [success, data] as [boolean, any];
@@ -297,6 +303,7 @@ export const AuthAPI = {
       sessionStorage.setItem('product_name', 'System Admin');
       sessionStorage.setItem('user_roles', ['admin', 'cms', 'mf', 'qc', 'complaints', 'production', 'lab', 'rd'].join(','));
       sessionStorage.setItem('username_cache', username);
+      sessionStorage.setItem('is_admin', 'true');
     }
 
     return [success, data] as [boolean, any];
@@ -321,6 +328,13 @@ export const AuthAPI = {
       sessionStorage.setItem('product_name_cache', productName);
       // Also remove stale active_view so welcome page re-renders with new context
       sessionStorage.setItem('active_view', 'welcome');
+      const currentStoredUser = (sessionStorage.getItem('username') || '').toLowerCase();
+      const isUserAdmin = Boolean(data.is_admin || (Array.isArray(data.roles) && data.roles.includes('admin')) || ['admin', 'aditya'].includes(currentStoredUser));
+      if (isUserAdmin) {
+        sessionStorage.setItem('is_admin', 'true');
+      } else {
+        sessionStorage.removeItem('is_admin');
+      }
     }
 
     return [success, data] as [boolean, any];

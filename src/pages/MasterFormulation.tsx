@@ -79,6 +79,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
 
   // Deletion states
   const [deletingBatch, setDeletingBatch] = useState<string | null>(null);
@@ -284,6 +285,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
       setDetailData(data);
       setIsEditing(false);
       setAutosaveStatus('');
+      setFailedImages({});
 
       const form = data.form || {};
 
@@ -1171,6 +1173,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px' }}>
                       {attachedImages.map((imgName, idx) => {
                         const imgUrl = imgName.startsWith('http') ? imgName : `${API_BASE_URL}/mf/images/${imgName}`;
+                        const isFailed = Boolean(failedImages[imgName]);
                         return (
                           <div
                             key={idx}
@@ -1180,16 +1183,37 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                               height: '120px',
                               borderRadius: '8px',
                               overflow: 'hidden',
-                              border: '1px solid #cbd5e1',
+                              border: isFailed ? '1px dashed #f87171' : '1px solid #cbd5e1',
                               boxShadow: '0 2px 4px rgba(0,0,0,0.06)',
-                              backgroundColor: '#000000'
+                              backgroundColor: isFailed ? '#fff5f5' : '#f1f5f9'
                             }}
                           >
-                            <img
-                              src={imgUrl}
-                              alt={`Master Sheet ${idx + 1}`}
-                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                            />
+                            {isFailed ? (
+                              <div style={{
+                                width: '100%',
+                                height: '100%',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                padding: '8px',
+                                textAlign: 'center',
+                                gap: '4px',
+                                color: '#b91c1c'
+                              }}>
+                                <ImageIcon size={22} color="#dc2626" />
+                                <span style={{ fontSize: '11px', fontWeight: 600 }}>Image not on server</span>
+                                <span style={{ fontSize: '9px', color: '#64748b' }}>Re-upload photo to save to DB</span>
+                              </div>
+                            ) : (
+                              <img
+                                src={imgUrl}
+                                crossOrigin="anonymous"
+                                alt={`Master Sheet ${idx + 1}`}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                onError={() => setFailedImages(prev => ({ ...prev, [imgName]: true }))}
+                              />
+                            )}
                             <div
                               style={{
                                 position: 'absolute',
@@ -1203,25 +1227,29 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                                 alignItems: 'center'
                               }}
                             >
-                              <button
-                                type="button"
-                                onClick={() => setZoomedImage(imgUrl)}
-                                style={{
-                                  background: 'rgba(255,255,255,0.9)',
-                                  color: '#0f172a',
-                                  border: 'none',
-                                  borderRadius: '4px',
-                                  padding: '2px 8px',
-                                  fontSize: '11px',
-                                  fontWeight: 600,
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '4px'
-                                }}
-                              >
-                                <ZoomIn size={12} /> Zoom
-                              </button>
+                              {!isFailed ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setZoomedImage(imgUrl)}
+                                  style={{
+                                    background: 'rgba(255,255,255,0.9)',
+                                    color: '#0f172a',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    padding: '2px 8px',
+                                    fontSize: '11px',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '4px'
+                                  }}
+                                >
+                                  <ZoomIn size={12} /> Zoom
+                                </button>
+                              ) : (
+                                <span />
+                              )}
                               <button
                                 type="button"
                                 onClick={() => handleRemoveDetailImage(idx)}
@@ -1238,7 +1266,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                                   alignItems: 'center',
                                   gap: '4px'
                                 }}
-                                title="Delete this image"
+                                title="Delete this image reference"
                               >
                                 <Trash2 size={12} /> Remove
                               </button>

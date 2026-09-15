@@ -1449,7 +1449,21 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
     }
 
     // 2. Fallback to Lab Master Formulation (Hub Source)
-    const [lmfSuccess, lmfData] = await LabFormulationsAPI.getLmfBatchDetail(productName, targetBatchNo);
+    let lmfSuccess = false;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let lmfData: any = null;
+
+    const [mfSuccess, mfData] = await MasterFormulationAPI.getBatchDetail(productName, targetBatchNo, true);
+    if (mfSuccess && mfData && typeof mfData !== 'string') {
+      lmfSuccess = true;
+      lmfData = mfData;
+    } else {
+      const [legacySuccess, legacyData] = await LabFormulationsAPI.getLmfBatchDetail(productName, targetBatchNo);
+      if (legacySuccess && legacyData && typeof legacyData !== 'string') {
+        lmfSuccess = true;
+        lmfData = legacyData;
+      }
+    }
     setLoading(false);
 
     if (lmfSuccess && lmfData && typeof lmfData !== 'string') {

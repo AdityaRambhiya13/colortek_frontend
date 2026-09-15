@@ -219,7 +219,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
     if (success) {
       onShowToast(`Master formulation ${batchToApprove} successfully approved by Admin and released to Production!`, 'success');
       if (selectedBatch === batchToApprove) {
-        loadBatchDetails(batchToApprove);
+        loadBatchDetails(batchToApprove, detailData?.product_name || formProductName || productName);
       }
       loadMasterList();
     } else {
@@ -276,10 +276,11 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
   }, [fromDate, toDate, searchTerm, viewMode]);
 
   // Load detailed specifications
-  const loadBatchDetails = async (batchNo: string) => {
+  const loadBatchDetails = async (batchNo: string, batchProduct?: string) => {
     setLoading(true);
     const isLabMf = viewMode === 'lab_master_formulation';
-    const [success, data] = await MasterFormulationAPI.getBatchDetail(productName, batchNo, isLabMf);
+    const targetProd = (batchProduct && batchProduct.trim()) ? batchProduct.trim() : productName;
+    const [success, data] = await MasterFormulationAPI.getBatchDetail(targetProd, batchNo, isLabMf);
     setLoading(false);
 
     if (success && typeof data !== 'string') {
@@ -319,7 +320,18 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
       setApproval(form.approval || form.APPROVAL || data.approval || '');
       
       setGrams(String(data.grams || form['QUANTITY (Grams)'] || '100'));
-      setLocalInventory(data.inventory || []);
+      const rawInv = Array.isArray(data.inventory) ? data.inventory : [];
+      const inv = rawInv.map((item: any, idx: number) => ({
+        sr: String(item.sr || idx + 1),
+        material: item.material || item.raw_material || '',
+        raw_material: item.raw_material || item.material || '',
+        qty: String(item.qty !== undefined && item.qty !== null ? item.qty : ''),
+        rounded_qty: String(item.rounded_qty !== undefined && item.rounded_qty !== null ? item.rounded_qty : ''),
+        remarks: item.remarks || '',
+        percent: item.percent || '',
+        final_qty: item.final_qty || ''
+      }));
+      setLocalInventory(inv.length > 0 ? inv : [{ sr: '1', remarks: '', material: '', raw_material: '', qty: '', rounded_qty: '' }]);
 
       const imgs: string[] = data.image_references || form.image_references || [];
       setAttachedImages(imgs);
@@ -379,7 +391,8 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
           sender,
           approval
         };
-        await MasterFormulationAPI.updateBatch(productName, selectedBatch, updatedPayload);
+        const targetProdToUpdate = (viewMode === 'lab_master_formulation' && formProductName ? formProductName.trim() : '') || detailData?.product_name || productName;
+        await MasterFormulationAPI.updateBatch(targetProdToUpdate, selectedBatch, updatedPayload);
         setDetailData({ ...detailData, image_references: newImages, form: { ...(detailData.form || {}), image_references: newImages } });
       }
       onShowToast('Physical sheet photo uploaded and attached successfully!', 'success');
@@ -430,7 +443,8 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
         sender,
         approval
       };
-      await MasterFormulationAPI.updateBatch(productName, selectedBatch, updatedPayload);
+      const targetProdToUpdate = (viewMode === 'lab_master_formulation' && formProductName ? formProductName.trim() : '') || detailData?.product_name || productName;
+      await MasterFormulationAPI.updateBatch(targetProdToUpdate, selectedBatch, updatedPayload);
       setDetailData({ ...detailData, image_references: newImages, form: { ...(detailData.form || {}), image_references: newImages } });
       onShowToast('Image removed from formulation.', 'info');
     }
@@ -527,9 +541,8 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
         approval: currentParams.approval
       };
       
-      const isLabMf = viewMode === 'lab_master_formulation';
-      const updateApi = isLabMf ? LabFormulationsAPI.updateLmfBatch : MasterFormulationAPI.updateBatch;
-      const [success, resDataOrMsg] = await updateApi(productName, selectedBatch, updatedPayload);
+      const targetProdToUpdate = (viewMode === 'lab_master_formulation' && formProductName ? formProductName.trim() : '') || detailData?.product_name || productName;
+      const [success, resDataOrMsg] = await MasterFormulationAPI.updateBatch(targetProdToUpdate, selectedBatch, updatedPayload);
       if (success) {
         setAutosaveStatus('✓ Recipe changes saved automatically');
         setTimeout(() => setAutosaveStatus(''), 3000);
@@ -668,15 +681,14 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
     };
 
     setLoading(true);
-    const isLabMf = viewMode === 'lab_master_formulation';
-    const updateApi = isLabMf ? LabFormulationsAPI.updateLmfBatch : MasterFormulationAPI.updateBatch;
-    const [success, resDataOrMsg] = await updateApi(productName, selectedBatch, updatedPayload);
+    const targetProdToUpdate = (viewMode === 'lab_master_formulation' && formProductName ? formProductName.trim() : '') || detailData?.product_name || productName;
+    const [success, resDataOrMsg] = await MasterFormulationAPI.updateBatch(targetProdToUpdate, selectedBatch, updatedPayload);
     setLoading(false);
 
     if (success) {
       onShowToast(`Master formulation ${selectedBatch} successfully updated.`, 'success');
       setIsEditing(false);
-      loadBatchDetails(selectedBatch);
+      loadBatchDetails(selectedBatch, targetProdToUpdate);
     } else {
       const errorMsg = typeof resDataOrMsg === 'string' ? resDataOrMsg : 'Failed to update formulation parameters.';
       onShowToast(errorMsg, 'error');
@@ -939,7 +951,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
                         onChangeView('formulation_sheet');
                       }
                     } else {
-                      loadBatchDetails(row.batch_no);
+                      loadBatchDetails(row.batch_no, row.product_name);
                     }
                   }}
                   className="mf-batch-card"
@@ -2105,7 +2117,7 @@ export const MasterFormulation: React.FC<MasterFormulationProps> = ({ viewMode, 
           onClose={() => setCreateModalOpen(false)}
           onSuccess={(createdBatch, createdProduct) => {
             loadMasterList();
-            loadBatchDetails(createdBatch);
+            loadBatchDetails(createdBatch, createdProduct);
             if (createdProduct && createdProduct.trim().toLowerCase().replace(/\s+/g, '_') !== productName.trim().toLowerCase().replace(/\s+/g, '_')) {
               onShowToast(`Master formulation '${createdBatch}' created for '${createdProduct.toUpperCase()}'. Temporarily visible and editable in this workspace for 3 hours.`, 'info');
             }

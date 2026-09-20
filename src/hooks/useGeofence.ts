@@ -69,8 +69,9 @@ export function useGeofence(enabled: boolean = true): GeofenceState {
     setAllowedRadius(cfg.radius_meters);
     setLocationName(cfg.name || 'Company Premises');
 
-    // Add tolerance buffer for indoor GPS noise / accuracy radius (up to 20m)
-    const accuracyNoiseBuffer = Math.min(position.coords.accuracy || 0, 20);
+    // Add a generous tolerance buffer for indoor GPS noise / accuracy radius (up to 100m) 
+    // plus a flat 50m grace distance to account for being at the edge of the building
+    const accuracyNoiseBuffer = Math.min(position.coords.accuracy || 0, 100) + 50;
     const effectiveRadius = Number(cfg.radius_meters) + accuracyNoiseBuffer;
 
     if (dist <= effectiveRadius) {

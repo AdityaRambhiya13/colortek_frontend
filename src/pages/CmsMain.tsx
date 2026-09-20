@@ -262,18 +262,19 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
     setStarModalOpen(true);
   };
 
-  const handleSaveStarStatus = async (starredStatus: boolean) => {
+  const handleSaveStarStatus = async (starredStatus: boolean, okRating: string = "") => {
     if (!selectedBatchForStar) return;
     try {
       setLoading(true);
+      const finalRating = okRating || okRatingInput;
       const [success, res] = await LabFormulationsAPI.toggleStar(
         productName, 
         selectedBatchForStar.batchNo, 
         starredStatus, 
-        okRatingInput
+        finalRating
       );
       if (success) {
-        onShowToast(starredStatus ? `Bookmarked ${selectedBatchForStar.batchNo} (${okRatingInput})` : `Unstarred ${selectedBatchForStar.batchNo}`, 'success');
+        onShowToast(starredStatus ? `Bookmarked ${selectedBatchForStar.batchNo} (${finalRating})` : `Unstarred ${selectedBatchForStar.batchNo}`, 'success');
         setStarModalOpen(false);
         setSelectedBatchForStar(null);
         if (activeSubView === 'past_lab_formulations') {

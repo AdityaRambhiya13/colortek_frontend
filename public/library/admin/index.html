@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chemical Archive Admin Suite | Colortek</title>
+  <title>Chemical Library</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,400;1,600&family=Cinzel:wght@500;700;800&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
@@ -11,34 +11,64 @@
   <script src="../chemical_data.js"></script>
 
   <style>
+    
     :root {
-      --paper-primary: #FAF0D7;
-      --paper-surface: #FDF7E3;
-      --paper-card: #F6E2A3;
-      --archival-beige: #FAE8B4;
-      --border-subtle: #CBBD93;
-      --border-dark: #574A24;
-      --ink-primary: #574A24;
-      --ink-dark: #382F15;
-      --olive-muted: #80775C;
-      --font-display: 'Cinzel', serif;
-      --font-serif: 'Newsreader', serif;
-      --font-mono: 'JetBrains Mono', monospace;
-      --font-sans: 'Inter', sans-serif;
+      /* Colors */
+      --off-white: #f3f6f8;
+      --off-white-glass: rgba(243, 246, 248, 0.6);
+      --black: #1a1a1a;
+      --peacock-blue: #005f73;
+      --peacock-blue-glass: rgba(0, 95, 115, 0.1);
+      --sea-green: #2a9d8f;
+      --sea-green-glass: rgba(42, 157, 143, 0.1);
+      
+      --paper-primary: var(--off-white);
+      --paper-surface: var(--off-white-glass);
+      --paper-card: rgba(255, 255, 255, 0.5);
+      --paper-card-hover: rgba(255, 255, 255, 0.8);
+      --archival-beige: var(--peacock-blue-glass);
+      --border-subtle: rgba(255, 255, 255, 0.8);
+      --border-dark: var(--peacock-blue);
+      --ink-primary: var(--black);
+      --ink-dark: #000000;
+      --olive-muted: #555555;
+      
+      --font-display: 'Plus Jakarta Sans', sans-serif;
+      --font-serif: 'Plus Jakarta Sans', sans-serif;
+      --font-mono: 'Space Mono', monospace;
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      
+      --radius-large: 24px;
+      --radius-medium: 16px;
+      --radius-small: 12px;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
     body {
-      background-color: var(--paper-primary);
+      background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
       color: var(--ink-primary);
       font-family: var(--font-sans);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
     }
+    
+    .glass-panel {
+      background: rgba(255,255,255,0.4);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.6);
+      border-radius: var(--radius-large);
+      box-shadow: 0 8px 32px 0 rgba(0,0,0,0.05);
+    }
+
 
     /* Admin Header */
     .admin-header {
+      background: rgba(255,255,255,0.4);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(255,255,255,0.6);
+      border-radius: 0 0 24px 24px;
       background-color: var(--paper-surface);
       border-bottom: 2px solid var(--border-dark);
       padding: 16px 36px;
@@ -129,7 +159,7 @@
     .admin-card {
       background: var(--paper-surface);
       border: 1px solid var(--border-subtle);
-      border-radius: 4px;
+      border-radius: 12px;
       padding: 24px 30px;
       box-shadow: 0 4px 15px rgba(87, 74, 36, 0.05);
       margin-bottom: 24px;
@@ -178,7 +208,7 @@
       background: none;
       border: 1px solid var(--border-subtle);
       padding: 4px 8px;
-      border-radius: 2px;
+      border-radius: 12px;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
@@ -189,7 +219,7 @@
     }
     .action-btn:hover {
       background: var(--border-dark);
-      color: var(--paper-primary);
+      color: #fff;
     }
 
     /* Auth Gate Modal */
@@ -209,7 +239,7 @@
       background: #FDF7E3;
       border: 2px solid #574A24;
       box-shadow: 0 20px 45px rgba(56, 47, 21, 0.25);
-      border-radius: 4px;
+      border-radius: 12px;
       padding: 40px 36px;
     }
   </style>
@@ -290,7 +320,7 @@
     <a href="../" class="admin-brand">
       <div class="brand-mark">CA</div>
       <div>
-        <h1 class="brand-title">Chemical Archive Admin</h1>
+        <h1 class="brand-title">Chemical Library Admin</h1>
         <p class="brand-sub">Dedicated Library Administration & Security</p>
       </div>
     </a>

@@ -425,8 +425,7 @@ export const CreateMasterModal: React.FC<CreateMasterModalProps> = ({
       }
 
       onSuccess(cleanBatchNo, targetProdName);
-      resetForm();
-      onClose();
+      // Removed resetForm() and onClose() so user can save multiple batches without reopening modal.
     } else {
       const errMsg = typeof res === 'string' ? res : 'Failed to create master formulation.';
       onShowToast(errMsg, 'error');

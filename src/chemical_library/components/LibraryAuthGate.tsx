@@ -158,17 +158,7 @@ export const LibraryAuthGate: React.FC<LibraryAuthGateProps> = ({ onAuthSuccess 
           >
             Chemical Archive Gate
           </h1>
-          <p
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: '11px',
-              color: '#80775C',
-              marginTop: '6px',
-              letterSpacing: '1px',
-            }}
-          >
-            ?? AES-256 / SHA-256 + 2FA CRYPTOGRAPHY
-          </p>
+
         </div>
 
         {errorMsg && (
@@ -450,11 +440,7 @@ export const LibraryAuthGate: React.FC<LibraryAuthGateProps> = ({ onAuthSuccess 
           </form>
         )}
 
-        <div style={{ marginTop: '24px', textAlign: 'center', borderTop: '1px solid rgba(128,119,92,0.2)', paddingTop: '16px' }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#80775C' }}>
-            PROTECTED BY 256-BIT ENCRYPTION & SECURE MULTI-FACTOR AUTH
-          </span>
-        </div>
+
       </div>
     </div>
   );

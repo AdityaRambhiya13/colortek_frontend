@@ -230,13 +230,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
 
         {/* Complaints Role */}
-        {(roles.includes('complaints') || roles.includes('lab') || roles.includes('all')) && renderFolder(
+        {(roles.includes('complaints') || roles.includes('lab') || roles.includes('all') || roles.includes('admin')) && renderFolder(
           'complaints',
           'Complaints Dept',
           <ShieldAlert size={18} />,
           <>
-            {roles.includes('complaints') && renderLink('complaints', 'Registration', <ShieldAlert size={14} />, true)}
-            {roles.includes('lab') && (
+            {(roles.includes('complaints') || roles.includes('all') || roles.includes('admin')) && renderLink('complaints', 'Registration', <ShieldAlert size={14} />, true)}
+            {(roles.includes('lab') || roles.includes('all') || roles.includes('admin')) && (
               <>
                 {renderLink('complaints_lab', 'Lab Complaints', <Beaker size={14} />, true)}
                 {renderLink('repaired_formulations', 'Repaired Formulas', <FileText size={14} />, true)}

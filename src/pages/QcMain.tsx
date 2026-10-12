@@ -8,7 +8,6 @@ import {
   QCReportAPI, 
   RawMaterialAPI, 
   ProductionBatchAPI, 
-  ObservationAPI, 
   W56RndAPI, 
   ProductionBatchEntryAPI, 
   LabReturnAPI, 

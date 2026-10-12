@@ -838,11 +838,6 @@ export const MasterFormulationAPI = {
     }));
   },
 
-  findByBatch: async (batchNo: string) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return handleResponse<any>(apiClient.get(`/mf/find-by-batch/${encodeURIComponent(batchNo)}`));
-  },
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   createBatch: async (productName: string, payload: any) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -929,14 +924,6 @@ export const DispatchRegisterAPI = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return handleResponse<any>(apiClient.get(`/dispatch-register/fg-batches/${productNameDb}`, {
       params: { product_filter: productName },
-    }));
-  },
-
-  searchFgBatches: async (productFilter: string, searchTerm: string) => {
-    const productNameDb = sessionStorage.getItem('product_name') || '';
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return handleResponse<any>(apiClient.get(`/dispatch-register/search-fg-batches/${productNameDb}/${searchTerm}`, {
-      params: { product_filter: productFilter },
     }));
   }
 };
@@ -1228,15 +1215,8 @@ export const RDReportAPI = {
     }));
   },
 
-  getReports: async (productName: string, pageIndex: number, pageSize: number, searchTerm?: string) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return handleResponse<any>(apiClient.get(`/rd/reports/${productName}`, {
-      params: {
-        page_index: pageIndex,
-        page_size: pageSize,
-        ...(searchTerm && { batch_no_filter: searchTerm }),
-      },
-    }));
+  getReports: async (productName: string, pageIndex: number, _pageSize: number, searchTerm?: string) => {
+    return RDReportAPI.searchReports(productName, searchTerm ? { batch_no: searchTerm } : {}, pageIndex);
   },
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1617,6 +1597,13 @@ export const ObservationAPI = {
       product_name: productName,
       csrf_token: csrfToken,
       entries,
+    }));
+  },
+
+  getEntries: async (productName: string, batchNo?: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return handleResponse<any>(apiClient.get(`/qc/observation/entries/${encodeURIComponent(productName)}`, {
+      params: { ...(batchNo ? { batch_no: batchNo } : {}) }
     }));
   }
 };

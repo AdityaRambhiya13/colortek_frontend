@@ -189,6 +189,20 @@ apiClient.interceptors.response.use(
         _isRefreshing = false;
       }
     }
+    // Transient network resilience: Auto-retry idempotent GET requests on network drops or 502/503/504
+    if (
+      originalRequest &&
+      originalRequest.method?.toLowerCase() === 'get' &&
+      (error.code === 'ERR_NETWORK' || !error.response || (error.response?.status >= 502 && error.response?.status <= 504))
+    ) {
+      originalRequest._networkRetryCount = (originalRequest._networkRetryCount || 0) + 1;
+      if (originalRequest._networkRetryCount <= 2) {
+        const backoffMs = originalRequest._networkRetryCount * 800;
+        await new Promise((resolve) => setTimeout(resolve, backoffMs));
+        return apiClient(originalRequest);
+      }
+    }
+
     return Promise.reject(error);
   }
 );

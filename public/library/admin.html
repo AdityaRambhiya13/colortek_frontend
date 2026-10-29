@@ -539,7 +539,7 @@
       const code = document.getElementById('admin2FACode').value.trim();
       const expected = document.getElementById('adminTotpCode').innerText;
 
-      if (code !== expected && code !== '123456') {
+      if (code !== expected) {
         showAdminErr('Invalid 2FA verification code.');
         return;
       }

@@ -41,7 +41,7 @@ describe('AuthAPI Service wrapper', () => {
     const mockResponse = { data: { csrf_token: 'csrf123', roles: ['admin'] } };
     vi.mocked(axios.post).mockResolvedValueOnce(mockResponse);
 
-    const [success, data] = await AuthAPI.login('user', 'pretoken', 'product_a');
+    const [success] = await AuthAPI.login('user', 'pretoken', 'product_a');
     expect(success).toBe(true);
     expect(sessionStorage.getItem('csrf_token')).toBe('csrf123');
     expect(sessionStorage.getItem('username')).toBe('user');

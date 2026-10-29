@@ -15,7 +15,8 @@ const GeofenceManagement = React.lazy(() => import('./pages/GeofenceManagement')
 const DatabaseManagement = React.lazy(() => import('./pages/DatabaseManagement').then(m => ({ default: m.DatabaseManagement })));
 const ProductsMaster = React.lazy(() => import('./pages/ProductsMaster').then(m => ({ default: m.ProductsMaster })));
 import { AuthAPI } from './services/api';
-import { LogOut, Info as InfoIcon, RefreshCw } from 'lucide-react';
+import { LogOut, Info as InfoIcon, RefreshCw, CheckCircle2, AlertTriangle, AlertCircle, X as CloseIcon } from 'lucide-react';
+import { toast as globalToast } from './utils/toast';
 import { useGeofence } from './hooks/useGeofence';
 import { GeofenceLockoutOverlay } from './components/GeofenceLockoutOverlay';
 
@@ -50,7 +51,22 @@ export const App: React.FC = () => {
 
   // Toast Notification System State
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info' } | null>(null);
+
+  // Toast trigger helper (defined early to satisfy React effect dependencies)
+  const showToast = React.useCallback((message: string, type: 'success' | 'error' | 'warning' | 'info' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast(null);
+    }, 4000);
+  }, []);
   const lastSessionVerifyTimeRef = React.useRef<number>(0);
+
+  // Subscribe to global toast events
+  useEffect(() => {
+    return globalToast.subscribe((p) => {
+      showToast(p.message, p.type);
+    });
+  }, []);
 
   // Monitor network connection status
   useEffect(() => {
@@ -240,13 +256,7 @@ export const App: React.FC = () => {
     window.history.pushState({}, '', url.toString());
   };
 
-  // Toast trigger helper
-  const showToast = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'success') => {
-    setToast({ message, type });
-    setTimeout(() => {
-      setToast(null);
-    }, 4000);
-  };
+
 
   const refreshAvailableProducts = async (showNotification = false) => {
     setRefreshingProducts(true);
@@ -781,23 +791,33 @@ export const App: React.FC = () => {
         </main>
 
         {/* Toast Alert Dialog */}
-        {toast && (
-          <div className="toast-notification" style={{
-            position: 'fixed',
-            bottom: '24px',
-            right: '24px',
-            backgroundColor: toast.type === 'error' ? '#ef4444' : toast.type === 'warning' ? '#f59e0b' : toast.type === 'info' ? '#3b82f6' : '#10b981',
-            color: 'white',
-            padding: '12px 20px',
-            borderRadius: '8px',
-            boxShadow: '0 10px 15px -3px rgba(0,0,0,0.3)',
-            zIndex: 1000,
-            fontWeight: 600,
-            fontSize: '0.85rem'
-          }}>
+      {toast && (
+        <div className={`toast-alert ${toast.type}`} role="alert" aria-live="assertive">
+          {toast.type === 'success' && <CheckCircle2 size={16} color="var(--color-success, #10B981)" />}
+          {toast.type === 'error' && <AlertCircle size={16} color="var(--color-error, #EF4444)" />}
+          {toast.type === 'warning' && <AlertTriangle size={16} color="var(--color-warning, #F59E0B)" />}
+          {toast.type === 'info' && <InfoIcon size={16} color="var(--primary-color, #3B82F6)" />}
+          <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)' }}>
             {toast.message}
-          </div>
-        )}
+          </span>
+          <button
+            onClick={() => setToast(null)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--text-light)',
+              marginLeft: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              padding: '2px',
+            }}
+            title="Dismiss"
+          >
+            <CloseIcon size={14} />
+          </button>
+        </div>
+      )}
       </div>
     );
   }
@@ -848,12 +868,30 @@ export const App: React.FC = () => {
 
       {/* Toast Alert Dialog */}
       {toast && (
-        <div className={`toast-alert success ${toast.type}`}>
-          <InfoIcon size={16} color="var(--primary-color)" />
-
+        <div className={`toast-alert ${toast.type}`} role="alert" aria-live="assertive">
+          {toast.type === 'success' && <CheckCircle2 size={16} color="var(--color-success, #10B981)" />}
+          {toast.type === 'error' && <AlertCircle size={16} color="var(--color-error, #EF4444)" />}
+          {toast.type === 'warning' && <AlertTriangle size={16} color="var(--color-warning, #F59E0B)" />}
+          {toast.type === 'info' && <InfoIcon size={16} color="var(--primary-color, #3B82F6)" />}
           <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)' }}>
             {toast.message}
           </span>
+          <button
+            onClick={() => setToast(null)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--text-light)',
+              marginLeft: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              padding: '2px',
+            }}
+            title="Dismiss"
+          >
+            <CloseIcon size={14} />
+          </button>
         </div>
       )}
     </div>

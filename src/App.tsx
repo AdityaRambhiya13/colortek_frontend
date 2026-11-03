@@ -778,6 +778,25 @@ export const App: React.FC = () => {
           >
             Products Master
           </button>
+          <button
+            onClick={() => handleViewChange('batch_audit_system_health')}
+            style={{
+              padding: '14px 18px',
+              backgroundColor: 'transparent',
+              border: 'none',
+              borderBottom: currentView === 'batch_audit_system_health' ? '3px solid #c084fc' : '3px solid transparent',
+              color: currentView === 'batch_audit_system_health' ? '#ffffff' : '#94a3b8',
+              fontWeight: currentView === 'batch_audit_system_health' ? 700 : 600,
+              fontSize: '0.88rem',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              outline: 'none',
+              whiteSpace: 'nowrap',
+              flexShrink: 0
+            }}
+          >
+            Batch Audit & Health
+          </button>
         </div>
 
         {/* Admin Content Area (Responsive Padding) */}

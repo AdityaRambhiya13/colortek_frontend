@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   CheckCircle2, AlertTriangle, AlertCircle, RefreshCw, Database,
   ShieldCheck, Activity, Eye, FileText, Search,
-  Layers, Server, HardDrive, Key, X,
+  Layers, HardDrive, Key, X,
   ChevronDown, ChevronRight, Download, BarChart2
 } from 'lucide-react';
 import {
@@ -67,7 +67,7 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
     }
   };
 
-  // Load Duplicate Batches
+  // Load Duplicate Batches - Limit 1000 ensures all groups are returned without mismatch
   const fetchDuplicateBatches = async (showNotification = false) => {
     setAuditLoading(true);
     const [success, data] = await AdminAPI.getDuplicateBatches({
@@ -75,7 +75,7 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
       scope: scopeFilter,
       filter_type: duplicateMode,
       search: searchTerm.trim() || undefined,
-      limit: 150
+      limit: 1000
     });
     setAuditLoading(false);
 
@@ -95,7 +95,7 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
       setExpandedGroups(initialExpanded);
 
       if (showNotification) {
-        const formulaCount = data.summary?.total_formula_groups || 0;
+        const formulaCount = data.summary?.total_formula_groups || data.formula_duplicates?.length || 0;
         onShowToast(`Audit updated: Found ${formulaCount} identical formula groups.`, 'info');
       }
     } else {
@@ -114,7 +114,7 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
     fetchDuplicateBatches();
   }, [selectedProduct, duplicateMode, scopeFilter]);
 
-  // Handle Search on Enter or debounce
+  // Handle Search on Enter
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     fetchDuplicateBatches();
@@ -239,61 +239,68 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
     switch (status) {
       case 'healthy':
         return {
-          bg: 'rgba(16, 185, 129, 0.1)',
+          bg: 'rgba(16, 185, 129, 0.15)',
           border: '#10b981',
-          text: '#10b981',
+          text: '#34d399',
           label: 'System Operational - Healthy',
-          icon: <CheckCircle2 size={18} color="#10b981" />
+          icon: <CheckCircle2 size={18} color="#34d399" />
         };
       case 'warning':
         return {
-          bg: 'rgba(245, 158, 11, 0.1)',
+          bg: 'rgba(245, 158, 11, 0.15)',
           border: '#f59e0b',
-          text: '#f59e0b',
+          text: '#fbbf24',
           label: 'System Warning / Degraded',
-          icon: <AlertTriangle size={18} color="#f59e0b" />
+          icon: <AlertTriangle size={18} color="#fbbf24" />
         };
       case 'error':
         return {
-          bg: 'rgba(239, 68, 68, 0.1)',
+          bg: 'rgba(239, 68, 68, 0.15)',
           border: '#ef4444',
-          text: '#ef4444',
+          text: '#f87171',
           label: 'System Error / Issues Detected',
-          icon: <AlertCircle size={18} color="#ef4444" />
+          icon: <AlertCircle size={18} color="#f87171" />
         };
       default:
         return {
-          bg: 'rgba(100, 116, 139, 0.1)',
+          bg: 'rgba(100, 116, 139, 0.15)',
           border: '#64748b',
-          text: '#64748b',
+          text: '#94a3b8',
           label: 'Status Unknown',
-          icon: <Activity size={18} color="#64748b" />
+          icon: <Activity size={18} color="#94a3b8" />
         };
     }
   };
 
   const healthBadge = getStatusBadge(healthData?.status);
 
+  // Common dark theme card style
+  const darkCardStyle: React.CSSProperties = {
+    backgroundColor: '#0f172a',
+    border: '1px solid rgba(255, 255, 255, 0.08)',
+    borderRadius: '10px',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)',
+    color: '#f8fafc'
+  };
+
   return (
-    <div className="animated-fade" style={{ display: 'flex', flexDirection: 'column', gap: '24px', paddingBottom: '40px' }}>
+    <div className="animated-fade" style={{ display: 'flex', flexDirection: 'column', gap: '20px', paddingBottom: '40px', color: '#f8fafc' }}>
       {/* PAGE HEADER */}
       <div style={{
+        ...darkCardStyle,
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
         flexWrap: 'wrap',
         gap: '16px',
-        backgroundColor: 'var(--bg-card)',
         padding: '20px 24px',
-        borderRadius: 'var(--radius-md)',
-        border: '1px solid var(--border-color)',
-        boxShadow: 'var(--shadow-sm)'
+        backgroundColor: '#0f172a'
       }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{
-              backgroundColor: 'rgba(99, 102, 241, 0.12)',
-              color: 'var(--primary-color)',
+              backgroundColor: 'rgba(99, 102, 241, 0.18)',
+              color: '#818cf8',
               padding: '8px',
               borderRadius: '8px',
               display: 'flex',
@@ -302,11 +309,11 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
             }}>
               <ShieldCheck size={24} />
             </div>
-            <h1 style={{ fontSize: '1.6rem', fontWeight: 800, margin: 0 }}>
+            <h1 style={{ fontSize: '1.6rem', fontWeight: 800, margin: 0, color: '#ffffff' }}>
               Batch Audit & System Health
             </h1>
           </div>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: 0 }}>
+          <p style={{ color: '#94a3b8', fontSize: '0.875rem', margin: 0 }}>
             Audit identical formulation batches, analyze duplicate material compositions, and monitor server & database health.
           </p>
         </div>
@@ -319,8 +326,19 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
               else fetchSystemHealth(true);
             }}
             disabled={auditLoading || healthLoading}
-            className="btn-secondary"
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 14px' }}
+            style={{
+              backgroundColor: '#1e293b',
+              color: '#f8fafc',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              borderRadius: '6px',
+              padding: '8px 14px',
+              fontSize: '0.82rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
             title="Refresh current tab data"
           >
             <RefreshCw size={15} className={(auditLoading || healthLoading) ? 'spin' : ''} />
@@ -329,8 +347,19 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
 
           <button
             onClick={handleExportReport}
-            className="btn-secondary"
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 14px' }}
+            style={{
+              backgroundColor: '#1e293b',
+              color: '#f8fafc',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              borderRadius: '6px',
+              padding: '8px 14px',
+              fontSize: '0.82rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
             title="Download complete JSON report"
           >
             <Download size={15} />
@@ -340,8 +369,20 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
           <button
             onClick={handleTriggerBackup}
             disabled={backingUp}
-            className="btn-primary"
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', backgroundColor: '#6366f1' }}
+            style={{
+              backgroundColor: '#6366f1',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '6px',
+              padding: '8px 16px',
+              fontSize: '0.82rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              boxShadow: '0 2px 4px rgba(99, 102, 241, 0.3)'
+            }}
             title="Create full database backup"
           >
             <Database size={15} />
@@ -354,7 +395,7 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
       <div style={{
         display: 'flex',
         gap: '8px',
-        borderBottom: '2px solid var(--border-light)',
+        borderBottom: '2px solid rgba(255, 255, 255, 0.08)',
         paddingBottom: '2px'
       }}>
         <button
@@ -366,20 +407,20 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
             padding: '12px 20px',
             backgroundColor: 'transparent',
             border: 'none',
-            borderBottom: activeTab === 'audit' ? '3px solid var(--primary-color)' : '3px solid transparent',
-            color: activeTab === 'audit' ? 'var(--primary-color)' : 'var(--text-secondary)',
+            borderBottom: activeTab === 'audit' ? '3px solid #818cf8' : '3px solid transparent',
+            color: activeTab === 'audit' ? '#ffffff' : '#94a3b8',
             fontWeight: activeTab === 'audit' ? 700 : 500,
             cursor: 'pointer',
             fontSize: '0.95rem',
             transition: 'all 0.15s ease'
           }}
         >
-          <Layers size={18} />
+          <Layers size={18} color={activeTab === 'audit' ? '#818cf8' : '#94a3b8'} />
           <span>Duplicate Batch Audit</span>
           {auditSummary?.total_formula_groups !== undefined && (
             <span style={{
-              backgroundColor: activeTab === 'audit' ? 'rgba(99, 102, 241, 0.15)' : 'var(--bg-app)',
-              color: activeTab === 'audit' ? 'var(--primary-color)' : 'var(--text-light)',
+              backgroundColor: 'rgba(99, 102, 241, 0.25)',
+              color: '#c7d2fe',
               padding: '2px 8px',
               borderRadius: '12px',
               fontSize: '0.75rem',
@@ -402,15 +443,15 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
             padding: '12px 20px',
             backgroundColor: 'transparent',
             border: 'none',
-            borderBottom: activeTab === 'health' ? '3px solid var(--primary-color)' : '3px solid transparent',
-            color: activeTab === 'health' ? 'var(--primary-color)' : 'var(--text-secondary)',
+            borderBottom: activeTab === 'health' ? '3px solid #818cf8' : '3px solid transparent',
+            color: activeTab === 'health' ? '#ffffff' : '#94a3b8',
             fontWeight: activeTab === 'health' ? 700 : 500,
             cursor: 'pointer',
             fontSize: '0.95rem',
             transition: 'all 0.15s ease'
           }}
         >
-          <Activity size={18} />
+          <Activity size={18} color={activeTab === 'health' ? '#818cf8' : '#94a3b8'} />
           <span>System Health & Diagnostics</span>
           {healthData && (
             <span style={{
@@ -444,72 +485,73 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
             gap: '16px'
           }}>
             {/* Card 1: Formula Duplicate Groups */}
-            <div className="glass-card" style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+            <div style={{ ...darkCardStyle, padding: '18px 22px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <span style={{ fontSize: '0.78rem', color: '#cbd5e1', fontWeight: 700, letterSpacing: '0.04em' }}>
                 IDENTICAL FORMULA GROUPS
               </span>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
-                <span style={{ fontSize: '1.8rem', fontWeight: 800, color: '#f59e0b' }}>
+                <span style={{ fontSize: '2rem', fontWeight: 800, color: '#fbbf24' }}>
                   {auditSummary?.total_formula_groups ?? '...'}
                 </span>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-light)' }}>groups</span>
+                <span style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600 }}>groups</span>
               </div>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
                 Batches with 100% same materials & quantities
               </span>
             </div>
 
             {/* Card 2: Affected Batches */}
-            <div className="glass-card" style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+            <div style={{ ...darkCardStyle, padding: '18px 22px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <span style={{ fontSize: '0.78rem', color: '#cbd5e1', fontWeight: 700, letterSpacing: '0.04em' }}>
                 TOTAL DUPLICATE BATCHES
               </span>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
-                <span style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--primary-color)' }}>
+                <span style={{ fontSize: '2rem', fontWeight: 800, color: '#818cf8' }}>
                   {auditSummary?.total_formula_batches ?? '...'}
                 </span>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-light)' }}>batch records</span>
+                <span style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600 }}>batch records</span>
               </div>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
                 Entries sharing identical compositions
               </span>
             </div>
 
             {/* Card 3: Batch No Collisions */}
-            <div className="glass-card" style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+            <div style={{ ...darkCardStyle, padding: '18px 22px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <span style={{ fontSize: '0.78rem', color: '#cbd5e1', fontWeight: 700, letterSpacing: '0.04em' }}>
                 BATCH NUMBER COLLISIONS
               </span>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
-                <span style={{ fontSize: '1.8rem', fontWeight: 800, color: '#6366f1' }}>
+                <span style={{ fontSize: '2rem', fontWeight: 800, color: '#a78bfa' }}>
                   {auditSummary?.total_batch_no_groups ?? '...'}
                 </span>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-light)' }}>colliding numbers</span>
+                <span style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600 }}>colliding numbers</span>
               </div>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
                 Same batch # across product partitions
               </span>
             </div>
 
             {/* Card 4: Product Workspaces */}
-            <div className="glass-card" style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+            <div style={{ ...darkCardStyle, padding: '18px 22px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <span style={{ fontSize: '0.78rem', color: '#cbd5e1', fontWeight: 700, letterSpacing: '0.04em' }}>
                 PARTITION SCOPES
               </span>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
-                <span style={{ fontSize: '1.8rem', fontWeight: 800, color: '#10b981' }}>
+                <span style={{ fontSize: '2rem', fontWeight: 800, color: '#34d399' }}>
                   {availableProducts.length}
                 </span>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-light)' }}>databases</span>
+                <span style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600 }}>databases</span>
               </div>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
                 Audited product databases
               </span>
             </div>
           </div>
 
           {/* FILTER TOOLBAR */}
-          <div className="glass-card" style={{
+          <div style={{
+            ...darkCardStyle,
             padding: '16px 20px',
             display: 'flex',
             flexWrap: 'wrap',
@@ -519,11 +561,22 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
           }}>
             {/* Search Input */}
             <form onSubmit={handleSearchSubmit} style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '1 1 280px', position: 'relative' }}>
-              <Search size={16} style={{ position: 'absolute', left: '12px', color: 'var(--text-secondary)' }} />
+              <Search size={16} style={{ position: 'absolute', left: '12px', color: '#94a3b8' }} />
               <input
                 type="text"
-                className="field-input"
-                style={{ paddingLeft: '36px', paddingRight: searchTerm ? '32px' : '12px', width: '100%' }}
+                style={{
+                  paddingLeft: '36px',
+                  paddingRight: searchTerm ? '32px' : '12px',
+                  width: '100%',
+                  backgroundColor: '#1e293b',
+                  color: '#ffffff',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  borderRadius: '6px',
+                  paddingTop: '8px',
+                  paddingBottom: '8px',
+                  fontSize: '0.85rem',
+                  outline: 'none'
+                }}
                 placeholder="Search batch number, product, or raw material..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
@@ -532,7 +585,7 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
                 <button
                   type="button"
                   onClick={() => { setSearchTerm(''); }}
-                  style={{ position: 'absolute', right: '10px', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}
+                  style={{ position: 'absolute', right: '10px', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
                 >
                   <X size={14} />
                 </button>
@@ -541,10 +594,18 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
 
             {/* Product Filter Dropdown */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Product:</span>
+              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#cbd5e1' }}>Product:</span>
               <select
-                className="field-input"
-                style={{ width: '180px', padding: '6px 10px', fontSize: '0.85rem' }}
+                style={{
+                  width: '180px',
+                  padding: '7px 10px',
+                  fontSize: '0.85rem',
+                  backgroundColor: '#1e293b',
+                  color: '#ffffff',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  borderRadius: '6px',
+                  outline: 'none'
+                }}
                 value={selectedProduct}
                 onChange={e => setSelectedProduct(e.target.value)}
               >
@@ -557,10 +618,18 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
 
             {/* Scope Filter */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Source:</span>
+              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#cbd5e1' }}>Source:</span>
               <select
-                className="field-input"
-                style={{ width: '160px', padding: '6px 10px', fontSize: '0.85rem' }}
+                style={{
+                  width: '160px',
+                  padding: '7px 10px',
+                  fontSize: '0.85rem',
+                  backgroundColor: '#1e293b',
+                  color: '#ffffff',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  borderRadius: '6px',
+                  outline: 'none'
+                }}
                 value={scopeFilter}
                 onChange={e => setScopeFilter(e.target.value as any)}
               >
@@ -573,10 +642,10 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
             {/* Duplicate Mode Toggle */}
             <div style={{
               display: 'flex',
-              backgroundColor: 'var(--input-bg)',
-              borderRadius: 'var(--radius-sm)',
-              padding: '2px',
-              border: '1px solid var(--border-color)'
+              backgroundColor: '#1e293b',
+              borderRadius: '6px',
+              padding: '3px',
+              border: '1px solid rgba(255, 255, 255, 0.1)'
             }}>
               <button
                 type="button"
@@ -585,12 +654,11 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
                   padding: '6px 12px',
                   fontSize: '0.8rem',
                   fontWeight: duplicateMode === 'formula' ? 700 : 500,
-                  backgroundColor: duplicateMode === 'formula' ? 'var(--bg-card)' : 'transparent',
-                  color: duplicateMode === 'formula' ? 'var(--primary-color)' : 'var(--text-secondary)',
+                  backgroundColor: duplicateMode === 'formula' ? '#334155' : 'transparent',
+                  color: duplicateMode === 'formula' ? '#ffffff' : '#94a3b8',
                   border: 'none',
                   borderRadius: '4px',
-                  cursor: 'pointer',
-                  boxShadow: duplicateMode === 'formula' ? 'var(--shadow-sm)' : 'none'
+                  cursor: 'pointer'
                 }}
               >
                 Same Materials & Qty
@@ -602,12 +670,11 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
                   padding: '6px 12px',
                   fontSize: '0.8rem',
                   fontWeight: duplicateMode === 'batch_no' ? 700 : 500,
-                  backgroundColor: duplicateMode === 'batch_no' ? 'var(--bg-card)' : 'transparent',
-                  color: duplicateMode === 'batch_no' ? 'var(--primary-color)' : 'var(--text-secondary)',
+                  backgroundColor: duplicateMode === 'batch_no' ? '#334155' : 'transparent',
+                  color: duplicateMode === 'batch_no' ? '#ffffff' : '#94a3b8',
                   border: 'none',
                   borderRadius: '4px',
-                  cursor: 'pointer',
-                  boxShadow: duplicateMode === 'batch_no' ? 'var(--shadow-sm)' : 'none'
+                  cursor: 'pointer'
                 }}
               >
                 Same Batch No
@@ -619,12 +686,11 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
                   padding: '6px 12px',
                   fontSize: '0.8rem',
                   fontWeight: duplicateMode === 'all' ? 700 : 500,
-                  backgroundColor: duplicateMode === 'all' ? 'var(--bg-card)' : 'transparent',
-                  color: duplicateMode === 'all' ? 'var(--primary-color)' : 'var(--text-secondary)',
+                  backgroundColor: duplicateMode === 'all' ? '#334155' : 'transparent',
+                  color: duplicateMode === 'all' ? '#ffffff' : '#94a3b8',
                   border: 'none',
                   borderRadius: '4px',
-                  cursor: 'pointer',
-                  boxShadow: duplicateMode === 'all' ? 'var(--shadow-sm)' : 'none'
+                  cursor: 'pointer'
                 }}
               >
                 All
@@ -634,9 +700,9 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
 
           {/* MAIN RESULTS CONTAINER */}
           {auditLoading ? (
-            <div className="glass-card" style={{ padding: '60px 20px', textAlign: 'center' }}>
-              <RefreshCw size={28} className="spin" color="var(--primary-color)" style={{ marginBottom: '12px' }} />
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', fontWeight: 600 }}>
+            <div style={{ ...darkCardStyle, padding: '60px 20px', textAlign: 'center' }}>
+              <RefreshCw size={28} className="spin" color="#818cf8" style={{ marginBottom: '12px' }} />
+              <p style={{ color: '#cbd5e1', fontSize: '0.95rem', fontWeight: 600 }}>
                 Scanning and cross-referencing batch formulations & materials...
               </p>
             </div>
@@ -647,11 +713,13 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Layers size={18} color="#f59e0b" />
-                        <span>Identical Formulation Groups ({displayFormulaGroups.length})</span>
+                      <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: '#ffffff' }}>
+                        <Layers size={18} color="#fbbf24" />
+                        <span>
+                          Identical Formulation Groups ({searchTerm.trim() ? `${displayFormulaGroups.length} matching / ${auditSummary?.total_formula_groups ?? displayFormulaGroups.length} total` : (auditSummary?.total_formula_groups ?? displayFormulaGroups.length)})
+                        </span>
                       </h3>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-light)' }}>
+                      <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
                         Batches sharing 100% identical raw materials and exact quantities
                       </span>
                     </div>
@@ -659,14 +727,14 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <button
                         onClick={expandAllGroups}
-                        style={{ background: 'none', border: 'none', color: 'var(--primary-color)', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 600 }}
+                        style={{ background: 'none', border: 'none', color: '#818cf8', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 600 }}
                       >
                         Expand All
                       </button>
-                      <span style={{ color: 'var(--border-color)' }}>|</span>
+                      <span style={{ color: 'rgba(255, 255, 255, 0.2)' }}>|</span>
                       <button
                         onClick={collapseAllGroups}
-                        style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 600 }}
+                        style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 600 }}
                       >
                         Collapse All
                       </button>
@@ -674,9 +742,9 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
                   </div>
 
                   {displayFormulaGroups.length === 0 ? (
-                    <div className="glass-card" style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-light)' }}>
-                      <CheckCircle2 size={32} color="#10b981" style={{ marginBottom: '8px' }} />
-                      <p style={{ margin: 0, fontWeight: 600, color: 'var(--text-primary)' }}>
+                    <div style={{ ...darkCardStyle, padding: '40px 20px', textAlign: 'center', color: '#94a3b8' }}>
+                      <CheckCircle2 size={32} color="#34d399" style={{ marginBottom: '8px' }} />
+                      <p style={{ margin: 0, fontWeight: 600, color: '#f8fafc' }}>
                         No duplicate formulation groups found matching current filter criteria.
                       </p>
                     </div>
@@ -688,11 +756,10 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
                       return (
                         <div
                           key={group.group_id}
-                          className="glass-card"
                           style={{
+                            ...darkCardStyle,
                             overflow: 'hidden',
-                            border: '1px solid var(--border-color)',
-                            transition: 'border-color 0.15s ease'
+                            border: '1px solid rgba(255, 255, 255, 0.1)'
                           }}
                         >
                           {/* GROUP HEADER ROW */}
@@ -704,22 +771,23 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
                               justifyContent: 'space-between',
                               alignItems: 'center',
                               cursor: 'pointer',
-                              backgroundColor: isExpanded ? 'rgba(99, 102, 241, 0.04)' : 'transparent',
-                              borderBottom: isExpanded ? '1px solid var(--border-light)' : 'none',
+                              backgroundColor: isExpanded ? 'rgba(99, 102, 241, 0.08)' : 'transparent',
+                              borderBottom: isExpanded ? '1px solid rgba(255, 255, 255, 0.08)' : 'none',
                               gap: '12px',
                               flexWrap: 'wrap'
                             }}
                           >
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                               <button
-                                style={{ background: 'none', border: 'none', padding: 0, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center' }}
+                                style={{ background: 'none', border: 'none', padding: 0, color: '#94a3b8', display: 'flex', alignItems: 'center' }}
                               >
                                 {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                               </button>
 
                               <span style={{
-                                backgroundColor: 'rgba(245, 158, 11, 0.15)',
-                                color: '#b45309',
+                                backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                                color: '#fbbf24',
+                                border: '1px solid rgba(245, 158, 11, 0.4)',
                                 fontWeight: 700,
                                 fontSize: '0.8rem',
                                 padding: '3px 9px',
@@ -730,10 +798,10 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
                               </span>
 
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>
+                                <span style={{ fontWeight: 700, fontSize: '0.95rem', color: '#ffffff' }}>
                                   {group.match_count} Batches
                                 </span>
-                                <span style={{ color: 'var(--text-light)', fontSize: '0.85rem' }}>
+                                <span style={{ color: '#cbd5e1', fontSize: '0.85rem' }}>
                                   ({group.materials.length} Raw Materials • Total Qty: {totalQty.toFixed(2)}g)
                                 </span>
                               </div>
@@ -744,9 +812,9 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
                                   <span
                                     key={p}
                                     style={{
-                                      backgroundColor: 'var(--bg-app)',
-                                      border: '1px solid var(--border-color)',
-                                      color: 'var(--text-secondary)',
+                                      backgroundColor: '#1e293b',
+                                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                                      color: '#e2e8f0',
                                       fontSize: '0.72rem',
                                       padding: '2px 8px',
                                       borderRadius: '4px',
@@ -763,17 +831,21 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }} onClick={e => e.stopPropagation()}>
                               <button
                                 onClick={() => handleCompareGroupBatches(group)}
-                                className="btn-secondary"
                                 style={{
+                                  backgroundColor: '#1e293b',
+                                  color: '#f8fafc',
+                                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                                  borderRadius: '6px',
                                   padding: '5px 12px',
                                   fontSize: '0.8rem',
                                   display: 'flex',
                                   alignItems: 'center',
-                                  gap: '6px'
+                                  gap: '6px',
+                                  cursor: 'pointer'
                                 }}
                                 title="Compare formulations side-by-side"
                               >
-                                <BarChart2 size={14} />
+                                <BarChart2 size={14} color="#fbbf24" />
                                 <span>Compare Batches</span>
                               </button>
                             </div>
@@ -786,15 +858,15 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
                               display: 'grid',
                               gridTemplateColumns: 'minmax(300px, 1fr) minmax(320px, 1.2fr)',
                               gap: '20px',
-                              backgroundColor: 'var(--bg-card)'
+                              backgroundColor: '#0b1120'
                             }}>
                               {/* LEFT COLUMN: SHARED RAW MATERIALS & QUANTITIES */}
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                                   Identical Formula Composition ({group.materials.length} Items)
                                 </span>
                                 <div style={{
-                                  border: '1px solid var(--border-color)',
+                                  border: '1px solid rgba(255, 255, 255, 0.1)',
                                   borderRadius: '6px',
                                   overflow: 'hidden',
                                   maxHeight: '260px',
@@ -802,7 +874,7 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
                                 }}>
                                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
                                     <thead>
-                                      <tr style={{ backgroundColor: 'var(--bg-app)', borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
+                                      <tr style={{ backgroundColor: '#1e293b', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', textAlign: 'left', color: '#cbd5e1' }}>
                                         <th style={{ padding: '8px 12px', fontWeight: 600 }}>#</th>
                                         <th style={{ padding: '8px 12px', fontWeight: 600 }}>Raw Material</th>
                                         <th style={{ padding: '8px 12px', fontWeight: 600, textAlign: 'right' }}>Qty (g)</th>
@@ -816,18 +888,19 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
                                           <tr
                                             key={mIdx}
                                             style={{
-                                              borderBottom: '1px solid var(--border-light)',
-                                              backgroundColor: mIdx % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.015)'
+                                              borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                                              backgroundColor: mIdx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)',
+                                              color: '#f8fafc'
                                             }}
                                           >
-                                            <td style={{ padding: '6px 12px', color: 'var(--text-light)' }}>{mIdx + 1}</td>
+                                            <td style={{ padding: '6px 12px', color: '#94a3b8' }}>{mIdx + 1}</td>
                                             <td style={{ padding: '6px 12px', fontWeight: 600 }}>
                                               {m.material || m.normalized_material}
                                             </td>
-                                            <td style={{ padding: '6px 12px', textAlign: 'right', fontWeight: 600, color: 'var(--primary-color)' }}>
+                                            <td style={{ padding: '6px 12px', textAlign: 'right', fontWeight: 700, color: '#818cf8' }}>
                                               {m.qty.toFixed(2)}
                                             </td>
-                                            <td style={{ padding: '6px 12px', textAlign: 'right', color: 'var(--text-light)' }}>
+                                            <td style={{ padding: '6px 12px', textAlign: 'right', color: '#94a3b8' }}>
                                               {pct}%
                                             </td>
                                           </tr>
@@ -840,11 +913,11 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
 
                               {/* RIGHT COLUMN: DUPLICATE BATCHES LIST */}
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                                   Batches Sharing This Composition ({group.batches.length})
                                 </span>
                                 <div style={{
-                                  border: '1px solid var(--border-color)',
+                                  border: '1px solid rgba(255, 255, 255, 0.1)',
                                   borderRadius: '6px',
                                   overflow: 'hidden',
                                   maxHeight: '260px',
@@ -852,7 +925,7 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
                                 }}>
                                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
                                     <thead>
-                                      <tr style={{ backgroundColor: 'var(--bg-app)', borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
+                                      <tr style={{ backgroundColor: '#1e293b', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', textAlign: 'left', color: '#cbd5e1' }}>
                                         <th style={{ padding: '8px 12px', fontWeight: 600 }}>Batch No</th>
                                         <th style={{ padding: '8px 12px', fontWeight: 600 }}>Workspace</th>
                                         <th style={{ padding: '8px 12px', fontWeight: 600 }}>Ref / Lot</th>
@@ -862,41 +935,47 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
                                     </thead>
                                     <tbody>
                                       {group.batches.map(b => (
-                                        <tr key={`${b.source}_${b.id}`} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                                          <td style={{ padding: '8px 12px', fontWeight: 700, color: 'var(--primary-color)' }}>
+                                        <tr key={`${b.source}_${b.id}`} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)', color: '#f8fafc' }}>
+                                          <td style={{ padding: '8px 12px', fontWeight: 700, color: '#818cf8' }}>
                                             {b.batch_no}
                                           </td>
                                           <td style={{ padding: '8px 12px' }}>
                                             <span style={{
-                                              backgroundColor: 'var(--bg-app)',
+                                              backgroundColor: '#1e293b',
+                                              border: '1px solid rgba(255, 255, 255, 0.1)',
                                               padding: '2px 6px',
                                               borderRadius: '4px',
                                               fontSize: '0.75rem',
-                                              fontWeight: 600
+                                              fontWeight: 600,
+                                              color: '#e2e8f0'
                                             }}>
                                               {b.product_name.toUpperCase()}
                                             </span>
                                           </td>
-                                          <td style={{ padding: '8px 12px', color: 'var(--text-light)' }}>
+                                          <td style={{ padding: '8px 12px', color: '#94a3b8' }}>
                                             {b.ref_no || '-'}
                                           </td>
-                                          <td style={{ padding: '8px 12px', color: 'var(--text-secondary)' }}>
+                                          <td style={{ padding: '8px 12px', color: '#cbd5e1' }}>
                                             {b.test_date || '-'}
                                           </td>
                                           <td style={{ padding: '8px 12px', textAlign: 'center' }}>
                                             <button
                                               onClick={() => handleInspectBatch(b.source, b.id)}
-                                              className="btn-secondary"
                                               style={{
+                                                backgroundColor: '#1e293b',
+                                                color: '#f8fafc',
+                                                border: '1px solid rgba(255, 255, 255, 0.15)',
+                                                borderRadius: '4px',
                                                 padding: '4px 8px',
                                                 fontSize: '0.75rem',
                                                 display: 'inline-flex',
                                                 alignItems: 'center',
-                                                gap: '4px'
+                                                gap: '4px',
+                                                cursor: 'pointer'
                                               }}
                                               title="Inspect full batch details"
                                             >
-                                              <Eye size={12} />
+                                              <Eye size={12} color="#818cf8" />
                                               <span>Inspect</span>
                                             </button>
                                           </td>
@@ -919,27 +998,27 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
               {(duplicateMode === 'batch_no' || duplicateMode === 'all') && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <FileText size={18} color="#6366f1" />
-                      <span>Batch Number Collisions ({batchNoDuplicates.length})</span>
+                    <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: '#ffffff' }}>
+                      <FileText size={18} color="#818cf8" />
+                      <span>Batch Number Collisions ({auditSummary?.total_batch_no_groups ?? batchNoDuplicates.length})</span>
                     </h3>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-light)' }}>
+                    <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
                       Batch numbers that appear multiple times across product partitions
                     </span>
                   </div>
 
                   {batchNoDuplicates.length === 0 ? (
-                    <div className="glass-card" style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-light)' }}>
-                      <CheckCircle2 size={32} color="#10b981" style={{ marginBottom: '8px' }} />
-                      <p style={{ margin: 0, fontWeight: 600, color: 'var(--text-primary)' }}>
+                    <div style={{ ...darkCardStyle, padding: '40px 20px', textAlign: 'center', color: '#94a3b8' }}>
+                      <CheckCircle2 size={32} color="#34d399" style={{ marginBottom: '8px' }} />
+                      <p style={{ margin: 0, fontWeight: 600, color: '#f8fafc' }}>
                         No duplicate batch number collisions detected.
                       </p>
                     </div>
                   ) : (
-                    <div className="glass-card" style={{ padding: '0', overflow: 'hidden' }}>
+                    <div style={{ ...darkCardStyle, padding: '0', overflow: 'hidden' }}>
                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                         <thead>
-                          <tr style={{ backgroundColor: 'var(--bg-app)', borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
+                          <tr style={{ backgroundColor: '#1e293b', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', textAlign: 'left', color: '#cbd5e1' }}>
                             <th style={{ padding: '10px 16px', fontWeight: 600 }}>Batch Number</th>
                             <th style={{ padding: '10px 16px', fontWeight: 600 }}>Occurrence Count</th>
                             <th style={{ padding: '10px 16px', fontWeight: 600 }}>Product Partitions</th>
@@ -948,14 +1027,14 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
                         </thead>
                         <tbody>
                           {batchNoDuplicates.map(bnoGroup => (
-                            <tr key={bnoGroup.batch_no} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                              <td style={{ padding: '12px 16px', fontWeight: 700, color: 'var(--primary-color)' }}>
+                            <tr key={bnoGroup.batch_no} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)', color: '#f8fafc' }}>
+                              <td style={{ padding: '12px 16px', fontWeight: 700, color: '#818cf8' }}>
                                 {bnoGroup.batch_no}
                               </td>
                               <td style={{ padding: '12px 16px', fontWeight: 600 }}>
                                 <span style={{
-                                  backgroundColor: 'rgba(99, 102, 241, 0.12)',
-                                  color: '#6366f1',
+                                  backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                                  color: '#a5b4fc',
                                   padding: '2px 8px',
                                   borderRadius: '12px',
                                   fontSize: '0.75rem',
@@ -970,12 +1049,13 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
                                     <span
                                       key={p}
                                       style={{
-                                        backgroundColor: 'var(--bg-app)',
-                                        border: '1px solid var(--border-color)',
+                                        backgroundColor: '#1e293b',
+                                        border: '1px solid rgba(255, 255, 255, 0.1)',
                                         padding: '2px 6px',
                                         borderRadius: '4px',
                                         fontSize: '0.72rem',
-                                        fontWeight: 600
+                                        fontWeight: 600,
+                                        color: '#e2e8f0'
                                       }}
                                     >
                                       {p.toUpperCase()}
@@ -989,17 +1069,21 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
                                     <button
                                       key={`${b.source}_${b.id}`}
                                       onClick={() => handleInspectBatch(b.source, b.id)}
-                                      className="btn-secondary"
                                       style={{
+                                        backgroundColor: '#1e293b',
+                                        color: '#f8fafc',
+                                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                                        borderRadius: '4px',
                                         padding: '4px 10px',
                                         fontSize: '0.75rem',
                                         display: 'inline-flex',
                                         alignItems: 'center',
-                                        gap: '6px'
+                                        gap: '6px',
+                                        cursor: 'pointer'
                                       }}
                                       title={`Inspect ${b.batch_no} in ${b.product_name}`}
                                     >
-                                      <Eye size={12} />
+                                      <Eye size={12} color="#818cf8" />
                                       <span>{b.product_name}: {b.ref_no || `ID#${b.id}`}</span>
                                     </button>
                                   ))}
@@ -1028,7 +1112,7 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
             backgroundColor: healthBadge.bg,
             border: `1.5px solid ${healthBadge.border}`,
             padding: '20px 24px',
-            borderRadius: 'var(--radius-md)',
+            borderRadius: '10px',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
@@ -1037,11 +1121,11 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
               <div style={{
-                backgroundColor: 'var(--bg-card)',
+                backgroundColor: '#0f172a',
                 padding: '10px',
                 borderRadius: '50%',
                 display: 'flex',
-                boxShadow: 'var(--shadow-sm)'
+                boxShadow: '0 2px 4px rgba(0,0,0,0.4)'
               }}>
                 {healthBadge.icon}
               </div>
@@ -1049,35 +1133,35 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
                 <span style={{ fontSize: '1.25rem', fontWeight: 800, color: healthBadge.text }}>
                   {healthBadge.label}
                 </span>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                  Server Uptime: <strong>{healthData?.uptime_human || 'Calculating...'}</strong> • Last Checked: {healthData?.timestamp ? new Date(healthData.timestamp).toLocaleTimeString() : 'Just now'}
+                <span style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>
+                  Server Uptime: <strong style={{ color: '#ffffff' }}>{healthData?.uptime_human || 'Calculating...'}</strong> • Last Checked: {healthData?.timestamp ? new Date(healthData.timestamp).toLocaleTimeString() : 'Just now'}
                 </span>
               </div>
             </div>
 
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
               <div style={{
-                backgroundColor: 'var(--bg-card)',
+                backgroundColor: '#0f172a',
                 padding: '8px 14px',
                 borderRadius: '8px',
-                border: '1px solid var(--border-color)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
                 textAlign: 'center'
               }}>
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-light)', display: 'block' }}>DB LATENCY</span>
-                <span style={{ fontSize: '0.95rem', fontWeight: 700, color: (healthData?.database?.latency_ms || 0) < 50 ? '#10b981' : '#f59e0b' }}>
+                <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>DB LATENCY</span>
+                <span style={{ fontSize: '0.95rem', fontWeight: 700, color: (healthData?.database?.latency_ms || 0) < 50 ? '#34d399' : '#fbbf24' }}>
                   {healthData?.database?.latency_ms ? `${healthData.database.latency_ms} ms` : '...'}
                 </span>
               </div>
 
               <div style={{
-                backgroundColor: 'var(--bg-card)',
+                backgroundColor: '#0f172a',
                 padding: '8px 14px',
                 borderRadius: '8px',
-                border: '1px solid var(--border-color)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
                 textAlign: 'center'
               }}>
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-light)', display: 'block' }}>REDIS CACHE</span>
-                <span style={{ fontSize: '0.95rem', fontWeight: 700, color: healthData?.cache?.status === 'connected' ? '#10b981' : 'var(--text-secondary)' }}>
+                <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>REDIS CACHE</span>
+                <span style={{ fontSize: '0.95rem', fontWeight: 700, color: healthData?.cache?.status === 'connected' ? '#34d399' : '#cbd5e1' }}>
                   {healthData?.cache?.status === 'connected' ? 'Connected' : 'In-Memory Fallback'}
                 </span>
               </div>
@@ -1091,15 +1175,15 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
             gap: '20px'
           }}>
             {/* Card 1: PostgreSQL Database */}
-            <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '10px' }}>
+            <div style={{ ...darkCardStyle, display: 'flex', flexDirection: 'column', gap: '14px', padding: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Database size={18} color="var(--primary-color)" />
-                  <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0 }}>PostgreSQL Database</h3>
+                  <Database size={18} color="#818cf8" />
+                  <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: '#ffffff' }}>PostgreSQL Database</h3>
                 </div>
                 <span style={{
-                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                  color: '#10b981',
+                  backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                  color: '#34d399',
                   fontSize: '0.75rem',
                   fontWeight: 700,
                   padding: '2px 8px',
@@ -1111,53 +1195,53 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '0.85rem' }}>
                 <div>
-                  <span style={{ color: 'var(--text-light)', fontSize: '0.75rem', display: 'block' }}>Engine Version</span>
-                  <strong style={{ color: 'var(--text-primary)' }}>{healthData?.database?.version || 'PostgreSQL'}</strong>
+                  <span style={{ color: '#94a3b8', fontSize: '0.75rem', display: 'block' }}>Engine Version</span>
+                  <strong style={{ color: '#ffffff' }}>{healthData?.database?.version || 'PostgreSQL'}</strong>
                 </div>
                 <div>
-                  <span style={{ color: 'var(--text-light)', fontSize: '0.75rem', display: 'block' }}>Database Size</span>
-                  <strong style={{ color: 'var(--text-primary)' }}>{healthData?.database?.database_size || '...'}</strong>
+                  <span style={{ color: '#94a3b8', fontSize: '0.75rem', display: 'block' }}>Database Size</span>
+                  <strong style={{ color: '#ffffff' }}>{healthData?.database?.database_size || '...'}</strong>
                 </div>
                 <div>
-                  <span style={{ color: 'var(--text-light)', fontSize: '0.75rem', display: 'block' }}>Active Connections</span>
-                  <strong style={{ color: 'var(--text-primary)' }}>{healthData?.database?.active_connections || 1} client</strong>
+                  <span style={{ color: '#94a3b8', fontSize: '0.75rem', display: 'block' }}>Active Connections</span>
+                  <strong style={{ color: '#ffffff' }}>{healthData?.database?.active_connections || 1} client</strong>
                 </div>
                 <div>
-                  <span style={{ color: 'var(--text-light)', fontSize: '0.75rem', display: 'block' }}>Query Response</span>
-                  <strong style={{ color: '#10b981' }}>{healthData?.database?.latency_ms || 0} ms</strong>
+                  <span style={{ color: '#94a3b8', fontSize: '0.75rem', display: 'block' }}>Query Response</span>
+                  <strong style={{ color: '#34d399' }}>{healthData?.database?.latency_ms || 0} ms</strong>
                 </div>
               </div>
 
               {/* Table Records Snapshot */}
               <div style={{
-                backgroundColor: 'var(--bg-app)',
+                backgroundColor: '#1e293b',
                 borderRadius: '6px',
                 padding: '10px 12px',
-                border: '1px solid var(--border-color)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '6px'
               }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>TABLE COUNTS</span>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', fontSize: '0.78rem' }}>
-                  <div>Lab Formulations: <strong>{healthData?.database?.table_counts?.lab_formulations_batch_entries ?? 0}</strong></div>
-                  <div>Lab Raw Materials: <strong>{healthData?.database?.table_counts?.lab_raw_materials ?? 0}</strong></div>
-                  <div>Registered Users: <strong>{healthData?.database?.table_counts?.all_users ?? 0}</strong></div>
-                  <div>System Audit Logs: <strong>{healthData?.database?.table_counts?.audit_logs ?? 0}</strong></div>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#cbd5e1' }}>TABLE COUNTS</span>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', fontSize: '0.78rem', color: '#e2e8f0' }}>
+                  <div>Lab Formulations: <strong style={{ color: '#ffffff' }}>{healthData?.database?.table_counts?.lab_formulations_batch_entries ?? 0}</strong></div>
+                  <div>Lab Raw Materials: <strong style={{ color: '#ffffff' }}>{healthData?.database?.table_counts?.lab_raw_materials ?? 0}</strong></div>
+                  <div>Registered Users: <strong style={{ color: '#ffffff' }}>{healthData?.database?.table_counts?.all_users ?? 0}</strong></div>
+                  <div>System Audit Logs: <strong style={{ color: '#ffffff' }}>{healthData?.database?.table_counts?.audit_logs ?? 0}</strong></div>
                 </div>
               </div>
             </div>
 
             {/* Card 2: Security & Encryption */}
-            <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '10px' }}>
+            <div style={{ ...darkCardStyle, display: 'flex', flexDirection: 'column', gap: '14px', padding: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Key size={18} color="#6366f1" />
-                  <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0 }}>Encryption & Cryptography</h3>
+                  <Key size={18} color="#a78bfa" />
+                  <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: '#ffffff' }}>Encryption & Cryptography</h3>
                 </div>
                 <span style={{
-                  backgroundColor: healthData?.encryption?.crypto_roundtrip_test ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                  color: healthData?.encryption?.crypto_roundtrip_test ? '#10b981' : '#ef4444',
+                  backgroundColor: healthData?.encryption?.crypto_roundtrip_test ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                  color: healthData?.encryption?.crypto_roundtrip_test ? '#34d399' : '#f87171',
                   fontSize: '0.75rem',
                   fontWeight: 700,
                   padding: '2px 8px',
@@ -1169,34 +1253,34 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.85rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Master Secret Key:</span>
-                  <span style={{ color: '#10b981', fontWeight: 600 }}>Configured & Verified</span>
+                  <span style={{ color: '#cbd5e1' }}>Master Secret Key:</span>
+                  <span style={{ color: '#34d399', fontWeight: 600 }}>Configured & Verified</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>AES-256-GCM Round-trip:</span>
-                  <span style={{ color: '#10b981', fontWeight: 600 }}>Self-Test Passed</span>
+                  <span style={{ color: '#cbd5e1' }}>AES-256-GCM Round-trip:</span>
+                  <span style={{ color: '#34d399', fontWeight: 600 }}>Self-Test Passed</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Loaded Tenant Ciphers:</span>
-                  <strong style={{ color: 'var(--text-primary)' }}>{healthData?.encryption?.ciphers_loaded || 0} loaded</strong>
+                  <span style={{ color: '#cbd5e1' }}>Loaded Tenant Ciphers:</span>
+                  <strong style={{ color: '#ffffff' }}>{healthData?.encryption?.ciphers_loaded || 0} loaded</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Password Hasher:</span>
-                  <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>Bcrypt (Salted)</span>
+                  <span style={{ color: '#cbd5e1' }}>Password Hasher:</span>
+                  <span style={{ color: '#ffffff', fontWeight: 600 }}>Bcrypt (Salted)</span>
                 </div>
               </div>
             </div>
 
             {/* Card 3: Storage & File System */}
-            <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '10px' }}>
+            <div style={{ ...darkCardStyle, display: 'flex', flexDirection: 'column', gap: '14px', padding: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <HardDrive size={18} color="#06b6d4" />
-                  <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0 }}>Storage & Backup Paths</h3>
+                  <HardDrive size={18} color="#38bdf8" />
+                  <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: '#ffffff' }}>Storage & Backup Paths</h3>
                 </div>
                 <span style={{
-                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                  color: '#10b981',
+                  backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                  color: '#34d399',
                   fontSize: '0.75rem',
                   fontWeight: 700,
                   padding: '2px 8px',
@@ -1208,39 +1292,39 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.85rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Uploads Directory:</span>
-                  <span style={{ color: healthData?.storage?.uploads_dir_ok ? '#10b981' : '#ef4444', fontWeight: 600 }}>
+                  <span style={{ color: '#cbd5e1' }}>Uploads Directory:</span>
+                  <span style={{ color: healthData?.storage?.uploads_dir_ok ? '#34d399' : '#f87171', fontWeight: 600 }}>
                     {healthData?.storage?.uploads_dir_ok ? 'Writable' : 'Error'}
                   </span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Backups Directory:</span>
-                  <span style={{ color: healthData?.storage?.backups_dir_ok ? '#10b981' : '#ef4444', fontWeight: 600 }}>
+                  <span style={{ color: '#cbd5e1' }}>Backups Directory:</span>
+                  <span style={{ color: healthData?.storage?.backups_dir_ok ? '#34d399' : '#f87171', fontWeight: 600 }}>
                     {healthData?.storage?.backups_dir_ok ? 'Writable' : 'Error'}
                   </span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Exports Directory:</span>
-                  <span style={{ color: healthData?.storage?.exports_dir_ok ? '#10b981' : '#ef4444', fontWeight: 600 }}>
+                  <span style={{ color: '#cbd5e1' }}>Exports Directory:</span>
+                  <span style={{ color: healthData?.storage?.exports_dir_ok ? '#34d399' : '#f87171', fontWeight: 600 }}>
                     {healthData?.storage?.exports_dir_ok ? 'Ready' : 'Error'}
                   </span>
                 </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-light)', wordBreak: 'break-all' }}>
+                <div style={{ fontSize: '0.75rem', color: '#94a3b8', wordBreak: 'break-all' }}>
                   Root: <code>{healthData?.storage?.storage_path || 'uploads/'}</code>
                 </div>
               </div>
             </div>
 
             {/* Card 4: Integrity & Security Diagnostics */}
-            <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '10px' }}>
+            <div style={{ ...darkCardStyle, display: 'flex', flexDirection: 'column', gap: '14px', padding: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <ShieldCheck size={18} color="#10b981" />
-                  <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0 }}>Data Integrity & Security</h3>
+                  <ShieldCheck size={18} color="#34d399" />
+                  <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: '#ffffff' }}>Data Integrity & Security</h3>
                 </div>
                 <span style={{
-                  backgroundColor: (healthData?.security_integrity?.orphaned_raw_materials ?? 0) === 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
-                  color: (healthData?.security_integrity?.orphaned_raw_materials ?? 0) === 0 ? '#10b981' : '#f59e0b',
+                  backgroundColor: (healthData?.security_integrity?.orphaned_raw_materials ?? 0) === 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                  color: (healthData?.security_integrity?.orphaned_raw_materials ?? 0) === 0 ? '#34d399' : '#fbbf24',
                   fontSize: '0.75rem',
                   fontWeight: 700,
                   padding: '2px 8px',
@@ -1252,26 +1336,26 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.85rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Orphaned Raw Materials:</span>
-                  <strong style={{ color: (healthData?.security_integrity?.orphaned_raw_materials ?? 0) === 0 ? '#10b981' : '#f59e0b' }}>
+                  <span style={{ color: '#cbd5e1' }}>Orphaned Raw Materials:</span>
+                  <strong style={{ color: (healthData?.security_integrity?.orphaned_raw_materials ?? 0) === 0 ? '#34d399' : '#fbbf24' }}>
                     {healthData?.security_integrity?.orphaned_raw_materials ?? 0} records
                   </strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Empty Batches (0 RM):</span>
-                  <strong style={{ color: 'var(--text-primary)' }}>
+                  <span style={{ color: '#cbd5e1' }}>Empty Batches (0 RM):</span>
+                  <strong style={{ color: '#ffffff' }}>
                     {healthData?.security_integrity?.empty_batches ?? 0} batches
                   </strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Active Locked-out IPs/Users:</span>
-                  <strong style={{ color: (healthData?.security_integrity?.active_lockouts ?? 0) === 0 ? '#10b981' : '#ef4444' }}>
+                  <span style={{ color: '#cbd5e1' }}>Active Locked-out IPs/Users:</span>
+                  <strong style={{ color: (healthData?.security_integrity?.active_lockouts ?? 0) === 0 ? '#34d399' : '#f87171' }}>
                     {healthData?.security_integrity?.active_lockouts ?? 0}
                   </strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Failed Login Attempts (24h):</span>
-                  <strong style={{ color: 'var(--text-primary)' }}>
+                  <span style={{ color: '#cbd5e1' }}>Failed Login Attempts (24h):</span>
+                  <strong style={{ color: '#ffffff' }}>
                     {healthData?.security_integrity?.recent_failed_logins ?? 0}
                   </strong>
                 </div>
@@ -1288,14 +1372,15 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
         <div style={{
           position: 'fixed',
           top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.65)',
+          backgroundColor: 'rgba(0, 0, 0, 0.75)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 1000,
           padding: '20px'
         }}>
-          <div className="glass-card" style={{
+          <div style={{
+            ...darkCardStyle,
             width: '100%',
             maxWidth: '720px',
             maxHeight: '90vh',
@@ -1303,18 +1388,19 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
             flexDirection: 'column',
             gap: '16px',
             padding: '24px',
-            boxShadow: 'var(--shadow-lg)'
+            backgroundColor: '#0f172a',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)'
           }}>
             {/* Modal Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <FileText size={20} color="var(--primary-color)" />
-                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>
+                <FileText size={20} color="#818cf8" />
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: '#ffffff' }}>
                   Batch #{selectedBatchDetail?.batch_no || '...'} Details
                 </h3>
                 <span style={{
-                  backgroundColor: 'rgba(99, 102, 241, 0.12)',
-                  color: 'var(--primary-color)',
+                  backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                  color: '#c7d2fe',
                   fontSize: '0.75rem',
                   padding: '2px 8px',
                   borderRadius: '4px',
@@ -1325,7 +1411,7 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
               </div>
               <button
                 onClick={() => setDetailModalOpen(false)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}
               >
                 <X size={20} />
               </button>
@@ -1333,36 +1419,36 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
 
             {detailLoading ? (
               <div style={{ padding: '40px', textAlign: 'center' }}>
-                <RefreshCw size={24} className="spin" color="var(--primary-color)" />
-                <p style={{ color: 'var(--text-secondary)', marginTop: '8px' }}>Loading batch record...</p>
+                <RefreshCw size={24} className="spin" color="#818cf8" />
+                <p style={{ color: '#cbd5e1', marginTop: '8px' }}>Loading batch record...</p>
               </div>
             ) : selectedBatchDetail ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto' }}>
                 {/* Meta fields */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', backgroundColor: 'var(--bg-app)', padding: '12px', borderRadius: '8px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', backgroundColor: '#1e293b', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
                   <div>
-                    <span style={{ fontSize: '0.72rem', color: 'var(--text-light)', display: 'block' }}>REFERENCE NO</span>
-                    <strong style={{ fontSize: '0.85rem' }}>{selectedBatchDetail.ref_no || '-'}</strong>
+                    <span style={{ fontSize: '0.72rem', color: '#94a3b8', display: 'block' }}>REFERENCE NO</span>
+                    <strong style={{ fontSize: '0.85rem', color: '#ffffff' }}>{selectedBatchDetail.ref_no || '-'}</strong>
                   </div>
                   <div>
-                    <span style={{ fontSize: '0.72rem', color: 'var(--text-light)', display: 'block' }}>TEST DATE</span>
-                    <strong style={{ fontSize: '0.85rem' }}>{selectedBatchDetail.test_date || '-'}</strong>
+                    <span style={{ fontSize: '0.72rem', color: '#94a3b8', display: 'block' }}>TEST DATE</span>
+                    <strong style={{ fontSize: '0.85rem', color: '#ffffff' }}>{selectedBatchDetail.test_date || '-'}</strong>
                   </div>
                   <div>
-                    <span style={{ fontSize: '0.72rem', color: 'var(--text-light)', display: 'block' }}>LEDGER SOURCE</span>
-                    <strong style={{ fontSize: '0.85rem' }}>{selectedBatchDetail.source.toUpperCase()}</strong>
+                    <span style={{ fontSize: '0.72rem', color: '#94a3b8', display: 'block' }}>LEDGER SOURCE</span>
+                    <strong style={{ fontSize: '0.85rem', color: '#ffffff' }}>{selectedBatchDetail.source.toUpperCase()}</strong>
                   </div>
                 </div>
 
                 {/* Raw Materials Table */}
                 <div>
-                  <h4 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px' }}>
+                  <h4 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px', color: '#ffffff' }}>
                     Raw Materials ({selectedBatchDetail.materials.length})
                   </h4>
-                  <div style={{ border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden' }}>
+                  <div style={{ border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '6px', overflow: 'hidden' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
                       <thead>
-                        <tr style={{ backgroundColor: 'var(--bg-app)', borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
+                        <tr style={{ backgroundColor: '#1e293b', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', textAlign: 'left', color: '#cbd5e1' }}>
                           <th style={{ padding: '8px 12px' }}>#</th>
                           <th style={{ padding: '8px 12px' }}>Material Name</th>
                           <th style={{ padding: '8px 12px', textAlign: 'right' }}>Quantity</th>
@@ -1370,10 +1456,10 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
                       </thead>
                       <tbody>
                         {selectedBatchDetail.materials.map((m, idx) => (
-                          <tr key={idx} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                            <td style={{ padding: '6px 12px', color: 'var(--text-light)' }}>{m.sr_no || idx + 1}</td>
+                          <tr key={idx} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)', color: '#f8fafc' }}>
+                            <td style={{ padding: '6px 12px', color: '#94a3b8' }}>{m.sr_no || idx + 1}</td>
                             <td style={{ padding: '6px 12px', fontWeight: 600 }}>{m.raw_material || m.normalized_raw_material}</td>
-                            <td style={{ padding: '6px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--primary-color)' }}>
+                            <td style={{ padding: '6px 12px', textAlign: 'right', fontWeight: 700, color: '#818cf8' }}>
                               {m.qty.toFixed(2)}
                             </td>
                           </tr>
@@ -1386,8 +1472,8 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
                 {/* Remarks */}
                 {selectedBatchDetail.remarks && (
                   <div>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>REMARKS</span>
-                    <p style={{ backgroundColor: 'var(--bg-app)', padding: '10px', borderRadius: '6px', fontSize: '0.82rem', margin: 0 }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>REMARKS</span>
+                    <p style={{ backgroundColor: '#1e293b', padding: '10px', borderRadius: '6px', fontSize: '0.82rem', margin: 0, color: '#e2e8f0', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
                       {selectedBatchDetail.remarks}
                     </p>
                   </div>
@@ -1405,14 +1491,15 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
         <div style={{
           position: 'fixed',
           top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.65)',
+          backgroundColor: 'rgba(0, 0, 0, 0.75)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 1000,
           padding: '20px'
         }}>
-          <div className="glass-card" style={{
+          <div style={{
+            ...darkCardStyle,
             width: '100%',
             maxWidth: '1000px',
             maxHeight: '90vh',
@@ -1420,19 +1507,20 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
             flexDirection: 'column',
             gap: '16px',
             padding: '24px',
-            boxShadow: 'var(--shadow-lg)'
+            backgroundColor: '#0f172a',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)'
           }}>
             {/* Compare Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <BarChart2 size={20} color="#f59e0b" />
-                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>
+                <BarChart2 size={20} color="#fbbf24" />
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: '#ffffff' }}>
                   Side-by-Side Formulation Comparison
                 </h3>
               </div>
               <button
                 onClick={() => setCompareModalOpen(false)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}
               >
                 <X size={20} />
               </button>
@@ -1440,8 +1528,8 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
 
             {compareLoading ? (
               <div style={{ padding: '60px', textAlign: 'center' }}>
-                <RefreshCw size={28} className="spin" color="var(--primary-color)" />
-                <p style={{ color: 'var(--text-secondary)', marginTop: '8px' }}>Comparing batch recipes and compositions...</p>
+                <RefreshCw size={28} className="spin" color="#818cf8" />
+                <p style={{ color: '#cbd5e1', marginTop: '8px' }}>Comparing batch recipes and compositions...</p>
               </div>
             ) : compareBatchA && compareBatchB ? (
               <div style={{
@@ -1451,29 +1539,29 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
                 overflowY: 'auto'
               }}>
                 {/* Batch A */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', border: '1px solid var(--border-color)', padding: '14px', borderRadius: '8px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px' }}>
-                    <strong style={{ fontSize: '1.05rem', color: 'var(--primary-color)' }}>Batch: {compareBatchA.batch_no}</strong>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: 'var(--bg-app)', padding: '2px 8px', borderRadius: '4px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', border: '1px solid rgba(255, 255, 255, 0.1)', padding: '14px', borderRadius: '8px', backgroundColor: '#1e293b' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '8px' }}>
+                    <strong style={{ fontSize: '1.05rem', color: '#818cf8' }}>Batch: {compareBatchA.batch_no}</strong>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#0f172a', padding: '2px 8px', borderRadius: '4px', color: '#e2e8f0' }}>
                       {compareBatchA.product_name.toUpperCase()}
                     </span>
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                  <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
                     Ref: {compareBatchA.ref_no || '-'} • Date: {compareBatchA.test_date || '-'}
                   </div>
                   <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
                       <thead>
-                        <tr style={{ backgroundColor: 'var(--bg-app)', borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
+                        <tr style={{ backgroundColor: '#0f172a', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', textAlign: 'left', color: '#cbd5e1' }}>
                           <th style={{ padding: '6px 8px' }}>Material</th>
                           <th style={{ padding: '6px 8px', textAlign: 'right' }}>Qty</th>
                         </tr>
                       </thead>
                       <tbody>
                         {compareBatchA.materials.map((m, idx) => (
-                          <tr key={idx} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                          <tr key={idx} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)', color: '#f8fafc' }}>
                             <td style={{ padding: '6px 8px' }}>{m.raw_material || m.normalized_raw_material}</td>
-                            <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700 }}>{m.qty.toFixed(2)}</td>
+                            <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, color: '#818cf8' }}>{m.qty.toFixed(2)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -1482,29 +1570,29 @@ export const BatchAuditSystemHealth: React.FC<BatchAuditSystemHealthProps> = ({ 
                 </div>
 
                 {/* Batch B */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', border: '1px solid var(--border-color)', padding: '14px', borderRadius: '8px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px' }}>
-                    <strong style={{ fontSize: '1.05rem', color: 'var(--primary-color)' }}>Batch: {compareBatchB.batch_no}</strong>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: 'var(--bg-app)', padding: '2px 8px', borderRadius: '4px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', border: '1px solid rgba(255, 255, 255, 0.1)', padding: '14px', borderRadius: '8px', backgroundColor: '#1e293b' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '8px' }}>
+                    <strong style={{ fontSize: '1.05rem', color: '#818cf8' }}>Batch: {compareBatchB.batch_no}</strong>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#0f172a', padding: '2px 8px', borderRadius: '4px', color: '#e2e8f0' }}>
                       {compareBatchB.product_name.toUpperCase()}
                     </span>
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                  <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
                     Ref: {compareBatchB.ref_no || '-'} • Date: {compareBatchB.test_date || '-'}
                   </div>
                   <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
                       <thead>
-                        <tr style={{ backgroundColor: 'var(--bg-app)', borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
+                        <tr style={{ backgroundColor: '#0f172a', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', textAlign: 'left', color: '#cbd5e1' }}>
                           <th style={{ padding: '6px 8px' }}>Material</th>
                           <th style={{ padding: '6px 8px', textAlign: 'right' }}>Qty</th>
                         </tr>
                       </thead>
                       <tbody>
                         {compareBatchB.materials.map((m, idx) => (
-                          <tr key={idx} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                          <tr key={idx} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)', color: '#f8fafc' }}>
                             <td style={{ padding: '6px 8px' }}>{m.raw_material || m.normalized_raw_material}</td>
-                            <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700 }}>{m.qty.toFixed(2)}</td>
+                            <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, color: '#818cf8' }}>{m.qty.toFixed(2)}</td>
                           </tr>
                         ))}
                       </tbody>

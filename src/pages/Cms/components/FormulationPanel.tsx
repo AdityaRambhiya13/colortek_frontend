@@ -51,6 +51,7 @@ export interface FormulationPanelProps {
   handleSaveMaster: (side: 'left' | 'right') => void;
   handleRmApproval: (side: 'left' | 'right', status: 'OK' | 'Not OK') => void;
   handleExitComplaintMode?: () => void;
+  handleSaveAsNewTrial?: () => void;
   fetchDuplicateDetails: (batchNo: string, side: 'left' | 'right') => void;
   handleDismissDuplicateOverlay: (side: 'left' | 'right') => void;
   handleLoadDuplicateToSide: (target: 'left' | 'right', source: 'left' | 'right', batchNo: string | null) => void;
@@ -65,7 +66,7 @@ export const FormulationPanel: React.FC<FormulationPanelProps> = ({
   onCopy, handleSaveFull, handleClearAllFields, handleAddRow, handleDeleteSelectedRows,
   handleOCRUpload, handleFilterMatches, calculateTotalWeight, handleHeaderFieldKeyDown, handleCellKeyDown,
   handleAddTestRow, handleDeleteSelectedTests, handleTestCellKeyDown,
-  handleSaveMaster, handleRmApproval, handleExitComplaintMode, openStarModal, calculateTotalSolidQty, calculateFormulationSolidity,
+  handleSaveMaster, handleRmApproval, handleExitComplaintMode, handleSaveAsNewTrial, openStarModal, calculateTotalSolidQty, calculateFormulationSolidity,
   fetchDuplicateDetails, handleDismissDuplicateOverlay, handleLoadDuplicateToSide
 }) => {
   return (
@@ -85,7 +86,21 @@ export const FormulationPanel: React.FC<FormulationPanelProps> = ({
               ) : (
                 <>
                   {/* Sticky Header for RM Testing / Lab Formulations Material Details */}
-                  {activeSubView === 'rm_testing' ? (
+                  {isComplaintMode ? (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #cbd5e1', paddingBottom: '6px', marginBottom: '8px', flexShrink: 0 }}>
+                      <span style={{ fontWeight: "bold", fontSize: "13px", color: "#10b981" }}>REPAIR FORMULATION TRIAL (MODIFY & TEST)</span>
+                      {handleSaveAsNewTrial && (
+                        <button 
+                          onClick={handleSaveAsNewTrial} 
+                          className="flet-btn" 
+                          style={{ backgroundColor: '#10b981', color: '#ffffff', fontWeight: 700, border: 'none', height: '26px', padding: '0 12px' }} 
+                          disabled={loading}
+                        >
+                          🛠️ Save Repair Trial
+                        </button>
+                      )}
+                    </div>
+                  ) : activeSubView === 'rm_testing' ? (
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #cbd5e1', paddingBottom: '6px', marginBottom: '8px', flexShrink: 0 }}>
                       <span style={{ fontWeight: "bold", fontSize: "13px", color: "var(--primary-color)" }}>{`MATERIAL DETAILS (${side.toUpperCase()})`}</span>
                       <div style={{ display: 'flex', gap: '6px' }}>
@@ -351,6 +366,17 @@ export const FormulationPanel: React.FC<FormulationPanelProps> = ({
                       <button onClick={() => handleDeleteSelectedRows(side)} className="flet-btn flet-btn-red" disabled={loading}>Delete Selected</button>
                       <button onClick={() => handleClearAllFields(side)} className="flet-btn flet-btn-orange" disabled={loading}>Clear All</button>
                       <button onClick={onCopy} className="flet-btn flet-btn-blue" disabled={loading}>Copy ➡️</button>
+                      {isComplaintMode && handleSaveAsNewTrial && (
+                        <button 
+                          onClick={handleSaveAsNewTrial} 
+                          className="flet-btn" 
+                          style={{ backgroundColor: '#10b981', color: '#ffffff', fontWeight: 700, border: 'none', boxShadow: '0 2px 4px rgba(16, 185, 129, 0.4)' }} 
+                          disabled={loading}
+                          title="Save this formulation as a repair trial for the complaint batch"
+                        >
+                          🛠️ Save Repair Trial
+                        </button>
+                      )}
                       <button onClick={() => handleSaveFull(side)} className="flet-btn flet-btn-blue" disabled={loading}>Save</button>
                       <button onClick={() => handleSaveMaster(side)} className="flet-btn flet-btn-green" disabled={loading}>Save Master</button>
                     </div>

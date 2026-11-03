@@ -356,6 +356,17 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
 
     if (success) {
       onShowToast(`New trial (Batch ${repairedBatchNo}) has been saved to Repaired Formulations.`, "success");
+      try {
+        await NotificationsAPI.createNotification(
+          "🛠️ Repair Trial Saved",
+          `Repair trial recorded for batch ${complaintOriginInfo.batch_no} (Repaired batch: ${repairedBatchNo}).`,
+          "success",
+          ["lab", "complaints"]
+        );
+        window.dispatchEvent(new CustomEvent('refresh-notifications'));
+      } catch (err) {
+        console.error('Failed to dispatch notification:', err);
+      }
     } else {
       const errorMsg = response && typeof response === 'object' && response.detail 
         ? response.detail 
@@ -1716,8 +1727,20 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
         <>
           {/* Fixed Flet Style Header Toolbar */}
           <div className="flet-fixed-toolbar">
-            <div className="flet-toolbar-title">
-              {activeSubView === 'lab_formulations' ? 'LAB FORMULATIONS' : 'RM Laboratory Testing Scope'}
+            <div className="flet-toolbar-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span>{activeSubView === 'lab_formulations' ? 'LAB FORMULATIONS' : 'RM Laboratory Testing Scope'}</span>
+              {isComplaintMode && complaintOriginInfo && (
+                <span style={{ 
+                  fontSize: '11px', 
+                  backgroundColor: '#f59e0b', 
+                  color: '#0f172a', 
+                  padding: '2px 10px', 
+                  borderRadius: '12px', 
+                  fontWeight: 800 
+                }}>
+                  🛠️ REPAIR MODE: BATCH {complaintOriginInfo.batch_no}
+                </span>
+              )}
             </div>
 
             {/* Cross table alert */}
@@ -1795,6 +1818,7 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
               handleSaveMaster={handleSaveMaster}
               handleRmApproval={handleRmApproval}
               handleExitComplaintMode={handleExitComplaintMode}
+              handleSaveAsNewTrial={handleSaveAsNewTrial}
               fetchDuplicateDetails={fetchDuplicateDetails}
               handleDismissDuplicateOverlay={handleDismissDuplicateOverlay}
               handleLoadDuplicateToSide={handleLoadDuplicateToSide}
@@ -1804,6 +1828,9 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
               activeSubView={activeSubView}
               isLab={activeSubView === 'lab_formulations'}
               loading={loading}
+              isComplaintMode={isComplaintMode}
+              handleExitComplaintMode={handleExitComplaintMode}
+              handleSaveAsNewTrial={handleSaveAsNewTrial}
               form={rightForm}
               setForm={setRightForm}
               rows={rightRows}

@@ -12,7 +12,8 @@ import {
   Layers,
   Settings,
   Database,
-  MapPin
+  MapPin,
+  ShieldCheck
 } from 'lucide-react';
 // Note: We'll map appropriate Lucide icons for high visual fidelity
 
@@ -298,6 +299,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {renderLink('geofence_management', 'Geofence Control', <MapPin size={14} />, true)}
             {renderLink('database_management', 'Database Manager', <Database size={14} />, true)}
             {renderLink('products_master', 'Products Master', <Layers size={14} />, true)}
+            {renderLink('batch_audit_system_health', 'Batch Audit & Health', <ShieldCheck size={14} />, true)}
           </>
         )}
       </div>

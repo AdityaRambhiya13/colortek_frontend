@@ -59,6 +59,127 @@ export interface GeofenceConfig {
   updated_by?: string | null;
 }
 
+export interface DatabaseHealth {
+  status: string;
+  latency_ms: number;
+  active_connections: number;
+  database_size: string;
+  version: string;
+  table_counts: Record<string, number>;
+}
+
+export interface CacheHealth {
+  status: string;
+  latency_ms: number | null;
+}
+
+export interface EncryptionHealth {
+  status: string;
+  master_key_configured: boolean;
+  crypto_roundtrip_test: boolean;
+  ciphers_loaded: number;
+}
+
+export interface StorageHealth {
+  status: string;
+  uploads_dir_ok: boolean;
+  backups_dir_ok: boolean;
+  exports_dir_ok: boolean;
+  storage_path: string;
+}
+
+export interface SecurityIntegrityHealth {
+  active_lockouts: number;
+  recent_failed_logins: number;
+  recent_audit_errors: number;
+  orphaned_raw_materials: number;
+  empty_batches: number;
+}
+
+export interface SystemHealthResponse {
+  status: 'healthy' | 'warning' | 'error';
+  timestamp: string;
+  uptime_seconds: number;
+  uptime_human: string;
+  database: DatabaseHealth;
+  cache: CacheHealth;
+  encryption: EncryptionHealth;
+  storage: StorageHealth;
+  security_integrity: SecurityIntegrityHealth;
+}
+
+export interface DuplicateBatchItem {
+  id: number;
+  batch_no: string;
+  product_name: string;
+  ref_no?: string;
+  test_date?: string;
+  source: string;
+}
+
+export interface DuplicateMaterialItem {
+  material: string;
+  normalized_material: string;
+  qty: number;
+}
+
+export interface FormulaDuplicateGroup {
+  group_id: string;
+  match_count: number;
+  item_count: number;
+  products: string[];
+  materials: DuplicateMaterialItem[];
+  batches: DuplicateBatchItem[];
+}
+
+export interface BatchNoDuplicateGroup {
+  batch_no: string;
+  match_count: number;
+  products: string[];
+  batches: DuplicateBatchItem[];
+}
+
+export interface DuplicateAuditResponse {
+  status: string;
+  summary: {
+    total_formula_groups: number;
+    total_formula_batches: number;
+    total_batch_no_groups: number;
+    total_batch_no_batches: number;
+    scope: string;
+    filter_type: string;
+    product_filter: string;
+    search_query: string;
+  };
+  formula_duplicates: FormulaDuplicateGroup[];
+  batch_no_duplicates: BatchNoDuplicateGroup[];
+  available_products: string[];
+}
+
+export interface BatchDetailResponseAdmin {
+  id: number;
+  batch_no: string;
+  product_name: string;
+  ref_no: string;
+  test_date?: string | null;
+  report_date?: string | null;
+  formula_date?: string | null;
+  remarks?: string | null;
+  source: string;
+  materials: Array<{
+    sr_no: number;
+    mr_no?: string;
+    raw_material: string;
+    normalized_raw_material: string;
+    qty: number;
+  }>;
+  tests: Array<{
+    method: string;
+    standard: string;
+    result: string;
+  }>;
+}
+
 // Base URL for the FastAPI backend (uses VITE_API_URL env variable with localhost fallback)
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -480,7 +601,30 @@ export const AdminAPI = {
     radius_meters: number;
   }) => {
     return handleResponse<GeofenceConfig>(apiClient.post('/admin/geofence', payload));
-  }
+  },
+  getSystemHealth: async () => {
+    return handleResponse<SystemHealthResponse>(apiClient.get('/admin/system-health'));
+  },
+
+  getDuplicateBatches: async (params?: {
+    product_name?: string;
+    scope?: string;
+    filter_type?: string;
+    search?: string;
+    limit?: number;
+    offset?: number;
+  }) => {
+    return handleResponse<DuplicateAuditResponse>(apiClient.get('/admin/duplicate-batches', { params }));
+  },
+
+  getBatchDetail: async (source: string, batchId: number) => {
+    return handleResponse<BatchDetailResponseAdmin>(apiClient.get(`/admin/batch-detail/${source}/${batchId}`));
+  },
+
+  triggerBackup: async () => {
+    return handleResponse<GeneralResponse>(apiClient.post('/admin/database/backup'));
+  },
+
 };
 
 // ============================================================================

@@ -14,6 +14,7 @@ const UserManagement = React.lazy(() => import('./pages/UserManagement').then(m 
 const GeofenceManagement = React.lazy(() => import('./pages/GeofenceManagement').then(m => ({ default: m.GeofenceManagement })));
 const DatabaseManagement = React.lazy(() => import('./pages/DatabaseManagement').then(m => ({ default: m.DatabaseManagement })));
 const ProductsMaster = React.lazy(() => import('./pages/ProductsMaster').then(m => ({ default: m.ProductsMaster })));
+const BatchAuditSystemHealth = React.lazy(() => import('./pages/BatchAuditSystemHealth').then(m => ({ default: m.BatchAuditSystemHealth })));
 import { AuthAPI } from './services/api';
 import { LogOut, Info as InfoIcon, RefreshCw, CheckCircle2, AlertTriangle, AlertCircle, X as CloseIcon } from 'lucide-react';
 import { toast as globalToast } from './utils/toast';
@@ -316,7 +317,7 @@ export const App: React.FC = () => {
     const isMasterAdmin = sessionStorage.getItem('product_name') === 'System Admin';
     let targetView = urlView || cachedView || 'welcome';
     
-    if (isMasterAdmin && !['user_management', 'geofence_management', 'database_management', 'products_master'].includes(targetView)) {
+    if (isMasterAdmin && !['user_management', 'geofence_management', 'database_management', 'products_master', 'batch_audit_system_health'].includes(targetView)) {
       targetView = 'user_management';
     }
 
@@ -406,6 +407,8 @@ export const App: React.FC = () => {
         return <DatabaseManagement onShowToast={showToast} />;
       case 'products_master':
         return <ProductsMaster onShowToast={showToast} />;
+      case 'batch_audit_system_health':
+        return <BatchAuditSystemHealth onShowToast={showToast} />;
 
       // Fallback Welcome Dashboard
       case 'welcome':

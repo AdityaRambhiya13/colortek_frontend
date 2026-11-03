@@ -561,7 +561,9 @@ export const useExports = (props: any) => {
         doc.addPage();
       }
 
-      const positionOnPage = idx % 2; 
+      const positionOnPage = printableCards.length === 1
+        ? (printSlot && printSlot.includes('right') ? 1 : 0)
+        : (idx % 2);
       const startY = margin;
       const slotX = margin + (positionOnPage * (cardWidth + gapX));
 
@@ -760,31 +762,27 @@ export const useExports = (props: any) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const generateMultiFormulationsPrintPDF = (fetchedData: any[]) => {
     const doc = new jsPDF('p', 'mm', 'a4');
+    const margin = 8;
     const cardWidth = 94;
+    const gapX = 6;
+    const fixedCardHeight = 281;
+    const containerInnerWidth = cardWidth - 8;
 
-    const getSlotCoords = (slotName: string) => {
-      switch (slotName) {
-        case 'top-left': return { x: 8, y: 8 };
-        case 'top-right': return { x: 108, y: 8 };
-        case 'middle-left': return { x: 8, y: 101 };
-        case 'middle-right': return { x: 108, y: 101 };
-        case 'bottom-left': return { x: 8, y: 194 };
-        case 'bottom-right': return { x: 108, y: 194 };
-        default: return { x: 8, y: 8 };
+    const formatDateDMY = (dateStr: string) => {
+      if (!dateStr || dateStr === 'N/A' || dateStr.trim() === '-' || dateStr.trim() === '') return '-';
+      const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (match) {
+        return `${match[3]}-${match[2]}-${match[1]}`;
       }
+      return dateStr;
     };
 
-    fetchedData.forEach((data, idx) => {
-      const fd = data.form_data || [];
-      const refNo = data.ref_no || fd[0] || 'N/A';
-      const batchNo = data.batch_no || fd[1] || 'N/A';
-      
-      const isLab = fd.length === 6 || activeSubView.includes('lab');
-      const productNameField = data.product_name_field || fd[2] || data.product || 'N/A';
-      const testDate = data.test_date || (isLab ? (fd[3] || 'N/A') : (fd.length === 8 ? (fd[5] || 'N/A') : (fd[4] || 'N/A')));
-      const reportDate = data.report_date || (isLab ? (fd[4] || 'N/A') : (fd.length === 8 ? (fd[6] || 'N/A') : (fd[5] || 'N/A')));
-      const formulaDate = data.formula_date || (isLab ? (fd[5] || 'N/A') : (fd.length === 8 ? (fd[7] || 'N/A') : (fd[6] || 'N/A')));
+    // Flatten data into individual printable card blocks (handling multi-chunk cards if total items exceed card limit)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const printableCards: any[] = [];
 
+    fetchedData.forEach((data) => {
+      const fd = data.form_data || [];
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const inventory = (data.inventory || []).map((i: any) => {
         if (Array.isArray(i)) {
@@ -834,43 +832,77 @@ export const useExports = (props: any) => {
         return !(isStdEmpty && isResEmpty);
       });
 
-      const remarks = data.remarks || '';
-
-      // Determine slot coordinates
-      let slotX = 8;
-      let slotY = 8;
-      
-      if (fetchedData.length === 1) {
-        const coords = getSlotCoords(printSlot);
-        slotX = coords.x;
-        slotY = coords.y;
+      // A single 281mm card can comfortably hold up to 42 combined raw materials + test rows
+      if (inventory.length + tests.length <= 42) {
+        printableCards.push({
+          ...data,
+          inventory,
+          tests,
+          isContinuation: false,
+          isFinalChunk: true
+        });
       } else {
-        const pageIndex = idx % 6;
-        const pageNum = Math.floor(idx / 6);
-        if (pageNum > 0 && pageIndex === 0) {
+        // Multi-card chunking when total items exceed single card limit
+        const chunkLimit = 22;
+        const firstChunkInv = inventory.slice(0, chunkLimit);
+        const remInv = inventory.slice(chunkLimit);
+
+        printableCards.push({
+          ...data,
+          inventory: firstChunkInv,
+          tests: remInv.length === 0 ? tests : [],
+          isContinuation: false,
+          isFinalChunk: remInv.length === 0,
+          fullInventoryRef: inventory
+        });
+
+        if (remInv.length > 0) {
+          printableCards.push({
+            ...data,
+            inventory: remInv,
+            tests: tests,
+            isContinuation: true,
+            isFinalChunk: true,
+            fullInventoryRef: inventory
+          });
+        }
+      }
+    });
+
+    // Render generated complete cards side-by-side
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    printableCards.forEach((cardData: any, idx: number) => {
+      let slotX = margin;
+      const startY = margin;
+
+      if (printableCards.length === 1) {
+        const isRight = printSlot ? printSlot.includes('right') : false;
+        slotX = margin + (isRight ? 1 : 0) * (cardWidth + gapX);
+      } else {
+        const pageIndex = idx % 2;
+        if (idx > 0 && pageIndex === 0) {
           doc.addPage();
         }
-        if (pageIndex === 0) { slotX = 8; slotY = 8; }
-        else if (pageIndex === 1) { slotX = 108; slotY = 8; }
-        else if (pageIndex === 2) { slotX = 8; slotY = 101; }
-        else if (pageIndex === 3) { slotX = 108; slotY = 101; }
-        else if (pageIndex === 4) { slotX = 8; slotY = 194; }
-        else if (pageIndex === 5) { slotX = 108; slotY = 194; }
+        slotX = margin + (pageIndex * (cardWidth + gapX));
       }
 
-      const startY = slotY;
-      const cardHeight = 88;
+      const fd = cardData.form_data || [];
+      const refNo = cardData.ref_no || fd[0] || 'N/A';
+      const batchNo = cardData.batch_no || fd[1] || 'N/A';
+      
+      const isLab = fd.length === 6 || activeSubView.includes('lab');
+      const productNameField = cardData.product_name_field || fd[2] || cardData.product || 'N/A';
+      const testDate = formatDateDMY(cardData.test_date || (isLab ? (fd[3] || 'N/A') : (fd.length === 8 ? (fd[5] || 'N/A') : (fd[4] || 'N/A'))));
+      const reportDate = formatDateDMY(cardData.report_date || (isLab ? (fd[4] || 'N/A') : (fd.length === 8 ? (fd[6] || 'N/A') : (fd[5] || 'N/A'))));
+      const formulaDate = formatDateDMY(cardData.formula_date || (isLab ? (fd[5] || 'N/A') : (fd.length === 8 ? (fd[7] || 'N/A') : (fd[6] || 'N/A'))));
+      const remarks = cardData.remarks || '';
 
-      // Card Border
-      doc.setDrawColor(200, 200, 200);
-      doc.setLineWidth(0.3);
-      doc.rect(slotX, startY, cardWidth, cardHeight, 'S');
-
-      // Card Header
+      // --- 1. CARD HEADER ---
       doc.setFont('Helvetica', 'bold');
       doc.setFontSize(11);
       doc.setTextColor(29, 78, 216); // Blue-700
-      doc.text(`Batch: ${batchNo.substring(0, 18)}`, slotX + 4, startY + 5.5, { charSpace: 0.2 });
+      const titleText = cardData.isContinuation ? `Batch: ${batchNo.substring(0, 12)} (Cont.)` : `Batch: ${batchNo.substring(0, 18)}`;
+      doc.text(titleText, slotX + 4, startY + 5.5, { charSpace: 0.1 });
       
       doc.setFont('Helvetica', 'normal');
       doc.setFontSize(9.5);
@@ -878,176 +910,207 @@ export const useExports = (props: any) => {
       doc.text(`Ref: ${refNo !== 'N/A' ? refNo.substring(0, 14) : '-'}`, slotX + cardWidth - 4, startY + 5.5, { align: 'right', charSpace: 0.1 });
 
       doc.setDrawColor(229, 231, 235);
-      doc.line(slotX + 4, startY + 6.5, slotX + cardWidth - 4, startY + 6.5);
+      doc.setLineWidth(0.3);
+      doc.line(slotX + 4, startY + 7, slotX + cardWidth - 4, startY + 7);
 
-      // BATCH DETAILS Table
-      doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(8.5);
-      doc.setTextColor(29, 78, 216);
-      doc.text('BATCH DETAILS', slotX + 4, startY + 10.5, { charSpace: 0.2 });
+      let currentSectionsY = startY + 8;
 
-      doc.setDrawColor(209, 213, 219);
-      doc.setFillColor(249, 250, 251);
-      doc.rect(slotX + 4, startY + 12, cardWidth - 8, 9);
-      doc.line(slotX + 4, startY + 16.5, slotX + cardWidth - 4, startY + 16.5); // Horizontal Divider
-      doc.line(slotX + 4 + (cardWidth - 8) / 2, startY + 12, slotX + 4 + (cardWidth - 8) / 2, startY + 21); // Vertical Divider
+      // --- 2. BATCH DETAILS SECTION ---
+      if (!cardData.isContinuation) {
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.setTextColor(29, 78, 216);
+        doc.text('BATCH DETAILS', slotX + 4, currentSectionsY + 2.5, { charSpace: 0.15 });
 
-      doc.setFontSize(8);
-      doc.setTextColor(0, 0, 0);
-      
-      doc.setFont('Helvetica', 'bold'); doc.text('Product:', slotX + 6, startY + 15.5, { charSpace: 0.1 });
-      doc.setFont('Helvetica', 'normal'); doc.text(productNameField.substring(0, 15), slotX + 17, startY + 15.5, { charSpace: 0.08 });
-      
-      doc.setFont('Helvetica', 'bold'); doc.text('Formula Dt:', slotX + 4 + (cardWidth - 8) / 2 + 2, startY + 15.5, { charSpace: 0.1 });
-      doc.setFont('Helvetica', 'normal'); doc.text(formulaDate !== 'N/A' ? formulaDate : '-', slotX + 4 + (cardWidth - 8) / 2 + 20, startY + 15.5, { charSpace: 0.08 });
-
-      doc.setFont('Helvetica', 'bold'); doc.text('Test Dt:', slotX + 6, startY + 20, { charSpace: 0.1 });
-      doc.setFont('Helvetica', 'normal'); doc.text(testDate !== 'N/A' ? testDate : '-', slotX + 17, startY + 20, { charSpace: 0.08 });
-      
-      doc.setFont('Helvetica', 'bold'); doc.text('Report Dt:', slotX + 4 + (cardWidth - 8) / 2 + 2, startY + 20, { charSpace: 0.1 });
-      doc.setFont('Helvetica', 'normal'); doc.text(reportDate !== 'N/A' ? reportDate : '-', slotX + 4 + (cardWidth - 8) / 2 + 20, startY + 20, { charSpace: 0.08 });
-
-      // RAW MATERIALS Table
-      doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(8.5);
-      doc.setTextColor(29, 78, 216);
-      doc.text('RAW MATERIALS', slotX + 4, startY + 24.5, { charSpace: 0.2 });
-
-      let tableY = startY + 26;
-      doc.setFillColor(245, 248, 250);
-      doc.rect(slotX + 4, tableY, cardWidth - 8, 4.5, 'F');
-      doc.rect(slotX + 4, tableY, cardWidth - 8, 4.5, 'S');
-
-      doc.setFontSize(8);
-      doc.setTextColor(0, 0, 0);
-      doc.text('Sr', slotX + 6, tableY + 3.2, { charSpace: 0.1 });
-      doc.text('Material Description', slotX + 14, tableY + 3.2, { charSpace: 0.1 });
-      doc.text('Qty (g)', slotX + cardWidth - 6, tableY + 3.2, { align: 'right', charSpace: 0.1 });
-
-      tableY += 4.5;
-      doc.setFont('Helvetica', 'normal');
-
-      let totalQty = 0;
-      const maxRawMaterials = 5;
-      const displayInventory = inventory.slice(0, maxRawMaterials);
-      const remainingRMCount = inventory.length - maxRawMaterials;
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      displayInventory.forEach((item: any, index: number) => {
-        const isLastRow = index === maxRawMaterials - 1 && remainingRMCount > 0;
+        currentSectionsY += 4;
         
-        if (index % 2 === 0) {
-          doc.setFillColor(250, 250, 250);
-          doc.rect(slotX + 4, tableY, cardWidth - 8, 4.5, 'F');
-        }
-        doc.rect(slotX + 4, tableY, cardWidth - 8, 4.5, 'S');
+        doc.setFont('Helvetica', 'normal');
+        doc.setFontSize(8);
+        const labelWidth = 16;
+        const allowedTextWidth = containerInnerWidth - labelWidth - 4;
+        const wrappedProductLines = doc.splitTextToSize(productNameField, allowedTextWidth);
+        const productRowHeight = wrappedProductLines.length > 1 ? 5 + (wrappedProductLines.length - 1) * 3.8 : 5.5;
+        const datesRowHeight = 9;
+        const batchDetailsContainerHeight = productRowHeight + datesRowHeight;
 
-        if (isLastRow) {
-          doc.setFont('Helvetica', 'bold');
-          doc.text('', slotX + 6, tableY + 3.2);
-          doc.text(`+ ${remainingRMCount + 1} more materials...`, slotX + 14, tableY + 3.2, { charSpace: 0.08 });
-          doc.text('-', slotX + cardWidth - 6, tableY + 3.2, { align: 'right', charSpace: 0.08 });
-          doc.setFont('Helvetica', 'normal');
-        } else {
-          doc.text(item.sr || String(index + 1), slotX + 6, tableY + 3.2, { charSpace: 0.08 });
-          doc.text(item.material.substring(0, 24), slotX + 14, tableY + 3.2, { charSpace: 0.08 });
+        doc.setDrawColor(209, 213, 219);
+        doc.setFillColor(249, 250, 251);
+        doc.rect(slotX + 4, currentSectionsY, containerInnerWidth, batchDetailsContainerHeight, 'DF');
+        doc.line(slotX + 4, currentSectionsY + productRowHeight, slotX + cardWidth - 4, currentSectionsY + productRowHeight);
+
+        doc.setTextColor(0, 0, 0);
+        doc.setFont('Helvetica', 'bold'); doc.text('Product:', slotX + 6, currentSectionsY + 3.8);
+        doc.setFont('Helvetica', 'normal'); doc.text(wrappedProductLines, slotX + 6 + labelWidth, currentSectionsY + 3.8);
+
+        const datesStartY = currentSectionsY + productRowHeight;
+        const halfWidth = containerInnerWidth / 2;
+        doc.line(slotX + 4 + halfWidth, datesStartY, slotX + 4 + halfWidth, datesStartY + datesRowHeight);
+
+        doc.setFont('Helvetica', 'bold'); doc.text('Formula Dt:', slotX + 6, datesStartY + 3.8);
+        doc.setFont('Helvetica', 'normal'); doc.text(formulaDate, slotX + 23, datesStartY + 3.8);
+
+        doc.setFont('Helvetica', 'bold'); doc.text('Test Dt:', slotX + 6 + halfWidth, datesStartY + 3.8);
+        doc.setFont('Helvetica', 'normal'); doc.text(testDate, slotX + 22 + halfWidth, datesStartY + 3.8);
+
+        doc.setFont('Helvetica', 'bold'); doc.text('Report Dt:', slotX + 6 + halfWidth, datesStartY + 7.5);
+        doc.setFont('Helvetica', 'normal'); doc.text(reportDate, slotX + 22 + halfWidth, datesStartY + 7.5);
+
+        currentSectionsY += batchDetailsContainerHeight + 3;
+      }
+
+      // --- 3. RAW MATERIALS TABLE (ALL RAW MATERIALS SHOWN) ---
+      if (cardData.inventory && cardData.inventory.length > 0) {
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.setTextColor(29, 78, 216);
+        doc.text(cardData.isContinuation ? 'RAW MATERIALS (CONTINUED)' : 'RAW MATERIALS', slotX + 4, currentSectionsY + 2.5, { charSpace: 0.15 });
+
+        currentSectionsY += 4;
+        const tableRowHeight = 4.2;
+
+        // Header Row
+        doc.setFillColor(245, 248, 250);
+        doc.rect(slotX + 4, currentSectionsY, containerInnerWidth, tableRowHeight, 'DF');
+        doc.setFontSize(7.5);
+        doc.setTextColor(0, 0, 0);
+        doc.text('Sr', slotX + 6, currentSectionsY + 3.0, { charSpace: 0.1 });
+        doc.text('Material Description', slotX + 14, currentSectionsY + 3.0, { charSpace: 0.1 });
+        doc.text('Qty (g)', slotX + cardWidth - 6, currentSectionsY + 3.0, { align: 'right', charSpace: 0.1 });
+
+        currentSectionsY += tableRowHeight;
+        doc.setFont('Helvetica', 'normal');
+
+        let totalQty = 0;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        cardData.inventory.forEach((item: any, index: number) => {
+          if (index % 2 === 0) {
+            doc.setFillColor(250, 250, 250);
+            doc.rect(slotX + 4, currentSectionsY, containerInnerWidth, tableRowHeight, 'F');
+          }
+          doc.rect(slotX + 4, currentSectionsY, containerInnerWidth, tableRowHeight, 'S');
+
+          doc.text(item.sr || String(index + 1), slotX + 6, currentSectionsY + 3.0, { charSpace: 0.08 });
+          doc.text(item.material.substring(0, 28), slotX + 14, currentSectionsY + 3.0, { charSpace: 0.08 });
           
           const qtyVal = parseFloat(item.qty);
           if (!isNaN(qtyVal)) {
             totalQty += qtyVal;
-            doc.text(qtyVal.toFixed(2), slotX + cardWidth - 6, tableY + 3.2, { align: 'right', charSpace: 0.08 });
+            doc.text(qtyVal.toFixed(2), slotX + cardWidth - 6, currentSectionsY + 3.0, { align: 'right', charSpace: 0.08 });
           } else {
-            doc.text(item.qty || '0.00', slotX + cardWidth - 6, tableY + 3.2, { align: 'right', charSpace: 0.08 });
+            doc.text(item.qty || '0.00', slotX + cardWidth - 6, currentSectionsY + 3.0, { align: 'right', charSpace: 0.08 });
           }
-        }
-        tableY += 4.5;
-      });
-
-      if (remainingRMCount > 0) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        inventory.slice(maxRawMaterials - 1).forEach((item: any) => {
-          const qtyVal = parseFloat(item.qty);
-          if (!isNaN(qtyVal)) totalQty += qtyVal;
+          currentSectionsY += tableRowHeight;
         });
+
+        // Total Row (Only if final inventory chunk)
+        if (cardData.isFinalChunk || (cardData.tests && cardData.tests.length > 0)) {
+          let sumQty = totalQty;
+          if (cardData.fullInventoryRef) {
+            sumQty = 0;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            cardData.fullInventoryRef.forEach((item: any) => {
+              const qVal = parseFloat(item.qty);
+              if (!isNaN(qVal)) sumQty += qVal;
+            });
+          }
+          doc.setFillColor(243, 244, 246);
+          doc.rect(slotX + 4, currentSectionsY, containerInnerWidth, tableRowHeight, 'DF');
+          doc.setFont('Helvetica', 'bold');
+          doc.setFontSize(8);
+          doc.text('Total:', slotX + 14, currentSectionsY + 3.0, { charSpace: 0.1 });
+          doc.text(`${sumQty.toFixed(2)} g`, slotX + cardWidth - 6, currentSectionsY + 3.0, { align: 'right', charSpace: 0.1 });
+          currentSectionsY += tableRowHeight;
+        }
+
+        currentSectionsY += 3;
       }
 
-      // Total Row
-      doc.setFillColor(243, 244, 246);
-      doc.rect(slotX + 4, tableY, cardWidth - 8, 4.5, 'F');
-      doc.rect(slotX + 4, tableY, cardWidth - 8, 4.5, 'S');
-      doc.setFont('Helvetica', 'bold');
-      doc.text('Total:', slotX + 14, tableY + 3.2, { charSpace: 0.1 });
-      doc.text(`${totalQty.toFixed(2)} g`, slotX + cardWidth - 6, tableY + 3.2, { align: 'right', charSpace: 0.1 });
-
-      let nextY = tableY + 4.5;
-
-      // TEST RESULTS (if exist)
-      if (tests.length > 0) {
+      // --- 4. TEST RESULTS TABLE (ALL TESTS SHOWN) ---
+      if (cardData.tests && cardData.tests.length > 0) {
         doc.setFont('Helvetica', 'bold');
         doc.setFontSize(8.5);
         doc.setTextColor(29, 78, 216);
-        doc.text('TEST RESULTS', slotX + 4, nextY + 2.5, { charSpace: 0.2 });
+        doc.text(cardData.isContinuation && (!cardData.inventory || cardData.inventory.length === 0) ? 'TEST RESULTS (CONTINUED)' : 'TEST RESULTS', slotX + 4, currentSectionsY + 2.5, { charSpace: 0.15 });
 
-        let testTableY = nextY + 4;
+        currentSectionsY += 4;
+        const testRowHeight = 4.2;
+
+        // Table Header
         doc.setFillColor(245, 248, 250);
-        doc.rect(slotX + 4, testTableY, cardWidth - 8, 4.5, 'F');
-        doc.rect(slotX + 4, testTableY, cardWidth - 8, 4.5, 'S');
-
-        doc.setFontSize(8);
+        doc.rect(slotX + 4, currentSectionsY, containerInnerWidth, testRowHeight, 'DF');
+        doc.setFontSize(7.5);
         doc.setTextColor(0, 0, 0);
-        doc.text('Test Method', slotX + 6, testTableY + 3.2, { charSpace: 0.1 });
-        doc.text('Std / Result', slotX + cardWidth - 6, testTableY + 3.2, { align: 'right', charSpace: 0.1 });
+        doc.text('Test Method', slotX + 6, currentSectionsY + 3.0, { charSpace: 0.1 });
+        doc.text('Std / Result', slotX + cardWidth - 6, currentSectionsY + 3.0, { align: 'right', charSpace: 0.1 });
 
-        testTableY += 4.5;
+        currentSectionsY += testRowHeight;
         doc.setFont('Helvetica', 'normal');
 
-        const maxTests = 2;
-        const displayTests = tests.slice(0, maxTests);
-        const remainingTestsCount = tests.length - maxTests;
-
+        // Render ALL tests without truncation!
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        displayTests.forEach((t: any, index: number) => {
-          const isLastRow = index === maxTests - 1 && remainingTestsCount > 0;
-          
+        cardData.tests.forEach((t: any, index: number) => {
           if (index % 2 === 0) {
             doc.setFillColor(250, 250, 250);
-            doc.rect(slotX + 4, testTableY, cardWidth - 8, 4.5, 'F');
+            doc.rect(slotX + 4, currentSectionsY, containerInnerWidth, testRowHeight, 'F');
           }
-          doc.rect(slotX + 4, testTableY, cardWidth - 8, 4.5, 'S');
+          doc.rect(slotX + 4, currentSectionsY, containerInnerWidth, testRowHeight, 'S');
 
-          if (isLastRow) {
-            doc.setFont('Helvetica', 'bold');
-            doc.text(`+ ${remainingTestsCount + 1} more tests...`, slotX + 6, testTableY + 3.2, { charSpace: 0.08 });
-            doc.text('-', slotX + cardWidth - 6, testTableY + 3.2, { align: 'right', charSpace: 0.08 });
-            doc.setFont('Helvetica', 'normal');
-          } else {
-            doc.text(t.method.substring(0, 20), slotX + 6, testTableY + 3.2, { charSpace: 0.08 });
-            const resStr = `${t.standard || '-'} / ${t.result || '-'}`;
-            doc.text(resStr.substring(0, 20), slotX + cardWidth - 6, testTableY + 3.2, { align: 'right', charSpace: 0.08 });
-          }
-          testTableY += 4.5;
+          doc.text(t.method.substring(0, 24), slotX + 6, currentSectionsY + 3.0, { charSpace: 0.08 });
+          const resStr = `${t.standard || '-'} / ${t.result || '-'}`;
+          doc.text(resStr.substring(0, 24), slotX + cardWidth - 6, currentSectionsY + 3.0, { align: 'right', charSpace: 0.08 });
+
+          currentSectionsY += testRowHeight;
         });
 
-        nextY = testTableY;
+        currentSectionsY += 3;
       }
 
-      // Remarks & Comments (if exist)
-      if (remarks) {
+      // --- 5. REMARKS & COMMENTS ---
+      if (remarks && cardData.isFinalChunk) {
         doc.setFont('Helvetica', 'bold');
         doc.setFontSize(8.5);
         doc.setTextColor(29, 78, 216);
-        doc.text('Remarks & Comments:', slotX + 4, nextY + 2.5, { charSpace: 0.2 });
+        doc.text('Remarks & Comments:', slotX + 4, currentSectionsY + 2.5, { charSpace: 0.15 });
 
-        const remarksBoxY = nextY + 4;
-        const remarksBoxHeight = 6;
-        doc.setDrawColor(209, 213, 219);
-        doc.rect(slotX + 4, remarksBoxY, cardWidth - 8, remarksBoxHeight);
-
+        currentSectionsY += 4;
         doc.setFont('Helvetica', 'normal');
-        doc.setFontSize(8);
+        doc.setFontSize(7.5);
         doc.setTextColor(0, 0, 0);
-        doc.text(remarks.substring(0, 52), slotX + 6, remarksBoxY + 4.2, { charSpace: 0.05 });
+        const splitRemarks = doc.splitTextToSize(remarks, containerInnerWidth - 4);
+        const remarksBoxHeight = Math.max(7, 3 + splitRemarks.length * 3.5);
+        doc.setDrawColor(209, 213, 219);
+        doc.rect(slotX + 4, currentSectionsY, containerInnerWidth, remarksBoxHeight);
+        doc.text(splitRemarks, slotX + 6, currentSectionsY + 3.5, { charSpace: 0.05 });
+
+        currentSectionsY += remarksBoxHeight + 3;
       }
+
+      // --- 6. REPORT NOTES RULED LINES (fill remaining space if space permits) ---
+      if (cardData.isFinalChunk) {
+        const remainingSpaceHeaderY = currentSectionsY + 2;
+        const absoluteCardBottomBoundary = startY + fixedCardHeight - 4;
+
+        if (remainingSpaceHeaderY < absoluteCardBottomBoundary - 10) {
+          doc.setFont('Helvetica', 'bold');
+          doc.setFontSize(8.5);
+          doc.setTextColor(29, 78, 216);
+          doc.text('REPORT NOTES', slotX + 4, remainingSpaceHeaderY, { charSpace: 0.15 });
+
+          doc.setDrawColor(220, 225, 230);
+          doc.setLineWidth(0.2);
+
+          let noteLineY = remainingSpaceHeaderY + 5;
+          while (noteLineY < absoluteCardBottomBoundary - 2) {
+            doc.line(slotX + 4, noteLineY, slotX + cardWidth - 4, noteLineY);
+            noteLineY += 6.5;
+          }
+        }
+      }
+
+      // --- 7. OUTER CARD BORDER ---
+      doc.setDrawColor(180, 185, 190);
+      doc.setLineWidth(0.4);
+      doc.rect(slotX, startY, cardWidth, fixedCardHeight, 'S');
     });
 
     doc.save(`Lab_Complete_Cards_${Date.now()}.pdf`);

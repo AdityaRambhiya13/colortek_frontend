@@ -1962,12 +1962,8 @@ export const CmsMain: React.FC<CmsMainProps> = ({ activeSubView, onShowToast, on
                       onChange={(e) => setPrintSlot(e.target.value as any)}
                       style={{ height: '32px', borderRadius: '4px', border: '1px solid #cbd5e1', padding: '0 8px', fontSize: '13px', marginLeft: '6px', cursor: 'pointer', backgroundColor: '#ffffff', color: '#1e293b', fontWeight: '500' }}
                     >
-                      <option value="top-left">Slot: Top Left</option>
-                      <option value="top-right">Slot: Top Right</option>
-                      <option value="middle-left">Slot: Middle Left</option>
-                      <option value="middle-right">Slot: Middle Right</option>
-                      <option value="bottom-left">Slot: Bottom Left</option>
-                      <option value="bottom-right">Slot: Bottom Right</option>
+                      <option value="top-left">Slot: Left Side</option>
+                      <option value="top-right">Slot: Right Side</option>
                     </select>
                   )}
                 </>

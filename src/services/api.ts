@@ -1295,13 +1295,14 @@ export const FinishGoodAPI = {
   },
 
   getAllEntries: async (productNameDb: string, filterBatch = '') => {
+    const params: Record<string, string> = {
+      product_name_db: productNameDb
+    };
+    if (filterBatch && filterBatch.trim()) {
+      params.filter_batch = filterBatch.trim();
+    }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return handleResponse<any>(apiClient.get('/fg/get-all-entries', {
-      params: {
-        product_name_db: productNameDb,
-        filter_batch: filterBatch
-      }
-    }));
+    return handleResponse<any>(apiClient.get('/fg/get-all-entries', { params }));
   },
 
   recalculateGoods: async (productNameDb: string, filterProduct: string) => {

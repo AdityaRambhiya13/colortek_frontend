@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   Factory, Search, RefreshCw, FileText, Download, Scale, ArrowRight,
   Plus, Trash2, ShieldAlert, CheckCircle2, ShoppingCart, Calendar, 
@@ -2441,9 +2441,35 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
   // ==========================================================================
   const [fgPage, setFgPage] = useState(1);
   const [fgTotalPages, setFgTotalPages] = useState(1);
+  const [fgTotalItems, setFgTotalItems] = useState(0);
+  const [fgGrandTotals, setFgGrandTotals] = useState({
+    qty: 0,
+    prod: 0,
+    total: 0,
+    dispatch: 0,
+    balance: 0
+  });
   const [fgPageInput, setFgPageInput] = useState('1');
   const [fgSearchFilter, setFgSearchFilter] = useState('');
   const [fgList, setFgList] = useState<any[]>([]);
+
+  const liveFgStats = useMemo(() => {
+    const activeRows = fgList.filter(r => r.particulars || r.batch_no);
+    const pageQty = activeRows.reduce((sum, r) => sum + (parseFloat(r.qty_in_kgs_ltr) || 0), 0);
+    const pageProd = activeRows.reduce((sum, r) => sum + (parseFloat(r.production) || 0), 0);
+    const pageTotal = activeRows.reduce((sum, r) => sum + (parseFloat(r.total) || 0), 0);
+    const pageDisp = activeRows.reduce((sum, r) => sum + (parseFloat(r.dispatch) || 0), 0);
+    const pageBal = activeRows.reduce((sum, r) => sum + (parseFloat(r.balance) || 0), 0);
+
+    return {
+      activeCount: fgTotalItems || activeRows.length,
+      qty: fgGrandTotals.qty > 0 ? fgGrandTotals.qty : pageQty,
+      prod: fgGrandTotals.prod > 0 ? fgGrandTotals.prod : pageProd,
+      total: fgGrandTotals.total > 0 ? fgGrandTotals.total : pageTotal,
+      dispatch: fgGrandTotals.dispatch > 0 ? fgGrandTotals.dispatch : pageDisp,
+      balance: fgGrandTotals.balance !== 0 ? fgGrandTotals.balance : pageBal
+    };
+  }, [fgList, fgTotalItems, fgGrandTotals]);
 
   useEffect(() => {
     setFgPageInput(String(fgPage));
@@ -2515,6 +2541,14 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
       }
       setFgList(paddedItems);
       setFgTotalPages(res.total_pages || res.pages || 1);
+      setFgTotalItems(res.total_items || items.length);
+      setFgGrandTotals({
+        qty: res.grand_total_qty || 0,
+        prod: res.grand_total_prod || 0,
+        total: res.grand_total_total || 0,
+        dispatch: res.grand_total_dispatch || 0,
+        balance: res.grand_total_balance || 0,
+      });
     } else {
       const emptyItems = Array.from({ length: 20 }, () => ({
         particulars: '',
@@ -2531,6 +2565,8 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
       }));
       setFgList(emptyItems);
       setFgTotalPages(1);
+      setFgTotalItems(0);
+      setFgGrandTotals({ qty: 0, prod: 0, total: 0, dispatch: 0, balance: 0 });
     }
   };
 
@@ -2841,19 +2877,32 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
   const exportFgToExcel = async (showLoading: any = true) => {
     const shouldShowLoading = showLoading !== false;
     if (shouldShowLoading) setLoading(true);
-    const [success, data] = await FinishGoodAPI.getAllEntries(
-      productName,
-      fgSearchFilter
-    );
-    if (shouldShowLoading) setLoading(false);
-    if (!success || !data || typeof data === 'string') {
-      onShowToast('Failed to fetch data for export.', 'error');
-      return;
+    let allEntries: any[] = [];
+    try {
+      const [success, data] = await FinishGoodAPI.getAllEntries(
+        productName,
+        fgSearchFilter
+      );
+      if (success && Array.isArray(data) && data.length > 0) {
+        allEntries = data;
+      }
+    } catch (err) {
+      console.warn('Failed fetching all FG entries from API:', err);
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const allEntries: any[] = Array.isArray(data) ? data : [];
+
+    if (allEntries.length === 0 && fgList.length > 0) {
+      allEntries = fgList.filter(item => item.particulars || item.batch_no).map(item => ({
+        ...item,
+        product: item.particulars || item.product || '',
+      }));
+      if (allEntries.length > 0) {
+        onShowToast('Exporting available entries to Excel.', 'info');
+      }
+    }
+
+    if (shouldShowLoading) setLoading(false);
     if (allEntries.length === 0) {
-      onShowToast('No data to export.', 'warning');
+      onShowToast('No data available to export.', 'warning');
       return;
     }
 
@@ -3020,6 +3069,174 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
     const timestamp = new Date().toISOString().slice(0,19).replace(/[-T:]/g,"_");
     XLSX.writeFile(wb, `Finish_Good_Report_${timestamp}.xlsx`);
     onShowToast('Finished Goods Report exported successfully.', 'success');
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const exportFgToPdf = async (showLoading: any = true) => {
+    const shouldShowLoading = showLoading !== false;
+    if (shouldShowLoading) setLoading(true);
+    let allEntries: any[] = [];
+    try {
+      const [success, data] = await FinishGoodAPI.getAllEntries(
+        productName,
+        fgSearchFilter
+      );
+      if (success && Array.isArray(data) && data.length > 0) {
+        allEntries = data;
+      }
+    } catch (err) {
+      console.warn('Failed fetching FG entries for PDF:', err);
+    }
+
+    if (allEntries.length === 0 && fgList.length > 0) {
+      allEntries = fgList.filter(item => item.particulars || item.batch_no).map(item => ({
+        ...item,
+        product: item.particulars || item.product || '',
+      }));
+      if (allEntries.length > 0) {
+        onShowToast('Generating PDF with available entries.', 'info');
+      }
+    }
+
+    if (shouldShowLoading) setLoading(false);
+    if (allEntries.length === 0) {
+      onShowToast('No data available to print.', 'warning');
+      return;
+    }
+
+    const processedData = allEntries.map(entry => {
+      const productFull = entry.product || '';
+      const parts = productFull.split(" - ");
+      const mainProd = parts[0] || '';
+      const category = getCategoryForProduct(mainProd);
+      const [sortProdIdx, _, displayName] = getSortKeys(mainProd);
+      
+      let catIndex = CATEGORY_ORDER.indexOf(category);
+      if (catIndex === -1) catIndex = 999;
+
+      return {
+        ...entry,
+        category,
+        main_product: displayName || mainProd,
+        _sort_cat: catIndex,
+        _sort_prod: sortProdIdx,
+        _sort_alpha: mainProd.toLowerCase(),
+        _sort_allotment: String(entry.allotment || '').trim().toLowerCase()
+      };
+    });
+
+    processedData.sort((a, b) => {
+      if (a._sort_cat !== b._sort_cat) return a._sort_cat - b._sort_cat;
+      if (a._sort_prod !== b._sort_prod) return a._sort_prod - b._sort_prod;
+      if (a._sort_alpha !== b._sort_alpha) return a._sort_alpha.localeCompare(b._sort_alpha);
+      if (a._sort_allotment !== b._sort_allotment) return a._sort_allotment.localeCompare(b._sort_allotment);
+      const aBatch = getBatchNumber(a.batch_no);
+      const bBatch = getBatchNumber(b.batch_no);
+      return aBatch - bBatch;
+    });
+
+    const doc = new jsPDF('l', 'mm', 'a4');
+    const todayStr = new Date().toLocaleDateString('en-GB');
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(15, 23, 42);
+    doc.text("COLORTEK - FINISHED GOODS INVENTORY REPORT", 148, 14, { align: "center" });
+
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(71, 85, 105);
+    doc.text(`Database: ${productName.toUpperCase()}`, 14, 21);
+    doc.text(`Department: Warehouse / Finished Goods Storage`, 14, 26);
+    doc.text(`Doc Ref: CT/PRD/SR-01`, 282, 21, { align: "right" });
+    doc.text(`Date Printed: ${todayStr}`, 282, 26, { align: "right" });
+
+    let sumQty = 0, sumProd = 0, sumTotal = 0, sumDispatch = 0, sumBalance = 0;
+
+    const body: any[] = [];
+    processedData.forEach(entry => {
+      const particularsRaw = String(entry.product || '');
+      const particularsDisplay = particularsRaw.includes(" - ") 
+        ? particularsRaw.split(" - ")[1].trim().toUpperCase() 
+        : particularsRaw.toUpperCase();
+
+      const qtyVal = parseFloat(entry.qty_in_kgs_ltr) || 0;
+      const prodVal = parseFloat(entry.production) || 0;
+      const totalVal = parseFloat(entry.total) || 0;
+      const dispatchVal = parseFloat(entry.dispatch) || 0;
+      const balanceVal = parseFloat(entry.balance) || 0;
+
+      sumQty += qtyVal;
+      sumProd += prodVal;
+      sumTotal += totalVal;
+      sumDispatch += dispatchVal;
+      sumBalance += balanceVal;
+
+      body.push([
+        particularsDisplay,
+        String(entry.batch_no || '').toUpperCase(),
+        String(entry.date || '').toUpperCase(),
+        qtyVal.toFixed(2),
+        prodVal.toFixed(2),
+        totalVal.toFixed(2),
+        dispatchVal.toFixed(2),
+        balanceVal.toFixed(2),
+        String(entry.allotment || '').toUpperCase(),
+        String(entry.location || '').toUpperCase(),
+        String(entry.remarks || '').toUpperCase()
+      ]);
+    });
+
+    // Add Grand Total row
+    body.push([
+      "GRAND TOTAL",
+      "",
+      "",
+      sumQty.toFixed(2),
+      sumProd.toFixed(2),
+      sumTotal.toFixed(2),
+      sumDispatch.toFixed(2),
+      sumBalance.toFixed(2),
+      "",
+      "",
+      ""
+    ]);
+
+    autoTable(doc, {
+      head: [[
+        "Particulars", "Batch No.", "Date", "Qty (Kg/L)", "Production", 
+        "Total", "Dispatch", "Balance", "Allotment", "Location", "Remarks"
+      ]],
+      body: body,
+      startY: 31,
+      theme: 'grid',
+      styles: { fontSize: 8, cellPadding: 2, halign: 'center', valign: 'middle' },
+      headStyles: { halign: 'center', fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
+      didParseCell: (data) => {
+        if (data.row.index === body.length - 1) {
+          data.cell.styles.fontStyle = 'bold';
+          data.cell.styles.fillColor = [241, 245, 249];
+          data.cell.styles.textColor = [15, 23, 42];
+        }
+      },
+      columnStyles: {
+        0: { cellWidth: 46, halign: 'left' },
+        1: { cellWidth: 24 },
+        2: { cellWidth: 22 },
+        3: { cellWidth: 20, halign: 'right' },
+        4: { cellWidth: 20, halign: 'right' },
+        5: { cellWidth: 20, halign: 'right' },
+        6: { cellWidth: 20, halign: 'right' },
+        7: { cellWidth: 22, halign: 'right' },
+        8: { cellWidth: 28 },
+        9: { cellWidth: 20 },
+        10: { cellWidth: 'auto', halign: 'left' }
+      }
+    });
+
+    const timestamp = new Date().toISOString().slice(0, 10);
+    doc.save(`Finished_Goods_Report_${productName}_${timestamp}.pdf`);
+    onShowToast('Finished Goods PDF report exported successfully.', 'success');
   };
 
   // ==========================================================================
@@ -5400,233 +5617,512 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
           WAREHOUSE FINISHED GOODS STORAGE MATRIX (fg.py)
           ====================================================================== */}
       {activeSubView === 'warehouse_dept' && (
-        <div className="glass-card animated-fade" style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '24px', backgroundColor: '#ffffff', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}>
+        <div className="glass-card animated-fade" style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: '20px', 
+          padding: '24px', 
+          backgroundColor: '#ffffff', 
+          borderRadius: '16px', 
+          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03)',
+          border: '1px solid #e2e8f0'
+        }}>
           
           {/* Header Row */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '18px', flexWrap: 'wrap' }}>
             {/* Logo and Titles */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ backgroundColor: '#eff6ff', padding: '8px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Grid size={24} color="#0ea5e9" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div style={{ 
+                background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', 
+                padding: '10px', 
+                borderRadius: '12px', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                boxShadow: '0 4px 12px rgba(2, 132, 199, 0.25)'
+              }}>
+                <Package size={24} color="#ffffff" />
               </div>
               <div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>Finish Good Report</h3>
-                <p style={{ fontSize: '0.8rem', color: '#64748b', margin: 0, fontWeight: 500 }}>Production & Inventory</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>
+                    Finish Good Inventory Report
+                  </h3>
+                  <span style={{ 
+                    backgroundColor: '#eff6ff', 
+                    color: '#1d4ed8', 
+                    border: '1px solid #bfdbfe', 
+                    padding: '2px 8px', 
+                    borderRadius: '6px', 
+                    fontSize: '11px', 
+                    fontWeight: 700, 
+                    textTransform: 'uppercase' 
+                  }}>
+                    {productName}
+                  </span>
+                  <span style={{ 
+                    backgroundColor: '#f1f5f9', 
+                    color: '#475569', 
+                    padding: '2px 8px', 
+                    borderRadius: '6px', 
+                    fontSize: '11px', 
+                    fontWeight: 600 
+                  }}>
+                    CT/PRD/SR-01
+                  </span>
+                </div>
+                <p style={{ fontSize: '0.82rem', color: '#64748b', margin: '3px 0 0 0', fontWeight: 500 }}>
+                  Warehouse Finished Goods Storage Matrix & Stock Balances
+                </p>
               </div>
             </div>
 
-            {/* Pagination Controls */}
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '8px', 
-              backgroundColor: '#f1f5f9', 
-              padding: '4px 12px', 
-              borderRadius: '8px', 
-              border: '1px solid #cbd5e1' 
-            }}>
-              <button 
-                disabled={fgPage === 1} 
-                onClick={() => setFgPage(p => Math.max(1, p - 1))}
-                style={{ 
-                  background: 'none', 
-                  border: 'none', 
-                  cursor: fgPage === 1 ? 'default' : 'pointer', 
-                  opacity: fgPage === 1 ? 0.4 : 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '4px'
-                }}
-              >
-                <ChevronLeft size={18} color="#475569" />
-              </button>
-              
-              <input 
-                type="text" 
-                value={fgPageInput} 
-                onChange={e => setFgPageInput(e.target.value)}
-                onBlur={() => {
-                  const pNum = parseInt(fgPageInput) || 1;
-                  if (pNum >= 1 && pNum <= fgTotalPages) {
-                    setFgPage(pNum);
-                  } else {
-                    setFgPageInput(String(fgPage));
-                  }
-                }}
-                onKeyDown={e => {
-                  if (e.key === 'Enter') {
+            {/* Right Controls: Pagination + Actions */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              {/* Pagination Controls */}
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '8px', 
+                backgroundColor: '#f8fafc', 
+                padding: '4px 12px', 
+                borderRadius: '10px', 
+                border: '1px solid #cbd5e1' 
+              }}>
+                <button 
+                  disabled={fgPage === 1} 
+                  onClick={() => setFgPage(p => Math.max(1, p - 1))}
+                  style={{ 
+                    background: 'none', 
+                    border: 'none', 
+                    cursor: fgPage === 1 ? 'default' : 'pointer', 
+                    opacity: fgPage === 1 ? 0.4 : 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '4px'
+                  }}
+                  title="Previous Page"
+                >
+                  <ChevronLeft size={18} color="#475569" />
+                </button>
+                
+                <input 
+                  type="text" 
+                  value={fgPageInput} 
+                  onChange={e => setFgPageInput(e.target.value)}
+                  onBlur={() => {
                     const pNum = parseInt(fgPageInput) || 1;
                     if (pNum >= 1 && pNum <= fgTotalPages) {
                       setFgPage(pNum);
                     } else {
                       setFgPageInput(String(fgPage));
                     }
-                    e.currentTarget.blur();
-                  }
-                }}
-                style={{
-                  width: '36px',
-                  height: '26px',
-                  textAlign: 'center',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '4px',
-                  fontWeight: 'bold',
-                  fontSize: '13px',
-                  color: '#1e293b',
-                  backgroundColor: '#ffffff'
-                }}
-              />
-              
-              <span style={{ fontSize: '13px', color: '#475569', fontWeight: 600, paddingRight: '4px' }}>
-                Page {fgPage} / {fgTotalPages}
-              </span>
+                  }}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      const pNum = parseInt(fgPageInput) || 1;
+                      if (pNum >= 1 && pNum <= fgTotalPages) {
+                        setFgPage(pNum);
+                      } else {
+                        setFgPageInput(String(fgPage));
+                      }
+                      e.currentTarget.blur();
+                    }
+                  }}
+                  style={{
+                    width: '38px',
+                    height: '28px',
+                    textAlign: 'center',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '6px',
+                    fontWeight: 700,
+                    fontSize: '13px',
+                    color: '#1e293b',
+                    backgroundColor: '#ffffff'
+                  }}
+                />
+                
+                <span style={{ fontSize: '13px', color: '#475569', fontWeight: 600, paddingRight: '4px' }}>
+                  / {fgTotalPages}
+                </span>
 
-              <button 
-                disabled={fgPage === fgTotalPages} 
-                onClick={() => setFgPage(p => Math.min(fgTotalPages, p + 1))}
-                style={{ 
-                  background: 'none', 
-                  border: 'none', 
-                  cursor: fgPage === fgTotalPages ? 'default' : 'pointer', 
-                  opacity: fgPage === fgTotalPages ? 0.4 : 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '4px'
-                }}
-              >
-                <ChevronRight size={18} color="#475569" />
-              </button>
+                <button 
+                  disabled={fgPage === fgTotalPages} 
+                  onClick={() => setFgPage(p => Math.min(fgTotalPages, p + 1))}
+                  style={{ 
+                    background: 'none', 
+                    border: 'none', 
+                    cursor: fgPage === fgTotalPages ? 'default' : 'pointer', 
+                    opacity: fgPage === fgTotalPages ? 0.4 : 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '4px'
+                  }}
+                  title="Next Page"
+                >
+                  <ChevronRight size={18} color="#475569" />
+                </button>
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button 
+                  onClick={handleFgSaveAndExport} 
+                  className="btn-primary" 
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '6px', 
+                    background: 'linear-gradient(135deg, #059669 0%, #047857 100%)', 
+                    color: '#ffffff', 
+                    padding: '8px 16px', 
+                    borderRadius: '8px', 
+                    border: 'none', 
+                    fontWeight: 700, 
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    boxShadow: '0 2px 4px rgba(5, 150, 105, 0.25)',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Save current entries to database"
+                >
+                  <Save size={15} /> Save
+                </button>
+                <button 
+                  onClick={() => exportFgToExcel(true)} 
+                  className="btn-primary" 
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '6px', 
+                    background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)', 
+                    color: '#ffffff', 
+                    padding: '8px 16px', 
+                    borderRadius: '8px', 
+                    border: 'none', 
+                    fontWeight: 700, 
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    boxShadow: '0 2px 4px rgba(13, 148, 136, 0.25)',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Export all database records to Excel (.xlsx)"
+                >
+                  <Download size={15} /> Excel
+                </button>
+                <button 
+                  onClick={() => exportFgToPdf(true)} 
+                  className="btn-primary" 
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '6px', 
+                    background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', 
+                    color: '#ffffff', 
+                    padding: '8px 16px', 
+                    borderRadius: '8px', 
+                    border: 'none', 
+                    fontWeight: 700, 
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    boxShadow: '0 2px 4px rgba(37, 99, 235, 0.25)',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Generate official Finished Goods printable PDF report"
+                >
+                  <Printer size={15} /> Print
+                </button>
+                <button 
+                  onClick={handleFgRecalculate} 
+                  className="btn-primary" 
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '6px', 
+                    background: 'linear-gradient(135deg, #d97706 0%, #b45309 100%)', 
+                    color: '#ffffff', 
+                    padding: '8px 14px', 
+                    borderRadius: '8px', 
+                    border: 'none', 
+                    fontWeight: 700, 
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    boxShadow: '0 2px 4px rgba(217, 119, 6, 0.2)',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Recalculate opening and current inventory stock"
+                >
+                  <Package size={15} /> Stock
+                </button>
+                <button 
+                  onClick={handleFgClear} 
+                  className="btn-primary" 
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '6px', 
+                    backgroundColor: '#fef2f2', 
+                    border: '1px solid #fecaca',
+                    color: '#dc2626', 
+                    padding: '8px 14px', 
+                    borderRadius: '8px', 
+                    fontWeight: 700, 
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Clear current view inputs"
+                >
+                  <RefreshCw size={15} /> Clear
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* KPI Summary Cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+            {/* Card 1: Available Balance */}
+            <div style={{
+              background: 'linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%)',
+              border: '1px solid #bbf7d0',
+              borderRadius: '12px',
+              padding: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '14px',
+              boxShadow: '0 2px 4px rgba(16, 185, 129, 0.06)'
+            }}>
+              <div style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '10px',
+                backgroundColor: '#dcfce7',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#15803d'
+              }}>
+                <Package size={22} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: '#15803d', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Available Balance
+                </div>
+                <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.2, marginTop: '2px' }}>
+                  {liveFgStats.balance.toFixed(2)}
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginLeft: '4px' }}>KG/LTR</span>
+                </div>
+                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>Warehouse Current Stock</div>
+              </div>
             </div>
 
-            {/* Action Buttons */}
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button 
-                onClick={handleFgSaveAndExport} 
-                className="btn-primary" 
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '6px', 
-                  backgroundColor: '#10b981', 
-                  color: '#ffffff', 
-                  padding: '8px 16px', 
-                  borderRadius: '6px', 
-                  border: 'none', 
-                  fontWeight: 'bold', 
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-                }}
-              >
-                <Save size={16} /> Save
-              </button>
-              <button 
-                onClick={exportFgToExcel} 
-                className="btn-primary" 
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '6px', 
-                  backgroundColor: '#3b82f6', 
-                  color: '#ffffff', 
-                  padding: '8px 16px', 
-                  borderRadius: '6px', 
-                  border: 'none', 
-                  fontWeight: 'bold', 
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-                }}
-              >
-                <Printer size={16} /> Print
-              </button>
-              <button 
-                onClick={handleFgRecalculate} 
-                className="btn-primary" 
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '6px', 
-                  backgroundColor: '#f59e0b', 
-                  color: '#ffffff', 
-                  padding: '8px 16px', 
-                  borderRadius: '6px', 
-                  border: 'none', 
-                  fontWeight: 'bold', 
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-                }}
-              >
-                <Package size={16} /> Stock
-              </button>
-              <button 
-                onClick={handleFgClear} 
-                className="btn-primary" 
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '6px', 
-                  backgroundColor: '#ef4444', 
-                  color: '#ffffff', 
-                  padding: '8px 16px', 
-                  borderRadius: '6px', 
-                  border: 'none', 
-                  fontWeight: 'bold', 
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-                }}
-              >
-                <RefreshCw size={16} /> Clear
-              </button>
+            {/* Card 2: Total Production */}
+            <div style={{
+              background: 'linear-gradient(135deg, #eff6ff 0%, #ffffff 100%)',
+              border: '1px solid #bfdbfe',
+              borderRadius: '12px',
+              padding: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '14px',
+              boxShadow: '0 2px 4px rgba(59, 130, 246, 0.06)'
+            }}>
+              <div style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '10px',
+                backgroundColor: '#dbeafe',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#1d4ed8'
+              }}>
+                <Factory size={22} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: '#1d4ed8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Total Production
+                </div>
+                <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.2, marginTop: '2px' }}>
+                  {liveFgStats.prod.toFixed(2)}
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginLeft: '4px' }}>KG/LTR</span>
+                </div>
+                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>Manufactured Yield</div>
+              </div>
+            </div>
+
+            {/* Card 3: Total Dispatched */}
+            <div style={{
+              background: 'linear-gradient(135deg, #faf5ff 0%, #ffffff 100%)',
+              border: '1px solid #e9d5ff',
+              borderRadius: '12px',
+              padding: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '14px',
+              boxShadow: '0 2px 4px rgba(139, 92, 246, 0.06)'
+            }}>
+              <div style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '10px',
+                backgroundColor: '#f3e8ff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#6d28d9'
+              }}>
+                <Truck size={22} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: '#6d28d9', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Total Dispatched
+                </div>
+                <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.2, marginTop: '2px' }}>
+                  {liveFgStats.dispatch.toFixed(2)}
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginLeft: '4px' }}>KG/LTR</span>
+                </div>
+                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>Outward Delivery Total</div>
+              </div>
+            </div>
+
+            {/* Card 4: Total Batches */}
+            <div style={{
+              background: 'linear-gradient(135deg, #fffbeb 0%, #ffffff 100%)',
+              border: '1px solid #fde68a',
+              borderRadius: '12px',
+              padding: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '14px',
+              boxShadow: '0 2px 4px rgba(245, 158, 11, 0.06)'
+            }}>
+              <div style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '10px',
+                backgroundColor: '#fef3c7',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#b45309'
+              }}>
+                <Grid size={22} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: '#b45309', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Total Batches
+                </div>
+                <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.2, marginTop: '2px' }}>
+                  {liveFgStats.activeCount}
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginLeft: '4px' }}>BATCHES</span>
+                </div>
+                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>Registered in Database</div>
+              </div>
             </div>
           </div>
 
           {/* Search Filter & Autosave Row */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', backgroundColor: '#ffffff', padding: '0 4px' }}>
-            <div style={{ position: 'relative', width: '300px' }}>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            gap: '16px', 
+            backgroundColor: '#f8fafc', 
+            padding: '12px 16px', 
+            borderRadius: '10px', 
+            border: '1px solid #e2e8f0',
+            flexWrap: 'wrap'
+          }}>
+            <div style={{ position: 'relative', width: '380px', maxWidth: '100%' }}>
               <input 
                 type="text" 
                 className="field-input" 
-                placeholder="Search Batch or Particulars" 
+                placeholder="Search Batch No, Product or Particulars..." 
                 value={fgSearchFilter} 
                 onChange={e => { setFgSearchFilter(e.target.value); setFgPage(1); }} 
                 style={{
-                  paddingLeft: '36px',
+                  paddingLeft: '38px',
+                  paddingRight: fgSearchFilter ? '32px' : '12px',
                   textTransform: 'uppercase',
-                  height: '38px',
-                  borderRadius: '6px',
+                  height: '40px',
+                  borderRadius: '8px',
                   border: '1px solid #cbd5e1',
-                  width: '100%'
+                  backgroundColor: '#ffffff',
+                  width: '100%',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  boxSizing: 'border-box'
                 }}
               />
-              <Search size={16} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '11px' }} />
+              <Search size={16} color="#64748b" style={{ position: 'absolute', left: '12px', top: '12px' }} />
+              {fgSearchFilter && (
+                <button
+                  onClick={() => { setFgSearchFilter(''); setFgPage(1); }}
+                  style={{
+                    position: 'absolute',
+                    right: '10px',
+                    top: '11px',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#94a3b8',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: 0
+                  }}
+                  title="Clear search"
+                >
+                  <X size={16} />
+                </button>
+              )}
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '13px', fontWeight: 500 }}>
-              <Info size={16} color="#64748b" />
-              <span>Changes autosave automatically</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{ fontSize: '12px', color: '#475569', fontWeight: 600 }}>
+                Showing <span style={{ color: '#0f172a', fontWeight: 700 }}>{fgList.filter(r => r.particulars || r.batch_no).length}</span> items on Page {fgPage} of {fgTotalPages}
+              </div>
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                backgroundColor: '#ecfdf5',
+                border: '1px solid #a7f3d0',
+                padding: '5px 12px',
+                borderRadius: '20px',
+                color: '#065f46',
+                fontSize: '12px',
+                fontWeight: 600
+              }}>
+                <span style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  backgroundColor: '#10b981',
+                  boxShadow: '0 0 6px rgba(16, 185, 129, 0.6)'
+                }} />
+                <span>Auto-save Active</span>
+              </div>
             </div>
           </div>
 
           {/* Ledger Table Grid */}
-          <div className="table-scroll-container" style={{ maxHeight: '600px', border: '1px solid #cbd5e1', borderRadius: '8px', overflowX: 'auto' }}>
+          <div className="table-scroll-container" style={{ maxHeight: '600px', border: '1px solid #cbd5e1', borderRadius: '10px', overflowX: 'auto', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
             <table className="table-locked-header" style={{ minWidth: '2230px', borderCollapse: 'collapse', width: '100%' }}>
               <thead>
-                <tr style={{ height: '40px', backgroundColor: '#0f172a' }}>
-                  <th style={{ width: '380px', minWidth: '380px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>PARTICULARS</th>
-                  <th style={{ width: '180px', minWidth: '180px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>BATCH NO.</th>
-                  <th style={{ width: '190px', minWidth: '190px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>DATE</th>
-                  <th style={{ width: '180px', minWidth: '180px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>QTY IN KGS/LTR</th>
-                  <th style={{ width: '190px', minWidth: '190px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>PRODUCTION</th>
-                  <th style={{ width: '190px', minWidth: '190px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>TOTAL</th>
-                  <th style={{ width: '190px', minWidth: '190px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>DISPATCH</th>
-                  <th style={{ width: '190px', minWidth: '190px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>BALANCE</th>
-                  <th style={{ width: '250px', minWidth: '250px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>ALLOTMENT</th>
-                  <th style={{ width: '180px', minWidth: '180px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>LOCATION</th>
-                  <th style={{ textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>REMARKS</th>
-                  <th style={{ width: '110px', minWidth: '110px', textAlign: 'center', padding: '8px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>ACTION</th>
+                <tr style={{ height: '42px', backgroundColor: '#0f172a' }}>
+                  <th style={{ width: '380px', minWidth: '380px', textAlign: 'center', padding: '10px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #334155', letterSpacing: '0.03em' }}>PARTICULARS</th>
+                  <th style={{ width: '180px', minWidth: '180px', textAlign: 'center', padding: '10px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #334155', letterSpacing: '0.03em' }}>BATCH NO.</th>
+                  <th style={{ width: '190px', minWidth: '190px', textAlign: 'center', padding: '10px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #334155', letterSpacing: '0.03em' }}>DATE</th>
+                  <th style={{ width: '180px', minWidth: '180px', textAlign: 'center', padding: '10px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #334155', letterSpacing: '0.03em' }}>QTY IN KGS/LTR</th>
+                  <th style={{ width: '190px', minWidth: '190px', textAlign: 'center', padding: '10px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #334155', letterSpacing: '0.03em' }}>PRODUCTION</th>
+                  <th style={{ width: '190px', minWidth: '190px', textAlign: 'center', padding: '10px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #334155', letterSpacing: '0.03em' }}>TOTAL</th>
+                  <th style={{ width: '190px', minWidth: '190px', textAlign: 'center', padding: '10px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #334155', letterSpacing: '0.03em' }}>DISPATCH</th>
+                  <th style={{ width: '190px', minWidth: '190px', textAlign: 'center', padding: '10px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #334155', letterSpacing: '0.03em' }}>BALANCE</th>
+                  <th style={{ width: '250px', minWidth: '250px', textAlign: 'center', padding: '10px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #334155', letterSpacing: '0.03em' }}>ALLOTMENT</th>
+                  <th style={{ width: '180px', minWidth: '180px', textAlign: 'center', padding: '10px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #334155', letterSpacing: '0.03em' }}>LOCATION</th>
+                  <th style={{ textAlign: 'center', padding: '10px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #334155', letterSpacing: '0.03em' }}>REMARKS</th>
+                  <th style={{ width: '90px', minWidth: '90px', textAlign: 'center', padding: '10px 12px', color: '#ffffff', backgroundColor: '#0f172a', fontWeight: 'bold', border: '1px solid #334155', letterSpacing: '0.03em' }}>ACTION</th>
                 </tr>
               </thead>
               <tbody>
@@ -5643,13 +6139,15 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
                   const getFgCellStyle = (colName: string) => {
                     const isFocused = activeCell?.row === idx && activeCell?.col === colName && activeCell?.subview === 'fg';
                     return {
-                      border: isFocused ? '2px solid #3b82f6' : '1px solid #cbd5e1',
-                      backgroundColor: isFocused ? '#e0f2fe' : 'transparent',
+                      border: isFocused ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                      backgroundColor: isFocused ? '#eff6ff' : 'transparent',
                       padding: '0px',
                       height: '46px',
                       boxSizing: 'border-box' as const
                     };
                   };
+
+                  const balNum = parseFloat(item.balance) || 0;
 
                   return (
                     <tr key={idx} style={{ height: '46px', backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
@@ -5663,8 +6161,8 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
                           cursor: isQcApproved ? 'not-allowed' : 'pointer',
                           width: '350px',
                           minWidth: '350px',
-                          border: activeCell?.row === idx && activeCell?.col === 'particulars' && activeCell?.subview === 'fg' ? '2px solid #3b82f6' : '1px solid #cbd5e1',
-                          backgroundColor: activeCell?.row === idx && activeCell?.col === 'particulars' && activeCell?.subview === 'fg' ? '#e0f2fe' : 'transparent',
+                          border: activeCell?.row === idx && activeCell?.col === 'particulars' && activeCell?.subview === 'fg' ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                          backgroundColor: activeCell?.row === idx && activeCell?.col === 'particulars' && activeCell?.subview === 'fg' ? '#eff6ff' : 'transparent',
                           verticalAlign: 'middle'
                         }}
                         onClick={() => {
@@ -5703,7 +6201,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', justifyContent: 'center', height: '100%' }}>
                             {isQcApproved && <Lock size={12} color="var(--color-success)" style={{ position: 'absolute', right: '8px', top: '16px' }} />}
                             {main ? (
-                              <span style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', display: 'block', lineHeight: '1.2' }}>{main}</span>
+                              <span style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase', display: 'block', lineHeight: '1.2', fontWeight: 600, letterSpacing: '0.02em' }}>{main}</span>
                             ) : null}
                             <span style={{ fontSize: '13px', color: '#0f172a', fontWeight: 'bold', textTransform: 'uppercase', display: 'block', lineHeight: '1.2' }}>{sub || 'PRODUCT DETAILS'}</span>
                           </div>
@@ -5745,7 +6243,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
                           id={`fg-input-${idx}-qty_in_kgs_ltr`}
                           type="text" 
                           className="cell-input" 
-                          style={{ textAlign: 'right', border: 'none', outline: 'none', width: '100%', height: '100%', background: 'transparent' }} 
+                          style={{ textAlign: 'right', border: 'none', outline: 'none', width: '100%', height: '100%', background: 'transparent', fontWeight: 500 }} 
                           value={item.qty_in_kgs_ltr || ''} 
                           onChange={e => updateFgCell(idx, 'qty_in_kgs_ltr', e.target.value)} 
                           onFocus={() => setActiveCell({ row: idx, col: 'qty_in_kgs_ltr', subview: 'fg' })}
@@ -5760,7 +6258,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
                           id={`fg-input-${idx}-production`}
                           type="text" 
                           className="cell-input" 
-                          style={{ textAlign: 'right', border: 'none', outline: 'none', width: '100%', height: '100%', background: 'transparent' }} 
+                          style={{ textAlign: 'right', border: 'none', outline: 'none', width: '100%', height: '100%', background: 'transparent', fontWeight: 500 }} 
                           value={item.production || ''} 
                           onChange={e => updateFgCell(idx, 'production', e.target.value)} 
                           onFocus={() => setActiveCell({ row: idx, col: 'production', subview: 'fg' })}
@@ -5770,7 +6268,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
                         />
                       </td>
 
-                      <td style={{ textAlign: 'right', fontWeight: 600, color: '#475569', border: '1px solid #cbd5e1', padding: '8px 12px' }}>
+                      <td style={{ textAlign: 'right', fontWeight: 600, color: '#334155', border: '1px solid #cbd5e1', padding: '8px 12px' }}>
                         {formattedTotal}
                       </td>
 
@@ -5779,7 +6277,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
                           id={`fg-input-${idx}-dispatch`}
                           type="text" 
                           className="cell-input" 
-                          style={{ textAlign: 'right', border: 'none', outline: 'none', width: '100%', height: '100%', background: 'transparent' }} 
+                          style={{ textAlign: 'right', border: 'none', outline: 'none', width: '100%', height: '100%', background: 'transparent', fontWeight: 500 }} 
                           value={item.dispatch || ''} 
                           onChange={e => updateFgCell(idx, 'dispatch', e.target.value)} 
                           onFocus={() => setActiveCell({ row: idx, col: 'dispatch', subview: 'fg' })}
@@ -5789,7 +6287,14 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
                         />
                       </td>
 
-                      <td style={{ textAlign: 'right', fontWeight: 'bold', color: parseFloat(item.balance) > 0 ? '#10b981' : '#ef4444', border: '1px solid #cbd5e1', padding: '8px 12px' }}>
+                      <td style={{ 
+                        textAlign: 'right', 
+                        fontWeight: 'bold', 
+                        border: '1px solid #cbd5e1', 
+                        padding: '6px 12px',
+                        backgroundColor: balNum > 0 ? '#f0fdf4' : (balNum < 0 ? '#fef2f2' : 'transparent'),
+                        color: balNum > 0 ? '#15803d' : (balNum < 0 ? '#dc2626' : '#64748b')
+                      }}>
                         {formattedBalance}
                       </td>
 
@@ -5820,19 +6325,21 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
                             onClick={() => handleOpenAllotment(item)} 
                             style={{ 
                               padding: '4px 10px', 
-                              fontSize: '0.8rem', 
-                              marginRight: '8px',
-                              height: '30px',
-                              backgroundColor: '#cbd5e1', 
+                              fontSize: '0.78rem', 
+                              marginRight: '6px',
+                              height: '28px',
+                              backgroundColor: '#e2e8f0', 
                               color: '#1e293b',
                               border: 'none',
-                              borderRadius: '4px',
+                              borderRadius: '6px',
                               cursor: 'pointer',
-                              fontWeight: 'bold',
+                              fontWeight: 700,
                               display: 'inline-flex',
                               alignItems: 'center',
-                              justifyContent: 'center'
+                              justifyContent: 'center',
+                              transition: 'all 0.15s ease'
                             }}
+                            title="View / Manage Sub-Allotments"
                           >
                             View
                           </button>
@@ -5875,17 +6382,18 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
                           <button 
                             onClick={() => handleFgDeleteRow(item.id)} 
                             style={{ 
-                              padding: '4px 8px', 
-                              borderRadius: '4px', 
-                              height: '28px', 
-                              width: '28px', 
+                              padding: '5px 8px', 
+                              borderRadius: '6px', 
+                              height: '30px', 
+                              width: '30px', 
                               display: 'inline-flex', 
                               alignItems: 'center', 
                               justifyContent: 'center',
                               border: 'none',
-                              backgroundColor: '#ef4444',
-                              color: '#ffffff',
-                              cursor: 'pointer'
+                              backgroundColor: '#fee2e2',
+                              color: '#dc2626',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease'
                             }}
                             title="Delete Row"
                           >
@@ -5901,19 +6409,19 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
               
               {/* Grand Total Row */}
               <tfoot>
-                <tr style={{ height: '40px', backgroundColor: '#334155', color: '#ffffff', fontWeight: 'bold' }}>
-                  <td style={{ padding: '8px 12px', border: '1px solid #cbd5e1' }}>GRAND TOTAL</td>
-                  <td style={{ border: '1px solid #cbd5e1' }}></td>
-                  <td style={{ border: '1px solid #cbd5e1' }}></td>
-                  <td style={{ textAlign: 'right', padding: '8px 12px', border: '1px solid #cbd5e1' }}>{fgList.reduce((sum, r) => sum + (parseFloat(r.qty_in_kgs_ltr) || 0), 0).toFixed(4)}</td>
-                  <td style={{ textAlign: 'right', padding: '8px 12px', border: '1px solid #cbd5e1' }}>{fgList.reduce((sum, r) => sum + (parseFloat(r.production) || 0), 0).toFixed(4)}</td>
-                  <td style={{ textAlign: 'right', padding: '8px 12px', border: '1px solid #cbd5e1' }}>{fgList.reduce((sum, r) => sum + (parseFloat(r.total) || 0), 0).toFixed(4)}</td>
-                  <td style={{ textAlign: 'right', padding: '8px 12px', border: '1px solid #cbd5e1' }}>{fgList.reduce((sum, r) => sum + (parseFloat(r.dispatch) || 0), 0).toFixed(4)}</td>
-                  <td style={{ textAlign: 'right', padding: '8px 12px', border: '1px solid #cbd5e1' }}>{fgList.reduce((sum, r) => sum + (parseFloat(r.balance) || 0), 0).toFixed(4)}</td>
-                  <td style={{ border: '1px solid #cbd5e1' }}></td>
-                  <td style={{ border: '1px solid #cbd5e1' }}></td>
-                  <td style={{ border: '1px solid #cbd5e1' }}></td>
-                  <td style={{ border: '1px solid #cbd5e1' }}></td>
+                <tr style={{ height: '42px', backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 'bold' }}>
+                  <td style={{ padding: '8px 12px', border: '1px solid #334155', letterSpacing: '0.05em' }}>GRAND TOTAL</td>
+                  <td style={{ border: '1px solid #334155' }}></td>
+                  <td style={{ border: '1px solid #334155' }}></td>
+                  <td style={{ textAlign: 'right', padding: '8px 12px', border: '1px solid #334155', color: '#38bdf8' }}>{fgList.reduce((sum, r) => sum + (parseFloat(r.qty_in_kgs_ltr) || 0), 0).toFixed(4)}</td>
+                  <td style={{ textAlign: 'right', padding: '8px 12px', border: '1px solid #334155', color: '#38bdf8' }}>{fgList.reduce((sum, r) => sum + (parseFloat(r.production) || 0), 0).toFixed(4)}</td>
+                  <td style={{ textAlign: 'right', padding: '8px 12px', border: '1px solid #334155', color: '#f1f5f9' }}>{fgList.reduce((sum, r) => sum + (parseFloat(r.total) || 0), 0).toFixed(4)}</td>
+                  <td style={{ textAlign: 'right', padding: '8px 12px', border: '1px solid #334155', color: '#c084fc' }}>{fgList.reduce((sum, r) => sum + (parseFloat(r.dispatch) || 0), 0).toFixed(4)}</td>
+                  <td style={{ textAlign: 'right', padding: '8px 12px', border: '1px solid #334155', color: '#4ade80' }}>{fgList.reduce((sum, r) => sum + (parseFloat(r.balance) || 0), 0).toFixed(4)}</td>
+                  <td style={{ border: '1px solid #334155' }}></td>
+                  <td style={{ border: '1px solid #334155' }}></td>
+                  <td style={{ border: '1px solid #334155' }}></td>
+                  <td style={{ border: '1px solid #334155' }}></td>
                 </tr>
               </tfoot>
             </table>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Factory, Search, RefreshCw, FileText, Download, Scale, ArrowRight,
   Plus, Trash2, ShieldAlert, CheckCircle2, ShoppingCart, Calendar, 
@@ -2453,23 +2453,6 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
   const [fgSearchFilter, setFgSearchFilter] = useState('');
   const [fgList, setFgList] = useState<any[]>([]);
 
-  const liveFgStats = useMemo(() => {
-    const activeRows = fgList.filter(r => r.particulars || r.batch_no);
-    const pageQty = activeRows.reduce((sum, r) => sum + (parseFloat(r.qty_in_kgs_ltr) || 0), 0);
-    const pageProd = activeRows.reduce((sum, r) => sum + (parseFloat(r.production) || 0), 0);
-    const pageTotal = activeRows.reduce((sum, r) => sum + (parseFloat(r.total) || 0), 0);
-    const pageDisp = activeRows.reduce((sum, r) => sum + (parseFloat(r.dispatch) || 0), 0);
-    const pageBal = activeRows.reduce((sum, r) => sum + (parseFloat(r.balance) || 0), 0);
-
-    return {
-      activeCount: fgTotalItems || activeRows.length,
-      qty: fgGrandTotals.qty > 0 ? fgGrandTotals.qty : pageQty,
-      prod: fgGrandTotals.prod > 0 ? fgGrandTotals.prod : pageProd,
-      total: fgGrandTotals.total > 0 ? fgGrandTotals.total : pageTotal,
-      dispatch: fgGrandTotals.dispatch > 0 ? fgGrandTotals.dispatch : pageDisp,
-      balance: fgGrandTotals.balance !== 0 ? fgGrandTotals.balance : pageBal
-    };
-  }, [fgList, fgTotalItems, fgGrandTotals]);
 
   useEffect(() => {
     setFgPageInput(String(fgPage));
@@ -5879,149 +5862,6 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
             </div>
           </div>
 
-          {/* KPI Summary Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
-            {/* Card 1: Available Balance */}
-            <div style={{
-              background: 'linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%)',
-              border: '1px solid #bbf7d0',
-              borderRadius: '12px',
-              padding: '16px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '14px',
-              boxShadow: '0 2px 4px rgba(16, 185, 129, 0.06)'
-            }}>
-              <div style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '10px',
-                backgroundColor: '#dcfce7',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#15803d'
-              }}>
-                <Package size={22} />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '11px', fontWeight: 700, color: '#15803d', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Available Balance
-                </div>
-                <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.2, marginTop: '2px' }}>
-                  {liveFgStats.balance.toFixed(2)}
-                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginLeft: '4px' }}>KG/LTR</span>
-                </div>
-                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>Warehouse Current Stock</div>
-              </div>
-            </div>
-
-            {/* Card 2: Total Production */}
-            <div style={{
-              background: 'linear-gradient(135deg, #eff6ff 0%, #ffffff 100%)',
-              border: '1px solid #bfdbfe',
-              borderRadius: '12px',
-              padding: '16px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '14px',
-              boxShadow: '0 2px 4px rgba(59, 130, 246, 0.06)'
-            }}>
-              <div style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '10px',
-                backgroundColor: '#dbeafe',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#1d4ed8'
-              }}>
-                <Factory size={22} />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '11px', fontWeight: 700, color: '#1d4ed8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Total Production
-                </div>
-                <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.2, marginTop: '2px' }}>
-                  {liveFgStats.prod.toFixed(2)}
-                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginLeft: '4px' }}>KG/LTR</span>
-                </div>
-                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>Manufactured Yield</div>
-              </div>
-            </div>
-
-            {/* Card 3: Total Dispatched */}
-            <div style={{
-              background: 'linear-gradient(135deg, #faf5ff 0%, #ffffff 100%)',
-              border: '1px solid #e9d5ff',
-              borderRadius: '12px',
-              padding: '16px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '14px',
-              boxShadow: '0 2px 4px rgba(139, 92, 246, 0.06)'
-            }}>
-              <div style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '10px',
-                backgroundColor: '#f3e8ff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#6d28d9'
-              }}>
-                <Truck size={22} />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '11px', fontWeight: 700, color: '#6d28d9', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Total Dispatched
-                </div>
-                <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.2, marginTop: '2px' }}>
-                  {liveFgStats.dispatch.toFixed(2)}
-                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginLeft: '4px' }}>KG/LTR</span>
-                </div>
-                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>Outward Delivery Total</div>
-              </div>
-            </div>
-
-            {/* Card 4: Total Batches */}
-            <div style={{
-              background: 'linear-gradient(135deg, #fffbeb 0%, #ffffff 100%)',
-              border: '1px solid #fde68a',
-              borderRadius: '12px',
-              padding: '16px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '14px',
-              boxShadow: '0 2px 4px rgba(245, 158, 11, 0.06)'
-            }}>
-              <div style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '10px',
-                backgroundColor: '#fef3c7',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#b45309'
-              }}>
-                <Grid size={22} />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '11px', fontWeight: 700, color: '#b45309', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Total Batches
-                </div>
-                <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.2, marginTop: '2px' }}>
-                  {liveFgStats.activeCount}
-                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginLeft: '4px' }}>BATCHES</span>
-                </div>
-                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>Registered in Database</div>
-              </div>
-            </div>
-          </div>
-
           {/* Search Filter & Autosave Row */}
           <div style={{ 
             display: 'flex', 
@@ -6107,7 +5947,7 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
           </div>
 
           {/* Ledger Table Grid */}
-          <div className="table-scroll-container" style={{ maxHeight: '600px', border: '1px solid #cbd5e1', borderRadius: '10px', overflowX: 'auto', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div className="table-scroll-container" style={{ maxHeight: '600px', border: '1px solid #cbd5e1', borderRadius: '10px', overflow: 'auto', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
             <table className="table-locked-header" style={{ minWidth: '2230px', borderCollapse: 'collapse', width: '100%' }}>
               <thead>
                 <tr style={{ height: '42px', backgroundColor: '#0f172a' }}>
@@ -6408,20 +6248,20 @@ export const ProductionMain: React.FC<ProductionMainProps> = ({ activeSubView, o
               </tbody>
               
               {/* Grand Total Row */}
-              <tfoot>
+              <tfoot style={{ position: 'sticky', bottom: 0, zIndex: 10 }}>
                 <tr style={{ height: '42px', backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 'bold' }}>
-                  <td style={{ padding: '8px 12px', border: '1px solid #334155', letterSpacing: '0.05em' }}>GRAND TOTAL</td>
-                  <td style={{ border: '1px solid #334155' }}></td>
-                  <td style={{ border: '1px solid #334155' }}></td>
-                  <td style={{ textAlign: 'right', padding: '8px 12px', border: '1px solid #334155', color: '#38bdf8' }}>{fgList.reduce((sum, r) => sum + (parseFloat(r.qty_in_kgs_ltr) || 0), 0).toFixed(4)}</td>
-                  <td style={{ textAlign: 'right', padding: '8px 12px', border: '1px solid #334155', color: '#38bdf8' }}>{fgList.reduce((sum, r) => sum + (parseFloat(r.production) || 0), 0).toFixed(4)}</td>
-                  <td style={{ textAlign: 'right', padding: '8px 12px', border: '1px solid #334155', color: '#f1f5f9' }}>{fgList.reduce((sum, r) => sum + (parseFloat(r.total) || 0), 0).toFixed(4)}</td>
-                  <td style={{ textAlign: 'right', padding: '8px 12px', border: '1px solid #334155', color: '#c084fc' }}>{fgList.reduce((sum, r) => sum + (parseFloat(r.dispatch) || 0), 0).toFixed(4)}</td>
-                  <td style={{ textAlign: 'right', padding: '8px 12px', border: '1px solid #334155', color: '#4ade80' }}>{fgList.reduce((sum, r) => sum + (parseFloat(r.balance) || 0), 0).toFixed(4)}</td>
-                  <td style={{ border: '1px solid #334155' }}></td>
-                  <td style={{ border: '1px solid #334155' }}></td>
-                  <td style={{ border: '1px solid #334155' }}></td>
-                  <td style={{ border: '1px solid #334155' }}></td>
+                  <td style={{ position: 'sticky', bottom: 0, backgroundColor: '#0f172a', padding: '8px 12px', border: '1px solid #334155', borderTop: '2px solid #38bdf8', letterSpacing: '0.05em', zIndex: 10, boxShadow: '0 -2px 4px rgba(0,0,0,0.2)' }}>GRAND TOTAL</td>
+                  <td style={{ position: 'sticky', bottom: 0, backgroundColor: '#0f172a', border: '1px solid #334155', borderTop: '2px solid #38bdf8', zIndex: 10, boxShadow: '0 -2px 4px rgba(0,0,0,0.2)' }}></td>
+                  <td style={{ position: 'sticky', bottom: 0, backgroundColor: '#0f172a', border: '1px solid #334155', borderTop: '2px solid #38bdf8', zIndex: 10, boxShadow: '0 -2px 4px rgba(0,0,0,0.2)' }}></td>
+                  <td style={{ position: 'sticky', bottom: 0, backgroundColor: '#0f172a', textAlign: 'right', padding: '8px 12px', border: '1px solid #334155', borderTop: '2px solid #38bdf8', color: '#38bdf8', zIndex: 10, boxShadow: '0 -2px 4px rgba(0,0,0,0.2)' }}>{(fgGrandTotals.qty > 0 ? fgGrandTotals.qty : fgList.reduce((sum, r) => sum + (parseFloat(r.qty_in_kgs_ltr) || 0), 0)).toFixed(4)}</td>
+                  <td style={{ position: 'sticky', bottom: 0, backgroundColor: '#0f172a', textAlign: 'right', padding: '8px 12px', border: '1px solid #334155', borderTop: '2px solid #38bdf8', color: '#38bdf8', zIndex: 10, boxShadow: '0 -2px 4px rgba(0,0,0,0.2)' }}>{(fgGrandTotals.prod > 0 ? fgGrandTotals.prod : fgList.reduce((sum, r) => sum + (parseFloat(r.production) || 0), 0)).toFixed(4)}</td>
+                  <td style={{ position: 'sticky', bottom: 0, backgroundColor: '#0f172a', textAlign: 'right', padding: '8px 12px', border: '1px solid #334155', borderTop: '2px solid #38bdf8', color: '#f1f5f9', zIndex: 10, boxShadow: '0 -2px 4px rgba(0,0,0,0.2)' }}>{(fgGrandTotals.total > 0 ? fgGrandTotals.total : fgList.reduce((sum, r) => sum + (parseFloat(r.total) || 0), 0)).toFixed(4)}</td>
+                  <td style={{ position: 'sticky', bottom: 0, backgroundColor: '#0f172a', textAlign: 'right', padding: '8px 12px', border: '1px solid #334155', borderTop: '2px solid #38bdf8', color: '#c084fc', zIndex: 10, boxShadow: '0 -2px 4px rgba(0,0,0,0.2)' }}>{(fgGrandTotals.dispatch > 0 ? fgGrandTotals.dispatch : fgList.reduce((sum, r) => sum + (parseFloat(r.dispatch) || 0), 0)).toFixed(4)}</td>
+                  <td style={{ position: 'sticky', bottom: 0, backgroundColor: '#0f172a', textAlign: 'right', padding: '8px 12px', border: '1px solid #334155', borderTop: '2px solid #38bdf8', color: '#4ade80', zIndex: 10, boxShadow: '0 -2px 4px rgba(0,0,0,0.2)' }}>{(fgGrandTotals.balance !== 0 ? fgGrandTotals.balance : fgList.reduce((sum, r) => sum + (parseFloat(r.balance) || 0), 0)).toFixed(4)}</td>
+                  <td style={{ position: 'sticky', bottom: 0, backgroundColor: '#0f172a', border: '1px solid #334155', borderTop: '2px solid #38bdf8', zIndex: 10, boxShadow: '0 -2px 4px rgba(0,0,0,0.2)' }}></td>
+                  <td style={{ position: 'sticky', bottom: 0, backgroundColor: '#0f172a', border: '1px solid #334155', borderTop: '2px solid #38bdf8', zIndex: 10, boxShadow: '0 -2px 4px rgba(0,0,0,0.2)' }}></td>
+                  <td style={{ position: 'sticky', bottom: 0, backgroundColor: '#0f172a', border: '1px solid #334155', borderTop: '2px solid #38bdf8', zIndex: 10, boxShadow: '0 -2px 4px rgba(0,0,0,0.2)' }}></td>
+                  <td style={{ position: 'sticky', bottom: 0, backgroundColor: '#0f172a', border: '1px solid #334155', borderTop: '2px solid #38bdf8', zIndex: 10, boxShadow: '0 -2px 4px rgba(0,0,0,0.2)' }}></td>
                 </tr>
               </tfoot>
             </table>

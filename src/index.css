@@ -3,11 +3,11 @@
 
 :root {
   /* Premium Dark/Light Modes via HSL for smooth gradients */
-  --bg-app: #f4f7fb;
+  --bg-app: #f8fafc;
   --bg-card: rgba(255, 255, 255, 0.6);
   --bg-card-hover: rgba(255, 255, 255, 0.8);
-  --bg-sidebar: rgba(15, 23, 42, 0.95);
-  --bg-sidebar-active: rgba(99, 102, 241, 0.2);
+  --bg-sidebar: #0f172a;
+  --bg-sidebar-active: rgba(148, 163, 184, 0.16);
   --bg-header: rgba(255, 255, 255, 0.7);
   
   --text-primary: #1e293b;
@@ -24,7 +24,7 @@
   --primary-color: #6366f1;
   --primary-light: #e0e7ff;
   --primary-gradient: linear-gradient(135deg, #6366f1, #4f46e5);
-  --sidebar-gradient: linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%);
+  --sidebar-gradient: #0f172a;
   
   /* Status Colors */
   --color-success: #10b981;
@@ -133,7 +133,7 @@ html {
   flex-direction: column;
   color: #ffffff;
   z-index: 100;
-  border-right: 1px solid var(--border-color);
+  border-right: 1px solid #1e293b;
 }
 
 .sidebar-panel::-webkit-scrollbar {

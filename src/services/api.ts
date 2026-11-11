@@ -1721,6 +1721,13 @@ export const RawMaterialAPI = {
 };
 
 export const ProductionBatchAPI = {
+  getDropdownOptions: async (productName: string) => {
+    return handleResponse<{ products: string[]; parties: string[]; latest_batch_no: string }>(
+      apiClient.get('/qc/pb/dropdown-options', {
+        params: { product_name: productName },
+      })
+    );
+  },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   saveEntries: async (productName: string, entries: any[]) => {
     const csrfToken = sessionStorage.getItem('csrf_token') || '';

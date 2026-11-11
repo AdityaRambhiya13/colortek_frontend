@@ -71,9 +71,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
           margin: '2px 8px',
           borderRadius: 'var(--radius-sm)',
           cursor: 'pointer',
-          backgroundColor: active ? 'var(--bg-sidebar-active)' : 'transparent',
-          color: active ? '#818cf8' : '#cbd5e1',
-          borderLeft: active ? '3px solid #6366f1' : '3px solid transparent',
+          backgroundColor: active ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
+          color: active ? '#f8fafc' : '#94a3b8',
+          borderLeft: active ? '3px solid #059669' : '3px solid transparent',
           paddingLeft: indent && !miniMode ? '32px' : undefined,
           transition: 'all var(--transition-fast)',
         }}
@@ -152,7 +152,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   return (
-    <aside className={`sidebar-panel ${miniMode ? 'mini' : ''}`}>
+    <aside className={`sidebar-panel ${miniMode ? 'mini' : ''}`} style={{ backgroundColor: '#0F172A' }}>
       {/* Sidebar Header Logo */}
       <div style={{
         height: '64px',
@@ -160,7 +160,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         alignItems: 'center',
         justifyItems: 'center',
         padding: '0 20px',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+        borderBottom: '1px solid #1E293B',
         gap: '12px'
       }}>
         <button 
@@ -181,10 +181,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <span style={{
             fontWeight: 700,
             fontSize: '1.15rem',
-            background: 'linear-gradient(to right, #818cf8, #a78bfa)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            letterSpacing: '0.05em'
+            color: '#f8fafc',
+            letterSpacing: '0.06em',
+            fontFamily: 'inherit',
+            lineHeight: 1.2
           }}>
             COLORTEK CMS
           </span>

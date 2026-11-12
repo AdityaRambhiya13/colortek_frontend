@@ -233,28 +233,27 @@ describe('ProductionBatchesEntry UI & Workflow', () => {
     fireEvent.mouseDown(partyOpt);
     expect(row0Party.value).toBe('Apex Paints Pvt Ltd');
 
-    // Toggle QC metric pills for core checks: Pass -> KPI Passed becomes 1
-    const settlingGroup = document.getElementById('qc3-input-0-settling') as HTMLElement;
-    const shadeGroup = document.getElementById('qc3-input-0-shade_variation') as HTMLElement;
-    const adhesionGroup = document.getElementById('qc3-input-0-adhesion') as HTMLElement;
+    // Verify QC metric columns use manual text inputs with no Pass/Review/Fail buttons
+    expect(document.querySelectorAll('.qc3-pill-group')).toHaveLength(0);
+    const settlingInput = document.getElementById('qc3-input-0-settling') as HTMLInputElement;
+    const shadeInput = document.getElementById('qc3-input-0-shade_variation') as HTMLInputElement;
+    const adhesionInput = document.getElementById('qc3-input-0-adhesion') as HTMLInputElement;
 
-    fireEvent.click(within(settlingGroup).getByText('Pass'));
-    expect(settlingGroup).toHaveAttribute('data-qc-status', 'pass');
-    expect(settlingGroup.style.backgroundColor).toBe('rgb(236, 253, 245)'); // #ECFDF5 soft sage
+    fireEvent.change(settlingInput, { target: { value: 'Pass' } });
+    expect((settlingInput.closest('td') as HTMLElement).style.backgroundColor).toBe('rgb(236, 253, 245)'); // #ECFDF5 soft sage
 
     // Before Shade Var & Adhesion pass, batch is pending review
     expect(screen.getByTestId('kpi-total-entered')).toHaveTextContent('1');
     expect(screen.getByTestId('kpi-pending-review')).toHaveTextContent('1');
 
-    fireEvent.click(within(shadeGroup).getByText('Pass'));
-    fireEvent.click(within(adhesionGroup).getByText('Pass'));
+    fireEvent.change(shadeInput, { target: { value: 'Pass' } });
+    fireEvent.change(adhesionInput, { target: { value: 'Pass' } });
     expect(screen.getByTestId('kpi-passed-qc')).toHaveTextContent('1');
     expect(screen.getByTestId('kpi-pending-review')).toHaveTextContent('0');
 
-    // Switching Shade Var to Fail highlights muted rose (#FFF1F2) & increments Failed KPI
-    fireEvent.click(within(shadeGroup).getByText('Fail'));
-    expect(shadeGroup).toHaveAttribute('data-qc-status', 'fail');
-    expect(shadeGroup.style.backgroundColor).toBe('rgb(255, 241, 242)');
+    // Typing Fail highlights muted rose (#FFF1F2) on the cell & increments Failed KPI
+    fireEvent.change(shadeInput, { target: { value: 'Fail' } });
+    expect((shadeInput.closest('td') as HTMLElement).style.backgroundColor).toBe('rgb(255, 241, 242)');
     expect(screen.getByTestId('kpi-failed-qc')).toHaveTextContent('1');
   }, 15000);
 
@@ -272,9 +271,13 @@ describe('ProductionBatchesEntry UI & Workflow', () => {
     const cardProductInput = within(card0).getByLabelText('Card 1 Product Name') as HTMLInputElement;
     expect(cardProductInput.value).toBe('Satin Binder - White');
 
+    const cardSettlingInput = within(card0).getByLabelText('Card 1 Settling') as HTMLInputElement;
+    fireEvent.change(cardSettlingInput, { target: { value: 'OK' } });
+    expect(cardSettlingInput.value).toBe('OK');
+
     const sheetBtn = screen.getByText(/Sheet View/i).closest('button') as HTMLButtonElement;
     fireEvent.click(sheetBtn);
-    expect(document.getElementById('qc3-input-0-product_name')).toBeInTheDocument();
+    expect((document.getElementById('qc3-input-0-settling') as HTMLInputElement).value).toBe('OK');
   }, 15000);
 
   it('requires Clear Sheet confirmation modal before wiping entered batches', async () => {
@@ -305,8 +308,8 @@ describe('ProductionBatchesEntry UI & Workflow', () => {
     const row0Product = document.getElementById('qc3-input-0-product_name') as HTMLInputElement;
     fireEvent.change(row0Product, { target: { value: 'Master Gloss - Clear' } });
 
-    const settlingGroup = document.getElementById('qc3-input-0-settling') as HTMLElement;
-    fireEvent.click(within(settlingGroup).getByText('Pass'));
+    const settlingInput = document.getElementById('qc3-input-0-settling') as HTMLInputElement;
+    fireEvent.change(settlingInput, { target: { value: 'Pass' } });
 
     const draftKey = getDraftStorageKey('test_unit', 'qc_operator');
     await waitFor(() => {

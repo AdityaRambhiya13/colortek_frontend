@@ -12,7 +12,6 @@ import {
   XCircle,
   Sparkles,
   RotateCcw,
-  CheckCheck,
   Database,
   FileSpreadsheet,
   Trash2,
@@ -45,7 +44,7 @@ import {
   getCellPastelBackground,
 } from '../../utils/qcBatchHelpers';
 import { SmartAutocompleteInput } from './SmartAutocompleteInput';
-import { QcMetricPillSelector, QcMetricStatusBadge } from './QcMetricPillSelector';
+import { QcMetricStatusBadge } from './QcMetricPillSelector';
 
 interface ProductionBatchesEntryProps {
   activeSubView: string;
@@ -67,12 +66,12 @@ const COLUMN_WIDTHS = {
   product_name: 226,
   batch_no: 140,
   party_name: 210,
-  settling: 164,
-  shade_variation: 164,
-  adhesion: 164,
-  perfume: 164,
-  water: 164,
-  color_bleeding: 164,
+  settling: 120,
+  shade_variation: 120,
+  adhesion: 120,
+  perfume: 120,
+  water: 120,
+  color_bleeding: 120,
   observation: 215,
   remarks: 225,
 } as const;
@@ -423,30 +422,6 @@ const ProductionBatchesEntryInner: React.FC<ProductionBatchesEntryProps & { draf
     },
     [latestDbBatch]
   );
-
-  // Mark all 6 QC metrics as Pass for a row (quick manager / operator helper)
-  const handleMarkRowAllPass = (idx: number) => {
-    setQc3Rows(prev => {
-      const updated = [...prev];
-      const current = updated[idx] || createEmptyQc3Row();
-      updated[idx] = {
-        ...current,
-        date: current.date.trim() ? current.date : formatTodayDDMMYYYY(),
-        batch_no: current.batch_no.trim()
-          ? current.batch_no
-          : getNextSequentialBatchForRow(prev, idx, latestDbBatch),
-        _isDefaultAutoBatch: false,
-        settling: 'Pass',
-        shade_variation: 'Pass',
-        adhesion: 'Pass',
-        perfume: 'Pass',
-        water: 'Pass',
-        color_bleeding: 'Pass',
-      };
-      return updated;
-    });
-    setHasUnsavedChanges(true);
-  };
 
   const focusCell = (targetRow: number, targetCol: number) => {
     const colKey = QC3_COLUMN_KEYS[targetCol];
@@ -1328,7 +1303,7 @@ const ProductionBatchesEntryInner: React.FC<ProductionBatchesEntryProps & { draf
               <table
                 className="qc3-sheet-table"
                 style={{
-                  minWidth: '2172px',
+                  minWidth: '1920px',
                   width: '100%',
                   tableLayout: 'fixed',
                   borderCollapse: 'separate',
@@ -1593,11 +1568,19 @@ const ProductionBatchesEntryInner: React.FC<ProductionBatchesEntryProps & { draf
                           />
                         </td>
 
-                        {/* Cols 5..10: Context-Aware QC Metric Pill Selectors */}
+                        {/* Cols 5..10: Manual QC Metric Inline Cells */}
                         {QC3_METRIC_FIELDS.map((metric, mOffset) => {
                           const colIdx = 4 + mOffset;
                           const metricVal = r[metric.key];
                           const status = normalizeQcMetricStatus(metricVal);
+                          const metricTextColor =
+                            status === 'pass'
+                              ? '#065F46'
+                              : status === 'fail'
+                                ? '#9F1239'
+                                : status === 'review' || status === 'custom'
+                                  ? '#92400E'
+                                  : '#0F172A';
                           return (
                             <td
                               key={metric.key}
@@ -1606,12 +1589,22 @@ const ProductionBatchesEntryInner: React.FC<ProductionBatchesEntryProps & { draf
                                 backgroundColor: getCellPastelBackground(status),
                               }}
                             >
-                              <QcMetricPillSelector
+                              <input
                                 id={`qc3-input-${idx}-${metric.key}`}
+                                type="text"
+                                className="qc3-inline-input"
+                                style={{
+                                  textAlign: 'center',
+                                  fontWeight: status === 'empty' ? 500 : 600,
+                                  color: metricTextColor,
+                                }}
                                 value={metricVal}
-                                ariaLabel={`Row ${idx + 1} ${metric.label}`}
-                                onChange={val => updateQc3Row(idx, metric.key, val)}
-                                onGridKeyDown={e => handleGridKeyDown(e, idx, colIdx)}
+                                onChange={e => updateQc3Row(idx, metric.key, e.target.value)}
+                                onKeyDown={e => handleGridKeyDown(e, idx, colIdx)}
+                                aria-label={`Row ${idx + 1} ${metric.label}`}
+                                autoComplete="off"
+                                autoCorrect="off"
+                                spellCheck={false}
                               />
                             </td>
                           );
@@ -1977,11 +1970,32 @@ const ProductionBatchesEntryInner: React.FC<ProductionBatchesEntryProps & { draf
                                 >
                                   {metric.label}
                                 </div>
-                                <QcMetricPillSelector
-                                  compact
+                                <input
+                                  type="text"
                                   value={row[metric.key]}
-                                  ariaLabel={`Card ${idx + 1} ${metric.label}`}
-                                  onChange={val => updateQc3Row(idx, metric.key, val)}
+                                  onChange={e => updateQc3Row(idx, metric.key, e.target.value)}
+                                  aria-label={`Card ${idx + 1} ${metric.label}`}
+                                  autoComplete="off"
+                                  autoCorrect="off"
+                                  spellCheck={false}
+                                  style={{
+                                    width: '100%',
+                                    height: '30px',
+                                    border: 'none',
+                                    outline: 'none',
+                                    background: 'transparent',
+                                    padding: '0 8px',
+                                    fontSize: '0.76rem',
+                                    fontWeight: mStatus === 'empty' ? 500 : 600,
+                                    color:
+                                      mStatus === 'pass'
+                                        ? '#065F46'
+                                        : mStatus === 'fail'
+                                          ? '#9F1239'
+                                          : mStatus === 'review' || mStatus === 'custom'
+                                            ? '#92400E'
+                                            : '#0F172A',
+                                  }}
                                 />
                               </div>
                             );
@@ -2036,26 +2050,6 @@ const ProductionBatchesEntryInner: React.FC<ProductionBatchesEntryProps & { draf
                             {completedCount}/6 QC checks recorded
                           </span>
                           <div style={{ display: 'flex', gap: '6px' }}>
-                            <button
-                              type="button"
-                              onClick={() => handleMarkRowAllPass(idx)}
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                padding: '4px 10px',
-                                borderRadius: '6px',
-                                border: '1px solid #A7F3D0',
-                                backgroundColor: '#ECFDF5',
-                                color: '#065F46',
-                                fontSize: '0.72rem',
-                                fontWeight: 700,
-                                cursor: 'pointer',
-                              }}
-                            >
-                              <CheckCheck size={12} />
-                              Mark All Pass
-                            </button>
                             <button
                               type="button"
                               onClick={() => {

@@ -183,6 +183,12 @@ export interface BatchDetailResponseAdmin {
 // Base URL for the FastAPI backend (uses VITE_API_URL env variable with localhost fallback)
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
+try {
+  if (typeof window !== 'undefined' && window.localStorage && API_BASE_URL) {
+    window.localStorage.setItem('colortek_api_base_url', API_BASE_URL);
+  }
+} catch {}
+
 axios.defaults.withCredentials = true;
 
 // Configure standard axios instance

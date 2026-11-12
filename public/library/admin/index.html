@@ -8,6 +8,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,400;1,600&family=Cinzel:wght@500;700;800&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="../runtime_config.js"></script>
+  <script src="../library_shared.js"></script>
   <script src="../chemical_data.js"></script>
 
   <style>
@@ -461,7 +463,8 @@
       </div>
     </a>
 
-    <div style="display:flex; align-items:center; gap:20px;">
+    <div style="display:flex; align-items:center; gap:14px;">
+      <span id="syncStatusBadge" class="sync-status-pill" title="Cloud Sync Status">Syncing...</span>
       <a href="../" style="background:var(--peacock-blue); color:#fff; border:none; padding:8px 16px; font-family:var(--font-sans); font-size:12px; font-weight:800; letter-spacing:1px; cursor:pointer; display:flex; align-items:center; gap:6px; border-radius:20px; text-decoration:none; box-shadow: 0 4px 12px rgba(0, 95, 115, 0.2); transition: all 0.3s; height: fit-content; line-height: 1;">
         <i data-lucide="external-link" style="width:13px; height:13px;"></i> VIEW LIBRARY
       </a>
@@ -653,8 +656,11 @@
           <input type="text" id="recModalName" class="admin-input" placeholder="Compound name" />
         </div>
         <div class="cat-field">
-          <label for="recModalCategory">Category (Manual Entry)</label>
-          <input type="text" id="recModalCategory" class="admin-input" placeholder="Enter category manually" />
+          <label for="recModalCategory">Product Category</label>
+          <div class="cat-autocomplete-wrap">
+            <input type="text" id="recModalCategory" class="admin-input" style="width:100%;" placeholder="Type e.g. A for Additives, or enter any name" autocomplete="off" />
+            <div id="recModalCategoryAcList" class="cat-autocomplete-list"></div>
+          </div>
         </div>
         <div class="cat-field">
           <label for="recModalDesc">Description</label>
@@ -854,6 +860,7 @@
       } else {
         document.getElementById('adminAuthGate').style.display = 'none';
         refreshAllAdminViews();
+        syncAdminFromServer();
       }
       renderIcons();
     }
@@ -873,6 +880,34 @@
       sessionStorage.setItem('chem_auth_token', btoa(`${currentAdminUser}:ADMIN:${Date.now()}`));
       document.getElementById('adminAuthGate').style.display = 'none';
       refreshAllAdminViews();
+      syncAdminFromServer();
+    }
+
+    let adminSyncInFlight = null;
+    async function syncAdminFromServer() {
+      if (!window.LibraryShared) return;
+      if (adminSyncInFlight) return adminSyncInFlight;
+      adminSyncInFlight = (async () => {
+        const state = await window.LibraryShared.fetchState();
+        if (!state) return;
+
+        if (!state.initialized) {
+          if (sessionStorage.getItem('chem_auth_token')) {
+            await window.LibraryShared.bootstrapState(adminCollections, adminRecords);
+          }
+          return;
+        }
+
+        const backdrop = document.getElementById('recordModalBackdrop');
+        if (backdrop && backdrop.classList.contains('open')) return;
+
+        adminCollections = Array.isArray(state.collections) ? state.collections : [];
+        adminRecords = Array.isArray(state.records) ? sanitizeRecords(state.records) : [];
+        saveCollections();
+        saveAdminRecords();
+        refreshAllAdminViews();
+      })().finally(() => { adminSyncInFlight = null; });
+      return adminSyncInFlight;
     }
 
     function logoutAdmin() {
@@ -1050,6 +1085,9 @@
 
       refreshAllAdminViews();
       showCatFeedback('collFeedback', `Collection "${newColl.label}" (${newColl.id}) created with ${generated.length.toLocaleString()} cards.`, 'success');
+      if (window.LibraryShared) {
+        window.LibraryShared.createCollection(newColl, generated);
+      }
     }
 
     function deleteCollectionCategory(id) {
@@ -1080,6 +1118,9 @@
 
       refreshAllAdminViews();
       showCatFeedback('collFeedback', `Deleted collection "${target.label}". Existing records were preserved.`, 'success');
+      if (window.LibraryShared) {
+        window.LibraryShared.deleteCollection(id);
+      }
     }
 
     /* --- ADD / EDIT RECORD MODAL --- */
@@ -1109,6 +1150,13 @@
       document.getElementById('recModalCategory').value = '';
       document.getElementById('recModalDesc').value = '';
       document.getElementById('recordModalBackdrop').classList.add('open');
+      if (window.LibraryShared) {
+        window.LibraryShared.attachCategoryAutocomplete({
+          inputEl: document.getElementById('recModalCategory'),
+          listEl: document.getElementById('recModalCategoryAcList'),
+          getRecords: () => adminRecords
+        });
+      }
       renderIcons();
     }
 
@@ -1123,6 +1171,13 @@
       document.getElementById('recModalCategory').value = rec.category || '';
       document.getElementById('recModalDesc').value = rec.description || '';
       document.getElementById('recordModalBackdrop').classList.add('open');
+      if (window.LibraryShared) {
+        window.LibraryShared.attachCategoryAutocomplete({
+          inputEl: document.getElementById('recModalCategory'),
+          listEl: document.getElementById('recModalCategoryAcList'),
+          getRecords: () => adminRecords
+        });
+      }
       renderIcons();
     }
 
@@ -1143,7 +1198,10 @@
       const numMatch = code.match(/(\d+)\s*$/);
       const parsedNum = numMatch ? parseInt(numMatch[1], 10) : 9999;
 
+      let syncedRecord = null;
+      let isEdit = false;
       if (editingRecordId) {
+        isEdit = true;
         const rec = adminRecords.find(r => r.id === editingRecordId);
         if (rec) {
           rec.prefix = prefix;
@@ -1153,6 +1211,7 @@
           rec.category = category;
           rec.description = description;
           rec.num = Number.isFinite(parsedNum) ? parsedNum : (rec.num || 9999);
+          syncedRecord = rec;
         }
       } else {
         const newRec = {
@@ -1166,11 +1225,27 @@
           num: parsedNum,
         };
         adminRecords.unshift(newRec);
+        syncedRecord = newRec;
       }
 
       saveAdminRecords();
       closeRecordModal();
       refreshAllAdminViews();
+      if (window.LibraryShared && syncedRecord) {
+        if (isEdit) {
+          window.LibraryShared.updateRecord(syncedRecord.id, {
+            prefix: syncedRecord.prefix,
+            code: syncedRecord.code,
+            callNumber: syncedRecord.callNumber,
+            name: syncedRecord.name,
+            category: syncedRecord.category,
+            description: syncedRecord.description,
+            num: String(syncedRecord.num)
+          });
+        } else {
+          window.LibraryShared.createRecord(syncedRecord);
+        }
+      }
     }
 
     function deleteAdminRecord(id, code) {
@@ -1178,6 +1253,9 @@
         adminRecords = adminRecords.filter(r => r.id !== id);
         saveAdminRecords();
         refreshAllAdminViews();
+        if (window.LibraryShared) {
+          window.LibraryShared.deleteRecord(id);
+        }
       }
     }
 
@@ -1215,6 +1293,7 @@
             adminRecords = sanitizeRecords(imported);
             saveAdminRecords();
             refreshAllAdminViews();
+            if (window.LibraryShared) window.LibraryShared.restoreState(adminCollections, adminRecords);
             alert(`Successfully restored ${imported.length} records from backup!`);
           } else if (imported && Array.isArray(imported.records)) {
             adminRecords = sanitizeRecords(imported.records);
@@ -1224,6 +1303,7 @@
               saveCollections();
             }
             refreshAllAdminViews();
+            if (window.LibraryShared) window.LibraryShared.restoreState(adminCollections, adminRecords);
             alert(`Successfully restored ${adminRecords.length} records and categories from backup!`);
           } else {
             alert('Unrecognized backup JSON format.');
@@ -1244,6 +1324,7 @@
         adminRecords = sanitizeRecords(window.RAW_SEED_DATA || []);
         adminCollections = DEFAULT_COLLECTIONS.map(c => ({ ...c }));
         refreshAllAdminViews();
+        if (window.LibraryShared) window.LibraryShared.restoreState(adminCollections, adminRecords);
         alert('Archive and categories successfully reset to factory seed database.');
       }
     }
@@ -1260,6 +1341,22 @@
 
     window.onload = () => {
       checkAdminAuth();
+      if (window.LibraryShared) {
+        window.LibraryShared.attachCategoryAutocomplete({
+          inputEl: document.getElementById('recModalCategory'),
+          listEl: document.getElementById('recModalCategoryAcList'),
+          getRecords: () => adminRecords
+        });
+      }
+      window.addEventListener('focus', () => { if (sessionStorage.getItem('chem_auth_token')) syncAdminFromServer(); });
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && sessionStorage.getItem('chem_auth_token')) syncAdminFromServer();
+      });
+      setInterval(() => {
+        if (typeof document !== 'undefined' && !document.hidden && sessionStorage.getItem('chem_auth_token')) {
+          syncAdminFromServer();
+        }
+      }, 15000);
     };
   </script>
 </body>

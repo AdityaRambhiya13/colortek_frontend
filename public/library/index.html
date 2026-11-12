@@ -8,6 +8,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800;900&family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="./runtime_config.js"></script>
+  <script src="./library_shared.js"></script>
 
   <style>
     
@@ -307,7 +309,8 @@
       </div>
     </div>
 
-    <div class="header-right" style="display:flex; align-items:center; gap:20px;">
+    <div class="header-right" style="display:flex; align-items:center; gap:14px;">
+      <span id="syncStatusBadge" class="sync-status-pill" title="Cloud Sync Status">Syncing...</span>
       <span id="headerSpecimenCount" style="white-space: nowrap; font-size: 13px;">3,381 SPECIMENS</span>
       <a href="./admin/" style="background:var(--peacock-blue); color:#fff; border:none; padding:8px 16px; font-family:var(--font-sans); font-size:12px; font-weight:800; letter-spacing:1px; cursor:pointer; display:flex; align-items:center; gap:6px; border-radius:20px; text-decoration:none; box-shadow: 0 4px 12px rgba(0, 95, 115, 0.2); transition: all 0.3s; height: fit-content; line-height: 1;">
         <i data-lucide="settings" style="width:14px; height:14px;"></i> ADMIN PANEL
@@ -542,7 +545,10 @@
 
         <div class="edit-field-group">
           <label class="edit-field-label">Product Category</label>
-          <input type="text" id="editCategoryInput" class="edit-input" placeholder="Enter category manually" oninput="handleFieldChange('category', this.value)" />
+          <div class="cat-autocomplete-wrap">
+            <input type="text" id="editCategoryInput" class="edit-input" style="width:100%;" placeholder="Type e.g. A for Additives, or enter any name" autocomplete="off" oninput="handleFieldChange('category', this.value)" />
+            <div id="editCategoryAcList" class="cat-autocomplete-list"></div>
+          </div>
         </div>
 
         <div class="edit-field-group">
@@ -729,6 +735,43 @@
 
     let customCollections = loadStoredCollections();
     let archiveRecords = ensureCollectionRecordsSeeded(customCollections, loadArchiveRecords());
+    let syncInFlight = null;
+    let pendingRecordPatch = null;
+    let pendingPatchTimer = null;
+
+    async function syncFromServer() {
+      if (!window.LibraryShared) return;
+      if (syncInFlight) return syncInFlight;
+      syncInFlight = (async () => {
+        const state = await window.LibraryShared.fetchState();
+        if (!state) return;
+
+        if (!state.initialized) {
+          if (sessionStorage.getItem('chem_auth_token')) {
+            await window.LibraryShared.bootstrapState(customCollections, archiveRecords);
+          }
+          return;
+        }
+
+        if (activeEditingRecordId || pendingRecordPatch) return;
+
+        const serverColls = Array.isArray(state.collections) ? state.collections : [];
+        const serverRecs = Array.isArray(state.records) ? sanitizeRecords(state.records) : [];
+
+        customCollections = serverColls;
+        archiveRecords = serverRecs;
+        try {
+          localStorage.setItem(COLLECTIONS_STORAGE_KEY, JSON.stringify(customCollections));
+        } catch(e) {}
+        saveArchiveRecords(archiveRecords);
+
+        if (activeCollection !== 'ALL' && !customCollections.some(c => c.id === activeCollection)) {
+          activeCollection = 'ALL';
+        }
+        renderAll();
+      })().finally(() => { syncInFlight = null; });
+      return syncInFlight;
+    }
 
     function getCollectionsWithCounts() {
       const counts = {};
@@ -765,15 +808,26 @@
           .then(data => {
             archiveRecords = ensureCollectionRecordsSeeded(customCollections, sanitizeRecords(data));
             renderAll();
+            syncFromServer();
           })
           .catch(err => {
             console.error('Fallback error:', err);
             archiveRecords = ensureCollectionRecordsSeeded(customCollections, archiveRecords);
             renderAll();
+            syncFromServer();
           });
       } else {
         archiveRecords = ensureCollectionRecordsSeeded(customCollections, archiveRecords);
         renderAll();
+        syncFromServer();
+      }
+      if (window.LibraryShared) {
+        window.LibraryShared.attachCategoryAutocomplete({
+          inputEl: document.getElementById('editCategoryInput'),
+          listEl: document.getElementById('editCategoryAcList'),
+          getRecords: () => archiveRecords,
+          onSelect: (val) => handleFieldChange('category', val)
+        });
       }
       window.addEventListener('pageshow', () => {
         customCollections = loadStoredCollections();
@@ -781,7 +835,17 @@
         const si = document.getElementById('searchInput');
         if (si) searchQuery = si.value || '';
         renderAll();
+        syncFromServer();
       });
+      window.addEventListener('focus', () => { syncFromServer(); });
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) syncFromServer();
+      });
+      setInterval(() => {
+        if (typeof document !== 'undefined' && !document.hidden && !activeEditingRecordId) {
+          syncFromServer();
+        }
+      }, 15000);
       window.addEventListener('storage', (e) => {
         if (
           e.key === COLLECTIONS_STORAGE_KEY ||
@@ -1008,10 +1072,31 @@
 
       document.getElementById('saveStatusText').innerText = 'Auto-Saved';
       document.getElementById('editTabOverlay').classList.add('open');
+      if (window.LibraryShared) {
+        window.LibraryShared.attachCategoryAutocomplete({
+          inputEl: document.getElementById('editCategoryInput'),
+          listEl: document.getElementById('editCategoryAcList'),
+          getRecords: () => archiveRecords,
+          onSelect: (val) => handleFieldChange('category', val)
+        });
+      }
       renderIcons();
     }
 
+    function flushPendingRecordSync() {
+      if (pendingPatchTimer) {
+        clearTimeout(pendingPatchTimer);
+        pendingPatchTimer = null;
+      }
+      if (pendingRecordPatch && window.LibraryShared) {
+        const { id, patch } = pendingRecordPatch;
+        pendingRecordPatch = null;
+        window.LibraryShared.updateRecord(id, patch);
+      }
+    }
+
     function closeEditTab() {
+      flushPendingRecordSync();
       document.getElementById('editTabOverlay').classList.remove('open');
       activeEditingRecordId = null;
     }
@@ -1030,14 +1115,20 @@
       const statusText = document.getElementById('saveStatusText');
       statusText.innerText = 'Saving...';
 
-      try {
-        localStorage.setItem('chemical_archive_custom_v1', JSON.stringify(archiveRecords));
-        localStorage.setItem('chemical_archive_records_v1', JSON.stringify(archiveRecords));
-      } catch(e) {}
+      saveArchiveRecords(archiveRecords);
 
-      setTimeout(() => {
+      if (!pendingRecordPatch || pendingRecordPatch.id !== rec.id) {
+        flushPendingRecordSync();
+        pendingRecordPatch = { id: rec.id, patch: {} };
+      }
+      pendingRecordPatch.patch[field] = value;
+      if (field === 'code') pendingRecordPatch.patch.callNumber = value;
+
+      if (pendingPatchTimer) clearTimeout(pendingPatchTimer);
+      pendingPatchTimer = setTimeout(() => {
+        flushPendingRecordSync();
         statusText.innerText = 'Auto-Saved';
-      }, 250);
+      }, 350);
 
       renderCollectionSidebar();
       renderLibraryRecords();
@@ -1131,6 +1222,7 @@
       sessionStorage.setItem('chem_auth_token', sessionToken);
       document.getElementById('authGateModal').style.display = 'none';
       renderAll();
+      syncFromServer();
     }
 
     function logoutLibrary() {

@@ -1,5 +1,33 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
+
+function libraryRuntimeConfigPlugin(mode: string) {
+  const env = loadEnv(mode, process.cwd(), '');
+  const apiUrl = (env.VITE_API_URL || process.env.VITE_API_URL || '').trim().replace(/\/+$/, '');
+  const content = `window.COLORTEK_API_URL = ${JSON.stringify(apiUrl)};\n`;
+  return {
+    name: 'library-runtime-config',
+    configureServer(server: { middlewares: { use: (path: string, handler: (_req: unknown, res: { setHeader: (k: string, v: string) => void; end: (b: string) => void }) => void) => void } }) {
+      server.middlewares.use('/library/runtime_config.js', (_req, res) => {
+        res.setHeader('Content-Type', 'application/javascript');
+        res.end(content);
+      });
+    },
+    configurePreviewServer(server: { middlewares: { use: (path: string, handler: (_req: unknown, res: { setHeader: (k: string, v: string) => void; end: (b: string) => void }) => void) => void } }) {
+      server.middlewares.use('/library/runtime_config.js', (_req, res) => {
+        res.setHeader('Content-Type', 'application/javascript');
+        res.end(content);
+      });
+    },
+    generateBundle(this: { emitFile: (file: { type: 'asset'; fileName: string; source: string }) => void }) {
+      this.emitFile({
+        type: 'asset',
+        fileName: 'library/runtime_config.js',
+        source: content,
+      });
+    },
+  };
+}
 
 const securityHeaders = {
   'X-Content-Type-Options': 'nosniff',
@@ -12,8 +40,8 @@ const securityHeaders = {
 }
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [react()],
+export default defineConfig(({ mode }) => ({
+  plugins: [react(), libraryRuntimeConfigPlugin(mode)],
   server: {
     headers: securityHeaders,
   },
@@ -44,5 +72,5 @@ export default defineConfig({
       },
     },
   },
-})
+}))
 

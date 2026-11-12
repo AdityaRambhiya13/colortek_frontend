@@ -302,13 +302,13 @@
     <div class="header-center">
       <div class="search-container">
         <i data-lucide="search" class="search-icon"></i>
-        <input type="text" id="searchInput" class="search-input" placeholder="Search exact code (e.g. D-250, Tc-1000), name, category..." />
-        <button id="searchClearBtn" class="search-clear-btn"><i data-lucide="x"></i></button>
+        <input type="text" id="searchInput" class="search-input" placeholder="Search exact code (e.g. D-250, Tc-1000), name, category..." oninput="handleSearchInput(this.value)" onkeydown="if(event.key==='Escape'){clearSearch();}" autocomplete="off" />
+        <button type="button" id="searchClearBtn" class="search-clear-btn" onclick="clearSearch()" aria-label="Clear search"><i data-lucide="x"></i></button>
       </div>
     </div>
 
     <div class="header-right" style="display:flex; align-items:center; gap:20px;">
-      <span style="white-space: nowrap; font-size: 13px;">3,381 SPECIMENS</span>
+      <span id="headerSpecimenCount" style="white-space: nowrap; font-size: 13px;">3,381 SPECIMENS</span>
       <a href="./admin/" style="background:var(--peacock-blue); color:#fff; border:none; padding:8px 16px; font-family:var(--font-sans); font-size:12px; font-weight:800; letter-spacing:1px; cursor:pointer; display:flex; align-items:center; gap:6px; border-radius:20px; text-decoration:none; box-shadow: 0 4px 12px rgba(0, 95, 115, 0.2); transition: all 0.3s; height: fit-content; line-height: 1;">
         <i data-lucide="settings" style="width:14px; height:14px;"></i> ADMIN PANEL
       </a>
@@ -465,19 +465,27 @@
         <div class="catalog-title-left">
           <h2 id="currentCollectionTitle">ALL RECORDS</h2>
           <div class="catalog-sub-count">
-            <span id="recordCountLabel">3,381 CATALOGED CHEMICAL RECORDS</span>
+            <span id="recordCountLabel">LOADING CATALOGED RECORDS...</span>
             
           </div>
         </div>
 
-        <div style="display:flex; align-items:center; gap:8px;">
-          <span style="font-family:var(--font-sans); font-size:10px; font-weight:700; text-transform:uppercase; color:var(--olive-muted);">Sort:</span>
-          <select id="sortSelect" style="background:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.8); padding:10px 16px; font-family:var(--font-sans); font-size:14px; font-weight:600; color:var(--peacock-blue); border-radius:20px; outline:none;" onchange="handleSortChange(this.value)">
-            <option value="code">Product Code (Ascending)</option>
-            <option value="code_desc">Product Code (Descending)</option>
-            <option value="name">Product Name (A-Z)</option>
-            <option value="category">Category</option>
-          </select>
+        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-family:var(--font-sans); font-size:10px; font-weight:700; text-transform:uppercase; color:var(--olive-muted);">Category:</span>
+            <select id="categoryFilterSelect" style="background:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.8); padding:10px 16px; font-family:var(--font-sans); font-size:14px; font-weight:600; color:var(--peacock-blue); border-radius:20px; outline:none;" onchange="handleCategoryFilterChange(this.value)">
+              <option value="ALL">All Categories</option>
+            </select>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-family:var(--font-sans); font-size:10px; font-weight:700; text-transform:uppercase; color:var(--olive-muted);">Sort:</span>
+            <select id="sortSelect" style="background:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.8); padding:10px 16px; font-family:var(--font-sans); font-size:14px; font-weight:600; color:var(--peacock-blue); border-radius:20px; outline:none;" onchange="handleSortChange(this.value)">
+              <option value="code">Product Code (Ascending)</option>
+              <option value="code_desc">Product Code (Descending)</option>
+              <option value="name">Product Name (A-Z)</option>
+              <option value="category">Category</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -503,599 +511,12 @@
       </div>
 
       <!-- Card Grid -->
-      <div class="archive-grid" id="cardGrid">
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-001</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Dinitrobenzene (Specimen #1)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-001. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-002</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Sulfonyl Chloride (Specimen #2)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-002. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-003</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Diazobicyclononane (Specimen #3)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-003. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-004</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Dicyclohexylcarbodiimide (Specimen #4)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-004. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-005</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Dimethylaminopyridine (Specimen #5)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-005. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-006</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Diisopropylethylamine (Specimen #6)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-006. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-007</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Dioxaborolane (Specimen #7)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-007. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-008</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Dibenzylideneacetone (Specimen #8)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-008. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-009</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Dichloromethane (Specimen #9)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-009. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-010</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Diethylformamide (Specimen #10)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-010. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-011</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Decanoic Acid (Specimen #11)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-011. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-012</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Dithiothreitol (Specimen #12)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-012. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-013</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Dimedone (Specimen #13)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-013. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-014</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Dithiazole (Specimen #14)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-014. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-015</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Dodecylbenzene (Specimen #15)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-015. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-016</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Diacetylmonoxime (Specimen #16)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-016. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-017</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Diphenylphosphinoferrocene (Specimen #17)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-017. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-018</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Dimethoxyethane (Specimen #18)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-018. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-019</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Dibromomalonamide (Specimen #19)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-019. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-020</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Diaza-crown Ether (Specimen #20)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-020. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-021</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Dinitrobenzene (Specimen #21)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-021. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-022</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Sulfonyl Chloride (Specimen #22)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-022. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-023</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Diazobicyclononane (Specimen #23)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-023. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-024</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Dicyclohexylcarbodiimide (Specimen #24)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-024. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-025</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Dimethylaminopyridine (Specimen #25)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-025. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-026</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Diisopropylethylamine (Specimen #26)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-026. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-027</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Dioxaborolane (Specimen #27)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-027. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-028</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Dibenzylideneacetone (Specimen #28)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-028. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-029</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Dichloromethane (Specimen #29)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-029. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-030</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Diethylformamide (Specimen #30)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-030. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-031</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Decanoic Acid (Specimen #31)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-031. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-032</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Dithiothreitol (Specimen #32)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-032. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-033</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Dimedone (Specimen #33)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-033. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-034</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Dithiazole (Specimen #34)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-034. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-035</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Dodecylbenzene (Specimen #35)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-035. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-<div class="catalog-card">
-      <div class="card-top">
-        <span class="card-call-number">D-036</span>
-        <span class="card-archival-stamp">D-DRAWER-01</span>
-      </div>
-      <div class="card-product-name">Diacetylmonoxime (Specimen #36)</div>
-      <div class="card-divider"></div>
-      <div class="card-meta-section">
-        <div class="card-category-label">CATEGORY</div>
-        <div class="card-category-value">Organic Synthesis & Specialized Reagents</div>
-      </div>
-      <div>
-        <div class="card-desc-label">DESCRIPTION</div>
-        <div class="card-desc-text">Archival Chemical Record D-036. Reference compound for analytical standardization, stoichiometric verification, and research synthesis.</div>
-      </div>
-    </div>
-      </div>
+      <div class="archive-grid" id="cardGrid"></div>
 
       <!-- Virtual Pagination Controls -->
       <div class="pagination-bar" id="paginationBar">
-        <div class="pagination-info" id="paginationInfo">Showing 1 - 36 of 3,381 records</div>
-        <div class="pagination-buttons" id="paginationButtons">
-
-    <button class="btn-page" disabled onclick="goToPage(0)">PREV</button>
-    <button class="btn-page active" onclick="goToPage(1)">1</button>
-    <button class="btn-page" onclick="goToPage(2)">2</button>
-    <button class="btn-page" onclick="goToPage(3)">3</button>
-    <span style="font-family:var(--font-mono); padding:0 4px;">...</span>
-    <button class="btn-page" onclick="goToPage(94)">94</button>
-    <button class="btn-page" onclick="goToPage(2)">NEXT</button>
-
-        </div>
+        <div class="pagination-info" id="paginationInfo"></div>
+        <div class="pagination-buttons" id="paginationButtons"></div>
       </div>
     </main>
 
@@ -1118,6 +539,11 @@
         </div>
 
         <div class="edit-field-group">
+          <label class="edit-field-label">Collection / Index Category</label>
+          <select id="editCollectionInput" class="edit-input" onchange="handleFieldChange('prefix', this.value)"></select>
+        </div>
+
+        <div class="edit-field-group">
           <label class="edit-field-label">Product Code</label>
           <input type="text" id="editCodeInput" class="edit-input" style="font-family:var(--font-mono); font-weight:700;" oninput="handleFieldChange('code', this.value)" />
         </div>
@@ -1129,7 +555,7 @@
 
         <div class="edit-field-group">
           <label class="edit-field-label">Product Category</label>
-          <input type="text" id="editCategoryInput" class="edit-input" oninput="handleFieldChange('category', this.value)" />
+          <select id="editCategoryInput" class="edit-input" onchange="handleFieldChange('category', this.value)"></select>
         </div>
 
         <div class="edit-field-group">
@@ -1147,30 +573,120 @@
   <script src="./chemical_data.js"></script>
 
   <script>
-    const COLLECTIONS = [
-      { id: 'ALL', label: 'ALL RECORDS', range: 'Entire Archive Index', count: 3381 },
-      { id: 'D', label: 'D COLLECTION', range: 'D-001 to D-500', count: 500 },
-      { id: 'R', label: 'R COLLECTION', range: 'R-001 to R-500', count: 500 },
-      { id: 'Tc', label: 'Tc COLLECTION', range: 'Tc-001 to Tc-1000', count: 1000 },
-      { id: 'W', label: 'W COLLECTION', range: 'W-001 to W-100', count: 100 },
-      { id: 'B', label: 'B COLLECTION', range: 'B-001 to B-100', count: 100 },
-      { id: 'G', label: 'G COLLECTION', range: 'G-100 to G-200', count: 101 },
-      { id: 'Y', label: 'Y COLLECTION', range: 'Y-001 to Y-1000', count: 1000 },
-      { id: 'MISC', label: 'MISCELLANEOUS', range: 'MISC-001 to MISC-080', count: 80 }
+    const COLLECTIONS_STORAGE_KEY = 'chemical_archive_collections_v1';
+    const PRODUCT_CATEGORIES_STORAGE_KEY = 'chemical_archive_product_categories_v1';
+
+    const DEFAULT_COLLECTIONS = [
+      { id: 'D', label: 'D COLLECTION', range: 'D-001 to D-500' },
+      { id: 'R', label: 'R COLLECTION', range: 'R-001 to R-500' },
+      { id: 'Tc', label: 'Tc COLLECTION', range: 'Tc-001 to Tc-1000' },
+      { id: 'W', label: 'W COLLECTION', range: 'W-001 to W-100' },
+      { id: 'B', label: 'B COLLECTION', range: 'B-001 to B-100' },
+      { id: 'G', label: 'G COLLECTION', range: 'G-100 to G-200' },
+      { id: 'Y', label: 'Y COLLECTION', range: 'Y-001 to Y-1000' },
+      { id: 'MISC', label: 'MISCELLANEOUS', range: 'MISC-001 to MISC-080' }
     ];
 
-    let archiveRecords = (() => {
+    function escapeHtml(str) {
+      return String(str == null ? '' : str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function renderIcons() {
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+    }
+
+    function sanitizeRecords(records) {
+      if (!Array.isArray(records)) return [];
+      let changed = false;
+      const cleaned = records.map(r => {
+        const isLegacyName = typeof r.name === 'string' && /\(Specimen #\d+\)$/.test(r.name.trim());
+        const isLegacyDesc = typeof r.description === 'string' && /^Archival (Chemical Record|Grade Standard)\b/i.test(r.description.trim());
+        if (isLegacyName && isLegacyDesc) {
+          changed = true;
+          return {
+            ...r,
+            name: '',
+            category: '',
+            description: '',
+            drawer: (typeof r.drawer === 'string' && /^[A-Za-z]+-DRAWER-\d+$/i.test(r.drawer.trim())) ? '' : (r.drawer || '')
+          };
+        }
+        return r;
+      });
+      if (changed) {
+        try {
+          localStorage.setItem('chemical_archive_custom_v1', JSON.stringify(cleaned));
+        } catch(e) {}
+      }
+      return cleaned;
+    }
+
+    function loadArchiveRecords() {
       try {
-        const saved = localStorage.getItem('chemical_archive_custom_v1');
+        const saved = localStorage.getItem('chemical_archive_custom_v1') || localStorage.getItem('chemical_archive_records_v1');
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          if (Array.isArray(parsed) && parsed.length > 0) return sanitizeRecords(parsed);
         }
       } catch(e) {}
-      return window.RAW_SEED_DATA || [];
-    })();
+      return sanitizeRecords(window.RAW_SEED_DATA || []);
+    }
+
+    function loadStoredCollections() {
+      try {
+        const saved = localStorage.getItem(COLLECTIONS_STORAGE_KEY);
+        if (saved !== null) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      } catch(e) {}
+      return DEFAULT_COLLECTIONS.map(c => ({ ...c }));
+    }
+
+    function loadStoredProductCategories(records) {
+      try {
+        const saved = localStorage.getItem(PRODUCT_CATEGORIES_STORAGE_KEY);
+        if (saved !== null) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      } catch(e) {}
+      const derived = new Set();
+      (records || []).forEach(r => {
+        const c = (r.category || '').trim();
+        if (c) derived.add(c);
+      });
+      return Array.from(derived).sort((a, b) => a.localeCompare(b));
+    }
+
+    let archiveRecords = loadArchiveRecords();
+    let customCollections = loadStoredCollections();
+    let productCategories = loadStoredProductCategories(archiveRecords);
+
+    function getCollectionsWithCounts() {
+      const counts = {};
+      archiveRecords.forEach(r => {
+        const p = r.prefix || '';
+        counts[p] = (counts[p] || 0) + 1;
+      });
+      return [
+        { id: 'ALL', label: 'ALL RECORDS', range: 'Entire Archive Index', count: archiveRecords.length },
+        ...customCollections.map(c => ({
+          ...c,
+          count: counts[c.id] || 0
+        }))
+      ];
+    }
 
     let activeCollection = 'ALL';
+    let activeCategoryFilter = 'ALL';
     let searchQuery = '';
     let sortCriterion = 'code';
     const PAGE_SIZE = 36;
@@ -1178,11 +694,18 @@
     let activeEditingRecordId = null;
 
     function init() {
+      const searchInput = document.getElementById('searchInput');
+      const searchClearBtn = document.getElementById('searchClearBtn');
+      if (searchInput) {
+        searchQuery = searchInput.value || '';
+        if (searchClearBtn) searchClearBtn.style.display = searchQuery ? 'flex' : 'none';
+      }
       if (!archiveRecords || archiveRecords.length === 0) {
         fetch('./chemical_archive_data.json')
           .then(res => res.json())
           .then(data => {
-            archiveRecords = data;
+            archiveRecords = sanitizeRecords(data);
+            productCategories = loadStoredProductCategories(archiveRecords);
             renderAll();
           })
           .catch(err => {
@@ -1192,23 +715,72 @@
       } else {
         renderAll();
       }
-      attachSearchListener();
-      lucide.createIcons();
+      window.addEventListener('pageshow', () => {
+        archiveRecords = loadArchiveRecords();
+        customCollections = loadStoredCollections();
+        productCategories = loadStoredProductCategories(archiveRecords);
+        const si = document.getElementById('searchInput');
+        if (si) searchQuery = si.value || '';
+        renderAll();
+      });
+      window.addEventListener('storage', (e) => {
+        if (
+          e.key === COLLECTIONS_STORAGE_KEY ||
+          e.key === PRODUCT_CATEGORIES_STORAGE_KEY ||
+          e.key === 'chemical_archive_custom_v1' ||
+          e.key === 'chemical_archive_records_v1'
+        ) {
+          archiveRecords = loadArchiveRecords();
+          customCollections = loadStoredCollections();
+          productCategories = loadStoredProductCategories(archiveRecords);
+          if (activeCollection !== 'ALL' && !customCollections.some(c => c.id === activeCollection)) {
+            activeCollection = 'ALL';
+          }
+          renderAll();
+        }
+      });
+      renderIcons();
     }
 
     function renderAll() {
+      const specimenBadge = document.getElementById('headerSpecimenCount');
+      if (specimenBadge) {
+        specimenBadge.innerText = `${archiveRecords.length.toLocaleString()} SPECIMENS`;
+      }
+      renderCategoryFilterSelect();
       renderCollectionSidebar();
       renderIndexTabs();
       renderLibraryRecords();
     }
 
+    function renderCategoryFilterSelect() {
+      const sel = document.getElementById('categoryFilterSelect');
+      if (!sel) return;
+      const allCats = new Set(productCategories);
+      archiveRecords.forEach(r => {
+        const c = (r.category || '').trim();
+        if (c) allCats.add(c);
+      });
+      const sorted = Array.from(allCats).sort((a, b) => a.localeCompare(b));
+      const opts = ['<option value="ALL">All Categories</option>']
+        .concat(sorted.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`));
+      sel.innerHTML = opts.join('');
+      if (activeCategoryFilter !== 'ALL' && sorted.includes(activeCategoryFilter)) {
+        sel.value = activeCategoryFilter;
+      } else {
+        activeCategoryFilter = 'ALL';
+        sel.value = 'ALL';
+      }
+    }
+
     function renderCollectionSidebar() {
-      document.getElementById('collectionNavList').innerHTML = COLLECTIONS.map(c => `
+      const collections = getCollectionsWithCounts();
+      document.getElementById('collectionNavList').innerHTML = collections.map(c => `
         <li>
-          <button class="collection-btn ${activeCollection === c.id ? 'active' : ''}" onclick="selectCollection('${c.id}')">
+          <button class="collection-btn ${activeCollection === c.id ? 'active' : ''}" data-coll="${escapeHtml(c.id)}" onclick="selectCollection(this.getAttribute('data-coll'))">
             <div class="coll-info">
-              <span class="coll-title">${c.label}</span>
-              <span class="coll-range">${c.range}</span>
+              <span class="coll-title">${escapeHtml(c.label)}</span>
+              <span class="coll-range">${escapeHtml(c.range)}</span>
             </div>
             <span class="coll-count">${c.count}</span>
           </button>
@@ -1217,9 +789,10 @@
     }
 
     function renderIndexTabs() {
-      document.getElementById('libraryIndexTabs').innerHTML = COLLECTIONS.map(c => `
-        <button class="index-tab-btn ${activeCollection === c.id ? 'active' : ''}" onclick="selectCollection('${c.id}')">
-          [ ${c.id === 'ALL' ? 'ALL' : c.id} ]
+      const collections = getCollectionsWithCounts();
+      document.getElementById('libraryIndexTabs').innerHTML = collections.map(c => `
+        <button class="index-tab-btn ${activeCollection === c.id ? 'active' : ''}" data-coll="${escapeHtml(c.id)}" onclick="selectCollection(this.getAttribute('data-coll'))">
+          [ ${escapeHtml(c.id === 'ALL' ? 'ALL' : c.id)} ]
         </button>
       `).join('');
     }
@@ -1232,24 +805,36 @@
       renderLibraryRecords();
     }
 
+    function handleCategoryFilterChange(val) {
+      activeCategoryFilter = val || 'ALL';
+      currentPage = 1;
+      renderLibraryRecords();
+    }
+
     function getFilteredRecords() {
       const q = searchQuery.trim().toLowerCase();
+      const normQ = q.replace(/[\s\-_]+/g, '');
+      const catFilter = activeCategoryFilter !== 'ALL' ? activeCategoryFilter.trim().toLowerCase() : null;
       let list = archiveRecords.filter(item => {
         if (activeCollection !== 'ALL' && item.prefix !== activeCollection) return false;
+        if (catFilter !== null && (item.category || '').trim().toLowerCase() !== catFilter) return false;
         if (!q) return true;
         const code = (item.code || item.callNumber || '').toLowerCase();
+        const normCode = code.replace(/[\s\-_]+/g, '');
         return code === q ||
                code.includes(q) ||
+               (normQ && normCode.includes(normQ)) ||
                (item.name && item.name.toLowerCase().includes(q)) ||
                (item.category && item.category.toLowerCase().includes(q)) ||
-               (item.description && item.description.toLowerCase().includes(q));
+               (item.description && item.description.toLowerCase().includes(q)) ||
+               (item.drawer && item.drawer.toLowerCase().includes(q));
       });
 
       list.sort((a, b) => {
-        if (sortCriterion === 'code') return a.prefix.localeCompare(b.prefix) || parseInt(a.num) - parseInt(b.num);
-        if (sortCriterion === 'code_desc') return b.prefix.localeCompare(a.prefix) || parseInt(b.num) - parseInt(a.num);
-        if (sortCriterion === 'name') return a.name.localeCompare(b.name);
-        if (sortCriterion === 'category') return a.category.localeCompare(b.category);
+        if (sortCriterion === 'code') return (a.prefix || '').localeCompare(b.prefix || '') || parseInt(a.num || 0) - parseInt(b.num || 0);
+        if (sortCriterion === 'code_desc') return (b.prefix || '').localeCompare(a.prefix || '') || parseInt(b.num || 0) - parseInt(a.num || 0);
+        if (sortCriterion === 'name') return (a.name || '').localeCompare(b.name || '');
+        if (sortCriterion === 'category') return (a.category || '').localeCompare(b.category || '');
         return 0;
       });
 
@@ -1258,9 +843,10 @@
 
     function renderLibraryRecords() {
       const filtered = getFilteredRecords();
-      const coll = COLLECTIONS.find(c => c.id === activeCollection) || COLLECTIONS[0];
+      const collections = getCollectionsWithCounts();
+      const coll = collections.find(c => c.id === activeCollection) || collections[0];
       document.getElementById('currentCollectionTitle').innerText = coll.label;
-      document.getElementById('recordCountLabel').innerText = `${filtered.length} CATALOGED RECORDS AVAILABLE (TOTAL: 3,381)`;
+      document.getElementById('recordCountLabel').innerText = `${filtered.length.toLocaleString()} CATALOGED RECORDS AVAILABLE (TOTAL: ${archiveRecords.length.toLocaleString()})`;
 
       const filterStrip = document.getElementById('activeFilterStrip');
       if (searchQuery.trim()) {
@@ -1291,31 +877,41 @@
           </div>
         `;
       } else {
-        document.getElementById('cardGrid').innerHTML = pageRecords.map(item => `
-          <div class="catalog-card" onclick="openEditTab('${item.id}')" style="cursor:pointer;" title="Click to view and edit details in tab form">
+        document.getElementById('cardGrid').innerHTML = pageRecords.map(item => {
+          const nameText = (item.name || '').trim();
+          const categoryText = (item.category || '').trim();
+          const descText = (item.description || '').trim();
+          const drawerText = (item.drawer || '').trim();
+          const hasDetails = Boolean(categoryText || descText);
+
+          return `
+          <div class="catalog-card" data-id="${escapeHtml(item.id)}" onclick="openEditTab(this.getAttribute('data-id'))" style="cursor:pointer;" title="Click to view and edit details in tab form">
             <div>
               <div class="card-top">
-                <span class="card-call-number">${item.code || item.callNumber}</span>
-                ${item.drawer ? `<span class="card-archival-stamp">${item.drawer}</span>` : ''}
+                <span class="card-call-number">${escapeHtml(item.code || item.callNumber)}</span>
+                ${drawerText ? `<span class="card-archival-stamp">${escapeHtml(drawerText)}</span>` : ''}
               </div>
-              <div class="card-product-name" style="min-height:24px;">${item.name ? highlightMatch(item.name) : '<span style="color:var(--olive-muted); font-style:italic;">—</span>'}</div>
-              <div class="card-divider"></div>
+              ${nameText ? `<div class="card-product-name">${highlightMatch(nameText)}</div>` : ''}
+              ${hasDetails ? `<div class="card-divider"></div>` : ''}
+              ${categoryText ? `
               <div class="card-meta-section">
                 <div class="card-category-label">CATEGORY</div>
-                <div class="card-category-value">${item.category ? highlightMatch(item.category) : '<span style="color:var(--olive-muted);">—</span>'}</div>
-              </div>
+                <div class="card-category-value">${highlightMatch(categoryText)}</div>
+              </div>` : ''}
+              ${descText ? `
               <div>
                 <div class="card-desc-label">DESCRIPTION</div>
-                <div class="card-desc-text">${item.description ? highlightMatch(item.description) : '<span style="color:var(--olive-muted);">—</span>'}</div>
-              </div>
+                <div class="card-desc-text">${highlightMatch(descText)}</div>
+              </div>` : ''}
             </div>
             <div style="display:flex; justify-content:flex-end; padding-top:12px; border-top:1px dashed rgba(128,119,92,0.3); margin-top:auto;">
               <span style="font-family:var(--font-sans); font-size:11px; font-weight:700; color:var(--ink-primary); letter-spacing:1px;">EDIT DETAILS ✎</span>
             </div>
           </div>
-        `).join('');
+        `;
+        }).join('');
       }
-      lucide.createIcons();
+      renderIcons();
     }
 
     function renderPaginationButtons(totalPages) {
@@ -1354,10 +950,15 @@
     }
 
     function highlightMatch(text) {
-      if (!text || !searchQuery.trim()) return text || '';
+      const raw = String(text == null ? '' : text);
+      if (!raw || !searchQuery.trim()) return escapeHtml(raw);
       const q = searchQuery.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const regex = new RegExp(`(${q})`, 'gi');
-      return text.replace(regex, '<mark style="background:var(--archival-beige-light); color:var(--ink-dark); padding:0 2px;">$1</mark>');
+      return raw.split(regex).map((part, idx) =>
+        idx % 2 === 1
+          ? `<mark style="background:var(--archival-beige-light); color:var(--ink-dark); padding:0 2px;">${escapeHtml(part)}</mark>`
+          : escapeHtml(part)
+      ).join('');
     }
 
     function handleSortChange(val) {
@@ -1371,15 +972,36 @@
       const rec = archiveRecords.find(r => r.id === recordId);
       if (!rec) return;
 
-      document.getElementById('editTabCodeBadge').innerText = rec.code || rec.callNumber;
-      document.getElementById('editCodeInput').value = rec.code || rec.callNumber;
-      document.getElementById('editNameInput').value = rec.name;
-      document.getElementById('editCategoryInput').value = rec.category;
-      document.getElementById('editDescInput').value = rec.description;
+      customCollections = loadStoredCollections();
+      productCategories = loadStoredProductCategories(archiveRecords);
+
+      const collSelect = document.getElementById('editCollectionInput');
+      const collOpts = customCollections.map(c =>
+        `<option value="${escapeHtml(c.id)}">${escapeHtml(c.label)} (${escapeHtml(c.id)})</option>`
+      );
+      collOpts.push('<option value="">Unassigned (ALL RECORDS only)</option>');
+      collSelect.innerHTML = collOpts.join('');
+      const recPrefix = rec.prefix || '';
+      collSelect.value = customCollections.some(c => c.id === recPrefix) ? recPrefix : '';
+
+      const catSelect = document.getElementById('editCategoryInput');
+      const recCat = (rec.category || '').trim();
+      const catOpts = ['<option value="">-- Unassigned --</option>']
+        .concat(productCategories.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`));
+      if (recCat && !productCategories.some(c => c.toLowerCase() === recCat.toLowerCase())) {
+        catOpts.push(`<option value="${escapeHtml(recCat)}">${escapeHtml(recCat)} (Legacy)</option>`);
+      }
+      catSelect.innerHTML = catOpts.join('');
+      catSelect.value = recCat;
+
+      document.getElementById('editTabCodeBadge').innerText = rec.code || rec.callNumber || '';
+      document.getElementById('editCodeInput').value = rec.code || rec.callNumber || '';
+      document.getElementById('editNameInput').value = rec.name || '';
+      document.getElementById('editDescInput').value = rec.description || '';
 
       document.getElementById('saveStatusText').innerText = 'Auto-Saved';
       document.getElementById('editTabOverlay').classList.add('open');
-      lucide.createIcons();
+      renderIcons();
     }
 
     function closeEditTab() {
@@ -1403,33 +1025,34 @@
 
       try {
         localStorage.setItem('chemical_archive_custom_v1', JSON.stringify(archiveRecords));
+        localStorage.setItem('chemical_archive_records_v1', JSON.stringify(archiveRecords));
       } catch(e) {}
 
       setTimeout(() => {
         statusText.innerText = 'Auto-Saved';
       }, 250);
 
+      renderCollectionSidebar();
+      renderCategoryFilterSelect();
       renderLibraryRecords();
     }
 
-    function attachSearchListener() {
-      const searchInput = document.getElementById('searchInput');
+    function handleSearchInput(val) {
+      searchQuery = val == null ? '' : String(val);
       const searchClearBtn = document.getElementById('searchClearBtn');
-
-      searchInput.addEventListener('input', (e) => {
-        searchQuery = e.target.value;
-        searchClearBtn.style.display = searchQuery ? 'block' : 'none';
-        currentPage = 1;
-        renderLibraryRecords();
-      });
-
-      searchClearBtn.addEventListener('click', clearSearch);
+      if (searchClearBtn) {
+        searchClearBtn.style.display = searchQuery ? 'flex' : 'none';
+      }
+      currentPage = 1;
+      renderLibraryRecords();
     }
 
     function clearSearch() {
       searchQuery = '';
-      document.getElementById('searchInput').value = '';
-      document.getElementById('searchClearBtn').style.display = 'none';
+      const searchInput = document.getElementById('searchInput');
+      const searchClearBtn = document.getElementById('searchClearBtn');
+      if (searchInput) searchInput.value = '';
+      if (searchClearBtn) searchClearBtn.style.display = 'none';
       currentPage = 1;
       renderLibraryRecords();
     }
@@ -1453,7 +1076,7 @@
       } else {
         gate.style.display = 'none';
       }
-      lucide.createIcons();
+      renderIcons();
     }
 
     function togglePasswordVisibility() {
@@ -1513,10 +1136,15 @@
       const errBox = document.getElementById('authErrorMsg');
       document.getElementById('authErrorText').innerText = msg;
       errBox.style.display = 'flex';
-      lucide.createIcons();
+      renderIcons();
     }
 
-    window.onload = () => { checkAuthStatus(); init(); };
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => { checkAuthStatus(); init(); });
+    } else {
+      checkAuthStatus();
+      init();
+    }
   </script>
 </body>
 </html>

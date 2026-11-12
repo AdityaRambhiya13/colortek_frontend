@@ -242,6 +242,173 @@
       border-radius: 12px;
       padding: 40px 36px;
     }
+
+    /* Category Management & Record Modal */
+    .cat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
+      gap: 24px;
+    }
+    .admin-input, .admin-select, .admin-textarea {
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid rgba(0, 95, 115, 0.22);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      color: var(--ink-primary);
+      outline: none;
+      transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
+    }
+    .admin-input:focus, .admin-select:focus, .admin-textarea:focus {
+      border-color: var(--peacock-blue);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(0, 95, 115, 0.12);
+    }
+    .cat-form-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: flex-end;
+      background: var(--archival-beige);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+    }
+    .cat-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+      min-width: 120px;
+    }
+    .cat-field label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--olive-muted);
+    }
+    .btn-primary {
+      background: var(--peacock-blue);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 9px 16px;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 150ms ease, transform 150ms ease;
+      white-space: nowrap;
+    }
+    .btn-primary:hover {
+      background: var(--sea-green);
+    }
+    .btn-danger-outline {
+      background: rgba(153, 27, 27, 0.06);
+      color: #991b1b;
+      border: 1px solid rgba(153, 27, 27, 0.28);
+      border-radius: 10px;
+      padding: 5px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 150ms ease;
+    }
+    .btn-danger-outline:hover {
+      background: #991b1b;
+      color: #fff;
+      border-color: #991b1b;
+    }
+    .cat-badge {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 8px;
+      background: rgba(0, 95, 115, 0.12);
+      color: var(--peacock-blue);
+    }
+    .cat-feedback {
+      display: none;
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      align-items: center;
+      gap: 8px;
+    }
+    .cat-feedback.success {
+      display: flex;
+      background: rgba(42, 157, 143, 0.14);
+      border: 1px solid rgba(42, 157, 143, 0.4);
+      color: #134e4a;
+    }
+    .cat-feedback.error {
+      display: flex;
+      background: #fee2e2;
+      border: 1px solid #f87171;
+      color: #991b1b;
+    }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.42);
+      backdrop-filter: blur(6px);
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-backdrop.open {
+      display: flex;
+    }
+    .modal-card {
+      width: 100%;
+      max-width: 540px;
+      background: rgba(255, 255, 255, 0.94);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      border-radius: 16px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+      padding: 26px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(0, 95, 115, 0.15);
+      padding-bottom: 12px;
+    }
+    .modal-title {
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      color: var(--peacock-blue);
+      text-transform: uppercase;
+    }
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(0, 95, 115, 0.12);
+    }
   </style>
 </head>
 <body>
@@ -309,6 +476,9 @@
     <button class="admin-tab-btn active" id="tabBtnRecords" onclick="switchTab('records')">
       <i data-lucide="database" style="width:15px; height:15px;"></i> COMPOUND RECORDS
     </button>
+    <button class="admin-tab-btn" id="tabBtnCategories" onclick="switchTab('categories')">
+      <i data-lucide="tags" style="width:15px; height:15px;"></i> CATEGORIES
+    </button>
     <button class="admin-tab-btn" id="tabBtnSecurity" onclick="switchTab('security')">
       <i data-lucide="key-round" style="width:15px; height:15px;"></i> SECURITY
     </button>
@@ -323,11 +493,14 @@
     <!-- Tab 1: Records -->
     <div id="tabRecords" class="admin-tab-content">
       <div class="admin-card">
-        <div class="admin-card-title">
-          <span>COMPOUND DATABASE RECORDS (<span id="totalRecCount">3,381</span> Records)</span>
-          <div style="display:flex; gap:10px;">
-            <input type="text" id="recordSearchInput" placeholder="Filter code or name..." oninput="filterRecords(this.value)" style="background:var(--paper-card); border:1px solid var(--border-subtle); padding:6px 12px; font-size:12px; outline:none; border-radius:2px; width:220px;" />
-            <button onclick="showNewRecordModal()" class="action-btn" style="background:var(--border-dark); color:var(--paper-primary); font-weight:700; padding:6px 14px;">
+        <div class="admin-card-title" style="flex-wrap:wrap; gap:12px;">
+          <span>COMPOUND DATABASE RECORDS (<span id="totalRecCount">0</span> Records)</span>
+          <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
+            <select id="recordCollectionFilter" class="admin-select" onchange="applyRecordFilters()" style="padding:6px 10px; font-size:12px;">
+              <option value="ALL">All Collections</option>
+            </select>
+            <input type="text" id="recordSearchInput" placeholder="Filter code, name, or category..." oninput="applyRecordFilters()" class="admin-input" style="padding:6px 12px; font-size:12px; width:230px;" />
+            <button onclick="showNewRecordModal()" class="btn-primary" style="padding:7px 14px;">
               <i data-lucide="plus" style="width:14px; height:14px;"></i> ADD RECORD
             </button>
           </div>
@@ -337,8 +510,9 @@
           <thead>
             <tr>
               <th style="width:120px;">Product Code</th>
-              <th style="width:240px;">Product Name</th>
-              <th style="width:220px;">Category</th>
+              <th style="width:110px;">Collection</th>
+              <th style="width:220px;">Product Name</th>
+              <th style="width:210px;">Category</th>
               <th>Description</th>
               <th style="width:100px; text-align:center;">Actions</th>
             </tr>
@@ -350,7 +524,90 @@
       </div>
     </div>
 
-    <!-- Tab 2: Security -->
+    <!-- Tab 2: Categories Management -->
+    <div id="tabCategories" class="admin-tab-content" style="display:none;">
+      <div class="cat-grid">
+        <!-- Collection / Index Categories -->
+        <div class="admin-card" style="margin-bottom:0;">
+          <div class="admin-card-title">
+            <span><i data-lucide="folder-kanban" style="width:17px; height:17px; display:inline; vertical-align:middle; margin-right:6px;"></i>COLLECTION / INDEX CATEGORIES</span>
+            <span class="cat-badge" id="collCountBadge">0</span>
+          </div>
+          <p style="font-size:12px; color:var(--olive-muted); margin-bottom:14px; line-height:1.5;">
+            Manage sidebar &amp; tab collections shown in the Chemical Library (e.g., <strong>D</strong>, <strong>R</strong>, <strong>Tc</strong>, or custom collections). Deleting a collection keeps its compounds and moves them to <strong>MISC</strong> (or unlinked in <strong>ALL RECORDS</strong>).
+          </p>
+
+          <div id="collFeedback" class="cat-feedback"></div>
+
+          <form onsubmit="handleCreateCollection(event)" class="cat-form-row">
+            <div class="cat-field" style="max-width:110px;">
+              <label for="newCollId">Prefix / ID *</label>
+              <input type="text" id="newCollId" class="admin-input" placeholder="e.g. P" maxlength="16" required />
+            </div>
+            <div class="cat-field">
+              <label for="newCollLabel">Collection Name *</label>
+              <input type="text" id="newCollLabel" class="admin-input" placeholder="e.g. P COLLECTION" required />
+            </div>
+            <div class="cat-field">
+              <label for="newCollRange">Code Range / Subtitle</label>
+              <input type="text" id="newCollRange" class="admin-input" placeholder="e.g. P-001 to P-100" />
+            </div>
+            <button type="submit" class="btn-primary">
+              <i data-lucide="plus" style="width:14px; height:14px;"></i> CREATE
+            </button>
+          </form>
+
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th style="width:90px;">Prefix</th>
+                <th>Display Label</th>
+                <th>Range / Subtitle</th>
+                <th style="width:80px; text-align:right;">Records</th>
+                <th style="width:90px; text-align:center;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="collectionsTableBody"></tbody>
+          </table>
+        </div>
+
+        <!-- Product Categories -->
+        <div class="admin-card" style="margin-bottom:0;">
+          <div class="admin-card-title">
+            <span><i data-lucide="tag" style="width:17px; height:17px; display:inline; vertical-align:middle; margin-right:6px;"></i>PRODUCT CATEGORIES</span>
+            <span class="cat-badge" id="prodCatCountBadge">0</span>
+          </div>
+          <p style="font-size:12px; color:var(--olive-muted); margin-bottom:14px; line-height:1.5;">
+            Manage reusable <strong>Category</strong> labels assignable to compound records in both the Admin Panel and Library editor. Deleting a category keeps all compounds and clears their category field.
+          </p>
+
+          <div id="prodCatFeedback" class="cat-feedback"></div>
+
+          <form onsubmit="handleCreateProductCategory(event)" class="cat-form-row">
+            <div class="cat-field">
+              <label for="newProdCatName">Category Name *</label>
+              <input type="text" id="newProdCatName" class="admin-input" placeholder="e.g. Organic Synthesis &amp; Reagents" required />
+            </div>
+            <button type="submit" class="btn-primary">
+              <i data-lucide="plus" style="width:14px; height:14px;"></i> CREATE
+            </button>
+          </form>
+
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Category Name</th>
+                <th style="width:100px; text-align:right;">Assigned</th>
+                <th style="width:90px; text-align:center;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="productCategoriesTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 3: Security -->
     <div id="tabSecurity" class="admin-tab-content" style="display:none;">
       <div class="admin-card">
         <div class="admin-card-title">
@@ -369,17 +626,17 @@
       </div>
     </div>
 
-    <!-- Tab 3: Backup & Restore -->
+    <!-- Tab 4: Backup & Restore -->
     <div id="tabBackup" class="admin-tab-content" style="display:none;">
       <div class="admin-card">
         <div class="admin-card-title">
-          <span>DATA BACKUP & RESTORATION</span>
+          <span>DATA BACKUP &amp; RESTORATION</span>
         </div>
 
         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:20px; margin-top:16px;">
           <div style="background:var(--archival-beige); padding:20px; border:1px solid var(--border-subtle); border-radius:3px;">
             <h3 style="font-family:var(--font-display); font-size:13px; font-weight:700; margin-bottom:8px;">EXPORT ARCHIVE (JSON)</h3>
-            <p style="font-size:12px; color:var(--olive-muted); margin-bottom:14px;">Download a complete snapshot of all 3,381 chemical compound records.</p>
+            <p style="font-size:12px; color:var(--olive-muted); margin-bottom:14px;">Download a complete snapshot of all chemical compound records and categories.</p>
             <button onclick="exportArchiveJSON()" class="action-btn" style="background:var(--border-dark); color:var(--paper-primary); padding:8px 16px; font-weight:700;">
               <i data-lucide="download" style="width:14px; height:14px;"></i> EXPORT JSON
             </button>
@@ -387,7 +644,7 @@
 
           <div style="background:var(--archival-beige); padding:20px; border:1px solid var(--border-subtle); border-radius:3px;">
             <h3 style="font-family:var(--font-display); font-size:13px; font-weight:700; margin-bottom:8px;">RESTORE FROM BACKUP</h3>
-            <p style="font-size:12px; color:var(--olive-muted); margin-bottom:14px;">Upload a previously exported JSON backup file to overwrite current records.</p>
+            <p style="font-size:12px; color:var(--olive-muted); margin-bottom:14px;">Upload a previously exported JSON backup file to overwrite current records and categories.</p>
             <input type="file" id="importFileInput" accept=".json" style="display:none;" onchange="importArchiveJSON(event)" />
             <button onclick="document.getElementById('importFileInput').click()" class="action-btn" style="background:var(--border-dark); color:var(--paper-primary); padding:8px 16px; font-weight:700;">
               <i data-lucide="upload" style="width:14px; height:14px;"></i> UPLOAD BACKUP
@@ -398,7 +655,7 @@
         <div style="margin-top:24px; padding-top:20px; border-top:1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center;">
           <div>
             <div style="font-size:13px; font-weight:700; color:#991b1b;">Factory Reset Archive</div>
-            <div style="font-size:11px; color:var(--olive-muted);">Reset all records back to the default NIST seed database (3,381 clean codes).</div>
+            <div style="font-size:11px; color:var(--olive-muted);">Reset all records and categories back to the default NIST seed database.</div>
           </div>
           <button onclick="factoryResetArchive()" class="action-btn" style="background:#991b1b; color:#fff; padding:8px 16px; font-weight:700; border:none;">
             FACTORY RESET
@@ -408,19 +665,157 @@
     </div>
   </main>
 
+  <!-- Add / Edit Compound Record Modal -->
+  <div id="recordModalBackdrop" class="modal-backdrop" onclick="closeRecordModal()">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-title" id="recordModalTitle">Add Compound Record</span>
+        <button type="button" onclick="closeRecordModal()" style="background:none; border:none; cursor:pointer; color:var(--olive-muted); display:flex;">
+          <i data-lucide="x" style="width:18px; height:18px;"></i>
+        </button>
+      </div>
+      <form id="recordModalForm" onsubmit="saveRecordFromModal(event)" style="display:flex; flex-direction:column; gap:12px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div class="cat-field">
+            <label for="recModalPrefix">Collection / Index Category</label>
+            <select id="recModalPrefix" class="admin-select"></select>
+          </div>
+          <div class="cat-field">
+            <label for="recModalCode">Product Code *</label>
+            <input type="text" id="recModalCode" class="admin-input" placeholder="e.g. D-501" required />
+          </div>
+        </div>
+        <div class="cat-field">
+          <label for="recModalName">Product Name</label>
+          <input type="text" id="recModalName" class="admin-input" placeholder="Compound name" />
+        </div>
+        <div class="cat-field">
+          <label for="recModalCategory">Product Category</label>
+          <select id="recModalCategory" class="admin-select"></select>
+        </div>
+        <div class="cat-field">
+          <label for="recModalDesc">Description</label>
+          <textarea id="recModalDesc" class="admin-textarea" rows="3" placeholder="Chemical notes, specification, or usage"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" onclick="closeRecordModal()" class="action-btn" style="padding:8px 16px;">Cancel</button>
+          <button type="submit" class="btn-primary">SAVE RECORD</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
+    const COLLECTIONS_STORAGE_KEY = 'chemical_archive_collections_v1';
+    const PRODUCT_CATEGORIES_STORAGE_KEY = 'chemical_archive_product_categories_v1';
+
+    const DEFAULT_COLLECTIONS = [
+      { id: 'D', label: 'D COLLECTION', range: 'D-001 to D-500' },
+      { id: 'R', label: 'R COLLECTION', range: 'R-001 to R-500' },
+      { id: 'Tc', label: 'Tc COLLECTION', range: 'Tc-001 to Tc-1000' },
+      { id: 'W', label: 'W COLLECTION', range: 'W-001 to W-100' },
+      { id: 'B', label: 'B COLLECTION', range: 'B-001 to B-100' },
+      { id: 'G', label: 'G COLLECTION', range: 'G-100 to G-200' },
+      { id: 'Y', label: 'Y COLLECTION', range: 'Y-001 to Y-1000' },
+      { id: 'MISC', label: 'MISCELLANEOUS', range: 'MISC-001 to MISC-080' }
+    ];
+
+    function renderIcons() {
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+    }
+
+    function sanitizeRecords(records) {
+      if (!Array.isArray(records)) return [];
+      let changed = false;
+      const cleaned = records.map(r => {
+        const isLegacyName = typeof r.name === 'string' && /\(Specimen #\d+\)$/.test(r.name.trim());
+        const isLegacyDesc = typeof r.description === 'string' && /^Archival (Chemical Record|Grade Standard)\b/i.test(r.description.trim());
+        if (isLegacyName && isLegacyDesc) {
+          changed = true;
+          return {
+            ...r,
+            name: '',
+            category: '',
+            description: '',
+            drawer: (typeof r.drawer === 'string' && /^[A-Za-z]+-DRAWER-\d+$/i.test(r.drawer.trim())) ? '' : (r.drawer || '')
+          };
+        }
+        return r;
+      });
+      if (changed) {
+        try {
+          localStorage.setItem('chemical_archive_custom_v1', JSON.stringify(cleaned));
+          localStorage.setItem('chemical_archive_records_v1', JSON.stringify(cleaned));
+        } catch(e) {}
+      }
+      return cleaned;
+    }
+
     let adminRecords = (() => {
       try {
         const saved = localStorage.getItem('chemical_archive_custom_v1') || localStorage.getItem('chemical_archive_records_v1');
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          if (Array.isArray(parsed) && parsed.length > 0) return sanitizeRecords(parsed);
         }
       } catch(e) {}
-      return window.RAW_SEED_DATA || [];
+      return sanitizeRecords(window.RAW_SEED_DATA || []);
     })();
 
+    let adminCollections = loadCollections();
+    let adminProductCategories = loadProductCategories();
+    let editingRecordId = null;
     let currentAdminUser = '';
+
+    function loadCollections() {
+      try {
+        const saved = localStorage.getItem(COLLECTIONS_STORAGE_KEY);
+        if (saved !== null) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      } catch(e) {}
+      return DEFAULT_COLLECTIONS.map(c => ({ ...c }));
+    }
+
+    function saveCollections() {
+      try {
+        localStorage.setItem(COLLECTIONS_STORAGE_KEY, JSON.stringify(adminCollections));
+      } catch(e) {}
+    }
+
+    function loadProductCategories() {
+      try {
+        const saved = localStorage.getItem(PRODUCT_CATEGORIES_STORAGE_KEY);
+        if (saved !== null) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      } catch(e) {}
+      const derived = new Set();
+      adminRecords.forEach(r => {
+        const c = (r.category || '').trim();
+        if (c) derived.add(c);
+      });
+      return Array.from(derived).sort((a, b) => a.localeCompare(b));
+    }
+
+    function saveProductCategories() {
+      try {
+        localStorage.setItem(PRODUCT_CATEGORIES_STORAGE_KEY, JSON.stringify(adminProductCategories));
+      } catch(e) {}
+    }
+
+    function escapeHtml(str) {
+      return String(str == null ? '' : str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
 
     function checkAdminAuth() {
       const session = sessionStorage.getItem('chem_auth_token');
@@ -428,9 +823,9 @@
         document.getElementById('adminAuthGate').style.display = 'flex';
       } else {
         document.getElementById('adminAuthGate').style.display = 'none';
-        renderAdminRecords();
+        refreshAllAdminViews();
       }
-      lucide.createIcons();
+      renderIcons();
     }
 
     function handleAdminLogin(e) {
@@ -447,7 +842,7 @@
       document.getElementById('authErr').style.display = 'none';
       sessionStorage.setItem('chem_auth_token', btoa(`${currentAdminUser}:ADMIN:${Date.now()}`));
       document.getElementById('adminAuthGate').style.display = 'none';
-      renderAdminRecords();
+      refreshAllAdminViews();
     }
 
     function logoutAdmin() {
@@ -458,99 +853,374 @@
     function showAdminErr(msg) {
       document.getElementById('authErrText').innerText = msg;
       document.getElementById('authErr').style.display = 'flex';
-      lucide.createIcons();
+      renderIcons();
     }
 
     function switchTab(tab) {
       document.getElementById('tabRecords').style.display = tab === 'records' ? 'block' : 'none';
+      document.getElementById('tabCategories').style.display = tab === 'categories' ? 'block' : 'none';
       document.getElementById('tabSecurity').style.display = tab === 'security' ? 'block' : 'none';
       document.getElementById('tabBackup').style.display = tab === 'backup' ? 'block' : 'none';
 
       document.getElementById('tabBtnRecords').classList.toggle('active', tab === 'records');
+      document.getElementById('tabBtnCategories').classList.toggle('active', tab === 'categories');
       document.getElementById('tabBtnSecurity').classList.toggle('active', tab === 'security');
       document.getElementById('tabBtnBackup').classList.toggle('active', tab === 'backup');
-      lucide.createIcons();
+      renderIcons();
+    }
+
+    function refreshAllAdminViews() {
+      populateCollectionFilterDropdown();
+      applyRecordFilters();
+      renderCategoriesTab();
+    }
+
+    function populateCollectionFilterDropdown() {
+      const sel = document.getElementById('recordCollectionFilter');
+      if (!sel) return;
+      const current = sel.value || 'ALL';
+      const opts = ['<option value="ALL">All Collections</option>']
+        .concat(adminCollections.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.label)} (${escapeHtml(c.id)})</option>`));
+      if (adminRecords.some(r => !r.prefix || !adminCollections.some(c => c.id === r.prefix))) {
+        opts.push('<option value="__UNLINKED__">Unassigned / Unlinked</option>');
+      }
+      sel.innerHTML = opts.join('');
+      if (Array.from(sel.options).some(o => o.value === current)) {
+        sel.value = current;
+      } else {
+        sel.value = 'ALL';
+      }
+    }
+
+    function applyRecordFilters() {
+      const q = (document.getElementById('recordSearchInput')?.value || '').trim().toLowerCase();
+      const coll = document.getElementById('recordCollectionFilter')?.value || 'ALL';
+      const activeIds = new Set(adminCollections.map(c => c.id));
+
+      const filtered = adminRecords.filter(r => {
+        if (coll === '__UNLINKED__') {
+          if (r.prefix && activeIds.has(r.prefix)) return false;
+        } else if (coll !== 'ALL') {
+          if (r.prefix !== coll) return false;
+        }
+        if (!q) return true;
+        return (r.code || r.callNumber || '').toLowerCase().includes(q) ||
+               (r.name || '').toLowerCase().includes(q) ||
+               (r.category || '').toLowerCase().includes(q) ||
+               (r.description || '').toLowerCase().includes(q);
+      });
+
+      renderAdminRecords(filtered.slice(0, 100));
     }
 
     function renderAdminRecords(list = adminRecords.slice(0, 100)) {
       document.getElementById('totalRecCount').innerText = adminRecords.length.toLocaleString();
       const tbody = document.getElementById('recordsTableBody');
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--olive-muted); padding:24px;">No matching compound records found.</td></tr>`;
+        renderIcons();
+        return;
+      }
       tbody.innerHTML = list.map(r => `
         <tr>
-          <td style="font-family:var(--font-mono); font-weight:700; color:var(--ink-primary);">${r.code || r.callNumber}</td>
-          <td style="font-weight:600;">${r.name || '?'}</td>
-          <td style="color:var(--olive-muted);">${r.category || '?'}</td>
-          <td style="color:var(--olive-muted); font-size:12px;">${r.description || '?'}</td>
+          <td style="font-family:var(--font-mono); font-weight:700; color:var(--ink-primary);">${escapeHtml(r.code || r.callNumber)}</td>
+          <td><span class="cat-badge">${escapeHtml(r.prefix || '—')}</span></td>
+          <td style="font-weight:600;">${r.name ? escapeHtml(r.name) : '<span style="color:var(--olive-muted);">—</span>'}</td>
+          <td style="color:var(--olive-muted);">${r.category ? escapeHtml(r.category) : '<span style="opacity:0.6;">—</span>'}</td>
+          <td style="color:var(--olive-muted); font-size:12px;">${r.description ? escapeHtml(r.description) : '<span style="opacity:0.6;">—</span>'}</td>
           <td style="text-align:center;">
-            <button onclick="promptEditRecord('${r.id}')" class="action-btn" title="Edit Record"><i data-lucide="edit-3" style="width:12px; height:12px;"></i></button>
-            <button onclick="deleteAdminRecord('${r.id}', '${r.code}')" class="action-btn" style="color:#991b1b;" title="Delete Record"><i data-lucide="trash-2" style="width:12px; height:12px;"></i></button>
+            <button data-id="${escapeHtml(r.id)}" onclick="promptEditRecord(this.getAttribute('data-id'))" class="action-btn" title="Edit Record"><i data-lucide="edit-3" style="width:12px; height:12px;"></i></button>
+            <button data-id="${escapeHtml(r.id)}" data-code="${escapeHtml(r.code || r.callNumber || '')}" onclick="deleteAdminRecord(this.getAttribute('data-id'), this.getAttribute('data-code'))" class="action-btn" style="color:#991b1b;" title="Delete Record"><i data-lucide="trash-2" style="width:12px; height:12px;"></i></button>
           </td>
         </tr>
       `).join('');
-      lucide.createIcons();
+      renderIcons();
     }
 
-    function filterRecords(q) {
-      const query = q.trim().toLowerCase();
-      if (!query) {
-        renderAdminRecords(adminRecords.slice(0, 100));
+    /* --- CATEGORY MANAGEMENT (COLLECTIONS + PRODUCT CATEGORIES) --- */
+    function showCatFeedback(elementId, message, type) {
+      const el = document.getElementById(elementId);
+      if (!el) return;
+      el.className = `cat-feedback ${type}`;
+      el.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle-2' : 'alert-circle'}" style="width:15px; height:15px;"></i><span>${escapeHtml(message)}</span>`;
+      renderIcons();
+      clearTimeout(el._hideTimer);
+      el._hideTimer = setTimeout(() => { el.className = 'cat-feedback'; el.innerHTML = ''; }, 4000);
+    }
+
+    function renderCategoriesTab() {
+      // Collections table
+      document.getElementById('collCountBadge').innerText = adminCollections.length;
+      const collBody = document.getElementById('collectionsTableBody');
+      if (adminCollections.length === 0) {
+        collBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--olive-muted); padding:20px;">No collections configured. Create one above.</td></tr>`;
+      } else {
+        const countsByPrefix = {};
+        adminRecords.forEach(r => {
+          const p = r.prefix || '';
+          countsByPrefix[p] = (countsByPrefix[p] || 0) + 1;
+        });
+        collBody.innerHTML = adminCollections.map(c => {
+          const cnt = countsByPrefix[c.id] || 0;
+          return `
+            <tr>
+              <td><span class="cat-badge">${escapeHtml(c.id)}</span></td>
+              <td style="font-weight:700;">${escapeHtml(c.label)}</td>
+              <td style="color:var(--olive-muted); font-size:12px;">${escapeHtml(c.range || '—')}</td>
+              <td style="text-align:right; font-family:var(--font-mono); font-weight:700;">${cnt.toLocaleString()}</td>
+              <td style="text-align:center;">
+                <button data-id="${escapeHtml(c.id)}" onclick="deleteCollectionCategory(this.getAttribute('data-id'))" class="btn-danger-outline" title="Delete Collection Category">
+                  <i data-lucide="trash-2" style="width:12px; height:12px;"></i> Delete
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      // Product categories table
+      document.getElementById('prodCatCountBadge').innerText = adminProductCategories.length;
+      const prodBody = document.getElementById('productCategoriesTableBody');
+      if (adminProductCategories.length === 0) {
+        prodBody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--olive-muted); padding:20px;">No product categories created yet. Add one above.</td></tr>`;
+      } else {
+        const countsByCat = {};
+        adminRecords.forEach(r => {
+          const k = (r.category || '').trim().toLowerCase();
+          if (k) countsByCat[k] = (countsByCat[k] || 0) + 1;
+        });
+        prodBody.innerHTML = adminProductCategories.map(cat => {
+          const cnt = countsByCat[cat.trim().toLowerCase()] || 0;
+          return `
+            <tr>
+              <td style="font-weight:600;">${escapeHtml(cat)}</td>
+              <td style="text-align:right; font-family:var(--font-mono); font-weight:700;">${cnt.toLocaleString()}</td>
+              <td style="text-align:center;">
+                <button data-cat="${escapeHtml(cat)}" onclick="deleteProductCategory(this.getAttribute('data-cat'))" class="btn-danger-outline" title="Delete Product Category">
+                  <i data-lucide="trash-2" style="width:12px; height:12px;"></i> Delete
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+      renderIcons();
+    }
+
+    function handleCreateCollection(e) {
+      e.preventDefault();
+      const rawId = document.getElementById('newCollId').value.trim().replace(/\s+/g, '-');
+      const rawLabel = document.getElementById('newCollLabel').value.trim();
+      const rawRange = document.getElementById('newCollRange').value.trim();
+
+      if (!rawId) {
+        showCatFeedback('collFeedback', 'Please enter a valid Prefix / ID.', 'error');
         return;
       }
-      const filtered = adminRecords.filter(r => 
-        (r.code || '').toLowerCase().includes(query) ||
-        (r.name || '').toLowerCase().includes(query) ||
-        (r.category || '').toLowerCase().includes(query)
-      ).slice(0, 100);
-      renderAdminRecords(filtered);
+      if (rawId.toUpperCase() === 'ALL') {
+        showCatFeedback('collFeedback', '"ALL" is reserved for the master index.', 'error');
+        return;
+      }
+      if (adminCollections.some(c => c.id.toLowerCase() === rawId.toLowerCase())) {
+        showCatFeedback('collFeedback', `Collection "${rawId}" already exists.`, 'error');
+        return;
+      }
+
+      const newColl = {
+        id: rawId,
+        label: rawLabel || `${rawId.toUpperCase()} COLLECTION`,
+        range: rawRange || `${rawId}-001+`
+      };
+      adminCollections.push(newColl);
+      saveCollections();
+
+      document.getElementById('newCollId').value = '';
+      document.getElementById('newCollLabel').value = '';
+      document.getElementById('newCollRange').value = '';
+
+      refreshAllAdminViews();
+      showCatFeedback('collFeedback', `Collection "${newColl.label}" (${newColl.id}) created.`, 'success');
+    }
+
+    function deleteCollectionCategory(id) {
+      const target = adminCollections.find(c => c.id === id);
+      if (!target) return;
+
+      const affected = adminRecords.filter(r => r.prefix === id).length;
+      const hasMisc = id !== 'MISC' && adminCollections.some(c => c.id === 'MISC');
+      const fallbackPrefix = hasMisc ? 'MISC' : '';
+      const fallbackLabel = hasMisc ? 'MISCELLANEOUS (MISC)' : 'Unassigned (visible under ALL RECORDS)';
+
+      const msg = affected > 0
+        ? `Delete collection "${target.label}" (${target.id})?\n\n${affected.toLocaleString()} existing compound record(s) will be kept and moved to ${fallbackLabel}.`
+        : `Delete collection "${target.label}" (${target.id})?`;
+
+      if (!confirm(msg)) return;
+
+      adminCollections = adminCollections.filter(c => c.id !== id);
+      saveCollections();
+
+      if (affected > 0) {
+        adminRecords.forEach(r => {
+          if (r.prefix === id) r.prefix = fallbackPrefix;
+        });
+        saveAdminRecords();
+      }
+
+      refreshAllAdminViews();
+      showCatFeedback('collFeedback', `Deleted collection "${target.label}". Existing records were preserved.`, 'success');
+    }
+
+    function handleCreateProductCategory(e) {
+      e.preventDefault();
+      const name = document.getElementById('newProdCatName').value.trim();
+      if (!name) {
+        showCatFeedback('prodCatFeedback', 'Please enter a category name.', 'error');
+        return;
+      }
+      if (adminProductCategories.some(c => c.toLowerCase() === name.toLowerCase())) {
+        showCatFeedback('prodCatFeedback', `Category "${name}" already exists.`, 'error');
+        return;
+      }
+
+      adminProductCategories.push(name);
+      adminProductCategories.sort((a, b) => a.localeCompare(b));
+      saveProductCategories();
+
+      document.getElementById('newProdCatName').value = '';
+      renderCategoriesTab();
+      showCatFeedback('prodCatFeedback', `Product category "${name}" created.`, 'success');
+    }
+
+    function deleteProductCategory(catName) {
+      const norm = catName.trim().toLowerCase();
+      const affected = adminRecords.filter(r => (r.category || '').trim().toLowerCase() === norm).length;
+      const msg = affected > 0
+        ? `Delete product category "${catName}"?\n\n${affected.toLocaleString()} existing compound record(s) will be kept with their category cleared.`
+        : `Delete product category "${catName}"?`;
+
+      if (!confirm(msg)) return;
+
+      adminProductCategories = adminProductCategories.filter(c => c.trim().toLowerCase() !== norm);
+      saveProductCategories();
+
+      if (affected > 0) {
+        adminRecords.forEach(r => {
+          if ((r.category || '').trim().toLowerCase() === norm) {
+            r.category = '';
+          }
+        });
+        saveAdminRecords();
+      }
+
+      refreshAllAdminViews();
+      showCatFeedback('prodCatFeedback', `Deleted product category "${catName}". Existing records were preserved.`, 'success');
+    }
+
+    /* --- ADD / EDIT RECORD MODAL --- */
+    function populateRecordModalSelects(selectedPrefix, selectedCategory) {
+      const prefixSel = document.getElementById('recModalPrefix');
+      const prefixOpts = adminCollections.map(c =>
+        `<option value="${escapeHtml(c.id)}">${escapeHtml(c.label)} (${escapeHtml(c.id)})</option>`
+      );
+      prefixOpts.push('<option value="">Unassigned (ALL RECORDS only)</option>');
+      prefixSel.innerHTML = prefixOpts.join('');
+      if (selectedPrefix && Array.from(prefixSel.options).some(o => o.value === selectedPrefix)) {
+        prefixSel.value = selectedPrefix;
+      } else if (selectedPrefix === '') {
+        prefixSel.value = '';
+      } else if (adminCollections.length > 0) {
+        prefixSel.value = adminCollections[0].id;
+      }
+
+      const catSel = document.getElementById('recModalCategory');
+      const catOpts = ['<option value="">-- Unassigned --</option>']
+        .concat(adminProductCategories.map(cat => `<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`));
+      if (selectedCategory && !adminProductCategories.some(c => c.toLowerCase() === selectedCategory.trim().toLowerCase())) {
+        catOpts.push(`<option value="${escapeHtml(selectedCategory)}">${escapeHtml(selectedCategory)} (Legacy)</option>`);
+      }
+      catSel.innerHTML = catOpts.join('');
+      catSel.value = selectedCategory || '';
+    }
+
+    function showNewRecordModal() {
+      editingRecordId = null;
+      document.getElementById('recordModalTitle').innerText = 'Add Compound Record';
+      const defaultPrefix = adminCollections[0]?.id || '';
+      populateRecordModalSelects(defaultPrefix, '');
+      document.getElementById('recModalCode').value = '';
+      document.getElementById('recModalName').value = '';
+      document.getElementById('recModalDesc').value = '';
+      document.getElementById('recordModalBackdrop').classList.add('open');
+      renderIcons();
     }
 
     function promptEditRecord(id) {
       const rec = adminRecords.find(r => r.id === id);
       if (!rec) return;
-      const newName = prompt(`Edit Name for ${rec.code}:`, rec.name || '');
-      if (newName !== null) {
-        rec.name = newName;
-        const newCat = prompt(`Edit Category for ${rec.code}:`, rec.category || '');
-        if (newCat !== null) rec.category = newCat;
-        const newDesc = prompt(`Edit Description for ${rec.code}:`, rec.description || '');
-        if (newDesc !== null) rec.description = newDesc;
+      editingRecordId = id;
+      document.getElementById('recordModalTitle').innerText = `Edit Record (${rec.code || rec.callNumber})`;
+      populateRecordModalSelects(rec.prefix || '', rec.category || '');
+      document.getElementById('recModalCode').value = rec.code || rec.callNumber || '';
+      document.getElementById('recModalName').value = rec.name || '';
+      document.getElementById('recModalDesc').value = rec.description || '';
+      document.getElementById('recordModalBackdrop').classList.add('open');
+      renderIcons();
+    }
 
-        saveAdminRecords();
-        renderAdminRecords();
+    function closeRecordModal() {
+      document.getElementById('recordModalBackdrop').classList.remove('open');
+      editingRecordId = null;
+    }
+
+    function saveRecordFromModal(e) {
+      e.preventDefault();
+      const prefix = document.getElementById('recModalPrefix').value;
+      const code = document.getElementById('recModalCode').value.trim();
+      const name = document.getElementById('recModalName').value.trim();
+      const category = document.getElementById('recModalCategory').value.trim();
+      const description = document.getElementById('recModalDesc').value.trim();
+
+      if (!code) return;
+      const numMatch = code.match(/(\d+)\s*$/);
+      const parsedNum = numMatch ? parseInt(numMatch[1], 10) : 9999;
+
+      if (editingRecordId) {
+        const rec = adminRecords.find(r => r.id === editingRecordId);
+        if (rec) {
+          rec.prefix = prefix;
+          rec.code = code;
+          rec.callNumber = code;
+          rec.name = name;
+          rec.category = category;
+          rec.description = description;
+          rec.num = Number.isFinite(parsedNum) ? parsedNum : (rec.num || 9999);
+        }
+      } else {
+        const newRec = {
+          id: `custom_${Date.now()}`,
+          callNumber: code,
+          code: code,
+          name: name,
+          category: category,
+          description: description,
+          prefix: prefix,
+          num: parsedNum,
+        };
+        adminRecords.unshift(newRec);
       }
+
+      saveAdminRecords();
+      closeRecordModal();
+      refreshAllAdminViews();
     }
 
     function deleteAdminRecord(id, code) {
       if (confirm(`Are you sure you want to delete ${code}?`)) {
         adminRecords = adminRecords.filter(r => r.id !== id);
         saveAdminRecords();
-        renderAdminRecords();
+        refreshAllAdminViews();
       }
-    }
-
-    function showNewRecordModal() {
-      const code = prompt('Enter New Product Code (e.g. D-501, R-501):');
-      if (!code) return;
-      const name = prompt('Enter Product Name:') || '';
-      const category = prompt('Enter Category:') || '';
-      const description = prompt('Enter Description:') || '';
-
-      const prefix = code.split('-')[0] || 'MISC';
-      const newRec = {
-        id: `custom_${Date.now()}`,
-        callNumber: code.trim(),
-        code: code.trim(),
-        name: name.trim(),
-        category: category.trim(),
-        description: description.trim(),
-        prefix,
-        num: 9999,
-      };
-
-      adminRecords.unshift(newRec);
-      saveAdminRecords();
-      renderAdminRecords();
-      alert(`Record ${code} created successfully!`);
     }
 
     function saveAdminRecords() {
@@ -561,7 +1231,14 @@
     }
 
     function exportArchiveJSON() {
-      const blob = new Blob([JSON.stringify(adminRecords, null, 2)], { type: 'application/json' });
+      const payload = {
+        version: 2,
+        exportedAt: new Date().toISOString(),
+        collections: adminCollections,
+        productCategories: adminProductCategories,
+        records: adminRecords
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -580,8 +1257,23 @@
           if (Array.isArray(imported)) {
             adminRecords = imported;
             saveAdminRecords();
-            renderAdminRecords();
+            refreshAllAdminViews();
             alert(`Successfully restored ${imported.length} records from backup!`);
+          } else if (imported && Array.isArray(imported.records)) {
+            adminRecords = imported.records;
+            saveAdminRecords();
+            if (Array.isArray(imported.collections)) {
+              adminCollections = imported.collections;
+              saveCollections();
+            }
+            if (Array.isArray(imported.productCategories)) {
+              adminProductCategories = imported.productCategories;
+              saveProductCategories();
+            }
+            refreshAllAdminViews();
+            alert(`Successfully restored ${adminRecords.length} records and categories from backup!`);
+          } else {
+            alert('Unrecognized backup JSON format.');
           }
         } catch(err) {
           alert('Invalid JSON backup file.');
@@ -591,12 +1283,16 @@
     }
 
     function factoryResetArchive() {
-      if (confirm('Are you sure you want to reset all records to default NIST factory state? This will clear custom edits.')) {
+      if (confirm('Are you sure you want to reset all records and categories to default NIST factory state? This will clear custom edits.')) {
         localStorage.removeItem('chemical_archive_custom_v1');
         localStorage.removeItem('chemical_archive_records_v1');
+        localStorage.removeItem(COLLECTIONS_STORAGE_KEY);
+        localStorage.removeItem(PRODUCT_CATEGORIES_STORAGE_KEY);
         adminRecords = window.RAW_SEED_DATA || [];
-        renderAdminRecords();
-        alert('Archive successfully reset to factory seed database.');
+        adminCollections = DEFAULT_COLLECTIONS.map(c => ({ ...c }));
+        adminProductCategories = loadProductCategories();
+        refreshAllAdminViews();
+        alert('Archive and categories successfully reset to factory seed database.');
       }
     }
 

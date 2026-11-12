@@ -195,7 +195,7 @@
     .archive-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 16px; }
     .catalog-card {
       background: var(--paper-card); border: 1px solid var(--border-subtle); padding: 14px 16px; border-radius: var(--radius-medium);
-      display: flex; flex-direction: column; justify-content: space-between; min-height: 120px; position: relative;
+      display: flex; flex-direction: column; justify-content: flex-start; gap: 8px; min-height: 84px; position: relative;
       backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04); transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 300ms ease, background 300ms ease;
     }
@@ -990,37 +990,15 @@
         `;
       } else {
         document.getElementById('cardGrid').innerHTML = pageRecords.map(item => {
+          const codeText = (item.code || item.callNumber || '').trim();
           const nameText = (item.name || '').trim();
-          const categoryText = (item.category || '').trim();
-          const descText = (item.description || '').trim();
-          const drawerText = (item.drawer || '').trim();
-          const safeLink = toSafeProductUrl(item.productLink || '');
-          const hasDetails = Boolean(categoryText || descText || safeLink);
 
           return `
-          <div class="catalog-card" data-id="${escapeHtml(item.id)}" onclick="openEditTab(this.getAttribute('data-id'))" style="cursor:pointer;" title="Click to view and edit details in tab form">
-            <div>
-              <div class="card-top">
-                <span class="card-call-number">${escapeHtml(item.code || item.callNumber)}</span>
-                ${drawerText ? `<span class="card-archival-stamp">${escapeHtml(drawerText)}</span>` : ''}
-              </div>
-              ${nameText ? `<div class="card-product-name">${highlightMatch(nameText)}</div>` : ''}
-              ${hasDetails ? `<div class="card-divider"></div>` : ''}
-              ${categoryText ? `
-              <div class="card-meta-section">
-                <div class="card-category-label">CATEGORY</div>
-                <div class="card-category-value">${highlightMatch(categoryText)}</div>
-              </div>` : ''}
-              ${descText ? `
-              <div>
-                <div class="card-desc-label">DESCRIPTION</div>
-                <div class="card-desc-text">${highlightMatch(descText)}</div>
-              </div>` : ''}
+          <div class="catalog-card" data-id="${escapeHtml(item.id)}" onclick="openEditTab(this.getAttribute('data-id'))" style="cursor:pointer;" title="Click to view and edit details">
+            <div class="card-top" style="margin-bottom:0;">
+              <span class="card-call-number">${highlightMatch(codeText)}</span>
             </div>
-            <div style="display:flex; justify-content:${safeLink ? 'space-between' : 'flex-end'}; align-items:center; gap:8px; padding-top:8px; border-top:1px dashed rgba(128,119,92,0.3); margin-top:auto;">
-              ${safeLink ? `<a href="${escapeHtml(safeLink)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="font-family:var(--font-sans); font-size:10px; font-weight:700; color:var(--ink-primary); letter-spacing:0.6px; text-decoration:none; border-bottom:1px solid currentColor;">VISIT SITE ↗</a>` : ''}
-              <span style="font-family:var(--font-sans); font-size:10px; font-weight:700; color:var(--ink-primary); letter-spacing:0.8px;">EDIT DETAILS ✎</span>
-            </div>
+            ${nameText ? `<div class="card-product-name" style="margin-bottom:0;">${highlightMatch(nameText)}</div>` : ''}
           </div>
         `;
         }).join('');

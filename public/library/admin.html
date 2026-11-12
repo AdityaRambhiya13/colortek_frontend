@@ -1,17 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chemical Library</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chemical Library — Admin Portal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,400;1,600&family=Cinzel:wght@500;700;800&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="./runtime_config.js"></script>
-  <script src="./library_shared.js"></script>
-  <script src="./chemical_data.js"></script>
-
+  <script src="./library_shared.js" defer></script>
+  <script src="./library_admin.js" defer></script>
   <style>
     
     :root {
@@ -414,1455 +411,271 @@
   </style>
 </head>
 <body>
-
-  <!-- Auth Gate -->
-  <div id="adminAuthGate" class="auth-gate-backdrop" style="display:none;">
+  <div id="adminAuthGate" class="auth-gate-backdrop" style="display:flex;">
     <div class="auth-gate-card">
-      <div style="text-align:center; margin-bottom:28px;">
-        <div style="width:56px; height:56px; margin:0 auto 16px; background:#F6E2A3; border:1.5px solid #574A24; display:flex; align-items:center; justify-content:center; color:#574A24;">
-          <i data-lucide="shield-check" style="width:28px; height:28px;"></i>
-        </div>
-        <h1 style="font-family:var(--font-display); font-size:20px; font-weight:800; letter-spacing:2px; color:#574A24; text-transform:uppercase;">
-          Library Admin Gate
-        </h1>
+      <div style="display:inline-flex; align-items:center; gap:6px; font-family:var(--font-mono); font-size:11px; font-weight:700; text-transform:uppercase; color:#2d4a22; margin-bottom:10px;">
+        <i data-lucide="shield-check"></i> Chemical Library Admin Portal
+      </div>
+      <h2 style="font-family:var(--font-display); font-size:22px; margin:0 0 6px;">Administrator Sign In</h2>
+      <p style="font-size:13px; color:var(--olive-muted); margin:0 0 16px;">Requires Admin role plus Two-Factor OTP verification.</p>
+
+      <div id="authErr" style="display:none; align-items:center; gap:8px; padding:10px 12px; background:#fef2f2; border:1px solid #fecaca; color:#991b1b; border-radius:8px; font-size:12px; margin-bottom:14px;">
+        <i data-lucide="alert-circle"></i>
+        <span id="authErrText">Authentication error</span>
       </div>
 
-      <div id="authErr" style="display:none; background:#fee2e2; border:1px solid #f87171; color:#991b1b; padding:10px 14px; border-radius:2px; font-size:12px; margin-bottom:20px; align-items:center; gap:8px;">
-        <i data-lucide="alert-circle" style="width:16px; height:16px;"></i>
-        <span id="authErrText"></span>
-      </div>
+      <form id="adminLoginForm" style="display:flex; flex-direction:column; gap:14px;">
+        <div>
+          <label for="adminUser" style="display:block; font-family:var(--font-mono); font-size:11px; font-weight:700; margin-bottom:4px;">ADMIN USERNAME</label>
+          <input type="text" id="adminUser" class="admin-input" autocomplete="username" required />
+        </div>
+        <div>
+          <label for="adminPass" style="display:block; font-family:var(--font-mono); font-size:11px; font-weight:700; margin-bottom:4px;">PASSWORD</label>
+          <input type="password" id="adminPass" class="admin-input" autocomplete="current-password" required />
+        </div>
+        <button type="submit" id="adminStep1SubmitBtn" class="btn-primary" style="justify-content:center; padding:11px 16px;">Continue to 2FA</button>
+      </form>
 
-      <!-- Login -->
-      <form id="adminLoginForm" onsubmit="handleAdminLogin(event)" style="display:flex; flex-direction:column; gap:16px;">
+      <form id="adminOtpForm" style="display:none; flex-direction:column; gap:14px;">
+        <div id="adminOtpPrompt" style="font-size:12px; padding:10px; background:rgba(87,74,36,0.08); border-radius:6px;"></div>
         <div>
-          <label style="display:block; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:#80775C; margin-bottom:6px;">
-            Admin Username
-          </label>
-          <input type="text" id="adminUser" style="width:100%; height:42px; padding:0 14px; background:#F6E2A3; border:1px solid rgba(128,119,92,0.4); font-size:14px; color:#574A24; outline:none;" placeholder="e.g. admin, curator" required />
+          <label for="adminOtpCode" style="display:block; font-family:var(--font-mono); font-size:11px; font-weight:700; margin-bottom:4px;">6-DIGIT OTP CODE</label>
+          <input type="text" id="adminOtpCode" class="admin-input" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="000000" required />
         </div>
-        <div>
-          <label style="display:block; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:#80775C; margin-bottom:6px;">
-            Password
-          </label>
-          <input type="password" id="adminPass" style="width:100%; height:42px; padding:0 14px; background:#F6E2A3; border:1px solid rgba(128,119,92,0.4); font-size:14px; color:#574A24; outline:none;" placeholder="••••••••••••" required />
+        <button type="submit" id="adminVerifyOtpBtn" class="btn-primary" style="justify-content:center; padding:11px 16px;">Verify &amp; Enter Portal</button>
+        <div style="display:flex; justify-content:space-between;">
+          <button type="button" id="adminResendOtpBtn" class="action-btn" style="display:none;">Resend SMS OTP</button>
+          <button type="button" id="adminBackToStep1Btn" style="background:none; border:none; font-family:var(--font-mono); font-size:11px; text-decoration:underline; cursor:pointer;">Back</button>
         </div>
-        <button type="submit" style="height:44px; background:#574A24; color:#FAE8B4; border:none; font-family:var(--font-display); font-size:12px; font-weight:700; letter-spacing:1.5px; cursor:pointer; margin-top:8px;">
-          UNLOCK ADMIN SUITE
-        </button>
       </form>
     </div>
   </div>
 
-  <!-- Header -->
-  <header class="admin-header">
-    <a href="./" class="admin-brand">
-      <div class="brand-mark">CA</div>
+  <header class="admin-header glass-panel">
+    <div class="admin-brand">
+      <div class="brand-mark"><i data-lucide="folder-kanban"></i></div>
       <div>
-        <h1 class="brand-title">Chemical Library Admin</h1>
-        <p class="brand-sub">Dedicated Library Administration & Security</p>
+        <div class="brand-title">COLORTEK CHEMICAL LIBRARY — ADMIN</div>
+        <div class="brand-sub">Encrypted Archive Governance, RBAC &amp; Audit Console</div>
       </div>
-    </a>
-
-    <div style="display:flex; align-items:center; gap:14px;">
-      <span id="syncStatusBadge" class="sync-status-pill" title="Cloud Sync Status">Syncing...</span>
-      <a href="./" style="background:var(--paper-card); border:1px solid var(--border-subtle); padding:6px 14px; font-size:11px; font-weight:700; color:var(--ink-primary); text-decoration:none; display:flex; align-items:center; gap:6px;">
-        <i data-lucide="external-link" style="width:13px; height:13px;"></i> VIEW LIBRARY
-      </a>
-      <button onclick="logoutAdmin()" style="background:none; border:1px solid var(--border-subtle); padding:6px 12px; font-size:11px; font-weight:700; color:var(--ink-primary); cursor:pointer; display:flex; align-items:center; gap:6px;">
-        <i data-lucide="log-out" style="width:13px; height:13px;"></i> LOGOUT
-      </button>
+    </div>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <span id="syncStatusBadge" style="font-family:var(--font-mono); font-size:11px; font-weight:700; padding:4px 10px; border:1px solid #86efac; border-radius:999px; color:#2d4a22;">LOCKED</span>
+      <a href="./index.html" class="action-btn" style="text-decoration:none;"><i data-lucide="external-link"></i> Viewer</a>
+      <button type="button" id="adminLogoutBtn" style="background:none; border:1px solid var(--border-subtle); padding:6px 12px; font-size:11px; font-weight:700; cursor:pointer; border-radius:6px; display:inline-flex; align-items:center; gap:6px;"><i data-lucide="log-out"></i> Logout</button>
     </div>
   </header>
 
-  <!-- Tabs Navigation -->
-  <div class="admin-tabs-bar">
-    <button class="admin-tab-btn active" id="tabBtnRecords" onclick="switchTab('records')">
-      <i data-lucide="database" style="width:15px; height:15px;"></i> COMPOUND RECORDS
-    </button>
-    <button class="admin-tab-btn" id="tabBtnCategories" onclick="switchTab('categories')">
-      <i data-lucide="tags" style="width:15px; height:15px;"></i> CATEGORIES
-    </button>
-    <button class="admin-tab-btn" id="tabBtnSecurity" onclick="switchTab('security')">
-      <i data-lucide="key-round" style="width:15px; height:15px;"></i> SECURITY
-    </button>
-    <button class="admin-tab-btn" id="tabBtnBackup" onclick="switchTab('backup')">
-      <i data-lucide="download" style="width:15px; height:15px;"></i> BACKUP & RESTORE
-    </button>
-    <button class="admin-tab-btn" id="tabBtnActivity" onclick="switchTab('activity')">
-      <i data-lucide="activity" style="width:15px; height:15px;"></i> ACTIVITY & LOGS
-    </button>
-  </div>
+  <nav class="admin-tabs-bar">
+    <button type="button" class="admin-tab-btn active" id="tabBtnRecords"><i data-lucide="database"></i> Records</button>
+    <button type="button" class="admin-tab-btn" id="tabBtnCategories"><i data-lucide="tags"></i> Collections</button>
+    <button type="button" class="admin-tab-btn" id="tabBtnSecurity"><i data-lucide="key-round"></i> Security &amp; 2FA Users</button>
+    <button type="button" class="admin-tab-btn" id="tabBtnBackup"><i data-lucide="download"></i> Backup &amp; Reset</button>
+    <button type="button" class="admin-tab-btn" id="tabBtnActivity"><i data-lucide="activity"></i> Audit Logs</button>
+  </nav>
 
-  <!-- Body -->
   <main class="admin-body">
-    
-    <!-- Tab 1: Records -->
-    <div id="tabRecords" class="admin-tab-content">
+    <section id="tabRecords" class="admin-tab-content">
       <div class="admin-card">
-        <div class="admin-card-title" style="flex-wrap:wrap; gap:12px;">
-          <span>COMPOUND DATABASE RECORDS (<span id="totalRecCount">0</span> Records)</span>
-          <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
-            <select id="recordCollectionFilter" class="admin-select" onchange="applyRecordFilters()" style="padding:6px 10px; font-size:12px;">
-              <option value="ALL">All Collections</option>
-            </select>
-            <input type="text" id="recordSearchInput" placeholder="Filter code, name, or category..." oninput="applyRecordFilters()" class="admin-input" style="padding:6px 12px; font-size:12px; width:230px;" />
-            <button onclick="showNewRecordModal()" class="btn-primary" style="padding:7px 14px;">
-              <i data-lucide="plus" style="width:14px; height:14px;"></i> ADD RECORD
-            </button>
+        <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:12px; margin-bottom:14px;">
+          <div>
+            <div class="admin-card-title" style="margin:0;">Chemical Records</div>
+            <div id="totalRecCount" style="font-family:var(--font-mono); font-size:11px; color:var(--olive-muted);">0 total</div>
+          </div>
+          <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+            <select id="recordCollectionFilter" class="admin-select" style="padding:6px 10px; font-size:12px;"></select>
+            <input type="text" id="recordSearchInput" placeholder="Filter code, name, or category..." class="admin-input" style="width:240px;" />
+            <button type="button" id="newRecordBtn" class="btn-primary" style="padding:7px 14px;"><i data-lucide="plus"></i> New Record</button>
           </div>
         </div>
 
-        <div id="unlinkedRecordsBanner" style="display:none; margin-bottom:14px; padding:12px 14px; border-radius:10px; background:rgba(180,83,9,0.08); border:1px solid rgba(180,83,9,0.35); align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
-          <div style="font-size:12px; color:#7c2d12; line-height:1.45;">
-            <strong id="unlinkedRecordsBannerTitle">0 non-categorized / unlinked code(s) found.</strong>
-            <span id="unlinkedRecordsBannerPreview" style="display:block; margin-top:2px; font-family:var(--font-mono); font-size:11px; color:#9a3412;"></span>
+        <div id="unlinkedRecordsBanner" style="display:none; justify-content:space-between; align-items:center; padding:10px 14px; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; margin-bottom:14px;">
+          <div>
+            <strong id="unlinkedRecordsBannerTitle" style="color:#991b1b; font-size:13px;">0 Unlinked Records</strong>
+            <div id="unlinkedRecordsBannerPreview" style="font-family:var(--font-mono); font-size:11px; color:#7f1d1d;"></div>
           </div>
-          <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button type="button" onclick="viewUnlinkedRecordsInTable()" class="action-btn" style="font-size:11px; font-weight:700; padding:6px 12px;">
-              LIST IN TABLE
-            </button>
-            <button type="button" onclick="deleteAllUnlinkedRecords()" style="background:#991b1b; color:#fff; border:none; border-radius:6px; font-size:11px; font-weight:700; padding:6px 12px; cursor:pointer;">
-              DELETE ALL NON-CATEGORIZED (<span id="unlinkedBannerDelCount">0</span>)
-            </button>
+          <div style="display:flex; gap:8px;">
+            <button type="button" class="action-btn btn-view-unlinked">Inspect</button>
+            <button type="button" class="btn-del-unlinked" style="background:#991b1b; color:#fff; border:none; border-radius:6px; font-size:11px; font-weight:700; padding:6px 12px; cursor:pointer;">Purge (<span id="unlinkedBannerDelCount">0</span>)</button>
           </div>
         </div>
 
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th style="width:120px;">Product Code</th>
-              <th style="width:110px;">Collection</th>
-              <th style="width:220px;">Product Name</th>
-              <th style="width:210px;">Category</th>
-              <th>Description</th>
-              <th style="width:100px; text-align:center;">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="recordsTableBody">
-            <!-- Populated via JS -->
-          </tbody>
-        </table>
+        <div style="overflow-x:auto;">
+          <table class="admin-table">
+            <thead>
+              <tr><th>Code</th><th>Name</th><th>Category</th><th>Collection</th><th style="text-align:right;">Actions</th></tr>
+            </thead>
+            <tbody id="recordsTableBody"></tbody>
+          </table>
+        </div>
       </div>
-    </div>
+    </section>
 
-    <!-- Tab 2: Categories Management -->
-    <div id="tabCategories" class="admin-tab-content" style="display:none;">
-      <div class="admin-card" style="max-width:960px;">
-        <div class="admin-card-title">
-          <span><i data-lucide="folder-kanban" style="width:17px; height:17px; display:inline; vertical-align:middle; margin-right:6px;"></i>LIBRARY CATEGORIES (D, R, Tc, T, ...)</span>
-          <span class="cat-badge" id="collCountBadge">0</span>
-        </div>
-        <p style="font-size:12px; color:var(--olive-muted); margin-bottom:14px; line-height:1.5;">
-          Create or delete Chemical Library categories shown in the sidebar and index tabs (e.g., <strong>D</strong>, <strong>R</strong>, <strong>Tc</strong>, <strong>T</strong>). Deleting a category keeps its compounds and moves them to <strong>MISC</strong> (or unlinked in <strong>ALL RECORDS</strong>).
-        </p>
-
-        <div id="collFeedback" class="cat-feedback"></div>
-
-        <form onsubmit="handleCreateCollection(event)" class="cat-form-row">
-          <div class="cat-field" style="max-width:110px;">
-            <label for="newCollId">Prefix / ID *</label>
-            <input type="text" id="newCollId" class="admin-input" placeholder="e.g. T" maxlength="16" required />
-          </div>
-          <div class="cat-field">
-            <label for="newCollLabel">Category Name *</label>
-            <input type="text" id="newCollLabel" class="admin-input" placeholder="e.g. T COLLECTION" required />
-          </div>
-          <div class="cat-field">
-            <label for="newCollRange">Code Range / Subtitle</label>
-            <input type="text" id="newCollRange" class="admin-input" placeholder="e.g. T-001 to T-100" />
-          </div>
-          <button type="submit" class="btn-primary">
-            <i data-lucide="plus" style="width:14px; height:14px;"></i> CREATE
-          </button>
+    <section id="tabCategories" class="admin-tab-content" style="display:none;">
+      <div class="admin-card">
+        <div class="admin-card-title">Collections (<span id="collCountBadge">0</span>)</div>
+        <form id="createCollectionForm" class="cat-form-row" style="margin-bottom:16px;">
+          <div class="cat-field"><label for="newCollId">Prefix ID</label><input id="newCollId" class="admin-input" placeholder="e.g. X" maxlength="16" required /></div>
+          <div class="cat-field"><label for="newCollLabel">Label</label><input id="newCollLabel" class="admin-input" placeholder="e.g. Series X" maxlength="120" required /></div>
+          <div class="cat-field"><label for="newCollRange">Auto-Seed Range (optional)</label><input id="newCollRange" class="admin-input" placeholder="e.g. X-1 to X-50" maxlength="64" /></div>
+          <button type="submit" class="btn-primary" style="align-self:flex-end;">Save Collection</button>
         </form>
-
-        <div id="unlinkedRecordsBanner" style="display:none; margin-bottom:14px; padding:12px 14px; border-radius:10px; background:rgba(180,83,9,0.08); border:1px solid rgba(180,83,9,0.35); align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
-          <div style="font-size:12px; color:#7c2d12; line-height:1.45;">
-            <strong id="unlinkedRecordsBannerTitle">0 non-categorized / unlinked code(s) found.</strong>
-            <span id="unlinkedRecordsBannerPreview" style="display:block; margin-top:2px; font-family:var(--font-mono); font-size:11px; color:#9a3412;"></span>
-          </div>
-          <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button type="button" onclick="viewUnlinkedRecordsInTable()" class="action-btn" style="font-size:11px; font-weight:700; padding:6px 12px;">
-              LIST IN TABLE
-            </button>
-            <button type="button" onclick="deleteAllUnlinkedRecords()" style="background:#991b1b; color:#fff; border:none; border-radius:6px; font-size:11px; font-weight:700; padding:6px 12px; cursor:pointer;">
-              DELETE ALL NON-CATEGORIZED (<span id="unlinkedBannerDelCount">0</span>)
-            </button>
-          </div>
-        </div>
-
+        <div id="collFeedback" class="cat-feedback success" style="display:none; margin-bottom:12px;"></div>
         <table class="admin-table">
-          <thead>
-            <tr>
-              <th style="width:90px;">Prefix</th>
-              <th>Display Label</th>
-              <th>Range / Subtitle</th>
-              <th style="width:80px; text-align:right;">Records</th>
-              <th style="width:90px; text-align:center;">Action</th>
-            </tr>
-          </thead>
+          <thead><tr><th>ID</th><th>Label</th><th>Range / Count</th><th style="text-align:right;">Actions</th></tr></thead>
           <tbody id="collectionsTableBody"></tbody>
         </table>
-
-        <div id="unlinkedCategoriesCard" style="display:none; margin-top:20px; padding:14px 16px; border-radius:10px; background:rgba(180,83,9,0.06); border:1px solid rgba(180,83,9,0.3);">
-          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
-            <div>
-              <div style="font-size:13px; font-weight:800; color:#7c2d12;">
-                NON-CATEGORIZED / UNLINKED CODES (<span id="unlinkedCatCount">0</span>)
-              </div>
-              <div style="font-size:11px; color:#9a3412; margin-top:2px;">
-                These codes appear in <strong>ALL RECORDS</strong> but do not belong to any active Library Category above.
-              </div>
-            </div>
-            <div style="display:flex; gap:8px; flex-wrap:wrap;">
-              <button type="button" onclick="viewUnlinkedRecordsInTable()" class="action-btn" style="font-size:11px; font-weight:700; padding:6px 12px;">
-                OPEN IN RECORDS TABLE
-              </button>
-              <button type="button" onclick="deleteAllUnlinkedRecords()" style="background:#991b1b; color:#fff; border:none; border-radius:6px; font-size:11px; font-weight:700; padding:6px 12px; cursor:pointer;">
-                DELETE ALL NON-CATEGORIZED (<span id="unlinkedCatDelCount">0</span>)
-              </button>
-            </div>
-          </div>
-          <div id="unlinkedCodesList" style="max-height:160px; overflow-y:auto; display:flex; flex-wrap:wrap; gap:6px; padding:8px; background:rgba(255,255,255,0.65); border:1px solid rgba(180,83,9,0.2); border-radius:8px;"></div>
-        </div>
       </div>
-    </div>
+    </section>
 
-    <!-- Tab 3: Security -->
-    <div id="tabSecurity" class="admin-tab-content" style="display:none;">
+    <section id="tabSecurity" class="admin-tab-content" style="display:none;">
       <div class="admin-card">
-        <div class="admin-card-title">
-          <span><i data-lucide="shield-check" style="width:18px; height:18px; display:inline; vertical-align:middle;"></i> SECURITY SETTINGS</span>
-        </div>
-
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
           <div>
-            <div style="font-size:13px; font-weight:700;">Clear Security Lockouts</div>
-            <div style="font-size:11px; color:var(--olive-muted);">Reset temporary lockouts caused by repeated failed password attempts.</div>
+            <div class="admin-card-title" style="margin:0;">Account Provisioning &amp; Two-Factor Auth</div>
+            <div style="font-size:12px; color:var(--olive-muted);">Enroll staff with bcrypt passwords + Authenticator App (TOTP) or Phone SMS OTP.</div>
           </div>
-          <button onclick="clearAllLockouts()" class="action-btn" style="background:#574A24; color:#FAE8B4; padding:8px 16px; font-weight:700;">
-            CLEAR LOCKOUTS
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Tab 4: Backup & Restore -->
-    <div id="tabBackup" class="admin-tab-content" style="display:none;">
-      <div class="admin-card">
-        <div class="admin-card-title">
-          <span>DATA BACKUP &amp; RESTORATION</span>
+          <button type="button" id="clearLockoutsBtn" class="action-btn" style="background:#574A24; color:#FAE8B4; padding:8px 16px; font-weight:700;">Clear Server Lockouts</button>
         </div>
 
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:20px; margin-top:16px;">
-          <div style="background:var(--archival-beige); padding:20px; border:1px solid var(--border-subtle); border-radius:3px;">
-            <h3 style="font-family:var(--font-display); font-size:13px; font-weight:700; margin-bottom:8px;">EXPORT ARCHIVE (JSON)</h3>
-            <p style="font-size:12px; color:var(--olive-muted); margin-bottom:14px;">Download a complete snapshot of all chemical compound records and categories.</p>
-            <button onclick="exportArchiveJSON()" class="action-btn" style="background:var(--border-dark); color:var(--paper-primary); padding:8px 16px; font-weight:700;">
-              <i data-lucide="download" style="width:14px; height:14px;"></i> EXPORT JSON
-            </button>
-          </div>
-
-          <div style="background:var(--archival-beige); padding:20px; border:1px solid var(--border-subtle); border-radius:3px;">
-            <h3 style="font-family:var(--font-display); font-size:13px; font-weight:700; margin-bottom:8px;">RESTORE FROM BACKUP</h3>
-            <p style="font-size:12px; color:var(--olive-muted); margin-bottom:14px;">Upload a previously exported JSON backup file to overwrite current records and categories.</p>
-            <input type="file" id="importFileInput" accept=".json" style="display:none;" onchange="importArchiveJSON(event)" />
-            <button onclick="document.getElementById('importFileInput').click()" class="action-btn" style="background:var(--border-dark); color:var(--paper-primary); padding:8px 16px; font-weight:700;">
-              <i data-lucide="upload" style="width:14px; height:14px;"></i> UPLOAD BACKUP
-            </button>
-          </div>
-        </div>
-
-        <div style="margin-top:24px; padding-top:20px; border-top:1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center;">
+        <form id="createUserForm" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; padding:14px; background:rgba(255,255,255,0.55); border:1px solid var(--border-subtle); border-radius:8px; margin-bottom:16px;">
           <div>
-            <div style="font-size:13px; font-weight:700; color:#991b1b;">Factory Reset Archive</div>
-            <div style="font-size:11px; color:var(--olive-muted);">Reset all records and categories back to the default NIST seed database.</div>
+            <label for="newLibUsername" style="display:block; font-family:var(--font-mono); font-size:11px; font-weight:700; margin-bottom:4px;">Username</label>
+            <input id="newLibUsername" class="admin-input" placeholder="chemist_1" required />
           </div>
-          <button onclick="factoryResetArchive()" class="action-btn" style="background:#991b1b; color:#fff; padding:8px 16px; font-weight:700; border:none;">
-            FACTORY RESET
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Tab 5: Activity & Session Audit Logs -->
-    <div id="tabActivity" class="admin-tab-content" style="display:none;">
-      <div class="admin-card">
-        <div class="admin-card-title" style="flex-wrap:wrap; gap:12px;">
-          <span><i data-lucide="activity" style="width:17px; height:17px; display:inline; vertical-align:middle; margin-right:6px;"></i>LOGIN, LOGOUT &amp; ACTIVITY AUDIT LOG (<span id="activityTotalCount">0</span>)</span>
-          <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
-            <select id="activityActionFilter" class="admin-select" onchange="renderActivityLogsTable()" style="padding:6px 10px; font-size:12px;">
-              <option value="ALL">All Events</option>
-              <option value="AUTH">Logins &amp; Logouts Only</option>
-              <option value="COLLECTIONS">Category Changes</option>
-              <option value="RECORDS">Record Edits / Deletes</option>
+          <div>
+            <label for="newLibPassword" style="display:block; font-family:var(--font-mono); font-size:11px; font-weight:700; margin-bottom:4px;">Password (10+ chars, letter+digit)</label>
+            <input id="newLibPassword" type="password" class="admin-input" minlength="10" required />
+          </div>
+          <div>
+            <label for="newLibRole" style="display:block; font-family:var(--font-mono); font-size:11px; font-weight:700; margin-bottom:4px;">Role</label>
+            <select id="newLibRole" class="admin-select">
+              <option value="viewer">viewer (Read-Only)</option>
+              <option value="curator">curator (Read + Edit Records)</option>
+              <option value="admin">admin (Full Library Governance)</option>
             </select>
-            <input type="text" id="activitySearchInput" placeholder="Filter user, action, or details..." oninput="renderActivityLogsTable()" class="admin-input" style="padding:6px 12px; font-size:12px; width:220px;" />
-            <button type="button" onclick="loadAdminActivityLogs()" class="btn-primary" style="padding:7px 14px;">
-              <i data-lucide="refresh-cw" style="width:13px; height:13px;"></i> REFRESH
-            </button>
           </div>
-        </div>
+          <div>
+            <label for="newLibMfaMethod" style="display:block; font-family:var(--font-mono); font-size:11px; font-weight:700; margin-bottom:4px;">2FA Method</label>
+            <select id="newLibMfaMethod" class="admin-select">
+              <option value="totp">Authenticator App (TOTP)</option>
+              <option value="sms">Phone SMS OTP</option>
+            </select>
+          </div>
+          <div id="newLibPhoneGroup" style="display:none;">
+            <label for="newLibPhone" style="display:block; font-family:var(--font-mono); font-size:11px; font-weight:700; margin-bottom:4px;">Phone (E.164)</label>
+            <input id="newLibPhone" class="admin-input" placeholder="+919876543210" />
+          </div>
+          <div style="display:flex; align-items:flex-end;">
+            <button type="submit" class="btn-primary" style="width:100%; justify-content:center;">Create User</button>
+          </div>
+        </form>
 
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:16px;">
-          <div style="background:rgba(255,255,255,0.6); border:1px solid rgba(0,95,115,0.16); border-radius:10px; padding:12px 14px;">
-            <div style="font-size:10px; font-weight:800; color:var(--olive-muted); text-transform:uppercase; letter-spacing:0.8px;">Last Login</div>
-            <div id="lastLoginSummary" style="font-size:12px; font-weight:700; color:#005f73; margin-top:4px;">—</div>
-          </div>
-          <div style="background:rgba(255,255,255,0.6); border:1px solid rgba(180,83,9,0.2); border-radius:10px; padding:12px 14px;">
-            <div style="font-size:10px; font-weight:800; color:var(--olive-muted); text-transform:uppercase; letter-spacing:0.8px;">Last Logout / Auto-Logout</div>
-            <div id="lastLogoutSummary" style="font-size:12px; font-weight:700; color:#9a3412; margin-top:4px;">—</div>
-          </div>
-          <div style="background:rgba(255,255,255,0.6); border:1px solid rgba(0,95,115,0.16); border-radius:10px; padding:12px 14px;">
-            <div style="font-size:10px; font-weight:800; color:var(--olive-muted); text-transform:uppercase; letter-spacing:0.8px;">Recent Actions Tracked</div>
-            <div id="totalActivitySummary" style="font-size:12px; font-weight:700; color:var(--ink-primary); margin-top:4px;">0 events</div>
+        <div id="userProvisioningBox" style="display:none; padding:14px; background:#ecfdf5; border:1px solid #86efac; border-radius:8px; margin-bottom:16px;">
+          <div id="userProvisioningLabel" style="font-size:12px; font-weight:700; color:#14532d; margin-bottom:10px;"></div>
+          <div style="display:flex; flex-wrap:wrap; gap:16px; align-items:center;">
+            <img id="userProvisioningQr" alt="Authenticator QR Code" style="display:none; width:168px; height:168px; border:1px solid #bbf7d0; border-radius:6px; background:#fff; padding:4px;" />
+            <div style="flex:1; min-width:220px; display:flex; flex-direction:column; gap:8px;">
+              <div style="font-family:var(--font-mono); font-size:12px; color:#14532d;">Manual Key: <strong id="userProvisioningSecret" style="letter-spacing:0.08em;">—</strong></div>
+              <div style="display:flex; gap:8px;">
+                <input id="userProvisioningUri" class="admin-input" readonly style="font-family:var(--font-mono); font-size:11px;" />
+                <button type="button" id="copyProvUriBtn" class="action-btn">Copy URI</button>
+              </div>
+            </div>
           </div>
         </div>
 
         <table class="admin-table">
-          <thead>
-            <tr>
-              <th style="width:190px;">Timestamp</th>
-              <th style="width:110px;">User</th>
-              <th style="width:155px;">Action</th>
-              <th style="width:105px;">Area</th>
-              <th>What Was Done (Details)</th>
-            </tr>
-          </thead>
-          <tbody id="activityLogsTableBody">
-            <tr><td colspan="5" style="text-align:center; color:var(--olive-muted); padding:24px;">Open this tab to load activity logs.</td></tr>
-          </tbody>
+          <thead><tr><th>Username</th><th>Role</th><th>2FA Channel</th><th>Status</th><th style="text-align:right;">Actions</th></tr></thead>
+          <tbody id="libraryUsersTableBody"></tbody>
         </table>
       </div>
-    </div>
+    </section>
+
+    <section id="tabBackup" class="admin-tab-content" style="display:none;">
+      <div class="admin-card">
+        <div class="admin-card-title">Backup, Restore &amp; Server Seed Reset</div>
+        <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center;">
+          <button type="button" id="exportJsonBtn" class="action-btn" style="background:var(--border-dark); color:var(--paper-primary); padding:8px 16px;">Export Encrypted Snapshot (.json)</button>
+          <input type="file" id="importFileInput" accept=".json" style="display:none;" />
+          <button type="button" id="importFileBtn" class="action-btn" style="background:var(--border-dark); color:var(--paper-primary); padding:8px 16px;">Restore From Snapshot (.json)</button>
+          <button type="button" id="factoryResetBtn" style="background:#991b1b; color:#fff; border:none; border-radius:6px; padding:8px 16px; font-weight:700; cursor:pointer;">Factory Reset From Server Seed</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="tabActivity" class="admin-tab-content" style="display:none;">
+      <div class="admin-card">
+        <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:12px; margin-bottom:14px;">
+          <div>
+            <div class="admin-card-title" style="margin:0;">Audit Logs (<span id="activityTotalCount">0</span>)</div>
+            <div style="font-family:var(--font-mono); font-size:11px; color:var(--olive-muted);">
+              Last Login: <span id="lastLoginSummary">—</span> | Last Logout: <span id="lastLogoutSummary">—</span> | Loaded: <span id="totalActivitySummary">0</span>
+            </div>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <select id="activityActionFilter" class="admin-select" style="padding:6px 10px; font-size:12px;">
+              <option value="ALL">All Actions</option>
+              <option value="LOGIN_SUCCESS">LOGIN_SUCCESS</option>
+              <option value="LOGIN_FAILURE">LOGIN_FAILURE</option>
+              <option value="2FA_FAILURE">2FA_FAILURE</option>
+              <option value="LOGOUT">LOGOUT</option>
+              <option value="ADD_RECORD">ADD_RECORD</option>
+              <option value="EDIT_RECORD">EDIT_RECORD</option>
+              <option value="DELETE_RECORD">DELETE_RECORD</option>
+              <option value="ADD_COLLECTION">ADD_COLLECTION</option>
+              <option value="DELETE_COLLECTION">DELETE_COLLECTION</option>
+              <option value="FACTORY_RESET">FACTORY_RESET</option>
+            </select>
+            <input type="text" id="activitySearchInput" placeholder="Filter user, action, or details..." class="admin-input" style="width:220px;" />
+            <button type="button" id="refreshActivityBtn" class="btn-primary" style="padding:7px 14px;"><i data-lucide="refresh-cw"></i> Refresh</button>
+          </div>
+        </div>
+        <table class="admin-table">
+          <thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Details</th></tr></thead>
+          <tbody id="activityLogsTableBody"></tbody>
+        </table>
+      </div>
+    </section>
   </main>
 
-  <!-- Add / Edit Compound Record Modal -->
-  <div id="recordModalBackdrop" class="modal-backdrop" onclick="closeRecordModal()">
-    <div class="modal-card" onclick="event.stopPropagation()">
+  <div id="recordModalBackdrop" class="modal-backdrop">
+    <div id="recordModalCard" class="modal-card">
       <div class="modal-header">
-        <span class="modal-title" id="recordModalTitle">Add Compound Record</span>
-        <button type="button" onclick="closeRecordModal()" style="background:none; border:none; cursor:pointer; color:var(--olive-muted); display:flex;">
-          <i data-lucide="x" style="width:18px; height:18px;"></i>
-        </button>
+        <span id="recordModalTitle" class="modal-title">Chemical Record</span>
+        <button type="button" id="closeRecordModalBtn" style="background:none; border:none; cursor:pointer;"><i data-lucide="x"></i></button>
       </div>
-      <form id="recordModalForm" onsubmit="saveRecordFromModal(event)" style="display:flex; flex-direction:column; gap:12px;">
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-          <div class="cat-field">
-            <label for="recModalPrefix">Collection / Index Category</label>
-            <select id="recModalPrefix" class="admin-select"></select>
-          </div>
-          <div class="cat-field">
-            <label for="recModalCode">Product Code *</label>
-            <input type="text" id="recModalCode" class="admin-input" placeholder="e.g. D-501" required />
-          </div>
+      <form id="recordModalForm" style="display:flex; flex-direction:column; gap:12px;">
+        <div><label for="recModalPrefix">Collection Prefix</label><select id="recModalPrefix" class="admin-select"></select></div>
+        <div><label for="recModalCode">Specimen Code</label><input id="recModalCode" class="admin-input" required /></div>
+        <div><label for="recModalName">Name</label><input id="recModalName" class="admin-input" /></div>
+        <div style="position:relative;"><label for="recModalCategory">Category</label><input id="recModalCategory" class="admin-input" /><div id="recModalCategoryAcList" class="cat-autocomplete-list"></div></div>
+        <div>
+          <div style="display:flex; justify-content:space-between;"><label for="recModalProductLink">Product URL</label><a id="recModalLinkAnchor" target="_blank" rel="noopener noreferrer" style="display:none;font-size:11px;">Open</a></div>
+          <input type="url" id="recModalProductLink" class="admin-input" placeholder="https://example.com/product" />
         </div>
-        <div class="cat-field">
-          <label for="recModalName">Product Name</label>
-          <input type="text" id="recModalName" class="admin-input" placeholder="Compound name" />
-        </div>
-        <div class="cat-field">
-          <label for="recModalCategory">Product Category</label>
-          <div class="cat-autocomplete-wrap">
-            <input type="text" id="recModalCategory" class="admin-input" style="width:100%;" placeholder="Type e.g. A for Additives, or enter any name" autocomplete="off" />
-            <div id="recModalCategoryAcList" class="cat-autocomplete-list"></div>
-          </div>
-        </div>
-        <div class="cat-field">
-          <label for="recModalProductLink" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-            <span>Product Link</span>
-            <a id="recModalLinkAnchor" href="#" target="_blank" rel="noopener noreferrer" style="display:none; font-size:10px; font-weight:700; color:var(--ink-primary); text-decoration:none; border:1px solid var(--border-subtle); padding:2px 8px; border-radius:4px;">OPEN LINK ↗</a>
-          </label>
-          <input type="url" id="recModalProductLink" class="admin-input" placeholder="https://example.com/product" oninput="updateAdminModalLinkPreview(this.value)" />
-        </div>
-        <div class="cat-field">
-          <label for="recModalDesc">Description</label>
-          <textarea id="recModalDesc" class="admin-textarea" rows="3" placeholder="Chemical notes, specification, or usage"></textarea>
-        </div>
+        <div><label for="recModalDesc">Description</label><textarea id="recModalDesc" class="admin-textarea" rows="4"></textarea></div>
         <div class="modal-footer">
-          <button type="button" onclick="closeRecordModal()" class="action-btn" style="padding:8px 16px;">Cancel</button>
-          <button type="submit" class="btn-primary">SAVE RECORD</button>
+          <button type="button" id="cancelRecordModalBtn" class="action-btn">Cancel</button>
+          <button type="submit" class="btn-primary">Save Record</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Delete Collection Category Warning & Choice Modal -->
-  <div id="deleteCollModalBackdrop" class="modal-backdrop" onclick="closeDeleteCollModal()">
-    <div class="modal-card" style="max-width:460px;" onclick="event.stopPropagation()">
+  <div id="deleteCollModalBackdrop" class="modal-backdrop">
+    <div id="deleteCollModalCard" class="modal-card" style="max-width:460px;">
       <div class="modal-header">
-        <span class="modal-title" style="color:#991b1b;">Delete Category</span>
-        <button type="button" onclick="closeDeleteCollModal()" style="background:none; border:none; cursor:pointer; color:var(--olive-muted); display:flex;">
-          <i data-lucide="x" style="width:18px; height:18px;"></i>
-        </button>
+        <span class="modal-title">Delete Collection</span>
+        <button type="button" id="closeDeleteCollModalBtn" style="background:none; border:none; cursor:pointer;"><i data-lucide="x"></i></button>
       </div>
-      <div style="display:flex; flex-direction:column; gap:14px;">
-        <p id="deleteCollWarningText" style="font-size:13px; line-height:1.5; color:var(--ink-dark); margin:0;"></p>
-        <div id="deleteCollWarningAlert" style="background:#fef2f2; border:1px solid #fecaca; color:#991b1b; padding:10px 12px; border-radius:6px; font-size:12px; font-weight:600;">
-          Warning: Removing all records permanently deletes every card under this category across all synced devices.
-        </div>
-        <div style="display:flex; flex-direction:column; gap:8px; margin-top:4px;">
-          <button type="button" id="btnConfirmDeleteAllRecs" onclick="confirmDeleteCollectionAction('delete_records')" style="background:#991b1b; color:#fff; border:none; padding:10px 14px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; text-align:center;">
-            Delete Category &amp; Remove All Records
-          </button>
-          <button type="button" id="btnConfirmShiftMisc" onclick="confirmDeleteCollectionAction('shift_misc')" class="action-btn" style="padding:10px 14px; font-size:12px; font-weight:700; text-align:center; justify-content:center;">
-            Delete Category &amp; Shift Records to Miscellaneous
-          </button>
-          <button type="button" onclick="closeDeleteCollModal()" class="action-btn" style="padding:8px 14px; font-size:12px; text-align:center; justify-content:center;">
-            Cancel
-          </button>
-        </div>
+      <p id="deleteCollWarningText" style="font-size:13px; margin-bottom:16px;"></p>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <button type="button" id="btnConfirmDeleteAllRecs" style="background:#991b1b; color:#fff; border:none; padding:10px 14px; border-radius:6px; font-weight:700; cursor:pointer;">Delete Collection AND All Its Records</button>
+        <button type="button" id="btnConfirmShiftMisc" class="action-btn" style="padding:10px 14px; justify-content:center;">Delete Collection &amp; Shift Records to MISC</button>
+        <button type="button" id="cancelDeleteCollBtn" class="action-btn" style="padding:8px 14px; justify-content:center;">Cancel</button>
       </div>
     </div>
   </div>
-
-  <script>
-    const COLLECTIONS_STORAGE_KEY = 'chemical_archive_collections_v1';
-    const SEEDED_COLLS_STORAGE_KEY = 'chemical_archive_seeded_colls_v1';
-
-    const DEFAULT_COLLECTIONS = [
-      { id: 'D', label: 'D COLLECTION', range: 'D-001 to D-500' },
-      { id: 'R', label: 'R COLLECTION', range: 'R-001 to R-500' },
-      { id: 'Tc', label: 'Tc COLLECTION', range: 'Tc-001 to Tc-1000' },
-      { id: 'W', label: 'W COLLECTION', range: 'W-001 to W-100' },
-      { id: 'B', label: 'B COLLECTION', range: 'B-001 to B-100' },
-      { id: 'G', label: 'G COLLECTION', range: 'G-100 to G-200' },
-      { id: 'Y', label: 'Y COLLECTION', range: 'Y-001 to Y-1000' },
-      { id: 'MISC', label: 'MISCELLANEOUS', range: 'MISC-001 to MISC-080' }
-    ];
-
-    function renderIcons() {
-      if (window.lucide && typeof window.lucide.createIcons === 'function') {
-        window.lucide.createIcons();
-      }
-    }
-
-    function sanitizeRecords(records) {
-      if (!Array.isArray(records)) return [];
-      let changed = false;
-      const cleaned = records.map(r => {
-        const isLegacyName = typeof r.name === 'string' && /\(Specimen #\d+\)$/.test(r.name.trim());
-        const isLegacyDesc = typeof r.description === 'string' && /^Archival (Chemical Record|Grade Standard)\b/i.test(r.description.trim());
-        if (isLegacyName && isLegacyDesc) {
-          changed = true;
-          return {
-            ...r,
-            name: '',
-            category: '',
-            description: '',
-            drawer: (typeof r.drawer === 'string' && /^[A-Za-z]+-DRAWER-\d+$/i.test(r.drawer.trim())) ? '' : (r.drawer || '')
-          };
-        }
-        return r;
-      });
-      if (changed) {
-        try {
-          localStorage.setItem('chemical_archive_custom_v1', JSON.stringify(cleaned));
-          localStorage.setItem('chemical_archive_records_v1', JSON.stringify(cleaned));
-        } catch(e) {}
-      }
-      return cleaned;
-    }
-
-    let adminRecords = (() => {
-      try {
-        const saved = localStorage.getItem('chemical_archive_custom_v1') || localStorage.getItem('chemical_archive_records_v1');
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) return sanitizeRecords(parsed);
-        }
-      } catch(e) {}
-      return sanitizeRecords(window.RAW_SEED_DATA || []);
-    })();
-
-    let adminCollections = loadCollections();
-    let editingRecordId = null;
-    let currentAdminUser = '';
-
-    function loadCollections() {
-      try {
-        const saved = localStorage.getItem(COLLECTIONS_STORAGE_KEY);
-        if (saved !== null) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed)) return parsed;
-        }
-      } catch(e) {}
-      return DEFAULT_COLLECTIONS.map(c => ({ ...c }));
-    }
-
-    function saveCollections() {
-      try {
-        localStorage.setItem(COLLECTIONS_STORAGE_KEY, JSON.stringify(adminCollections));
-      } catch(e) {}
-    }
-
-    function parseCollectionRange(prefix, rangeText) {
-      if (window.LibraryShared && typeof window.LibraryShared.parseCollectionRange === 'function') {
-        return window.LibraryShared.parseCollectionRange(prefix, rangeText);
-      }
-      const clean = String(rangeText || '').trim();
-      const rangeMatch = clean.match(/^(?:[A-Za-z][A-Za-z0-9_-]*[\s-]+)?(\d+)\s*(?:to|–|—|-)\s*(?:[A-Za-z][A-Za-z0-9_-]*[\s-]+)?(\d+)$/i);
-      if (rangeMatch) {
-        let start = parseInt(rangeMatch[1], 10);
-        let end = parseInt(rangeMatch[2], 10);
-        if (end < start) [start, end] = [end, start];
-        const maxEnd = Math.min(end, start + 1999);
-        const padLen = Math.max(3, rangeMatch[1].length);
-        return { start, end: maxEnd, padLen };
-      }
-      const singleMatch = clean.match(/^(?:[A-Za-z][A-Za-z0-9_-]*[\s-]+)?(\d+)\s*\+?$/i);
-      if (singleMatch) {
-        const start = parseInt(singleMatch[1], 10);
-        const padLen = Math.max(3, singleMatch[1].length);
-        return { start, end: start + 99, padLen };
-      }
-      return { start: 1, end: 100, padLen: 3 };
-    }
-
-    function buildCollectionSeedRecords(coll, existingRecords) {
-      if (window.LibraryShared && typeof window.LibraryShared.relinkOrSeedCollection === 'function') {
-        const res = window.LibraryShared.relinkOrSeedCollection(coll, adminCollections, existingRecords);
-        return res.created;
-      }
-      const { start, end, padLen } = parseCollectionRange(coll.id, coll.range);
-      const existingCodes = new Set(
-        (existingRecords || []).map(r => (r.code || r.callNumber || '').trim().toLowerCase())
-      );
-      const created = [];
-      const stamp = Date.now();
-      for (let i = start; i <= end; i++) {
-        const numStr = String(i).padStart(padLen, '0');
-        const code = `${coll.id}-${numStr}`;
-        if (!existingCodes.has(code.toLowerCase())) {
-          created.push({
-            id: `${coll.id.toLowerCase()}-${numStr}-${stamp}-${i}`,
-            prefix: coll.id,
-            num: numStr,
-            callNumber: code,
-            code: code,
-            name: '',
-            category: '',
-            productLink: '',
-            description: '',
-            drawer: ''
-          });
-        }
-      }
-      return created;
-    }
-
-    function reconcileEmptyAdminCollections(syncRemote) {
-      if (!window.LibraryShared || typeof window.LibraryShared.relinkOrSeedCollection !== 'function') return false;
-      let changed = false;
-      adminCollections.forEach(c => {
-        const hasExact = adminRecords.some(r => r.prefix === c.id);
-        if (!hasExact) {
-          const res = window.LibraryShared.relinkOrSeedCollection(c, adminCollections, adminRecords);
-          if (res.relinked.length > 0) {
-            changed = true;
-            if (syncRemote && sessionStorage.getItem('chem_auth_token')) {
-              window.LibraryShared.createCollection(c, res.relinked);
-            }
-          }
-        }
-      });
-      if (changed) saveAdminRecords();
-      return changed;
-    }
-
-    function markCollectionSeeded(id, isSeeded) {
-      try {
-        const raw = localStorage.getItem(SEEDED_COLLS_STORAGE_KEY);
-        const set = new Set(raw ? JSON.parse(raw) : []);
-        if (isSeeded) set.add(id);
-        else set.delete(id);
-        localStorage.setItem(SEEDED_COLLS_STORAGE_KEY, JSON.stringify(Array.from(set)));
-      } catch(e) {}
-    }
-
-    function ensureAdminCollectionsSeeded() {
-      let seededSet = new Set();
-      try {
-        const raw = localStorage.getItem(SEEDED_COLLS_STORAGE_KEY);
-        if (raw) seededSet = new Set(JSON.parse(raw));
-      } catch(e) {}
-      let recordsChanged = reconcileEmptyAdminCollections(false);
-      let seededChanged = false;
-      adminCollections.forEach(c => {
-        const hasAny = adminRecords.some(r => r.prefix === c.id);
-        if (!hasAny && !seededSet.has(c.id)) {
-          const created = buildCollectionSeedRecords(c, adminRecords);
-          if (created.length > 0) {
-            adminRecords.push(...created);
-            recordsChanged = true;
-          }
-          seededSet.add(c.id);
-          seededChanged = true;
-        } else if (hasAny && !seededSet.has(c.id)) {
-          seededSet.add(c.id);
-          seededChanged = true;
-        }
-      });
-      if (recordsChanged) saveAdminRecords();
-      if (seededChanged) {
-        try {
-          localStorage.setItem(SEEDED_COLLS_STORAGE_KEY, JSON.stringify(Array.from(seededSet)));
-        } catch(e) {}
-      }
-    }
-
-    ensureAdminCollectionsSeeded();
-
-    function escapeHtml(str) {
-      return String(str == null ? '' : str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-    }
-
-    function checkAdminAuth() {
-      const session = sessionStorage.getItem('chem_auth_token');
-      if (!session) {
-        document.getElementById('adminAuthGate').style.display = 'flex';
-      } else {
-        document.getElementById('adminAuthGate').style.display = 'none';
-        refreshAllAdminViews();
-        syncAdminFromServer();
-      }
-      renderIcons();
-    }
-
-    function handleAdminLogin(e) {
-      e.preventDefault();
-      const user = document.getElementById('adminUser').value.trim();
-      const pass = document.getElementById('adminPass').value.trim();
-
-      if (!user || pass.length < 4) {
-        showAdminErr('Please enter a valid username and password (min 4 chars).');
-        return;
-      }
-
-      currentAdminUser = user;
-      document.getElementById('authErr').style.display = 'none';
-      sessionStorage.setItem('chem_auth_token', btoa(`${currentAdminUser}:ADMIN:${Date.now()}`));
-      document.getElementById('adminAuthGate').style.display = 'none';
-      if (window.LibraryShared) {
-        if (typeof window.LibraryShared.resetInactivityTimer === 'function') {
-          window.LibraryShared.resetInactivityTimer();
-        }
-        if (typeof window.LibraryShared.logActivity === 'function') {
-          window.LibraryShared.logActivity('LOGIN', 'admin', 'Logged in to Admin Control Panel', currentAdminUser);
-        }
-      }
-      refreshAllAdminViews();
-      syncAdminFromServer();
-      loadAdminActivityLogs();
-    }
-
-    let adminSyncInFlight = null;
-    async function syncAdminFromServer() {
-      if (!window.LibraryShared) return;
-      if (window.LibraryShared.hasPendingMutations && window.LibraryShared.hasPendingMutations()) return;
-      const recBackdropPre = document.getElementById('recordModalBackdrop');
-      const delBackdropPre = document.getElementById('deleteCollModalBackdrop');
-      if ((recBackdropPre && recBackdropPre.classList.contains('open')) || (delBackdropPre && delBackdropPre.classList.contains('open'))) return;
-      if (adminSyncInFlight) return adminSyncInFlight;
-      adminSyncInFlight = (async () => {
-        const state = await window.LibraryShared.fetchState();
-        if (!state) return;
-
-        if (!state.initialized) {
-          if (sessionStorage.getItem('chem_auth_token')) {
-            await window.LibraryShared.bootstrapState(adminCollections, adminRecords);
-          }
-          return;
-        }
-
-        if (window.LibraryShared.hasPendingMutations && window.LibraryShared.hasPendingMutations()) return;
-        const backdrop = document.getElementById('recordModalBackdrop');
-        const delBackdrop = document.getElementById('deleteCollModalBackdrop');
-        if ((backdrop && backdrop.classList.contains('open')) || (delBackdrop && delBackdrop.classList.contains('open'))) return;
-
-        adminCollections = Array.isArray(state.collections) ? state.collections : [];
-        adminRecords = Array.isArray(state.records) ? sanitizeRecords(state.records) : [];
-        reconcileEmptyAdminCollections(true);
-        saveCollections();
-        saveAdminRecords();
-        refreshAllAdminViews();
-      })().finally(() => { adminSyncInFlight = null; });
-      return adminSyncInFlight;
-    }
-
-    function logoutAdmin(reason) {
-      const recBackdrop = document.getElementById('recordModalBackdrop');
-      if (recBackdrop) recBackdrop.classList.remove('open');
-      const delBackdrop = document.getElementById('deleteCollModalBackdrop');
-      if (delBackdrop) delBackdrop.classList.remove('open');
-
-      const isIdle = reason === 'inactivity';
-      if (window.LibraryShared && typeof window.LibraryShared.logActivity === 'function' && sessionStorage.getItem('chem_auth_token')) {
-        window.LibraryShared.logActivity(
-          isIdle ? 'AUTO_LOGOUT' : 'LOGOUT',
-          'admin',
-          isIdle ? 'Auto-logged out after 1 minute of inactivity' : 'Logged out manually from Admin Control Panel'
-        );
-      }
-      sessionStorage.removeItem('chem_auth_token');
-      checkAdminAuth();
-      if (isIdle) {
-        showAdminErr('Session logged out due to 1 minute of inactivity.');
-      }
-    }
-
-    function showAdminErr(msg) {
-      document.getElementById('authErrText').innerText = msg;
-      document.getElementById('authErr').style.display = 'flex';
-      renderIcons();
-    }
-
-    function switchTab(tab) {
-      document.getElementById('tabRecords').style.display = tab === 'records' ? 'block' : 'none';
-      document.getElementById('tabCategories').style.display = tab === 'categories' ? 'block' : 'none';
-      document.getElementById('tabSecurity').style.display = tab === 'security' ? 'block' : 'none';
-      document.getElementById('tabBackup').style.display = tab === 'backup' ? 'block' : 'none';
-      const tabAct = document.getElementById('tabActivity');
-      if (tabAct) tabAct.style.display = tab === 'activity' ? 'block' : 'none';
-
-      document.getElementById('tabBtnRecords').classList.toggle('active', tab === 'records');
-      document.getElementById('tabBtnCategories').classList.toggle('active', tab === 'categories');
-      document.getElementById('tabBtnSecurity').classList.toggle('active', tab === 'security');
-      document.getElementById('tabBtnBackup').classList.toggle('active', tab === 'backup');
-      const btnAct = document.getElementById('tabBtnActivity');
-      if (btnAct) btnAct.classList.toggle('active', tab === 'activity');
-      if (tab === 'activity') {
-        loadAdminActivityLogs();
-      }
-      renderIcons();
-    }
-
-    let adminActivityLogs = [];
-
-    function formatActivityTimestamp(isoStr) {
-      if (!isoStr) return '—';
-      try {
-        const d = new Date(isoStr);
-        if (isNaN(d.getTime())) return String(isoStr);
-        return d.toLocaleString(undefined, {
-          year: 'numeric', month: 'short', day: '2-digit',
-          hour: '2-digit', minute: '2-digit', second: '2-digit'
-        });
-      } catch (e) {
-        return String(isoStr);
-      }
-    }
-
-    function getActionBadgeStyle(action) {
-      const a = String(action || '').toUpperCase();
-      if (a === 'LOGIN') return 'background:#dcfce7; color:#166534; border:1px solid #86efac;';
-      if (a === 'LOGOUT') return 'background:#fef3c7; color:#92400e; border:1px solid #fcd34d;';
-      if (a === 'AUTO_LOGOUT') return 'background:#fee2e2; color:#991b1b; border:1px solid #fca5a5;';
-      if (a.includes('DELETED')) return 'background:#fee2e2; color:#991b1b; border:1px solid #fca5a5;';
-      if (a.includes('CREATED') || a.includes('RESTORED')) return 'background:#e0f2fe; color:#075985; border:1px solid #7dd3fc;';
-      return 'background:rgba(0,95,115,0.1); color:#005f73; border:1px solid rgba(0,95,115,0.22);';
-    }
-
-    async function loadAdminActivityLogs() {
-      if (!window.LibraryShared || typeof window.LibraryShared.fetchActivityLogs !== 'function') return;
-      if (!sessionStorage.getItem('chem_auth_token')) return;
-      const logs = await window.LibraryShared.fetchActivityLogs(300);
-      if (Array.isArray(logs)) {
-        adminActivityLogs = logs;
-        renderActivityLogsTable();
-      }
-    }
-
-    function renderActivityLogsTable() {
-      const tbody = document.getElementById('activityLogsTableBody');
-      if (!tbody) return;
-      const filterType = document.getElementById('activityActionFilter')?.value || 'ALL';
-      const q = (document.getElementById('activitySearchInput')?.value || '').trim().toLowerCase();
-
-      const lastLogin = adminActivityLogs.find(l => l.action === 'LOGIN');
-      const lastLogout = adminActivityLogs.find(l => l.action === 'LOGOUT' || l.action === 'AUTO_LOGOUT');
-      const lastLoginEl = document.getElementById('lastLoginSummary');
-      const lastLogoutEl = document.getElementById('lastLogoutSummary');
-      const totalEl = document.getElementById('totalActivitySummary');
-      const countBadge = document.getElementById('activityTotalCount');
-
-      if (lastLoginEl) {
-        lastLoginEl.textContent = lastLogin
-          ? `${lastLogin.username || 'User'} — ${formatActivityTimestamp(lastLogin.timestamp)}`
-          : 'No login recorded yet';
-      }
-      if (lastLogoutEl) {
-        lastLogoutEl.textContent = lastLogout
-          ? `${lastLogout.username || 'User'} (${lastLogout.action === 'AUTO_LOGOUT' ? 'Idle 1m' : 'Manual'}) — ${formatActivityTimestamp(lastLogout.timestamp)}`
-          : 'No logout recorded yet';
-      }
-      if (totalEl) totalEl.textContent = `${adminActivityLogs.length.toLocaleString()} events`;
-      if (countBadge) countBadge.textContent = adminActivityLogs.length.toLocaleString();
-
-      const filtered = adminActivityLogs.filter(l => {
-        const a = String(l.action || '').toUpperCase();
-        if (filterType === 'AUTH' && !['LOGIN', 'LOGOUT', 'AUTO_LOGOUT'].includes(a)) return false;
-        if (filterType === 'COLLECTIONS' && !a.startsWith('COLLECTION')) return false;
-        if (filterType === 'RECORDS' && !['RECORD_CREATED', 'RECORD_UPDATED', 'RECORD_DELETED', 'UNLINKED_DELETED', 'ARCHIVE_RESTORED'].includes(a)) return false;
-        if (!q) return true;
-        return (l.username || '').toLowerCase().includes(q) ||
-               a.toLowerCase().includes(q) ||
-               (l.page || '').toLowerCase().includes(q) ||
-               (l.details || '').toLowerCase().includes(q);
-      });
-
-      if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--olive-muted); padding:24px;">No matching activity events found.</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = filtered.map(l => {
-        const areaLabel = l.page === 'admin' ? 'Admin Panel' : (l.page === 'library' ? 'Library Viewer' : (l.page || '—'));
-        return `
-          <tr>
-            <td style="font-family:var(--font-mono); font-size:11px; color:var(--ink-primary); white-space:nowrap;">${escapeHtml(formatActivityTimestamp(l.timestamp))}</td>
-            <td style="font-weight:700;">${escapeHtml(l.username || '—')}</td>
-            <td><span style="display:inline-block; font-size:10px; font-weight:800; padding:3px 8px; border-radius:6px; letter-spacing:0.4px; ${getActionBadgeStyle(l.action)}">${escapeHtml(l.action || 'ACTION')}</span></td>
-            <td style="font-size:11px; color:var(--olive-muted);">${escapeHtml(areaLabel)}</td>
-            <td style="font-size:12px; color:var(--ink-primary);">${escapeHtml(l.details || '—')}</td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    function getAdminUnlinkedRecords() {
-      if (window.LibraryShared && typeof window.LibraryShared.getUnlinkedRecords === 'function') {
-        return window.LibraryShared.getUnlinkedRecords(adminCollections, adminRecords);
-      }
-      const activeIds = new Set(adminCollections.map(c => c.id));
-      return adminRecords.filter(r => !r || !r.prefix || !activeIds.has(r.prefix));
-    }
-
-    function renderUnlinkedSection() {
-      const unlinked = getAdminUnlinkedRecords().slice().sort((a, b) =>
-        (a.code || a.callNumber || '').localeCompare(b.code || b.callNumber || '')
-      );
-      const count = unlinked.length;
-      const banner = document.getElementById('unlinkedRecordsBanner');
-      const catCard = document.getElementById('unlinkedCategoriesCard');
-
-      if (count === 0) {
-        if (banner) banner.style.display = 'none';
-        if (catCard) catCard.style.display = 'none';
-        return;
-      }
-
-      const codes = unlinked.map(r => (r.code || r.callNumber || r.id || '').trim()).filter(Boolean);
-      const preview = codes.slice(0, 12).join(', ') + (codes.length > 12 ? ` ... (+${(codes.length - 12).toLocaleString()} more)` : '');
-
-      if (banner) {
-        banner.style.display = 'flex';
-        const titleEl = document.getElementById('unlinkedRecordsBannerTitle');
-        const prevEl = document.getElementById('unlinkedRecordsBannerPreview');
-        const delCntEl = document.getElementById('unlinkedBannerDelCount');
-        if (titleEl) titleEl.textContent = `${count.toLocaleString()} non-categorized / unlinked code(s) are wandering in ALL RECORDS without an active category.`;
-        if (prevEl) prevEl.textContent = `Codes: ${preview}`;
-        if (delCntEl) delCntEl.textContent = count.toLocaleString();
-      }
-
-      if (catCard) {
-        catCard.style.display = 'block';
-        const catCountEl = document.getElementById('unlinkedCatCount');
-        const catDelEl = document.getElementById('unlinkedCatDelCount');
-        const listEl = document.getElementById('unlinkedCodesList');
-        if (catCountEl) catCountEl.textContent = count.toLocaleString();
-        if (catDelEl) catDelEl.textContent = count.toLocaleString();
-        if (listEl) {
-          listEl.innerHTML = unlinked.map(r => {
-            const label = r.code || r.callNumber || r.id || '';
-            const extra = r.name ? ` — ${r.name}` : '';
-            return `<span style="font-family:var(--font-mono); font-size:11px; font-weight:700; color:#7c2d12; background:#fff; border:1px solid rgba(180,83,9,0.28); padding:3px 8px; border-radius:6px;">${escapeHtml(label + extra)}</span>`;
-          }).join('');
-        }
-      }
-    }
-
-    function viewUnlinkedRecordsInTable() {
-      switchTab('records');
-      const sel = document.getElementById('recordCollectionFilter');
-      if (sel) sel.value = '__UNLINKED__';
-      const search = document.getElementById('recordSearchInput');
-      if (search) search.value = '';
-      applyRecordFilters();
-    }
-
-    function deleteAllUnlinkedRecords() {
-      const unlinked = getAdminUnlinkedRecords();
-      if (unlinked.length === 0) return;
-      const sample = unlinked.slice(0, 10).map(r => r.code || r.callNumber || r.id).join(', ');
-      const suffix = unlinked.length > 10 ? `, ... (+${unlinked.length - 10} more)` : '';
-      if (!confirm(`Delete ALL ${unlinked.length.toLocaleString()} non-categorized / unlinked code(s) (${sample}${suffix}) permanently?`)) {
-        return;
-      }
-      const unlinkedIds = new Set(unlinked.map(r => r.id));
-      adminRecords = adminRecords.filter(r => !unlinkedIds.has(r.id));
-      saveAdminRecords();
-      const sel = document.getElementById('recordCollectionFilter');
-      if (sel && sel.value === '__UNLINKED__') sel.value = 'ALL';
-      refreshAllAdminViews();
-      showCatFeedback('collFeedback', `Deleted ${unlinked.length.toLocaleString()} non-categorized record(s).`, 'success');
-      if (window.LibraryShared && typeof window.LibraryShared.deleteUnlinkedRecords === 'function') {
-        window.LibraryShared.deleteUnlinkedRecords();
-      }
-    }
-
-    function refreshAllAdminViews() {
-      populateCollectionFilterDropdown();
-      renderUnlinkedSection();
-      applyRecordFilters();
-      renderCategoriesTab();
-    }
-
-    function populateCollectionFilterDropdown() {
-      const sel = document.getElementById('recordCollectionFilter');
-      if (!sel) return;
-      const current = sel.value || 'ALL';
-      const opts = ['<option value="ALL">All Collections</option>']
-        .concat(adminCollections.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.label)} (${escapeHtml(c.id)})</option>`));
-      if (adminRecords.some(r => !r.prefix || !adminCollections.some(c => c.id === r.prefix))) {
-        opts.push('<option value="__UNLINKED__">Unassigned / Unlinked</option>');
-      }
-      sel.innerHTML = opts.join('');
-      if (Array.from(sel.options).some(o => o.value === current)) {
-        sel.value = current;
-      } else {
-        sel.value = 'ALL';
-      }
-    }
-
-    function applyRecordFilters() {
-      const q = (document.getElementById('recordSearchInput')?.value || '').trim().toLowerCase();
-      const coll = document.getElementById('recordCollectionFilter')?.value || 'ALL';
-      const activeIds = new Set(adminCollections.map(c => c.id));
-
-      const filtered = adminRecords.filter(r => {
-        if (coll === '__UNLINKED__') {
-          if (r.prefix && activeIds.has(r.prefix)) return false;
-        } else if (coll !== 'ALL') {
-          if (r.prefix !== coll) return false;
-        }
-        if (!q) return true;
-        return (r.code || r.callNumber || '').toLowerCase().includes(q) ||
-               (r.name || '').toLowerCase().includes(q) ||
-               (r.category || '').toLowerCase().includes(q) ||
-               (r.productLink || '').toLowerCase().includes(q) ||
-               (r.description || '').toLowerCase().includes(q);
-      });
-
-      const visibleLimit = (coll === '__UNLINKED__' || q.length > 0) ? filtered.length : 100;
-      renderAdminRecords(filtered.slice(0, visibleLimit));
-    }
-
-    function toSafeAdminUrl(raw) {
-      if (window.LibraryShared && typeof window.LibraryShared.normalizeProductUrl === 'function') {
-        return window.LibraryShared.normalizeProductUrl(raw);
-      }
-      const val = String(raw == null ? '' : raw).trim();
-      if (!val || /^(javascript|data|vbscript):/i.test(val)) return '';
-      return /^https?:\/\//i.test(val) ? val : 'https://' + val.replace(/^\/+/, '');
-    }
-
-    function updateAdminModalLinkPreview(raw) {
-      const anchor = document.getElementById('recModalLinkAnchor');
-      if (!anchor) return;
-      const safe = toSafeAdminUrl(raw);
-      if (safe) {
-        anchor.href = safe;
-        anchor.style.display = 'inline-block';
-      } else {
-        anchor.href = '#';
-        anchor.style.display = 'none';
-      }
-    }
-
-    function renderAdminRecords(list = adminRecords.slice(0, 100)) {
-      document.getElementById('totalRecCount').innerText = adminRecords.length.toLocaleString();
-      const tbody = document.getElementById('recordsTableBody');
-      if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--olive-muted); padding:24px;">No matching compound records found.</td></tr>`;
-        renderIcons();
-        return;
-      }
-      tbody.innerHTML = list.map(r => {
-        const safeUrl = toSafeAdminUrl(r.productLink || '');
-        const linkBadge = safeUrl
-          ? ` <a href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer" style="font-size:10px; font-weight:700; color:var(--ink-primary); text-decoration:none; border-bottom:1px solid currentColor; margin-left:4px;">Link ↗</a>`
-          : '';
-        return `
-        <tr>
-          <td style="font-family:var(--font-mono); font-weight:700; color:var(--ink-primary);">${escapeHtml(r.code || r.callNumber)}</td>
-          <td><span class="cat-badge">${escapeHtml(r.prefix || '—')}</span></td>
-          <td style="font-weight:600;">${r.name ? escapeHtml(r.name) : '<span style="color:var(--olive-muted);">—</span>'}${linkBadge}</td>
-          <td style="color:var(--olive-muted);">${r.category ? escapeHtml(r.category) : '<span style="opacity:0.6;">—</span>'}</td>
-          <td style="color:var(--olive-muted); font-size:12px;">${r.description ? escapeHtml(r.description) : '<span style="opacity:0.6;">—</span>'}</td>
-          <td style="text-align:center;">
-            <button data-id="${escapeHtml(r.id)}" onclick="promptEditRecord(this.getAttribute('data-id'))" class="action-btn" title="Edit Record"><i data-lucide="edit-3" style="width:12px; height:12px;"></i></button>
-            <button data-id="${escapeHtml(r.id)}" data-code="${escapeHtml(r.code || r.callNumber || '')}" onclick="deleteAdminRecord(this.getAttribute('data-id'), this.getAttribute('data-code'))" class="action-btn" style="color:#991b1b;" title="Delete Record"><i data-lucide="trash-2" style="width:12px; height:12px;"></i></button>
-          </td>
-        </tr>
-      `;
-      }).join('');
-      renderIcons();
-    }
-
-    /* --- CATEGORY MANAGEMENT (COLLECTIONS + PRODUCT CATEGORIES) --- */
-    function showCatFeedback(elementId, message, type) {
-      const el = document.getElementById(elementId);
-      if (!el) return;
-      el.className = `cat-feedback ${type}`;
-      el.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle-2' : 'alert-circle'}" style="width:15px; height:15px;"></i><span>${escapeHtml(message)}</span>`;
-      renderIcons();
-      clearTimeout(el._hideTimer);
-      el._hideTimer = setTimeout(() => { el.className = 'cat-feedback'; el.innerHTML = ''; }, 4000);
-    }
-
-    function renderCategoriesTab() {
-      document.getElementById('collCountBadge').innerText = adminCollections.length;
-      const collBody = document.getElementById('collectionsTableBody');
-      if (adminCollections.length === 0) {
-        collBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--olive-muted); padding:20px;">No collections configured. Create one above.</td></tr>`;
-      } else {
-        const countsByPrefix = {};
-        adminRecords.forEach(r => {
-          const p = r.prefix || '';
-          countsByPrefix[p] = (countsByPrefix[p] || 0) + 1;
-        });
-        collBody.innerHTML = adminCollections.map(c => {
-          const cnt = countsByPrefix[c.id] || 0;
-          return `
-            <tr>
-              <td><span class="cat-badge">${escapeHtml(c.id)}</span></td>
-              <td style="font-weight:700;">${escapeHtml(c.label)}</td>
-              <td style="color:var(--olive-muted); font-size:12px;">${escapeHtml(c.range || '—')}</td>
-              <td style="text-align:right; font-family:var(--font-mono); font-weight:700;">${cnt.toLocaleString()}</td>
-              <td style="text-align:center;">
-                <button data-id="${escapeHtml(c.id)}" onclick="deleteCollectionCategory(this.getAttribute('data-id'))" class="btn-danger-outline" title="Delete Collection Category">
-                  <i data-lucide="trash-2" style="width:12px; height:12px;"></i> Delete
-                </button>
-              </td>
-            </tr>
-          `;
-        }).join('');
-      }
-      renderIcons();
-    }
-
-    function handleCreateCollection(e) {
-      e.preventDefault();
-      const rawId = document.getElementById('newCollId').value.trim().replace(/\s+/g, '-');
-      const rawLabel = document.getElementById('newCollLabel').value.trim();
-      const rawRange = document.getElementById('newCollRange').value.trim();
-
-      if (!rawId) {
-        showCatFeedback('collFeedback', 'Please enter a valid Prefix / ID.', 'error');
-        return;
-      }
-      if (rawId.toUpperCase() === 'ALL') {
-        showCatFeedback('collFeedback', '"ALL" is reserved for the master index.', 'error');
-        return;
-      }
-      if (adminCollections.some(c => c.id.toLowerCase() === rawId.toLowerCase())) {
-        showCatFeedback('collFeedback', `Collection "${rawId}" already exists.`, 'error');
-        return;
-      }
-
-      const newColl = {
-        id: rawId,
-        label: rawLabel || `${rawId.toUpperCase()} COLLECTION`,
-        range: rawRange || `${rawId}-001 to ${rawId}-100`
-      };
-      adminCollections.push(newColl);
-      saveCollections();
-
-      let relinked = [];
-      let generated = [];
-      if (window.LibraryShared && typeof window.LibraryShared.relinkOrSeedCollection === 'function') {
-        const res = window.LibraryShared.relinkOrSeedCollection(newColl, adminCollections, adminRecords);
-        relinked = res.relinked;
-        generated = res.created;
-      } else {
-        generated = buildCollectionSeedRecords(newColl, adminRecords);
-      }
-      if (generated.length > 0) {
-        adminRecords.push(...generated);
-      }
-      if (relinked.length > 0 || generated.length > 0) {
-        saveAdminRecords();
-      }
-      markCollectionSeeded(newColl.id, true);
-
-      document.getElementById('newCollId').value = '';
-      document.getElementById('newCollLabel').value = '';
-      document.getElementById('newCollRange').value = '';
-
-      const totalCount = adminRecords.filter(r => r.prefix === newColl.id).length;
-      refreshAllAdminViews();
-      showCatFeedback('collFeedback', `Collection "${newColl.label}" (${newColl.id}) created with ${totalCount.toLocaleString()} cards.`, 'success');
-
-      if (window.LibraryShared) {
-        window.LibraryShared.createCollection(newColl, relinked.concat(generated));
-      }
-    }
-
-    let pendingDeleteCollId = null;
-
-    function closeDeleteCollModal() {
-      const backdrop = document.getElementById('deleteCollModalBackdrop');
-      if (backdrop) backdrop.classList.remove('open');
-      pendingDeleteCollId = null;
-    }
-
-    function deleteCollectionCategory(id) {
-      const target = adminCollections.find(c => c.id === id);
-      if (!target) return;
-
-      const affected = adminRecords.filter(r => r.prefix === id).length;
-      const backdrop = document.getElementById('deleteCollModalBackdrop');
-      if (!backdrop) {
-        if (affected === 0) {
-          if (confirm(`Delete empty collection "${target.label}" (${target.id})?`)) {
-            executeDeleteCollection(id, 'delete_records');
-          }
-          return;
-        }
-        const removeAll = confirm(`WARNING: Deleting collection "${target.label}" (${target.id}) affects ${affected.toLocaleString()} record(s).\n\nClick OK to DELETE ALL ${affected.toLocaleString()} records, or Cancel to choose shifting to Miscellaneous instead.`);
-        if (removeAll) {
-          executeDeleteCollection(id, 'delete_records');
-        } else if (confirm(`Shift ${affected.toLocaleString()} record(s) from "${target.label}" to Miscellaneous instead?`)) {
-          executeDeleteCollection(id, 'shift_misc');
-        }
-        return;
-      }
-
-      pendingDeleteCollId = id;
-      const hasMisc = id !== 'MISC' && adminCollections.some(c => c.id === 'MISC');
-      const warnText = document.getElementById('deleteCollWarningText');
-      const warnAlert = document.getElementById('deleteCollWarningAlert');
-      const btnDeleteAll = document.getElementById('btnConfirmDeleteAllRecs');
-      const btnShift = document.getElementById('btnConfirmShiftMisc');
-
-      if (affected > 0) {
-        warnText.textContent = `Collection "${target.label}" (${target.id}) currently contains ${affected.toLocaleString()} compound record(s). Choose what should happen to these records:`;
-        warnAlert.style.display = 'block';
-        btnDeleteAll.textContent = `Delete Category & Remove All ${affected.toLocaleString()} Records`;
-        btnShift.style.display = 'inline-flex';
-        btnShift.textContent = hasMisc
-          ? 'Delete Category & Shift Records to Miscellaneous (MISC)'
-          : 'Delete Category & Shift Records to Unassigned (ALL only)';
-      } else {
-        warnText.textContent = `Are you sure you want to delete empty collection "${target.label}" (${target.id})?`;
-        warnAlert.style.display = 'none';
-        btnDeleteAll.textContent = 'Delete Collection Category';
-        btnShift.style.display = 'none';
-      }
-      backdrop.classList.add('open');
-      renderIcons();
-    }
-
-    function confirmDeleteCollectionAction(mode) {
-      const id = pendingDeleteCollId;
-      closeDeleteCollModal();
-      if (!id) return;
-      executeDeleteCollection(id, mode === 'shift_misc' ? 'shift_misc' : 'delete_records');
-    }
-
-    function executeDeleteCollection(id, mode) {
-      const target = adminCollections.find(c => c.id === id);
-      if (!target) return;
-
-      const affected = adminRecords.filter(r => r.prefix === id).length;
-      const hasMisc = id !== 'MISC' && adminCollections.some(c => c.id === 'MISC');
-      const fallbackPrefix = hasMisc ? 'MISC' : '';
-      const fallbackLabel = hasMisc ? 'MISCELLANEOUS (MISC)' : 'Unassigned';
-
-      adminCollections = adminCollections.filter(c => c.id !== id);
-      saveCollections();
-      markCollectionSeeded(id, false);
-
-      if (affected > 0) {
-        if (mode === 'shift_misc') {
-          adminRecords.forEach(r => {
-            if (r.prefix === id) r.prefix = fallbackPrefix;
-          });
-        } else {
-          adminRecords = adminRecords.filter(r => r.prefix !== id);
-        }
-        saveAdminRecords();
-      }
-
-      refreshAllAdminViews();
-      const summaryMsg = affected > 0
-        ? (mode === 'shift_misc'
-            ? `Deleted collection "${target.label}" and shifted ${affected.toLocaleString()} record(s) to ${fallbackLabel}.`
-            : `Deleted collection "${target.label}" and removed all ${affected.toLocaleString()} record(s).`)
-        : `Deleted empty collection "${target.label}".`;
-      showCatFeedback('collFeedback', summaryMsg, 'success');
-
-      if (window.LibraryShared) {
-        window.LibraryShared.deleteCollection(id, mode);
-      }
-    }
-
-    /* --- ADD / EDIT RECORD MODAL --- */
-    function populateRecordModalSelects(selectedPrefix) {
-      const prefixSel = document.getElementById('recModalPrefix');
-      const prefixOpts = adminCollections.map(c =>
-        `<option value="${escapeHtml(c.id)}">${escapeHtml(c.label)} (${escapeHtml(c.id)})</option>`
-      );
-      prefixOpts.push('<option value="">Unassigned (ALL RECORDS only)</option>');
-      prefixSel.innerHTML = prefixOpts.join('');
-      if (selectedPrefix && Array.from(prefixSel.options).some(o => o.value === selectedPrefix)) {
-        prefixSel.value = selectedPrefix;
-      } else if (selectedPrefix === '') {
-        prefixSel.value = '';
-      } else if (adminCollections.length > 0) {
-        prefixSel.value = adminCollections[0].id;
-      }
-    }
-
-    function ensureModalCategoryAutocomplete() {
-      if (window.LibraryShared) {
-        window.LibraryShared.attachCategoryAutocomplete({
-          inputEl: document.getElementById('recModalCategory'),
-          listEl: document.getElementById('recModalCategoryAcList'),
-          getRecords: () => adminRecords
-        });
-      }
-    }
-
-    function showNewRecordModal() {
-      editingRecordId = null;
-      document.getElementById('recordModalTitle').innerText = 'Add Compound Record';
-      const defaultPrefix = adminCollections[0]?.id || '';
-      populateRecordModalSelects(defaultPrefix);
-      document.getElementById('recModalCode').value = '';
-      document.getElementById('recModalName').value = '';
-      document.getElementById('recModalCategory').value = '';
-      const linkEl = document.getElementById('recModalProductLink');
-      if (linkEl) linkEl.value = '';
-      updateAdminModalLinkPreview('');
-      document.getElementById('recModalDesc').value = '';
-      ensureModalCategoryAutocomplete();
-      document.getElementById('recordModalBackdrop').classList.add('open');
-      renderIcons();
-    }
-
-    function promptEditRecord(id) {
-      const rec = adminRecords.find(r => r.id === id);
-      if (!rec) return;
-      editingRecordId = id;
-      document.getElementById('recordModalTitle').innerText = `Edit Record (${rec.code || rec.callNumber})`;
-      populateRecordModalSelects(rec.prefix || '');
-      document.getElementById('recModalCode').value = rec.code || rec.callNumber || '';
-      document.getElementById('recModalName').value = rec.name || '';
-      document.getElementById('recModalCategory').value = rec.category || '';
-      const linkVal = rec.productLink || '';
-      const linkEl = document.getElementById('recModalProductLink');
-      if (linkEl) linkEl.value = linkVal;
-      updateAdminModalLinkPreview(linkVal);
-      document.getElementById('recModalDesc').value = rec.description || '';
-      ensureModalCategoryAutocomplete();
-      document.getElementById('recordModalBackdrop').classList.add('open');
-      renderIcons();
-    }
-
-    function closeRecordModal() {
-      document.getElementById('recordModalBackdrop').classList.remove('open');
-      editingRecordId = null;
-    }
-
-    function saveRecordFromModal(e) {
-      e.preventDefault();
-      const prefix = document.getElementById('recModalPrefix').value;
-      const code = document.getElementById('recModalCode').value.trim();
-      const name = document.getElementById('recModalName').value.trim();
-      const category = document.getElementById('recModalCategory').value.trim();
-      const productLink = (document.getElementById('recModalProductLink')?.value || '').trim();
-      const description = document.getElementById('recModalDesc').value.trim();
-
-      if (!code) return;
-      const numMatch = code.match(/(\d+)\s*$/);
-      const parsedNum = numMatch ? parseInt(numMatch[1], 10) : 9999;
-
-      let syncedRecord = null;
-      const isEdit = Boolean(editingRecordId);
-
-      if (editingRecordId) {
-        const rec = adminRecords.find(r => r.id === editingRecordId);
-        if (rec) {
-          rec.prefix = prefix;
-          rec.code = code;
-          rec.callNumber = code;
-          rec.name = name;
-          rec.category = category;
-          rec.productLink = productLink;
-          rec.description = description;
-          rec.num = Number.isFinite(parsedNum) ? parsedNum : (rec.num || 9999);
-          syncedRecord = rec;
-        }
-      } else {
-        const newRec = {
-          id: `custom_${Date.now()}`,
-          callNumber: code,
-          code: code,
-          name: name,
-          category: category,
-          productLink: productLink,
-          description: description,
-          prefix: prefix,
-          num: parsedNum,
-        };
-        adminRecords.unshift(newRec);
-        syncedRecord = newRec;
-      }
-
-      saveAdminRecords();
-      closeRecordModal();
-      refreshAllAdminViews();
-
-      if (window.LibraryShared && syncedRecord) {
-        if (isEdit) {
-          window.LibraryShared.updateRecord(syncedRecord.id, window.LibraryShared.compactRecord(syncedRecord));
-        } else {
-          window.LibraryShared.createRecord(syncedRecord);
-        }
-      }
-    }
-
-    function deleteAdminRecord(id, code) {
-      if (confirm(`Are you sure you want to delete ${code}?`)) {
-        adminRecords = adminRecords.filter(r => r.id !== id);
-        saveAdminRecords();
-        refreshAllAdminViews();
-        if (window.LibraryShared) {
-          window.LibraryShared.deleteRecord(id);
-        }
-      }
-    }
-
-    function saveAdminRecords() {
-      try {
-        const serialized = JSON.stringify(adminRecords);
-        localStorage.setItem('chemical_archive_custom_v1', serialized);
-        localStorage.setItem('chemical_archive_records_v1', serialized);
-      } catch(e) {}
-    }
-
-    function exportArchiveJSON() {
-      const payload = {
-        version: 2,
-        exportedAt: new Date().toISOString(),
-        collections: adminCollections,
-        records: adminRecords
-      };
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `chemical_archive_backup_${new Date().toISOString().slice(0,10)}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    function importArchiveJSON(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        try {
-          const imported = JSON.parse(evt.target.result);
-          if (Array.isArray(imported)) {
-            adminRecords = sanitizeRecords(imported);
-            saveAdminRecords();
-            refreshAllAdminViews();
-            if (window.LibraryShared) {
-              window.LibraryShared.restoreState(adminCollections, adminRecords);
-            }
-            alert(`Successfully restored ${imported.length} records from backup!`);
-          } else if (imported && Array.isArray(imported.records)) {
-            adminRecords = sanitizeRecords(imported.records);
-            saveAdminRecords();
-            if (Array.isArray(imported.collections)) {
-              adminCollections = imported.collections;
-              saveCollections();
-            }
-            refreshAllAdminViews();
-            if (window.LibraryShared) {
-              window.LibraryShared.restoreState(adminCollections, adminRecords);
-            }
-            alert(`Successfully restored ${adminRecords.length} records and categories from backup!`);
-          } else {
-            alert('Unrecognized backup JSON format.');
-          }
-        } catch(err) {
-          alert('Invalid JSON backup file.');
-        }
-      };
-      reader.readAsText(file);
-    }
-
-    function factoryResetArchive() {
-      if (confirm('Are you sure you want to reset all records and categories to default NIST factory state? This will clear custom edits.')) {
-        localStorage.removeItem('chemical_archive_custom_v1');
-        localStorage.removeItem('chemical_archive_records_v1');
-        localStorage.removeItem(COLLECTIONS_STORAGE_KEY);
-        localStorage.removeItem(SEEDED_COLLS_STORAGE_KEY);
-        adminRecords = sanitizeRecords(window.RAW_SEED_DATA || []);
-        adminCollections = DEFAULT_COLLECTIONS.map(c => ({ ...c }));
-        saveCollections();
-        saveAdminRecords();
-        refreshAllAdminViews();
-        if (window.LibraryShared) {
-          window.LibraryShared.restoreState(adminCollections, adminRecords);
-        }
-        alert('Archive and categories successfully reset to factory seed database.');
-      }
-    }
-
-    function clearAllLockouts() {
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (k && k.startsWith('chem_lock_')) {
-          localStorage.removeItem(k);
-        }
-      }
-      alert('All temporary security lockouts cleared.');
-    }
-
-    window.onload = () => {
-      checkAdminAuth();
-      ensureModalCategoryAutocomplete();
-      if (window.LibraryShared && typeof window.LibraryShared.initInactivityAutoLogout === 'function') {
-        window.LibraryShared.initInactivityAutoLogout({
-          timeoutMs: 60000,
-          isLoggedIn: () => Boolean(sessionStorage.getItem('chem_auth_token')),
-          onTimeout: () => logoutAdmin('inactivity')
-        });
-      }
-      window.addEventListener('focus', () => {
-        if (sessionStorage.getItem('chem_auth_token')) syncAdminFromServer();
-      });
-      document.addEventListener('visibilitychange', () => {
-        if (!document.hidden && sessionStorage.getItem('chem_auth_token')) syncAdminFromServer();
-      });
-      setInterval(() => {
-        if (typeof document !== 'undefined' && !document.hidden && sessionStorage.getItem('chem_auth_token')) {
-          syncAdminFromServer();
-          const tabAct = document.getElementById('tabActivity');
-          if (tabAct && tabAct.style.display !== 'none') loadAdminActivityLogs();
-        }
-      }, 15000);
-    };
-  </script>
 </body>
 </html>

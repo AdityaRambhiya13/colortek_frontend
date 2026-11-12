@@ -7,10 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800;900&family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="./runtime_config.js"></script>
-  <script src="./library_shared.js"></script>
-
+  <script src="./library_shared.js" defer></script>
+  <script src="./library_viewer.js" defer></script>
   <style>
     
     
@@ -287,1037 +285,153 @@
   </style>
 </head>
 <body>
-
-  <!-- Top Header -->
-  <header class="archive-header">
+  <header class="archive-header glass-panel">
     <div class="header-left">
-      <div class="brand-group" onclick="selectCollection('ALL')">
-        <div class="brand-mark"><span>CL</span></div>
+      <div class="brand-group" style="cursor:pointer;">
+        <div class="brand-mark"><i data-lucide="archive"></i></div>
         <div class="brand-text">
-          <h1>Chemical Library</h1>
-          
+          <h1>COLORTEK CHEMICAL LIBRARY</h1>
+          <span id="headerSpecimenCount">Encrypted Archive Index</span>
         </div>
       </div>
     </div>
 
-    <!-- Search -->
     <div class="header-center">
       <div class="search-container">
         <i data-lucide="search" class="search-icon"></i>
-        <input type="text" id="searchInput" class="search-input" placeholder="Search exact code (e.g. D-250, Tc-1000), name, category..." oninput="handleSearchInput(this.value)" onkeydown="if(event.key==='Escape'){clearSearch();}" autocomplete="off" />
-        <button type="button" id="searchClearBtn" class="search-clear-btn" onclick="clearSearch()" aria-label="Clear search"><i data-lucide="x"></i></button>
+        <input type="text" id="searchInput" class="search-input glass-input" placeholder="Search exact code (e.g. D-250, Tc-1000), name, category..." />
+        <button type="button" id="searchClearBtn" class="search-clear-btn" aria-label="Clear search"><i data-lucide="x"></i></button>
       </div>
     </div>
 
-    <div class="header-right" style="display:flex; align-items:center; gap:14px;">
-      <span id="syncStatusBadge" class="sync-status-pill" title="Cloud Sync Status">Syncing...</span>
-      <span id="headerSpecimenCount" style="white-space: nowrap; font-size: 13px;">3,381 SPECIMENS</span>
-      <a href="./admin/" style="background:var(--peacock-blue); color:#fff; border:none; padding:8px 16px; font-family:var(--font-sans); font-size:12px; font-weight:800; letter-spacing:1px; cursor:pointer; display:flex; align-items:center; gap:6px; border-radius:20px; text-decoration:none; box-shadow: 0 4px 12px rgba(0, 95, 115, 0.2); transition: all 0.3s; height: fit-content; line-height: 1;">
-        <i data-lucide="settings" style="width:14px; height:14px;"></i> ADMIN PANEL
+    <div class="header-right" style="display:flex; align-items:center; gap:10px;">
+      <span id="syncStatusBadge" style="font-family:var(--font-mono); font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; padding:5px 10px; border:1px solid #86efac; border-radius:999px; color:#2d4a22;">LOCKED</span>
+      <span id="sessionUserBadge" style="display:none; font-family:var(--font-mono); font-size:11px; padding:5px 10px; background:rgba(255,255,255,0.6); border-radius:6px;"></span>
+      <a id="adminPortalLink" href="./admin.html" style="display:none; align-items:center; gap:6px; background:rgba(255,255,255,0.75); border:1px solid #fff; padding:8px 14px; font-family:var(--font-mono); font-size:11px; font-weight:700; text-transform:uppercase; color:var(--ink-primary); text-decoration:none; border-radius:6px;">
+        <i data-lucide="settings"></i> Admin
       </a>
-      <button onclick="logoutLibrary()" style="background:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,1); padding:8px 16px; font-family:var(--font-sans); font-size:12px; font-weight:800; color:var(--peacock-blue); cursor:pointer; display:flex; align-items:center; gap:6px; border-radius:20px; transition: all 0.3s; height: fit-content; line-height: 1;">
-        <i data-lucide="log-out" style="width:13px; height:13px;"></i> LOGOUT
+      <button type="button" id="logoutBtn" style="display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,0.6); border:1px solid #fff; padding:8px 14px; font-family:var(--font-mono); font-size:11px; font-weight:700; text-transform:uppercase; cursor:pointer; border-radius:6px;">
+        <i data-lucide="log-out"></i> Logout
       </button>
     </div>
   </header>
 
-  <!-- Body -->
-  
-  <!-- Chemical Library Auth Gate -->
-  <div id="authGateModal" class="auth-gate-backdrop" style="display:none;">
+  <div id="authGateModal" class="auth-gate-backdrop" style="display:flex;">
     <div class="auth-gate-card">
-      <div style="text-align:center; margin-bottom:28px;">
-        <div class="auth-gate-badge">
-          <i data-lucide="shield-check" style="width:28px; height:28px;"></i>
-        </div>
-        <h1 style="font-family:var(--font-display); font-size:20px; font-weight:800; letter-spacing:2px; color:var(--peacock-blue); text-transform:uppercase; margin:0;">
-          Chemical Library Gate
-        </h1>
+      <div class="auth-gate-badge"><i data-lucide="shield-check"></i> Authenticated Two-Factor Archive</div>
+      <h2 style="font-family:var(--font-display); font-size:22px; margin:12px 0 6px;">Chemical Library Sign In</h2>
+      <p style="font-size:14px; color:var(--ink-secondary); margin-bottom:18px;">Verify with your password and second-factor OTP (Authenticator App or SMS) to unlock the archive.</p>
 
+      <div id="authErrorMsg" style="display:none; align-items:center; gap:8px; padding:10px 12px; background:#fef2f2; border:1px solid #fecaca; color:#991b1b; border-radius:8px; font-size:13px; margin-bottom:14px;">
+        <i data-lucide="alert-circle"></i>
+        <span id="authErrorText">Invalid credentials</span>
       </div>
 
-      <div id="authErrorMsg" style="display:none; background:#fee2e2; border:1px solid #f87171; color:#991b1b; padding:10px 14px; border-radius:2px; font-size:12px; margin-bottom:20px; align-items:center; gap:8px;">
-        <i data-lucide="alert-circle" style="width:16px; height:16px;"></i>
-        <span id="authErrorText"></span>
-      </div>
-
-      <!-- Credentials Form -->
-      <form id="credentialsForm" onsubmit="handleCredentialsSubmit(event)" style="display:flex; flex-direction:column; gap:18px;">
+      <form id="credentialsForm" style="display:flex; flex-direction:column; gap:16px;">
         <div>
-          <label style="display:block; font-family:var(--font-sans); font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:var(--olive-muted); margin-bottom:6px;">
-            Library Access ID / Username
-          </label>
-          <input type="text" id="authUsername" class="auth-input-field" placeholder="e.g. Adi" required />
+          <label for="authUsername" style="display:block; font-family:var(--font-mono); font-size:11px; font-weight:700; text-transform:uppercase; margin-bottom:6px;">Username</label>
+          <input type="text" id="authUsername" class="auth-input-field" autocomplete="username" required />
         </div>
-
         <div>
-          <label style="display:block; font-family:var(--font-sans); font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:var(--olive-muted); margin-bottom:6px;">
-            Password
-          </label>
+          <label for="authPassword" style="display:block; font-family:var(--font-mono); font-size:11px; font-weight:700; text-transform:uppercase; margin-bottom:6px;">Password</label>
           <div style="position:relative;">
-            <input type="password" id="authPassword" class="auth-input-field" placeholder="••••••••••••" style="padding-right:40px;" required />
-            <button type="button" onclick="togglePasswordVisibility()" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--olive-muted); cursor:pointer; display:flex;">
-              <i data-lucide="eye" id="pwdEyeIcon" style="width:16px; height:16px;"></i>
+            <input type="password" id="authPassword" class="auth-input-field" autocomplete="current-password" required style="padding-right:40px;" />
+            <button type="button" id="togglePwdVisBtn" aria-label="Toggle password visibility" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--ink-secondary); display:flex;">
+              <i id="pwdEyeIcon" data-lucide="eye"></i>
             </button>
           </div>
         </div>
+        <button type="submit" id="step1SubmitBtn" class="auth-primary-btn">Continue to 2FA Verification</button>
+      </form>
 
-        <button type="submit" class="auth-primary-btn" style="margin-top:8px;">
-          UNLOCK ARCHIVE
-        </button>
+      <form id="otpStepForm" style="display:none; flex-direction:column; gap:16px;">
+        <div id="otpPromptText" style="font-size:13px; padding:10px 12px; background:rgba(87,74,36,0.08); border-radius:8px; color:var(--ink-primary);"></div>
+        <div>
+          <label for="authOtpCode" style="display:block; font-family:var(--font-mono); font-size:11px; font-weight:700; text-transform:uppercase; margin-bottom:6px;">6-Digit Verification Code</label>
+          <input type="text" id="authOtpCode" class="auth-input-field" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="000000" required />
+        </div>
+        <button type="submit" id="verifyOtpBtn" class="auth-primary-btn">Verify &amp; Unlock Archive</button>
+        <div style="display:flex; justify-content:space-between; gap:10px;">
+          <button type="button" id="resendOtpBtn" style="display:none; background:none; border:1px solid var(--border-subtle); padding:8px 12px; border-radius:6px; font-family:var(--font-mono); font-size:11px; cursor:pointer;">Resend SMS OTP</button>
+          <button type="button" id="backToStep1Btn" style="background:none; border:none; color:var(--ink-secondary); font-family:var(--font-mono); font-size:11px; cursor:pointer; text-decoration:underline;">Back</button>
+        </div>
       </form>
     </div>
   </div>
 
   <div class="app-container">
-
-    <!-- Left Sidebar: Complete Collection Index -->
-    <aside class="archive-sidebar">
-      <div class="sidebar-heading">
-        <span>Collection Index</span>
-        <i data-lucide="archive" style="width:13px; height:13px;"></i>
-      </div>
-      <ul class="collection-nav" id="collectionNavList">
-<li>
-      <button class="collection-btn active" onclick="selectCollection('ALL')">
-        <div class="coll-info">
-          <span class="coll-title">ALL RECORDS</span>
-          <span class="coll-range">Entire Archive Index</span>
-        </div>
-        <span class="coll-count">3381</span>
-      </button>
-    </li>
-<li>
-      <button class="collection-btn " onclick="selectCollection('D')">
-        <div class="coll-info">
-          <span class="coll-title">D COLLECTION</span>
-          <span class="coll-range">D-001 to D-500</span>
-        </div>
-        <span class="coll-count">500</span>
-      </button>
-    </li>
-<li>
-      <button class="collection-btn " onclick="selectCollection('R')">
-        <div class="coll-info">
-          <span class="coll-title">R COLLECTION</span>
-          <span class="coll-range">R-001 to R-500</span>
-        </div>
-        <span class="coll-count">500</span>
-      </button>
-    </li>
-<li>
-      <button class="collection-btn " onclick="selectCollection('Tc')">
-        <div class="coll-info">
-          <span class="coll-title">Tc COLLECTION</span>
-          <span class="coll-range">Tc-001 to Tc-1000</span>
-        </div>
-        <span class="coll-count">1000</span>
-      </button>
-    </li>
-<li>
-      <button class="collection-btn " onclick="selectCollection('W')">
-        <div class="coll-info">
-          <span class="coll-title">W COLLECTION</span>
-          <span class="coll-range">W-001 to W-100</span>
-        </div>
-        <span class="coll-count">100</span>
-      </button>
-    </li>
-<li>
-      <button class="collection-btn " onclick="selectCollection('B')">
-        <div class="coll-info">
-          <span class="coll-title">B COLLECTION</span>
-          <span class="coll-range">B-001 to B-100</span>
-        </div>
-        <span class="coll-count">100</span>
-      </button>
-    </li>
-<li>
-      <button class="collection-btn " onclick="selectCollection('G')">
-        <div class="coll-info">
-          <span class="coll-title">G COLLECTION</span>
-          <span class="coll-range">G-100 to G-200</span>
-        </div>
-        <span class="coll-count">101</span>
-      </button>
-    </li>
-<li>
-      <button class="collection-btn " onclick="selectCollection('Y')">
-        <div class="coll-info">
-          <span class="coll-title">Y COLLECTION</span>
-          <span class="coll-range">Y-001 to Y-1000</span>
-        </div>
-        <span class="coll-count">1000</span>
-      </button>
-    </li>
-<li>
-      <button class="collection-btn " onclick="selectCollection('MISC')">
-        <div class="coll-info">
-          <span class="coll-title">MISCELLANEOUS</span>
-          <span class="coll-range">MISC-001 to MISC-080</span>
-        </div>
-        <span class="coll-count">80</span>
-      </button>
-    </li>
-      </ul>
+    <aside class="archive-sidebar glass-panel">
+      <div class="sidebar-heading">INDEX COLLECTIONS</div>
+      <ul class="collection-nav" id="collectionNavList"></ul>
     </aside>
 
-    <!-- Main Public Library View -->
     <main class="archive-main">
       <div class="catalog-title-strip">
         <div class="catalog-title-left">
-          <h2 id="currentCollectionTitle">ALL RECORDS</h2>
-          <div class="catalog-sub-count">
-            <span id="recordCountLabel">LOADING CATALOGED RECORDS...</span>
-            
-          </div>
+          <h2 id="currentCollectionTitle">All Chemical Specimens</h2>
+          <span class="catalog-sub-count" id="recordCountLabel">0 specimens shown</span>
         </div>
-
         <div style="display:flex; align-items:center; gap:10px;">
-          <span style="font-family:var(--font-sans); font-size:10px; font-weight:700; text-transform:uppercase; color:var(--olive-muted);">Sort:</span>
-          <select id="sortSelect" style="background:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.8); padding:10px 16px; font-family:var(--font-sans); font-size:14px; font-weight:600; color:var(--peacock-blue); border-radius:20px; outline:none;" onchange="handleSortChange(this.value)">
-            <option value="code">Product Code (Ascending)</option>
-            <option value="code_desc">Product Code (Descending)</option>
-            <option value="name">Product Name (A-Z)</option>
-            <option value="category">Category</option>
+          <div id="activeFilterStrip" class="active-filter-strip" style="display:none;">
+            <span class="filter-chip"><span id="searchFilterText"></span> <button type="button" id="clearSearchPillBtn" style="background:none;border:none;cursor:pointer;display:inline-flex;"><i data-lucide="x"></i></button></span>
+          </div>
+          <select id="sortSelect" style="background:rgba(255,255,255,0.65); border:1px solid rgba(255,255,255,0.9); padding:10px 16px; font-family:var(--font-mono); font-size:12px; border-radius:8px;">
+            <option value="code_asc">Sort: Call Number (A–Z)</option>
+            <option value="name_asc">Sort: Name (A–Z)</option>
+            <option value="category_asc">Sort: Category</option>
           </select>
         </div>
       </div>
 
-      <!-- Filing Index Tabs -->
-      <div class="library-index-tabs" id="libraryIndexTabs">
-<button class="index-tab-btn active" onclick="selectCollection('ALL')">[ ALL ]</button>
-<button class="index-tab-btn " onclick="selectCollection('D')">[ D ]</button>
-<button class="index-tab-btn " onclick="selectCollection('R')">[ R ]</button>
-<button class="index-tab-btn " onclick="selectCollection('Tc')">[ Tc ]</button>
-<button class="index-tab-btn " onclick="selectCollection('W')">[ W ]</button>
-<button class="index-tab-btn " onclick="selectCollection('B')">[ B ]</button>
-<button class="index-tab-btn " onclick="selectCollection('G')">[ G ]</button>
-<button class="index-tab-btn " onclick="selectCollection('Y')">[ Y ]</button>
-<button class="index-tab-btn " onclick="selectCollection('MISC')">[ MISC ]</button>
-      </div>
-
-      <!-- Active Filter Strip -->
-      <div class="active-filter-strip" id="activeFilterStrip" style="display:none;">
-        <span class="filter-chip">
-          <span id="searchFilterText"></span>
-          <button onclick="clearSearch()"><i data-lucide="x" style="width:12px;height:12px;"></i></button>
-        </span>
-      </div>
-
-      <!-- Card Grid -->
+      <div class="library-index-tabs" id="libraryIndexTabs"></div>
       <div class="archive-grid" id="cardGrid"></div>
 
-      <!-- Virtual Pagination Controls -->
-      <div class="pagination-bar" id="paginationBar">
-        <div class="pagination-info" id="paginationInfo"></div>
+      <div class="pagination-bar" id="paginationBar" style="display:none;">
+        <span class="pagination-info" id="paginationInfo"></span>
         <div class="pagination-buttons" id="paginationButtons"></div>
       </div>
     </main>
-
   </div>
 
-  <!-- Editable Tab Panel Overlay -->
-  <div class="edit-tab-overlay" id="editTabOverlay" onclick="closeEditTab()">
-    <div class="edit-tab-panel" onclick="event.stopPropagation()">
+  <div class="edit-tab-overlay" id="editTabOverlay">
+    <div class="edit-tab-panel" id="editTabPanel">
       <div class="edit-tab-header">
         <div style="display:flex; align-items:center; gap:12px;">
-          <span id="editTabCodeBadge" style="font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--ink-primary); border-bottom:2px solid var(--ink-primary);"></span>
-          <span class="save-pill" id="savePill"><i data-lucide="check-circle-2" style="width:12px; height:12px;"></i> <span id="saveStatusText">Auto-Saved</span></span>
+          <span id="editTabCodeBadge" class="card-call-number" style="font-size:15px;">SPECIMEN</span>
+          <span class="save-pill"><span class="dot"></span> <span id="saveStatusText">Synced</span></span>
         </div>
-        <button style="background:none; border:none; color:var(--ink-primary); cursor:pointer; display:flex;" onclick="closeEditTab()"><i data-lucide="x" style="width:20px; height:20px;"></i></button>
+        <button type="button" id="closeEditTabBtn" style="background:none; border:none; color:var(--ink-primary); cursor:pointer; display:flex;"><i data-lucide="x"></i></button>
       </div>
-
       <div class="edit-tab-body">
-        <div>
-          <h2 style="font-family:var(--font-display); font-size:20px; font-weight:700; color:var(--ink-primary); letter-spacing:1px;">RECORD SPECIFICATION</h2>
-        </div>
-
         <div class="edit-field-group">
-          <label class="edit-field-label">Product Code</label>
-          <input type="text" id="editCodeInput" class="edit-input" style="font-family:var(--font-mono); font-weight:700;" oninput="handleFieldChange('code', this.value)" />
+          <label for="editCodeInput" class="edit-field-label">Call Number / Code</label>
+          <input type="text" id="editCodeInput" class="edit-input" style="font-family:var(--font-mono); font-weight:700;" />
         </div>
-
         <div class="edit-field-group">
-          <label class="edit-field-label">Product Name</label>
-          <input type="text" id="editNameInput" class="edit-input" style="font-family:var(--font-serif); font-size:16px; font-weight:600;" oninput="handleFieldChange('name', this.value)" />
+          <label for="editNameInput" class="edit-field-label">Chemical / Product Name</label>
+          <input type="text" id="editNameInput" class="edit-input" style="font-family:var(--font-serif); font-size:16px; font-weight:600;" />
         </div>
-
+        <div class="edit-field-group" style="position:relative;">
+          <label for="editCategoryInput" class="edit-field-label">Category</label>
+          <input type="text" id="editCategoryInput" class="edit-input" style="width:100%;" placeholder="Type e.g. A for Additives, or enter any name" />
+          <div id="editCategoryAcList" class="cat-autocomplete-list"></div>
+        </div>
         <div class="edit-field-group">
-          <label class="edit-field-label">Product Category</label>
-          <div class="cat-autocomplete-wrap">
-            <input type="text" id="editCategoryInput" class="edit-input" style="width:100%;" placeholder="Type e.g. A for Additives, or enter any name" autocomplete="off" oninput="handleFieldChange('category', this.value)" />
-            <div id="editCategoryAcList" class="cat-autocomplete-list"></div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <label for="editProductLinkInput" class="edit-field-label">Technical / SDS Product Link</label>
+            <a id="editProductLinkAnchor" target="_blank" rel="noopener noreferrer" style="display:none; font-family:var(--font-mono); font-size:11px; color:#1b4332;">Open Link</a>
           </div>
+          <input type="url" id="editProductLinkInput" class="edit-input" style="font-family:var(--font-mono); font-size:13px;" placeholder="https://example.com/product" />
         </div>
-
         <div class="edit-field-group">
-          <label class="edit-field-label" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-            <span>Product Link</span>
-            <a id="editProductLinkAnchor" href="#" target="_blank" rel="noopener noreferrer" style="display:none; align-items:center; gap:4px; font-size:10px; font-weight:700; letter-spacing:0.5px; color:var(--ink-primary); text-decoration:none; border:1px solid var(--border-subtle); padding:2px 8px; border-radius:4px; background:var(--paper-card);">OPEN LINK ↗</a>
-          </label>
-          <input type="url" id="editProductLinkInput" class="edit-input" style="font-family:var(--font-mono); font-size:13px;" placeholder="https://example.com/product" oninput="handleFieldChange('productLink', this.value)" />
+          <label for="editDescInput" class="edit-field-label">Description &amp; Technical Notes</label>
+          <textarea id="editDescInput" class="edit-input" rows="5" style="font-family:var(--font-serif); font-size:14px; line-height:1.5; resize:vertical;"></textarea>
         </div>
-
-        <div class="edit-field-group">
-          <label class="edit-field-label">Product Description</label>
-          <textarea id="editDescInput" class="edit-input" rows="5" style="font-family:var(--font-serif); font-size:14px; line-height:1.5; resize:vertical;" oninput="handleFieldChange('description', this.value)"></textarea>
-        </div>
-
-        <div style="margin-top:auto; padding-top:20px; border-top:1px solid var(--border-subtle); display:flex; justify-content:flex-end;">
-          <button onclick="closeEditTab()" style="background:var(--ink-primary); color:var(--paper-primary); border:none; padding:10px 24px; font-family:var(--font-sans); font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; cursor:pointer; border-radius:2px;">DONE / CLOSE</button>
+        <div style="display:flex; justify-content:flex-end; margin-top:12px;">
+          <button type="button" id="doneEditTabBtn" style="background:var(--ink-primary); color:var(--paper-primary); border:none; padding:10px 24px; font-family:var(--font-mono); font-size:12px; font-weight:700; border-radius:6px; cursor:pointer;">DONE</button>
         </div>
       </div>
     </div>
   </div>
-
-  <script src="./chemical_data.js"></script>
-
-  <script>
-    const COLLECTIONS_STORAGE_KEY = 'chemical_archive_collections_v1';
-    const SEEDED_COLLS_STORAGE_KEY = 'chemical_archive_seeded_colls_v1';
-
-    const DEFAULT_COLLECTIONS = [
-      { id: 'D', label: 'D COLLECTION', range: 'D-001 to D-500' },
-      { id: 'R', label: 'R COLLECTION', range: 'R-001 to R-500' },
-      { id: 'Tc', label: 'Tc COLLECTION', range: 'Tc-001 to Tc-1000' },
-      { id: 'W', label: 'W COLLECTION', range: 'W-001 to W-100' },
-      { id: 'B', label: 'B COLLECTION', range: 'B-001 to B-100' },
-      { id: 'G', label: 'G COLLECTION', range: 'G-100 to G-200' },
-      { id: 'Y', label: 'Y COLLECTION', range: 'Y-001 to Y-1000' },
-      { id: 'MISC', label: 'MISCELLANEOUS', range: 'MISC-001 to MISC-080' }
-    ];
-
-    function escapeHtml(str) {
-      return String(str == null ? '' : str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-    }
-
-    function renderIcons() {
-      if (window.lucide && typeof window.lucide.createIcons === 'function') {
-        window.lucide.createIcons();
-      }
-    }
-
-    function sanitizeRecords(records) {
-      if (!Array.isArray(records)) return [];
-      let changed = false;
-      const cleaned = records.map(r => {
-        const isLegacyName = typeof r.name === 'string' && /\(Specimen #\d+\)$/.test(r.name.trim());
-        const isLegacyDesc = typeof r.description === 'string' && /^Archival (Chemical Record|Grade Standard)\b/i.test(r.description.trim());
-        if (isLegacyName && isLegacyDesc) {
-          changed = true;
-          return {
-            ...r,
-            name: '',
-            category: '',
-            description: '',
-            drawer: (typeof r.drawer === 'string' && /^[A-Za-z]+-DRAWER-\d+$/i.test(r.drawer.trim())) ? '' : (r.drawer || '')
-          };
-        }
-        return r;
-      });
-      if (changed) {
-        try {
-          localStorage.setItem('chemical_archive_custom_v1', JSON.stringify(cleaned));
-        } catch(e) {}
-      }
-      return cleaned;
-    }
-
-    function loadArchiveRecords() {
-      try {
-        const saved = localStorage.getItem('chemical_archive_custom_v1') || localStorage.getItem('chemical_archive_records_v1');
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) return sanitizeRecords(parsed);
-        }
-      } catch(e) {}
-      return sanitizeRecords(window.RAW_SEED_DATA || []);
-    }
-
-    function loadStoredCollections() {
-      try {
-        const saved = localStorage.getItem(COLLECTIONS_STORAGE_KEY);
-        if (saved !== null) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed)) return parsed;
-        }
-      } catch(e) {}
-      return DEFAULT_COLLECTIONS.map(c => ({ ...c }));
-    }
-
-    function saveArchiveRecords(records) {
-      try {
-        const serialized = JSON.stringify(records);
-        localStorage.setItem('chemical_archive_custom_v1', serialized);
-        localStorage.setItem('chemical_archive_records_v1', serialized);
-      } catch(e) {}
-    }
-
-    function parseCollectionRange(prefix, rangeText) {
-      if (window.LibraryShared && typeof window.LibraryShared.parseCollectionRange === 'function') {
-        return window.LibraryShared.parseCollectionRange(prefix, rangeText);
-      }
-      const clean = String(rangeText || '').trim();
-      const rangeMatch = clean.match(/^(?:[A-Za-z][A-Za-z0-9_-]*[\s-]+)?(\d+)\s*(?:to|–|—|-)\s*(?:[A-Za-z][A-Za-z0-9_-]*[\s-]+)?(\d+)$/i);
-      if (rangeMatch) {
-        let start = parseInt(rangeMatch[1], 10);
-        let end = parseInt(rangeMatch[2], 10);
-        if (end < start) [start, end] = [end, start];
-        const maxEnd = Math.min(end, start + 1999);
-        const padLen = Math.max(3, rangeMatch[1].length);
-        return { start, end: maxEnd, padLen };
-      }
-      const singleMatch = clean.match(/^(?:[A-Za-z][A-Za-z0-9_-]*[\s-]+)?(\d+)\s*\+?$/i);
-      if (singleMatch) {
-        const start = parseInt(singleMatch[1], 10);
-        const padLen = Math.max(3, singleMatch[1].length);
-        return { start, end: start + 99, padLen };
-      }
-      return { start: 1, end: 100, padLen: 3 };
-    }
-
-    function buildCollectionSeedRecords(coll, existingRecords) {
-      if (window.LibraryShared && typeof window.LibraryShared.relinkOrSeedCollection === 'function') {
-        const res = window.LibraryShared.relinkOrSeedCollection(coll, customCollections, existingRecords);
-        return res.created;
-      }
-      const { start, end, padLen } = parseCollectionRange(coll.id, coll.range);
-      const existingCodes = new Set(
-        (existingRecords || []).map(r => (r.code || r.callNumber || '').trim().toLowerCase())
-      );
-      const created = [];
-      const stamp = Date.now();
-      for (let i = start; i <= end; i++) {
-        const numStr = String(i).padStart(padLen, '0');
-        const code = `${coll.id}-${numStr}`;
-        if (!existingCodes.has(code.toLowerCase())) {
-          created.push({
-            id: `${coll.id.toLowerCase()}-${numStr}-${stamp}-${i}`,
-            prefix: coll.id,
-            num: numStr,
-            callNumber: code,
-            code: code,
-            name: '',
-            category: '',
-            productLink: '',
-            description: '',
-            drawer: ''
-          });
-        }
-      }
-      return created;
-    }
-
-    function ensureCollectionRecordsSeeded(collections, records) {
-      let seededSet = new Set();
-      try {
-        const raw = localStorage.getItem(SEEDED_COLLS_STORAGE_KEY);
-        if (raw) seededSet = new Set(JSON.parse(raw));
-      } catch(e) {}
-
-      let recordsChanged = false;
-      let seededChanged = false;
-      const nextRecords = Array.isArray(records) ? [...records] : [];
-
-      collections.forEach(c => {
-        const hasAny = nextRecords.some(r => r.prefix === c.id);
-        if (!hasAny && !seededSet.has(c.id)) {
-          const created = buildCollectionSeedRecords(c, nextRecords);
-          if (created.length > 0) {
-            nextRecords.push(...created);
-            recordsChanged = true;
-          }
-          seededSet.add(c.id);
-          seededChanged = true;
-        } else if (hasAny && !seededSet.has(c.id)) {
-          seededSet.add(c.id);
-          seededChanged = true;
-        }
-      });
-
-      if (recordsChanged) saveArchiveRecords(nextRecords);
-      if (seededChanged) {
-        try {
-          localStorage.setItem(SEEDED_COLLS_STORAGE_KEY, JSON.stringify(Array.from(seededSet)));
-        } catch(e) {}
-      }
-      return nextRecords;
-    }
-
-    let customCollections = loadStoredCollections();
-    let archiveRecords = ensureCollectionRecordsSeeded(customCollections, loadArchiveRecords());
-    let syncInFlight = null;
-    let pendingRecordPatch = null;
-    let pendingPatchTimer = null;
-
-    async function syncFromServer() {
-      if (!window.LibraryShared) return;
-      if (window.LibraryShared.hasPendingMutations && window.LibraryShared.hasPendingMutations()) return;
-      if (activeEditingRecordId || pendingRecordPatch) return;
-      if (syncInFlight) return syncInFlight;
-      syncInFlight = (async () => {
-        const state = await window.LibraryShared.fetchState();
-        if (!state) return;
-
-        if (!state.initialized) {
-          if (sessionStorage.getItem('chem_auth_token')) {
-            await window.LibraryShared.bootstrapState(customCollections, archiveRecords);
-          }
-          return;
-        }
-
-        if (activeEditingRecordId || pendingRecordPatch || (window.LibraryShared.hasPendingMutations && window.LibraryShared.hasPendingMutations())) return;
-
-        const serverColls = Array.isArray(state.collections) ? state.collections : [];
-        const serverRecs = Array.isArray(state.records) ? sanitizeRecords(state.records) : [];
-
-        customCollections = serverColls;
-        archiveRecords = serverRecs;
-        try {
-          localStorage.setItem(COLLECTIONS_STORAGE_KEY, JSON.stringify(customCollections));
-        } catch(e) {}
-        saveArchiveRecords(archiveRecords);
-
-        if (activeCollection !== 'ALL' && !customCollections.some(c => c.id === activeCollection)) {
-          activeCollection = 'ALL';
-        }
-        renderAll();
-      })().finally(() => { syncInFlight = null; });
-      return syncInFlight;
-    }
-
-    function getCollectionsWithCounts() {
-      const counts = {};
-      archiveRecords.forEach(r => {
-        const p = r.prefix || '';
-        counts[p] = (counts[p] || 0) + 1;
-      });
-      return [
-        { id: 'ALL', label: 'ALL RECORDS', range: 'Entire Archive Index', count: archiveRecords.length },
-        ...customCollections.map(c => ({
-          ...c,
-          count: counts[c.id] || 0
-        }))
-      ];
-    }
-
-    let activeCollection = 'ALL';
-    let searchQuery = '';
-    let sortCriterion = 'code';
-    const PAGE_SIZE = 36;
-    let currentPage = 1;
-    let activeEditingRecordId = null;
-
-    function init() {
-      const searchInput = document.getElementById('searchInput');
-      const searchClearBtn = document.getElementById('searchClearBtn');
-      if (searchInput) {
-        searchQuery = searchInput.value || '';
-        if (searchClearBtn) searchClearBtn.style.display = searchQuery ? 'flex' : 'none';
-      }
-      if (!archiveRecords || archiveRecords.length === 0) {
-        fetch('./chemical_archive_data.json')
-          .then(res => res.json())
-          .then(data => {
-            archiveRecords = ensureCollectionRecordsSeeded(customCollections, sanitizeRecords(data));
-            renderAll();
-            syncFromServer();
-          })
-          .catch(err => {
-            console.error('Fallback error:', err);
-            archiveRecords = ensureCollectionRecordsSeeded(customCollections, archiveRecords);
-            renderAll();
-            syncFromServer();
-          });
-      } else {
-        archiveRecords = ensureCollectionRecordsSeeded(customCollections, archiveRecords);
-        renderAll();
-        syncFromServer();
-      }
-      if (window.LibraryShared) {
-        window.LibraryShared.attachCategoryAutocomplete({
-          inputEl: document.getElementById('editCategoryInput'),
-          listEl: document.getElementById('editCategoryAcList'),
-          getRecords: () => archiveRecords,
-          onSelect: (val) => handleFieldChange('category', val)
-        });
-      }
-      window.addEventListener('pageshow', () => {
-        customCollections = loadStoredCollections();
-        archiveRecords = ensureCollectionRecordsSeeded(customCollections, loadArchiveRecords());
-        const si = document.getElementById('searchInput');
-        if (si) searchQuery = si.value || '';
-        renderAll();
-        syncFromServer();
-      });
-      window.addEventListener('focus', () => { syncFromServer(); });
-      document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) syncFromServer();
-      });
-      setInterval(() => {
-        if (typeof document !== 'undefined' && !document.hidden && !activeEditingRecordId) {
-          syncFromServer();
-        }
-      }, 15000);
-      window.addEventListener('storage', (e) => {
-        if (
-          e.key === COLLECTIONS_STORAGE_KEY ||
-          e.key === 'chemical_archive_custom_v1' ||
-          e.key === 'chemical_archive_records_v1'
-        ) {
-          customCollections = loadStoredCollections();
-          archiveRecords = ensureCollectionRecordsSeeded(customCollections, loadArchiveRecords());
-          if (activeCollection !== 'ALL' && !customCollections.some(c => c.id === activeCollection)) {
-            activeCollection = 'ALL';
-          }
-          renderAll();
-        }
-      });
-      renderIcons();
-    }
-
-    function renderAll() {
-      const specimenBadge = document.getElementById('headerSpecimenCount');
-      if (specimenBadge) {
-        specimenBadge.innerText = `${archiveRecords.length.toLocaleString()} SPECIMENS`;
-      }
-      renderCollectionSidebar();
-      renderIndexTabs();
-      renderLibraryRecords();
-    }
-
-    function renderCollectionSidebar() {
-      const collections = getCollectionsWithCounts();
-      document.getElementById('collectionNavList').innerHTML = collections.map(c => `
-        <li>
-          <button class="collection-btn ${activeCollection === c.id ? 'active' : ''}" data-coll="${escapeHtml(c.id)}" onclick="selectCollection(this.getAttribute('data-coll'))">
-            <div class="coll-info">
-              <span class="coll-title">${escapeHtml(c.label)}</span>
-              <span class="coll-range">${escapeHtml(c.range)}</span>
-            </div>
-            <span class="coll-count">${c.count}</span>
-          </button>
-        </li>
-      `).join('');
-    }
-
-    function renderIndexTabs() {
-      const collections = getCollectionsWithCounts();
-      document.getElementById('libraryIndexTabs').innerHTML = collections.map(c => `
-        <button class="index-tab-btn ${activeCollection === c.id ? 'active' : ''}" data-coll="${escapeHtml(c.id)}" onclick="selectCollection(this.getAttribute('data-coll'))">
-          [ ${escapeHtml(c.id === 'ALL' ? 'ALL' : c.id)} ]
-        </button>
-      `).join('');
-    }
-
-    function selectCollection(collId) {
-      activeCollection = collId;
-      currentPage = 1;
-      renderCollectionSidebar();
-      renderIndexTabs();
-      renderLibraryRecords();
-    }
-
-    function getFilteredRecords() {
-      const q = searchQuery.trim().toLowerCase();
-      const normQ = q.replace(/[\s\-_]+/g, '');
-      let list = archiveRecords.filter(item => {
-        if (activeCollection !== 'ALL' && item.prefix !== activeCollection) return false;
-        if (!q) return true;
-        const code = (item.code || item.callNumber || '').toLowerCase();
-        const normCode = code.replace(/[\s\-_]+/g, '');
-        return code === q ||
-               code.includes(q) ||
-               (normQ && normCode.includes(normQ)) ||
-               (item.name && item.name.toLowerCase().includes(q)) ||
-               (item.category && item.category.toLowerCase().includes(q)) ||
-               (item.productLink && item.productLink.toLowerCase().includes(q)) ||
-               (item.description && item.description.toLowerCase().includes(q)) ||
-               (item.drawer && item.drawer.toLowerCase().includes(q));
-      });
-
-      list.sort((a, b) => {
-        if (sortCriterion === 'code') return (a.prefix || '').localeCompare(b.prefix || '') || parseInt(a.num || 0) - parseInt(b.num || 0);
-        if (sortCriterion === 'code_desc') return (b.prefix || '').localeCompare(a.prefix || '') || parseInt(b.num || 0) - parseInt(a.num || 0);
-        if (sortCriterion === 'name') return (a.name || '').localeCompare(b.name || '');
-        if (sortCriterion === 'category') return (a.category || '').localeCompare(b.category || '');
-        return 0;
-      });
-
-      return list;
-    }
-
-    function renderLibraryRecords() {
-      const filtered = getFilteredRecords();
-      const collections = getCollectionsWithCounts();
-      const coll = collections.find(c => c.id === activeCollection) || collections[0];
-      document.getElementById('currentCollectionTitle').innerText = coll.label;
-      document.getElementById('recordCountLabel').innerText = `${filtered.length.toLocaleString()} CATALOGED RECORDS AVAILABLE (TOTAL: ${archiveRecords.length.toLocaleString()})`;
-
-      const filterStrip = document.getElementById('activeFilterStrip');
-      if (searchQuery.trim()) {
-        filterStrip.style.display = 'flex';
-        document.getElementById('searchFilterText').innerText = `Search: "${searchQuery}" (${filtered.length} matches)`;
-      } else {
-        filterStrip.style.display = 'none';
-      }
-
-      const totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
-      if (currentPage > totalPages) currentPage = totalPages;
-      const startIndex = (currentPage - 1) * PAGE_SIZE;
-      const endIndex = Math.min(startIndex + PAGE_SIZE, filtered.length);
-      const pageRecords = filtered.slice(startIndex, endIndex);
-
-      document.getElementById('paginationInfo').innerText = filtered.length > 0 
-        ? `Showing ${startIndex + 1} - ${endIndex} of ${filtered.length} records (Page ${currentPage} of ${totalPages})`
-        : `No matching records found in archive`;
-
-      renderPaginationButtons(totalPages);
-
-      if (pageRecords.length === 0) {
-        document.getElementById('cardGrid').innerHTML = `
-          <div style="grid-column: 1/-1; padding: 64px; text-align: center; border: 1px dashed var(--olive-muted); background: var(--paper-card);">
-            <h3 style="font-family: var(--font-display); font-size: 20px; color: var(--ink-primary); margin-bottom: 8px;">NO RECORD FOUND</h3>
-            <p style="font-family: var(--font-serif); font-style: italic; color: var(--olive-muted); font-size: 15px;">No chemical compound matches the search parameters.</p>
-            <button onclick="clearSearch()" style="margin-top: 18px; background: var(--ink-primary); color: var(--paper-primary); border: none; padding: 10px 20px; font-size: 11px; font-weight:700; cursor:pointer;">RESET SEARCH</button>
-          </div>
-        `;
-      } else {
-        document.getElementById('cardGrid').innerHTML = pageRecords.map(item => {
-          const codeText = (item.code || item.callNumber || '').trim();
-          const nameText = (item.name || '').trim();
-
-          return `
-          <div class="catalog-card" data-id="${escapeHtml(item.id)}" onclick="openEditTab(this.getAttribute('data-id'))" style="cursor:pointer;" title="Click to view and edit details">
-            <div class="card-top" style="margin-bottom:0;">
-              <span class="card-call-number">${highlightMatch(codeText)}</span>
-            </div>
-            ${nameText ? `<div class="card-product-name" style="margin-bottom:0;">${highlightMatch(nameText)}</div>` : ''}
-          </div>
-        `;
-        }).join('');
-      }
-      renderIcons();
-    }
-
-    function renderPaginationButtons(totalPages) {
-      if (totalPages <= 1) {
-        document.getElementById('paginationButtons').innerHTML = '';
-        return;
-      }
-      let btns = [];
-      btns.push(`<button class="btn-page" ${currentPage === 1 ? 'disabled' : ''} onclick="goToPage(${currentPage - 1})">PREV</button>`);
-      
-      let startP = Math.max(1, currentPage - 2);
-      let endP = Math.min(totalPages, currentPage + 2);
-
-      if (startP > 1) {
-        btns.push(`<button class="btn-page" onclick="goToPage(1)">1</button>`);
-        if (startP > 2) btns.push(`<span style="font-family:var(--font-mono); padding:0 4px;">...</span>`);
-      }
-
-      for (let p = startP; p <= endP; p++) {
-        btns.push(`<button class="btn-page ${p === currentPage ? 'active' : ''}" onclick="goToPage(${p})">${p}</button>`);
-      }
-
-      if (endP < totalPages) {
-        if (endP < totalPages - 1) btns.push(`<span style="font-family:var(--font-mono); padding:0 4px;">...</span>`);
-        btns.push(`<button class="btn-page" onclick="goToPage(${totalPages})">${totalPages}</button>`);
-      }
-
-      btns.push(`<button class="btn-page" ${currentPage === totalPages ? 'disabled' : ''} onclick="goToPage(${currentPage + 1})">NEXT</button>`);
-      document.getElementById('paginationButtons').innerHTML = btns.join('');
-    }
-
-    function goToPage(p) {
-      currentPage = p;
-      renderLibraryRecords();
-      window.scrollTo({ top: 80, behavior: 'smooth' });
-    }
-
-    function highlightMatch(text) {
-      const raw = String(text == null ? '' : text);
-      if (!raw || !searchQuery.trim()) return escapeHtml(raw);
-      const q = searchQuery.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const regex = new RegExp(`(${q})`, 'gi');
-      return raw.split(regex).map((part, idx) =>
-        idx % 2 === 1
-          ? `<mark style="background:var(--archival-beige-light); color:var(--ink-dark); padding:0 2px;">${escapeHtml(part)}</mark>`
-          : escapeHtml(part)
-      ).join('');
-    }
-
-    function handleSortChange(val) {
-      sortCriterion = val;
-      renderLibraryRecords();
-    }
-
-    function toSafeProductUrl(raw) {
-      if (window.LibraryShared && typeof window.LibraryShared.normalizeProductUrl === 'function') {
-        return window.LibraryShared.normalizeProductUrl(raw);
-      }
-      const val = String(raw == null ? '' : raw).trim();
-      if (!val || /^(javascript|data|vbscript):/i.test(val)) return '';
-      return /^https?:\/\//i.test(val) ? val : 'https://' + val.replace(/^\/+/, '');
-    }
-
-    function updateProductLinkPreview(raw) {
-      const anchor = document.getElementById('editProductLinkAnchor');
-      if (!anchor) return;
-      const safe = toSafeProductUrl(raw);
-      if (safe) {
-        anchor.href = safe;
-        anchor.style.display = 'inline-flex';
-      } else {
-        anchor.href = '#';
-        anchor.style.display = 'none';
-      }
-    }
-
-    /* Open Edit Tab Form */
-    function openEditTab(recordId) {
-      activeEditingRecordId = recordId;
-      const rec = archiveRecords.find(r => r.id === recordId);
-      if (!rec) return;
-
-      document.getElementById('editTabCodeBadge').innerText = rec.code || rec.callNumber || '';
-      document.getElementById('editCodeInput').value = rec.code || rec.callNumber || '';
-      document.getElementById('editNameInput').value = rec.name || '';
-      document.getElementById('editCategoryInput').value = rec.category || '';
-      const linkVal = rec.productLink || '';
-      const linkInput = document.getElementById('editProductLinkInput');
-      if (linkInput) linkInput.value = linkVal;
-      updateProductLinkPreview(linkVal);
-      document.getElementById('editDescInput').value = rec.description || '';
-
-      document.getElementById('saveStatusText').innerText = 'Auto-Saved';
-      document.getElementById('editTabOverlay').classList.add('open');
-      if (window.LibraryShared) {
-        window.LibraryShared.attachCategoryAutocomplete({
-          inputEl: document.getElementById('editCategoryInput'),
-          listEl: document.getElementById('editCategoryAcList'),
-          getRecords: () => archiveRecords,
-          onSelect: (val) => handleFieldChange('category', val)
-        });
-      }
-      renderIcons();
-    }
-
-    let pendingLocalFlushTimer = null;
-
-    function flushLocalUiAndStorage() {
-      if (pendingLocalFlushTimer) {
-        clearTimeout(pendingLocalFlushTimer);
-        pendingLocalFlushTimer = null;
-      }
-      saveArchiveRecords(archiveRecords);
-      renderLibraryRecords();
-    }
-
-    function flushPendingRecordSync() {
-      if (pendingPatchTimer) {
-        clearTimeout(pendingPatchTimer);
-        pendingPatchTimer = null;
-      }
-      flushLocalUiAndStorage();
-      if (pendingRecordPatch && window.LibraryShared) {
-        const { id, patch } = pendingRecordPatch;
-        pendingRecordPatch = null;
-        window.LibraryShared.updateRecord(id, patch);
-      }
-    }
-
-    function closeEditTab() {
-      flushPendingRecordSync();
-      document.getElementById('editTabOverlay').classList.remove('open');
-      activeEditingRecordId = null;
-    }
-
-    function handleFieldChange(field, value) {
-      if (!activeEditingRecordId) return;
-      const rec = archiveRecords.find(r => r.id === activeEditingRecordId);
-      if (!rec) return;
-
-      rec[field] = value;
-      if (field === 'code') {
-        rec.callNumber = value;
-        document.getElementById('editTabCodeBadge').innerText = value;
-      }
-      if (field === 'productLink') {
-        updateProductLinkPreview(value);
-      }
-
-      const statusText = document.getElementById('saveStatusText');
-      statusText.innerText = 'Saving...';
-
-      if (!pendingRecordPatch || pendingRecordPatch.id !== rec.id) {
-        flushPendingRecordSync();
-        pendingRecordPatch = { id: rec.id, patch: {} };
-      }
-      pendingRecordPatch.patch[field] = value;
-      if (field === 'code') pendingRecordPatch.patch.callNumber = value;
-
-      if (pendingLocalFlushTimer) clearTimeout(pendingLocalFlushTimer);
-      pendingLocalFlushTimer = setTimeout(flushLocalUiAndStorage, 120);
-
-      if (pendingPatchTimer) clearTimeout(pendingPatchTimer);
-      pendingPatchTimer = setTimeout(() => {
-        flushPendingRecordSync();
-        statusText.innerText = 'Auto-Saved';
-      }, 350);
-    }
-
-    function handleSearchInput(val) {
-      searchQuery = val == null ? '' : String(val);
-      const searchClearBtn = document.getElementById('searchClearBtn');
-      if (searchClearBtn) {
-        searchClearBtn.style.display = searchQuery ? 'flex' : 'none';
-      }
-      currentPage = 1;
-      renderLibraryRecords();
-    }
-
-    function clearSearch() {
-      searchQuery = '';
-      const searchInput = document.getElementById('searchInput');
-      const searchClearBtn = document.getElementById('searchClearBtn');
-      if (searchInput) searchInput.value = '';
-      if (searchClearBtn) searchClearBtn.style.display = 'none';
-      currentPage = 1;
-      renderLibraryRecords();
-    }
-
-    
-    /* --- AUTHENTICATION ENGINE --- */
-    let currentAuthUser = '';
-
-    async function computeSha256(str) {
-      const utf8 = new TextEncoder().encode(str);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', utf8);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
-    function checkAuthStatus() {
-      const session = sessionStorage.getItem('chem_auth_token');
-      const gate = document.getElementById('authGateModal');
-      if (!session) {
-        gate.style.display = 'flex';
-      } else {
-        gate.style.display = 'none';
-      }
-      renderIcons();
-    }
-
-    function togglePasswordVisibility() {
-      const pwd = document.getElementById('authPassword');
-      pwd.type = pwd.type === 'password' ? 'text' : 'password';
-    }
-
-    async function handleCredentialsSubmit(e) {
-      e.preventDefault();
-      const user = document.getElementById('authUsername').value.trim();
-      const pwd = document.getElementById('authPassword').value.trim();
-      const errBox = document.getElementById('authErrorMsg');
-
-      if (!user || !pwd) {
-        showAuthError('Please enter username and password.');
-        return;
-      }
-
-      if (pwd.length < 4) {
-        showAuthError('Password must be at least 4 characters.');
-        return;
-      }
-
-      currentAuthUser = user;
-
-      // Verify credentials with SHA-256 hash
-      const hash = await computeSha256(pwd);
-      const ADI_HASH = 'c8ee3e31cec5f7aa04d665319d60875ff3aaa1e543c67c1bb8c5d6e4689afb1a'; // Aditya@1234
-      
-      let users = [];
-      try {
-        users = JSON.parse(localStorage.getItem('chemical_archive_users_v1') || '[]');
-      } catch(e) {}
-      
-      const customUser = users.find(u => u.username.toLowerCase() === user.toLowerCase());
-      const isAdi = user.toLowerCase() === 'adi' && hash === ADI_HASH;
-      const isCustomValid = customUser && customUser.passwordHash === hash;
-      
-      if (!isAdi && !isCustomValid) {
-        showAuthError('Invalid Library Username or Password.');
-        return;
-      }
-
-      errBox.style.display = 'none';
-      const sessionToken = btoa(`${currentAuthUser}:SESSION:${Date.now()}:${Math.random()}`);
-      sessionStorage.setItem('chem_auth_token', sessionToken);
-      document.getElementById('authGateModal').style.display = 'none';
-      if (window.LibraryShared) {
-        if (typeof window.LibraryShared.resetInactivityTimer === 'function') {
-          window.LibraryShared.resetInactivityTimer();
-        }
-        if (typeof window.LibraryShared.logActivity === 'function') {
-          window.LibraryShared.logActivity('LOGIN', 'library', 'Logged in to Chemical Library Viewer', currentAuthUser);
-        }
-      }
-      renderAll();
-      syncFromServer();
-    }
-
-    function logoutLibrary(reason) {
-      if (activeEditingRecordId) {
-        flushPendingRecordSync();
-        const overlay = document.getElementById('editTabOverlay');
-        if (overlay) overlay.classList.remove('open');
-        activeEditingRecordId = null;
-      }
-      const isIdle = reason === 'inactivity';
-      if (window.LibraryShared && typeof window.LibraryShared.logActivity === 'function' && sessionStorage.getItem('chem_auth_token')) {
-        window.LibraryShared.logActivity(
-          isIdle ? 'AUTO_LOGOUT' : 'LOGOUT',
-          'library',
-          isIdle ? 'Auto-logged out after 1 minute of inactivity' : 'Logged out manually from Chemical Library Viewer'
-        );
-      }
-      sessionStorage.removeItem('chem_auth_token');
-      checkAuthStatus();
-      if (isIdle) {
-        showAuthError('Session logged out due to 1 minute of inactivity.');
-      }
-    }
-
-    function startLibraryInactivityMonitor() {
-      if (window.LibraryShared && typeof window.LibraryShared.initInactivityAutoLogout === 'function') {
-        window.LibraryShared.initInactivityAutoLogout({
-          timeoutMs: 60000,
-          isLoggedIn: () => Boolean(sessionStorage.getItem('chem_auth_token')),
-          onTimeout: () => logoutLibrary('inactivity')
-        });
-      }
-    }
-
-    function showAuthError(msg) {
-      const errBox = document.getElementById('authErrorMsg');
-      document.getElementById('authErrorText').innerText = msg;
-      errBox.style.display = 'flex';
-      renderIcons();
-    }
-
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => { checkAuthStatus(); init(); startLibraryInactivityMonitor(); });
-    } else {
-      checkAuthStatus();
-      init();
-      startLibraryInactivityMonitor();
-    }
-  </script>
 </body>
 </html>

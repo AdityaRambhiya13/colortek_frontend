@@ -526,84 +526,47 @@
 
     <!-- Tab 2: Categories Management -->
     <div id="tabCategories" class="admin-tab-content" style="display:none;">
-      <div class="cat-grid">
-        <!-- Collection / Index Categories -->
-        <div class="admin-card" style="margin-bottom:0;">
-          <div class="admin-card-title">
-            <span><i data-lucide="folder-kanban" style="width:17px; height:17px; display:inline; vertical-align:middle; margin-right:6px;"></i>COLLECTION / INDEX CATEGORIES</span>
-            <span class="cat-badge" id="collCountBadge">0</span>
-          </div>
-          <p style="font-size:12px; color:var(--olive-muted); margin-bottom:14px; line-height:1.5;">
-            Manage sidebar &amp; tab collections shown in the Chemical Library (e.g., <strong>D</strong>, <strong>R</strong>, <strong>Tc</strong>, or custom collections). Deleting a collection keeps its compounds and moves them to <strong>MISC</strong> (or unlinked in <strong>ALL RECORDS</strong>).
-          </p>
-
-          <div id="collFeedback" class="cat-feedback"></div>
-
-          <form onsubmit="handleCreateCollection(event)" class="cat-form-row">
-            <div class="cat-field" style="max-width:110px;">
-              <label for="newCollId">Prefix / ID *</label>
-              <input type="text" id="newCollId" class="admin-input" placeholder="e.g. P" maxlength="16" required />
-            </div>
-            <div class="cat-field">
-              <label for="newCollLabel">Collection Name *</label>
-              <input type="text" id="newCollLabel" class="admin-input" placeholder="e.g. P COLLECTION" required />
-            </div>
-            <div class="cat-field">
-              <label for="newCollRange">Code Range / Subtitle</label>
-              <input type="text" id="newCollRange" class="admin-input" placeholder="e.g. P-001 to P-100" />
-            </div>
-            <button type="submit" class="btn-primary">
-              <i data-lucide="plus" style="width:14px; height:14px;"></i> CREATE
-            </button>
-          </form>
-
-          <table class="admin-table">
-            <thead>
-              <tr>
-                <th style="width:90px;">Prefix</th>
-                <th>Display Label</th>
-                <th>Range / Subtitle</th>
-                <th style="width:80px; text-align:right;">Records</th>
-                <th style="width:90px; text-align:center;">Action</th>
-              </tr>
-            </thead>
-            <tbody id="collectionsTableBody"></tbody>
-          </table>
+      <div class="admin-card">
+        <div class="admin-card-title">
+          <span><i data-lucide="folder-kanban" style="width:17px; height:17px; display:inline; vertical-align:middle; margin-right:6px;"></i>LIBRARY CATEGORIES (D, R, Tc, T, ...)</span>
+          <span class="cat-badge" id="collCountBadge">0</span>
         </div>
+        <p style="font-size:12px; color:var(--olive-muted); margin-bottom:14px; line-height:1.5;">
+          Create or delete archive categories shown in the Chemical Library sidebar &amp; index tabs (e.g., <strong>D</strong>, <strong>R</strong>, <strong>Tc</strong>, <strong>T</strong>). Deleting a category keeps its compound records and moves them to <strong>MISC</strong> (or unlinked in <strong>ALL RECORDS</strong>).
+        </p>
 
-        <!-- Product Categories -->
-        <div class="admin-card" style="margin-bottom:0;">
-          <div class="admin-card-title">
-            <span><i data-lucide="tag" style="width:17px; height:17px; display:inline; vertical-align:middle; margin-right:6px;"></i>PRODUCT CATEGORIES</span>
-            <span class="cat-badge" id="prodCatCountBadge">0</span>
+        <div id="collFeedback" class="cat-feedback"></div>
+
+        <form onsubmit="handleCreateCollection(event)" class="cat-form-row">
+          <div class="cat-field" style="max-width:120px;">
+            <label for="newCollId">Category Code *</label>
+            <input type="text" id="newCollId" class="admin-input" placeholder="e.g. T" maxlength="16" required />
           </div>
-          <p style="font-size:12px; color:var(--olive-muted); margin-bottom:14px; line-height:1.5;">
-            Manage reusable <strong>Category</strong> labels assignable to compound records in both the Admin Panel and Library editor. Deleting a category keeps all compounds and clears their category field.
-          </p>
+          <div class="cat-field">
+            <label for="newCollLabel">Display Label</label>
+            <input type="text" id="newCollLabel" class="admin-input" placeholder="e.g. T COLLECTION" />
+          </div>
+          <div class="cat-field">
+            <label for="newCollRange">Code Range / Subtitle</label>
+            <input type="text" id="newCollRange" class="admin-input" placeholder="e.g. T-001 to T-100" />
+          </div>
+          <button type="submit" class="btn-primary">
+            <i data-lucide="plus" style="width:14px; height:14px;"></i> CREATE CATEGORY
+          </button>
+        </form>
 
-          <div id="prodCatFeedback" class="cat-feedback"></div>
-
-          <form onsubmit="handleCreateProductCategory(event)" class="cat-form-row">
-            <div class="cat-field">
-              <label for="newProdCatName">Category Name *</label>
-              <input type="text" id="newProdCatName" class="admin-input" placeholder="e.g. Organic Synthesis &amp; Reagents" required />
-            </div>
-            <button type="submit" class="btn-primary">
-              <i data-lucide="plus" style="width:14px; height:14px;"></i> CREATE
-            </button>
-          </form>
-
-          <table class="admin-table">
-            <thead>
-              <tr>
-                <th>Category Name</th>
-                <th style="width:100px; text-align:right;">Assigned</th>
-                <th style="width:90px; text-align:center;">Action</th>
-              </tr>
-            </thead>
-            <tbody id="productCategoriesTableBody"></tbody>
-          </table>
-        </div>
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th style="width:110px;">Code</th>
+              <th>Display Label</th>
+              <th>Range / Subtitle</th>
+              <th style="width:90px; text-align:right;">Records</th>
+              <th style="width:100px; text-align:center;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="collectionsTableBody"></tbody>
+        </table>
       </div>
     </div>
 
@@ -690,8 +653,8 @@
           <input type="text" id="recModalName" class="admin-input" placeholder="Compound name" />
         </div>
         <div class="cat-field">
-          <label for="recModalCategory">Product Category</label>
-          <select id="recModalCategory" class="admin-select"></select>
+          <label for="recModalCategory">Category (Manual Entry)</label>
+          <input type="text" id="recModalCategory" class="admin-input" placeholder="Enter category manually" />
         </div>
         <div class="cat-field">
           <label for="recModalDesc">Description</label>
@@ -707,7 +670,6 @@
 
   <script>
     const COLLECTIONS_STORAGE_KEY = 'chemical_archive_collections_v1';
-    const PRODUCT_CATEGORIES_STORAGE_KEY = 'chemical_archive_product_categories_v1';
 
     const DEFAULT_COLLECTIONS = [
       { id: 'D', label: 'D COLLECTION', range: 'D-001 to D-500' },
@@ -765,7 +727,6 @@
     })();
 
     let adminCollections = loadCollections();
-    let adminProductCategories = loadProductCategories();
     let editingRecordId = null;
     let currentAdminUser = '';
 
@@ -783,28 +744,6 @@
     function saveCollections() {
       try {
         localStorage.setItem(COLLECTIONS_STORAGE_KEY, JSON.stringify(adminCollections));
-      } catch(e) {}
-    }
-
-    function loadProductCategories() {
-      try {
-        const saved = localStorage.getItem(PRODUCT_CATEGORIES_STORAGE_KEY);
-        if (saved !== null) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed)) return parsed;
-        }
-      } catch(e) {}
-      const derived = new Set();
-      adminRecords.forEach(r => {
-        const c = (r.category || '').trim();
-        if (c) derived.add(c);
-      });
-      return Array.from(derived).sort((a, b) => a.localeCompare(b));
-    }
-
-    function saveProductCategories() {
-      try {
-        localStorage.setItem(PRODUCT_CATEGORIES_STORAGE_KEY, JSON.stringify(adminProductCategories));
       } catch(e) {}
     }
 
@@ -977,33 +916,6 @@
           `;
         }).join('');
       }
-
-      // Product categories table
-      document.getElementById('prodCatCountBadge').innerText = adminProductCategories.length;
-      const prodBody = document.getElementById('productCategoriesTableBody');
-      if (adminProductCategories.length === 0) {
-        prodBody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--olive-muted); padding:20px;">No product categories created yet. Add one above.</td></tr>`;
-      } else {
-        const countsByCat = {};
-        adminRecords.forEach(r => {
-          const k = (r.category || '').trim().toLowerCase();
-          if (k) countsByCat[k] = (countsByCat[k] || 0) + 1;
-        });
-        prodBody.innerHTML = adminProductCategories.map(cat => {
-          const cnt = countsByCat[cat.trim().toLowerCase()] || 0;
-          return `
-            <tr>
-              <td style="font-weight:600;">${escapeHtml(cat)}</td>
-              <td style="text-align:right; font-family:var(--font-mono); font-weight:700;">${cnt.toLocaleString()}</td>
-              <td style="text-align:center;">
-                <button data-cat="${escapeHtml(cat)}" onclick="deleteProductCategory(this.getAttribute('data-cat'))" class="btn-danger-outline" title="Delete Product Category">
-                  <i data-lucide="trash-2" style="width:12px; height:12px;"></i> Delete
-                </button>
-              </td>
-            </tr>
-          `;
-        }).join('');
-      }
       renderIcons();
     }
 
@@ -1071,54 +983,8 @@
       showCatFeedback('collFeedback', `Deleted collection "${target.label}". Existing records were preserved.`, 'success');
     }
 
-    function handleCreateProductCategory(e) {
-      e.preventDefault();
-      const name = document.getElementById('newProdCatName').value.trim();
-      if (!name) {
-        showCatFeedback('prodCatFeedback', 'Please enter a category name.', 'error');
-        return;
-      }
-      if (adminProductCategories.some(c => c.toLowerCase() === name.toLowerCase())) {
-        showCatFeedback('prodCatFeedback', `Category "${name}" already exists.`, 'error');
-        return;
-      }
-
-      adminProductCategories.push(name);
-      adminProductCategories.sort((a, b) => a.localeCompare(b));
-      saveProductCategories();
-
-      document.getElementById('newProdCatName').value = '';
-      renderCategoriesTab();
-      showCatFeedback('prodCatFeedback', `Product category "${name}" created.`, 'success');
-    }
-
-    function deleteProductCategory(catName) {
-      const norm = catName.trim().toLowerCase();
-      const affected = adminRecords.filter(r => (r.category || '').trim().toLowerCase() === norm).length;
-      const msg = affected > 0
-        ? `Delete product category "${catName}"?\n\n${affected.toLocaleString()} existing compound record(s) will be kept with their category cleared.`
-        : `Delete product category "${catName}"?`;
-
-      if (!confirm(msg)) return;
-
-      adminProductCategories = adminProductCategories.filter(c => c.trim().toLowerCase() !== norm);
-      saveProductCategories();
-
-      if (affected > 0) {
-        adminRecords.forEach(r => {
-          if ((r.category || '').trim().toLowerCase() === norm) {
-            r.category = '';
-          }
-        });
-        saveAdminRecords();
-      }
-
-      refreshAllAdminViews();
-      showCatFeedback('prodCatFeedback', `Deleted product category "${catName}". Existing records were preserved.`, 'success');
-    }
-
     /* --- ADD / EDIT RECORD MODAL --- */
-    function populateRecordModalSelects(selectedPrefix, selectedCategory) {
+    function populateRecordModalSelects(selectedPrefix) {
       const prefixSel = document.getElementById('recModalPrefix');
       const prefixOpts = adminCollections.map(c =>
         `<option value="${escapeHtml(c.id)}">${escapeHtml(c.label)} (${escapeHtml(c.id)})</option>`
@@ -1132,24 +998,16 @@
       } else if (adminCollections.length > 0) {
         prefixSel.value = adminCollections[0].id;
       }
-
-      const catSel = document.getElementById('recModalCategory');
-      const catOpts = ['<option value="">-- Unassigned --</option>']
-        .concat(adminProductCategories.map(cat => `<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`));
-      if (selectedCategory && !adminProductCategories.some(c => c.toLowerCase() === selectedCategory.trim().toLowerCase())) {
-        catOpts.push(`<option value="${escapeHtml(selectedCategory)}">${escapeHtml(selectedCategory)} (Legacy)</option>`);
-      }
-      catSel.innerHTML = catOpts.join('');
-      catSel.value = selectedCategory || '';
     }
 
     function showNewRecordModal() {
       editingRecordId = null;
       document.getElementById('recordModalTitle').innerText = 'Add Compound Record';
       const defaultPrefix = adminCollections[0]?.id || '';
-      populateRecordModalSelects(defaultPrefix, '');
+      populateRecordModalSelects(defaultPrefix);
       document.getElementById('recModalCode').value = '';
       document.getElementById('recModalName').value = '';
+      document.getElementById('recModalCategory').value = '';
       document.getElementById('recModalDesc').value = '';
       document.getElementById('recordModalBackdrop').classList.add('open');
       renderIcons();
@@ -1160,9 +1018,10 @@
       if (!rec) return;
       editingRecordId = id;
       document.getElementById('recordModalTitle').innerText = `Edit Record (${rec.code || rec.callNumber})`;
-      populateRecordModalSelects(rec.prefix || '', rec.category || '');
+      populateRecordModalSelects(rec.prefix || '');
       document.getElementById('recModalCode').value = rec.code || rec.callNumber || '';
       document.getElementById('recModalName').value = rec.name || '';
+      document.getElementById('recModalCategory').value = rec.category || '';
       document.getElementById('recModalDesc').value = rec.description || '';
       document.getElementById('recordModalBackdrop').classList.add('open');
       renderIcons();
@@ -1235,7 +1094,7 @@
         version: 2,
         exportedAt: new Date().toISOString(),
         collections: adminCollections,
-        productCategories: adminProductCategories,
+        collections: adminCollections,
         records: adminRecords
       };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -1255,20 +1114,16 @@
         try {
           const imported = JSON.parse(evt.target.result);
           if (Array.isArray(imported)) {
-            adminRecords = imported;
+            adminRecords = sanitizeRecords(imported);
             saveAdminRecords();
             refreshAllAdminViews();
             alert(`Successfully restored ${imported.length} records from backup!`);
           } else if (imported && Array.isArray(imported.records)) {
-            adminRecords = imported.records;
+            adminRecords = sanitizeRecords(imported.records);
             saveAdminRecords();
             if (Array.isArray(imported.collections)) {
               adminCollections = imported.collections;
               saveCollections();
-            }
-            if (Array.isArray(imported.productCategories)) {
-              adminProductCategories = imported.productCategories;
-              saveProductCategories();
             }
             refreshAllAdminViews();
             alert(`Successfully restored ${adminRecords.length} records and categories from backup!`);
@@ -1287,10 +1142,8 @@
         localStorage.removeItem('chemical_archive_custom_v1');
         localStorage.removeItem('chemical_archive_records_v1');
         localStorage.removeItem(COLLECTIONS_STORAGE_KEY);
-        localStorage.removeItem(PRODUCT_CATEGORIES_STORAGE_KEY);
-        adminRecords = window.RAW_SEED_DATA || [];
+        adminRecords = sanitizeRecords(window.RAW_SEED_DATA || []);
         adminCollections = DEFAULT_COLLECTIONS.map(c => ({ ...c }));
-        adminProductCategories = loadProductCategories();
         refreshAllAdminViews();
         alert('Archive and categories successfully reset to factory seed database.');
       }

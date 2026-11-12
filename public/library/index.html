@@ -470,22 +470,14 @@
           </div>
         </div>
 
-        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span style="font-family:var(--font-sans); font-size:10px; font-weight:700; text-transform:uppercase; color:var(--olive-muted);">Category:</span>
-            <select id="categoryFilterSelect" style="background:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.8); padding:10px 16px; font-family:var(--font-sans); font-size:14px; font-weight:600; color:var(--peacock-blue); border-radius:20px; outline:none;" onchange="handleCategoryFilterChange(this.value)">
-              <option value="ALL">All Categories</option>
-            </select>
-          </div>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span style="font-family:var(--font-sans); font-size:10px; font-weight:700; text-transform:uppercase; color:var(--olive-muted);">Sort:</span>
-            <select id="sortSelect" style="background:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.8); padding:10px 16px; font-family:var(--font-sans); font-size:14px; font-weight:600; color:var(--peacock-blue); border-radius:20px; outline:none;" onchange="handleSortChange(this.value)">
-              <option value="code">Product Code (Ascending)</option>
-              <option value="code_desc">Product Code (Descending)</option>
-              <option value="name">Product Name (A-Z)</option>
-              <option value="category">Category</option>
-            </select>
-          </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-family:var(--font-sans); font-size:10px; font-weight:700; text-transform:uppercase; color:var(--olive-muted);">Sort:</span>
+          <select id="sortSelect" style="background:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.8); padding:10px 16px; font-family:var(--font-sans); font-size:14px; font-weight:600; color:var(--peacock-blue); border-radius:20px; outline:none;" onchange="handleSortChange(this.value)">
+            <option value="code">Product Code (Ascending)</option>
+            <option value="code_desc">Product Code (Descending)</option>
+            <option value="name">Product Name (A-Z)</option>
+            <option value="category">Category</option>
+          </select>
         </div>
       </div>
 
@@ -539,11 +531,6 @@
         </div>
 
         <div class="edit-field-group">
-          <label class="edit-field-label">Collection / Index Category</label>
-          <select id="editCollectionInput" class="edit-input" onchange="handleFieldChange('prefix', this.value)"></select>
-        </div>
-
-        <div class="edit-field-group">
           <label class="edit-field-label">Product Code</label>
           <input type="text" id="editCodeInput" class="edit-input" style="font-family:var(--font-mono); font-weight:700;" oninput="handleFieldChange('code', this.value)" />
         </div>
@@ -555,7 +542,7 @@
 
         <div class="edit-field-group">
           <label class="edit-field-label">Product Category</label>
-          <select id="editCategoryInput" class="edit-input" onchange="handleFieldChange('category', this.value)"></select>
+          <input type="text" id="editCategoryInput" class="edit-input" placeholder="Enter category manually" oninput="handleFieldChange('category', this.value)" />
         </div>
 
         <div class="edit-field-group">
@@ -574,7 +561,6 @@
 
   <script>
     const COLLECTIONS_STORAGE_KEY = 'chemical_archive_collections_v1';
-    const PRODUCT_CATEGORIES_STORAGE_KEY = 'chemical_archive_product_categories_v1';
 
     const DEFAULT_COLLECTIONS = [
       { id: 'D', label: 'D COLLECTION', range: 'D-001 to D-500' },
@@ -650,25 +636,8 @@
       return DEFAULT_COLLECTIONS.map(c => ({ ...c }));
     }
 
-    function loadStoredProductCategories(records) {
-      try {
-        const saved = localStorage.getItem(PRODUCT_CATEGORIES_STORAGE_KEY);
-        if (saved !== null) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed)) return parsed;
-        }
-      } catch(e) {}
-      const derived = new Set();
-      (records || []).forEach(r => {
-        const c = (r.category || '').trim();
-        if (c) derived.add(c);
-      });
-      return Array.from(derived).sort((a, b) => a.localeCompare(b));
-    }
-
     let archiveRecords = loadArchiveRecords();
     let customCollections = loadStoredCollections();
-    let productCategories = loadStoredProductCategories(archiveRecords);
 
     function getCollectionsWithCounts() {
       const counts = {};
@@ -686,7 +655,6 @@
     }
 
     let activeCollection = 'ALL';
-    let activeCategoryFilter = 'ALL';
     let searchQuery = '';
     let sortCriterion = 'code';
     const PAGE_SIZE = 36;
@@ -705,7 +673,6 @@
           .then(res => res.json())
           .then(data => {
             archiveRecords = sanitizeRecords(data);
-            productCategories = loadStoredProductCategories(archiveRecords);
             renderAll();
           })
           .catch(err => {
@@ -718,7 +685,6 @@
       window.addEventListener('pageshow', () => {
         archiveRecords = loadArchiveRecords();
         customCollections = loadStoredCollections();
-        productCategories = loadStoredProductCategories(archiveRecords);
         const si = document.getElementById('searchInput');
         if (si) searchQuery = si.value || '';
         renderAll();
@@ -726,13 +692,11 @@
       window.addEventListener('storage', (e) => {
         if (
           e.key === COLLECTIONS_STORAGE_KEY ||
-          e.key === PRODUCT_CATEGORIES_STORAGE_KEY ||
           e.key === 'chemical_archive_custom_v1' ||
           e.key === 'chemical_archive_records_v1'
         ) {
           archiveRecords = loadArchiveRecords();
           customCollections = loadStoredCollections();
-          productCategories = loadStoredProductCategories(archiveRecords);
           if (activeCollection !== 'ALL' && !customCollections.some(c => c.id === activeCollection)) {
             activeCollection = 'ALL';
           }
@@ -747,30 +711,9 @@
       if (specimenBadge) {
         specimenBadge.innerText = `${archiveRecords.length.toLocaleString()} SPECIMENS`;
       }
-      renderCategoryFilterSelect();
       renderCollectionSidebar();
       renderIndexTabs();
       renderLibraryRecords();
-    }
-
-    function renderCategoryFilterSelect() {
-      const sel = document.getElementById('categoryFilterSelect');
-      if (!sel) return;
-      const allCats = new Set(productCategories);
-      archiveRecords.forEach(r => {
-        const c = (r.category || '').trim();
-        if (c) allCats.add(c);
-      });
-      const sorted = Array.from(allCats).sort((a, b) => a.localeCompare(b));
-      const opts = ['<option value="ALL">All Categories</option>']
-        .concat(sorted.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`));
-      sel.innerHTML = opts.join('');
-      if (activeCategoryFilter !== 'ALL' && sorted.includes(activeCategoryFilter)) {
-        sel.value = activeCategoryFilter;
-      } else {
-        activeCategoryFilter = 'ALL';
-        sel.value = 'ALL';
-      }
     }
 
     function renderCollectionSidebar() {
@@ -805,19 +748,11 @@
       renderLibraryRecords();
     }
 
-    function handleCategoryFilterChange(val) {
-      activeCategoryFilter = val || 'ALL';
-      currentPage = 1;
-      renderLibraryRecords();
-    }
-
     function getFilteredRecords() {
       const q = searchQuery.trim().toLowerCase();
       const normQ = q.replace(/[\s\-_]+/g, '');
-      const catFilter = activeCategoryFilter !== 'ALL' ? activeCategoryFilter.trim().toLowerCase() : null;
       let list = archiveRecords.filter(item => {
         if (activeCollection !== 'ALL' && item.prefix !== activeCollection) return false;
-        if (catFilter !== null && (item.category || '').trim().toLowerCase() !== catFilter) return false;
         if (!q) return true;
         const code = (item.code || item.callNumber || '').toLowerCase();
         const normCode = code.replace(/[\s\-_]+/g, '');
@@ -972,31 +907,10 @@
       const rec = archiveRecords.find(r => r.id === recordId);
       if (!rec) return;
 
-      customCollections = loadStoredCollections();
-      productCategories = loadStoredProductCategories(archiveRecords);
-
-      const collSelect = document.getElementById('editCollectionInput');
-      const collOpts = customCollections.map(c =>
-        `<option value="${escapeHtml(c.id)}">${escapeHtml(c.label)} (${escapeHtml(c.id)})</option>`
-      );
-      collOpts.push('<option value="">Unassigned (ALL RECORDS only)</option>');
-      collSelect.innerHTML = collOpts.join('');
-      const recPrefix = rec.prefix || '';
-      collSelect.value = customCollections.some(c => c.id === recPrefix) ? recPrefix : '';
-
-      const catSelect = document.getElementById('editCategoryInput');
-      const recCat = (rec.category || '').trim();
-      const catOpts = ['<option value="">-- Unassigned --</option>']
-        .concat(productCategories.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`));
-      if (recCat && !productCategories.some(c => c.toLowerCase() === recCat.toLowerCase())) {
-        catOpts.push(`<option value="${escapeHtml(recCat)}">${escapeHtml(recCat)} (Legacy)</option>`);
-      }
-      catSelect.innerHTML = catOpts.join('');
-      catSelect.value = recCat;
-
       document.getElementById('editTabCodeBadge').innerText = rec.code || rec.callNumber || '';
       document.getElementById('editCodeInput').value = rec.code || rec.callNumber || '';
       document.getElementById('editNameInput').value = rec.name || '';
+      document.getElementById('editCategoryInput').value = rec.category || '';
       document.getElementById('editDescInput').value = rec.description || '';
 
       document.getElementById('saveStatusText').innerText = 'Auto-Saved';
@@ -1033,7 +947,6 @@
       }, 250);
 
       renderCollectionSidebar();
-      renderCategoryFilterSelect();
       renderLibraryRecords();
     }
 

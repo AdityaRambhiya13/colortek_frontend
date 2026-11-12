@@ -552,6 +552,14 @@
         </div>
 
         <div class="edit-field-group">
+          <label class="edit-field-label" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+            <span>Product Link</span>
+            <a id="editProductLinkAnchor" href="#" target="_blank" rel="noopener noreferrer" style="display:none; align-items:center; gap:4px; font-size:10px; font-weight:700; letter-spacing:0.5px; color:var(--ink-primary); text-decoration:none; border:1px solid var(--border-subtle); padding:2px 8px; border-radius:4px; background:var(--paper-card);">OPEN LINK ↗</a>
+          </label>
+          <input type="url" id="editProductLinkInput" class="edit-input" style="font-family:var(--font-mono); font-size:13px;" placeholder="https://example.com/product" oninput="handleFieldChange('productLink', this.value)" />
+        </div>
+
+        <div class="edit-field-group">
           <label class="edit-field-label">Product Description</label>
           <textarea id="editDescInput" class="edit-input" rows="5" style="font-family:var(--font-serif); font-size:14px; line-height:1.5; resize:vertical;" oninput="handleFieldChange('description', this.value)"></textarea>
         </div>
@@ -645,14 +653,18 @@
 
     function saveArchiveRecords(records) {
       try {
-        localStorage.setItem('chemical_archive_custom_v1', JSON.stringify(records));
-        localStorage.setItem('chemical_archive_records_v1', JSON.stringify(records));
+        const serialized = JSON.stringify(records);
+        localStorage.setItem('chemical_archive_custom_v1', serialized);
+        localStorage.setItem('chemical_archive_records_v1', serialized);
       } catch(e) {}
     }
 
     function parseCollectionRange(prefix, rangeText) {
+      if (window.LibraryShared && typeof window.LibraryShared.parseCollectionRange === 'function') {
+        return window.LibraryShared.parseCollectionRange(prefix, rangeText);
+      }
       const clean = String(rangeText || '').trim();
-      const rangeMatch = clean.match(/^(?:[A-Za-z0-9_]+-)?(\d+)\s*(?:to|–|—|-)\s*(?:[A-Za-z0-9_]+-)?(\d+)$/i);
+      const rangeMatch = clean.match(/^(?:[A-Za-z][A-Za-z0-9_-]*[\s-]+)?(\d+)\s*(?:to|–|—|-)\s*(?:[A-Za-z][A-Za-z0-9_-]*[\s-]+)?(\d+)$/i);
       if (rangeMatch) {
         let start = parseInt(rangeMatch[1], 10);
         let end = parseInt(rangeMatch[2], 10);
@@ -661,7 +673,7 @@
         const padLen = Math.max(3, rangeMatch[1].length);
         return { start, end: maxEnd, padLen };
       }
-      const singleMatch = clean.match(/^(?:[A-Za-z0-9_]+-)?(\d+)\s*\+?$/i);
+      const singleMatch = clean.match(/^(?:[A-Za-z][A-Za-z0-9_-]*[\s-]+)?(\d+)\s*\+?$/i);
       if (singleMatch) {
         const start = parseInt(singleMatch[1], 10);
         const padLen = Math.max(3, singleMatch[1].length);
@@ -671,6 +683,10 @@
     }
 
     function buildCollectionSeedRecords(coll, existingRecords) {
+      if (window.LibraryShared && typeof window.LibraryShared.relinkOrSeedCollection === 'function') {
+        const res = window.LibraryShared.relinkOrSeedCollection(coll, customCollections, existingRecords);
+        return res.created;
+      }
       const { start, end, padLen } = parseCollectionRange(coll.id, coll.range);
       const existingCodes = new Set(
         (existingRecords || []).map(r => (r.code || r.callNumber || '').trim().toLowerCase())
@@ -689,6 +705,7 @@
             code: code,
             name: '',
             category: '',
+            productLink: '',
             description: '',
             drawer: ''
           });
@@ -741,6 +758,8 @@
 
     async function syncFromServer() {
       if (!window.LibraryShared) return;
+      if (window.LibraryShared.hasPendingMutations && window.LibraryShared.hasPendingMutations()) return;
+      if (activeEditingRecordId || pendingRecordPatch) return;
       if (syncInFlight) return syncInFlight;
       syncInFlight = (async () => {
         const state = await window.LibraryShared.fetchState();
@@ -753,7 +772,7 @@
           return;
         }
 
-        if (activeEditingRecordId || pendingRecordPatch) return;
+        if (activeEditingRecordId || pendingRecordPatch || (window.LibraryShared.hasPendingMutations && window.LibraryShared.hasPendingMutations())) return;
 
         const serverColls = Array.isArray(state.collections) ? state.collections : [];
         const serverRecs = Array.isArray(state.records) ? sanitizeRecords(state.records) : [];
@@ -918,6 +937,7 @@
                (normQ && normCode.includes(normQ)) ||
                (item.name && item.name.toLowerCase().includes(q)) ||
                (item.category && item.category.toLowerCase().includes(q)) ||
+               (item.productLink && item.productLink.toLowerCase().includes(q)) ||
                (item.description && item.description.toLowerCase().includes(q)) ||
                (item.drawer && item.drawer.toLowerCase().includes(q));
       });
@@ -974,7 +994,8 @@
           const categoryText = (item.category || '').trim();
           const descText = (item.description || '').trim();
           const drawerText = (item.drawer || '').trim();
-          const hasDetails = Boolean(categoryText || descText);
+          const safeLink = toSafeProductUrl(item.productLink || '');
+          const hasDetails = Boolean(categoryText || descText || safeLink);
 
           return `
           <div class="catalog-card" data-id="${escapeHtml(item.id)}" onclick="openEditTab(this.getAttribute('data-id'))" style="cursor:pointer;" title="Click to view and edit details in tab form">
@@ -996,7 +1017,8 @@
                 <div class="card-desc-text">${highlightMatch(descText)}</div>
               </div>` : ''}
             </div>
-            <div style="display:flex; justify-content:flex-end; padding-top:8px; border-top:1px dashed rgba(128,119,92,0.3); margin-top:auto;">
+            <div style="display:flex; justify-content:${safeLink ? 'space-between' : 'flex-end'}; align-items:center; gap:8px; padding-top:8px; border-top:1px dashed rgba(128,119,92,0.3); margin-top:auto;">
+              ${safeLink ? `<a href="${escapeHtml(safeLink)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="font-family:var(--font-sans); font-size:10px; font-weight:700; color:var(--ink-primary); letter-spacing:0.6px; text-decoration:none; border-bottom:1px solid currentColor;">VISIT SITE ↗</a>` : ''}
               <span style="font-family:var(--font-sans); font-size:10px; font-weight:700; color:var(--ink-primary); letter-spacing:0.8px;">EDIT DETAILS ✎</span>
             </div>
           </div>
@@ -1058,6 +1080,28 @@
       renderLibraryRecords();
     }
 
+    function toSafeProductUrl(raw) {
+      if (window.LibraryShared && typeof window.LibraryShared.normalizeProductUrl === 'function') {
+        return window.LibraryShared.normalizeProductUrl(raw);
+      }
+      const val = String(raw == null ? '' : raw).trim();
+      if (!val || /^(javascript|data|vbscript):/i.test(val)) return '';
+      return /^https?:\/\//i.test(val) ? val : 'https://' + val.replace(/^\/+/, '');
+    }
+
+    function updateProductLinkPreview(raw) {
+      const anchor = document.getElementById('editProductLinkAnchor');
+      if (!anchor) return;
+      const safe = toSafeProductUrl(raw);
+      if (safe) {
+        anchor.href = safe;
+        anchor.style.display = 'inline-flex';
+      } else {
+        anchor.href = '#';
+        anchor.style.display = 'none';
+      }
+    }
+
     /* Open Edit Tab Form */
     function openEditTab(recordId) {
       activeEditingRecordId = recordId;
@@ -1068,6 +1112,10 @@
       document.getElementById('editCodeInput').value = rec.code || rec.callNumber || '';
       document.getElementById('editNameInput').value = rec.name || '';
       document.getElementById('editCategoryInput').value = rec.category || '';
+      const linkVal = rec.productLink || '';
+      const linkInput = document.getElementById('editProductLinkInput');
+      if (linkInput) linkInput.value = linkVal;
+      updateProductLinkPreview(linkVal);
       document.getElementById('editDescInput').value = rec.description || '';
 
       document.getElementById('saveStatusText').innerText = 'Auto-Saved';
@@ -1083,11 +1131,23 @@
       renderIcons();
     }
 
+    let pendingLocalFlushTimer = null;
+
+    function flushLocalUiAndStorage() {
+      if (pendingLocalFlushTimer) {
+        clearTimeout(pendingLocalFlushTimer);
+        pendingLocalFlushTimer = null;
+      }
+      saveArchiveRecords(archiveRecords);
+      renderLibraryRecords();
+    }
+
     function flushPendingRecordSync() {
       if (pendingPatchTimer) {
         clearTimeout(pendingPatchTimer);
         pendingPatchTimer = null;
       }
+      flushLocalUiAndStorage();
       if (pendingRecordPatch && window.LibraryShared) {
         const { id, patch } = pendingRecordPatch;
         pendingRecordPatch = null;
@@ -1111,11 +1171,12 @@
         rec.callNumber = value;
         document.getElementById('editTabCodeBadge').innerText = value;
       }
+      if (field === 'productLink') {
+        updateProductLinkPreview(value);
+      }
 
       const statusText = document.getElementById('saveStatusText');
       statusText.innerText = 'Saving...';
-
-      saveArchiveRecords(archiveRecords);
 
       if (!pendingRecordPatch || pendingRecordPatch.id !== rec.id) {
         flushPendingRecordSync();
@@ -1124,14 +1185,14 @@
       pendingRecordPatch.patch[field] = value;
       if (field === 'code') pendingRecordPatch.patch.callNumber = value;
 
+      if (pendingLocalFlushTimer) clearTimeout(pendingLocalFlushTimer);
+      pendingLocalFlushTimer = setTimeout(flushLocalUiAndStorage, 120);
+
       if (pendingPatchTimer) clearTimeout(pendingPatchTimer);
       pendingPatchTimer = setTimeout(() => {
         flushPendingRecordSync();
         statusText.innerText = 'Auto-Saved';
       }, 350);
-
-      renderCollectionSidebar();
-      renderLibraryRecords();
     }
 
     function handleSearchInput(val) {

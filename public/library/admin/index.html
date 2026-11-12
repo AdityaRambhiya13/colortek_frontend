@@ -663,6 +663,13 @@
           </div>
         </div>
         <div class="cat-field">
+          <label for="recModalProductLink" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+            <span>Product Link</span>
+            <a id="recModalLinkAnchor" href="#" target="_blank" rel="noopener noreferrer" style="display:none; font-size:10px; font-weight:700; color:var(--ink-primary); text-decoration:none; border:1px solid var(--border-subtle); padding:2px 8px; border-radius:4px;">OPEN LINK ↗</a>
+          </label>
+          <input type="url" id="recModalProductLink" class="admin-input" placeholder="https://example.com/product" oninput="updateAdminModalLinkPreview(this.value)" />
+        </div>
+        <div class="cat-field">
           <label for="recModalDesc">Description</label>
           <textarea id="recModalDesc" class="admin-textarea" rows="3" placeholder="Chemical notes, specification, or usage"></textarea>
         </div>
@@ -671,6 +678,35 @@
           <button type="submit" class="btn-primary">SAVE RECORD</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Delete Collection Category Warning & Choice Modal -->
+  <div id="deleteCollModalBackdrop" class="modal-backdrop" onclick="closeDeleteCollModal()">
+    <div class="modal-card" style="max-width:460px;" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-title" style="color:#991b1b;">Delete Category</span>
+        <button type="button" onclick="closeDeleteCollModal()" style="background:none; border:none; cursor:pointer; color:var(--olive-muted); display:flex;">
+          <i data-lucide="x" style="width:18px; height:18px;"></i>
+        </button>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:14px;">
+        <p id="deleteCollWarningText" style="font-size:13px; line-height:1.5; color:var(--ink-dark); margin:0;"></p>
+        <div id="deleteCollWarningAlert" style="background:#fef2f2; border:1px solid #fecaca; color:#991b1b; padding:10px 12px; border-radius:6px; font-size:12px; font-weight:600;">
+          Warning: Removing all records permanently deletes every card under this category across all synced devices.
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px; margin-top:4px;">
+          <button type="button" id="btnConfirmDeleteAllRecs" onclick="confirmDeleteCollectionAction('delete_records')" style="background:#991b1b; color:#fff; border:none; padding:10px 14px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; text-align:center;">
+            Delete Category &amp; Remove All Records
+          </button>
+          <button type="button" id="btnConfirmShiftMisc" onclick="confirmDeleteCollectionAction('shift_misc')" class="action-btn" style="padding:10px 14px; font-size:12px; font-weight:700; text-align:center; justify-content:center;">
+            Delete Category &amp; Shift Records to Miscellaneous
+          </button>
+          <button type="button" onclick="closeDeleteCollModal()" class="action-btn" style="padding:8px 14px; font-size:12px; text-align:center; justify-content:center;">
+            Cancel
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -755,8 +791,11 @@
     }
 
     function parseCollectionRange(prefix, rangeText) {
+      if (window.LibraryShared && typeof window.LibraryShared.parseCollectionRange === 'function') {
+        return window.LibraryShared.parseCollectionRange(prefix, rangeText);
+      }
       const clean = String(rangeText || '').trim();
-      const rangeMatch = clean.match(/^(?:[A-Za-z0-9_]+-)?(\d+)\s*(?:to|–|—|-)\s*(?:[A-Za-z0-9_]+-)?(\d+)$/i);
+      const rangeMatch = clean.match(/^(?:[A-Za-z][A-Za-z0-9_-]*[\s-]+)?(\d+)\s*(?:to|–|—|-)\s*(?:[A-Za-z][A-Za-z0-9_-]*[\s-]+)?(\d+)$/i);
       if (rangeMatch) {
         let start = parseInt(rangeMatch[1], 10);
         let end = parseInt(rangeMatch[2], 10);
@@ -765,7 +804,7 @@
         const padLen = Math.max(3, rangeMatch[1].length);
         return { start, end: maxEnd, padLen };
       }
-      const singleMatch = clean.match(/^(?:[A-Za-z0-9_]+-)?(\d+)\s*\+?$/i);
+      const singleMatch = clean.match(/^(?:[A-Za-z][A-Za-z0-9_-]*[\s-]+)?(\d+)\s*\+?$/i);
       if (singleMatch) {
         const start = parseInt(singleMatch[1], 10);
         const padLen = Math.max(3, singleMatch[1].length);
@@ -775,6 +814,10 @@
     }
 
     function buildCollectionSeedRecords(coll, existingRecords) {
+      if (window.LibraryShared && typeof window.LibraryShared.relinkOrSeedCollection === 'function') {
+        const res = window.LibraryShared.relinkOrSeedCollection(coll, adminCollections, existingRecords);
+        return res.created;
+      }
       const { start, end, padLen } = parseCollectionRange(coll.id, coll.range);
       const existingCodes = new Set(
         (existingRecords || []).map(r => (r.code || r.callNumber || '').trim().toLowerCase())
@@ -793,12 +836,32 @@
             code: code,
             name: '',
             category: '',
+            productLink: '',
             description: '',
             drawer: ''
           });
         }
       }
       return created;
+    }
+
+    function reconcileEmptyAdminCollections(syncRemote) {
+      if (!window.LibraryShared || typeof window.LibraryShared.relinkOrSeedCollection !== 'function') return false;
+      let changed = false;
+      adminCollections.forEach(c => {
+        const hasExact = adminRecords.some(r => r.prefix === c.id);
+        if (!hasExact) {
+          const res = window.LibraryShared.relinkOrSeedCollection(c, adminCollections, adminRecords);
+          if (res.relinked.length > 0) {
+            changed = true;
+            if (syncRemote && sessionStorage.getItem('chem_auth_token')) {
+              window.LibraryShared.createCollection(c, res.relinked);
+            }
+          }
+        }
+      });
+      if (changed) saveAdminRecords();
+      return changed;
     }
 
     function markCollectionSeeded(id, isSeeded) {
@@ -817,7 +880,7 @@
         const raw = localStorage.getItem(SEEDED_COLLS_STORAGE_KEY);
         if (raw) seededSet = new Set(JSON.parse(raw));
       } catch(e) {}
-      let recordsChanged = false;
+      let recordsChanged = reconcileEmptyAdminCollections(false);
       let seededChanged = false;
       adminCollections.forEach(c => {
         const hasAny = adminRecords.some(r => r.prefix === c.id);
@@ -886,6 +949,10 @@
     let adminSyncInFlight = null;
     async function syncAdminFromServer() {
       if (!window.LibraryShared) return;
+      if (window.LibraryShared.hasPendingMutations && window.LibraryShared.hasPendingMutations()) return;
+      const recBackdropPre = document.getElementById('recordModalBackdrop');
+      const delBackdropPre = document.getElementById('deleteCollModalBackdrop');
+      if ((recBackdropPre && recBackdropPre.classList.contains('open')) || (delBackdropPre && delBackdropPre.classList.contains('open'))) return;
       if (adminSyncInFlight) return adminSyncInFlight;
       adminSyncInFlight = (async () => {
         const state = await window.LibraryShared.fetchState();
@@ -898,11 +965,14 @@
           return;
         }
 
+        if (window.LibraryShared.hasPendingMutations && window.LibraryShared.hasPendingMutations()) return;
         const backdrop = document.getElementById('recordModalBackdrop');
-        if (backdrop && backdrop.classList.contains('open')) return;
+        const delBackdrop = document.getElementById('deleteCollModalBackdrop');
+        if ((backdrop && backdrop.classList.contains('open')) || (delBackdrop && delBackdrop.classList.contains('open'))) return;
 
         adminCollections = Array.isArray(state.collections) ? state.collections : [];
         adminRecords = Array.isArray(state.records) ? sanitizeRecords(state.records) : [];
+        reconcileEmptyAdminCollections(true);
         saveCollections();
         saveAdminRecords();
         refreshAllAdminViews();
@@ -972,10 +1042,33 @@
         return (r.code || r.callNumber || '').toLowerCase().includes(q) ||
                (r.name || '').toLowerCase().includes(q) ||
                (r.category || '').toLowerCase().includes(q) ||
+               (r.productLink || '').toLowerCase().includes(q) ||
                (r.description || '').toLowerCase().includes(q);
       });
 
       renderAdminRecords(filtered.slice(0, 100));
+    }
+
+    function toSafeAdminUrl(raw) {
+      if (window.LibraryShared && typeof window.LibraryShared.normalizeProductUrl === 'function') {
+        return window.LibraryShared.normalizeProductUrl(raw);
+      }
+      const val = String(raw == null ? '' : raw).trim();
+      if (!val || /^(javascript|data|vbscript):/i.test(val)) return '';
+      return /^https?:\/\//i.test(val) ? val : 'https://' + val.replace(/^\/+/, '');
+    }
+
+    function updateAdminModalLinkPreview(raw) {
+      const anchor = document.getElementById('recModalLinkAnchor');
+      if (!anchor) return;
+      const safe = toSafeAdminUrl(raw);
+      if (safe) {
+        anchor.href = safe;
+        anchor.style.display = 'inline-block';
+      } else {
+        anchor.href = '#';
+        anchor.style.display = 'none';
+      }
     }
 
     function renderAdminRecords(list = adminRecords.slice(0, 100)) {
@@ -986,11 +1079,16 @@
         renderIcons();
         return;
       }
-      tbody.innerHTML = list.map(r => `
+      tbody.innerHTML = list.map(r => {
+        const safeUrl = toSafeAdminUrl(r.productLink || '');
+        const linkBadge = safeUrl
+          ? ` <a href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer" style="font-size:10px; font-weight:700; color:var(--ink-primary); text-decoration:none; border-bottom:1px solid currentColor; margin-left:4px;">Link ↗</a>`
+          : '';
+        return `
         <tr>
           <td style="font-family:var(--font-mono); font-weight:700; color:var(--ink-primary);">${escapeHtml(r.code || r.callNumber)}</td>
           <td><span class="cat-badge">${escapeHtml(r.prefix || '—')}</span></td>
-          <td style="font-weight:600;">${r.name ? escapeHtml(r.name) : '<span style="color:var(--olive-muted);">—</span>'}</td>
+          <td style="font-weight:600;">${r.name ? escapeHtml(r.name) : '<span style="color:var(--olive-muted);">—</span>'}${linkBadge}</td>
           <td style="color:var(--olive-muted);">${r.category ? escapeHtml(r.category) : '<span style="opacity:0.6;">—</span>'}</td>
           <td style="color:var(--olive-muted); font-size:12px;">${r.description ? escapeHtml(r.description) : '<span style="opacity:0.6;">—</span>'}</td>
           <td style="text-align:center;">
@@ -998,7 +1096,8 @@
             <button data-id="${escapeHtml(r.id)}" data-code="${escapeHtml(r.code || r.callNumber || '')}" onclick="deleteAdminRecord(this.getAttribute('data-id'), this.getAttribute('data-code'))" class="action-btn" style="color:#991b1b;" title="Delete Record"><i data-lucide="trash-2" style="width:12px; height:12px;"></i></button>
           </td>
         </tr>
-      `).join('');
+      `;
+      }).join('');
       renderIcons();
     }
 
@@ -1072,9 +1171,19 @@
       adminCollections.push(newColl);
       saveCollections();
 
-      const generated = buildCollectionSeedRecords(newColl, adminRecords);
+      let relinked = [];
+      let generated = [];
+      if (window.LibraryShared && typeof window.LibraryShared.relinkOrSeedCollection === 'function') {
+        const res = window.LibraryShared.relinkOrSeedCollection(newColl, adminCollections, adminRecords);
+        relinked = res.relinked;
+        generated = res.created;
+      } else {
+        generated = buildCollectionSeedRecords(newColl, adminRecords);
+      }
       if (generated.length > 0) {
         adminRecords.push(...generated);
+      }
+      if (relinked.length > 0 || generated.length > 0) {
         saveAdminRecords();
       }
       markCollectionSeeded(newColl.id, true);
@@ -1083,11 +1192,20 @@
       document.getElementById('newCollLabel').value = '';
       document.getElementById('newCollRange').value = '';
 
+      const totalCount = adminRecords.filter(r => r.prefix === newColl.id).length;
       refreshAllAdminViews();
-      showCatFeedback('collFeedback', `Collection "${newColl.label}" (${newColl.id}) created with ${generated.length.toLocaleString()} cards.`, 'success');
+      showCatFeedback('collFeedback', `Collection "${newColl.label}" (${newColl.id}) created with ${totalCount.toLocaleString()} cards.`, 'success');
       if (window.LibraryShared) {
-        window.LibraryShared.createCollection(newColl, generated);
+        window.LibraryShared.createCollection(newColl, relinked.concat(generated));
       }
+    }
+
+    let pendingDeleteCollId = null;
+
+    function closeDeleteCollModal() {
+      const backdrop = document.getElementById('deleteCollModalBackdrop');
+      if (backdrop) backdrop.classList.remove('open');
+      pendingDeleteCollId = null;
     }
 
     function deleteCollectionCategory(id) {
@@ -1095,31 +1213,88 @@
       if (!target) return;
 
       const affected = adminRecords.filter(r => r.prefix === id).length;
+      const backdrop = document.getElementById('deleteCollModalBackdrop');
+      if (!backdrop) {
+        if (affected === 0) {
+          if (confirm(`Delete empty collection "${target.label}" (${target.id})?`)) {
+            executeDeleteCollection(id, 'delete_records');
+          }
+          return;
+        }
+        const removeAll = confirm(`WARNING: Deleting collection "${target.label}" (${target.id}) affects ${affected.toLocaleString()} record(s).\n\nClick OK to DELETE ALL ${affected.toLocaleString()} records, or Cancel to choose shifting to Miscellaneous instead.`);
+        if (removeAll) {
+          executeDeleteCollection(id, 'delete_records');
+        } else if (confirm(`Shift ${affected.toLocaleString()} record(s) from "${target.label}" to Miscellaneous instead?`)) {
+          executeDeleteCollection(id, 'shift_misc');
+        }
+        return;
+      }
+
+      pendingDeleteCollId = id;
+      const hasMisc = id !== 'MISC' && adminCollections.some(c => c.id === 'MISC');
+      const warnText = document.getElementById('deleteCollWarningText');
+      const warnAlert = document.getElementById('deleteCollWarningAlert');
+      const btnDeleteAll = document.getElementById('btnConfirmDeleteAllRecs');
+      const btnShift = document.getElementById('btnConfirmShiftMisc');
+
+      if (affected > 0) {
+        warnText.textContent = `Collection "${target.label}" (${target.id}) currently contains ${affected.toLocaleString()} compound record(s). Choose what should happen to these records:`;
+        warnAlert.style.display = 'block';
+        btnDeleteAll.textContent = `Delete Category & Remove All ${affected.toLocaleString()} Records`;
+        btnShift.style.display = 'inline-flex';
+        btnShift.textContent = hasMisc
+          ? 'Delete Category & Shift Records to Miscellaneous (MISC)'
+          : 'Delete Category & Shift Records to Unassigned (ALL only)';
+      } else {
+        warnText.textContent = `Are you sure you want to delete empty collection "${target.label}" (${target.id})?`;
+        warnAlert.style.display = 'none';
+        btnDeleteAll.textContent = 'Delete Collection Category';
+        btnShift.style.display = 'none';
+      }
+      backdrop.classList.add('open');
+      renderIcons();
+    }
+
+    function confirmDeleteCollectionAction(mode) {
+      const id = pendingDeleteCollId;
+      closeDeleteCollModal();
+      if (!id) return;
+      executeDeleteCollection(id, mode === 'shift_misc' ? 'shift_misc' : 'delete_records');
+    }
+
+    function executeDeleteCollection(id, mode) {
+      const target = adminCollections.find(c => c.id === id);
+      if (!target) return;
+
+      const affected = adminRecords.filter(r => r.prefix === id).length;
       const hasMisc = id !== 'MISC' && adminCollections.some(c => c.id === 'MISC');
       const fallbackPrefix = hasMisc ? 'MISC' : '';
-      const fallbackLabel = hasMisc ? 'MISCELLANEOUS (MISC)' : 'Unassigned (visible under ALL RECORDS)';
-
-      const msg = affected > 0
-        ? `Delete collection "${target.label}" (${target.id})?\n\n${affected.toLocaleString()} existing compound record(s) will be kept and moved to ${fallbackLabel}.`
-        : `Delete collection "${target.label}" (${target.id})?`;
-
-      if (!confirm(msg)) return;
+      const fallbackLabel = hasMisc ? 'MISCELLANEOUS (MISC)' : 'Unassigned';
 
       adminCollections = adminCollections.filter(c => c.id !== id);
       saveCollections();
       markCollectionSeeded(id, false);
 
       if (affected > 0) {
-        adminRecords.forEach(r => {
-          if (r.prefix === id) r.prefix = fallbackPrefix;
-        });
+        if (mode === 'shift_misc') {
+          adminRecords.forEach(r => {
+            if (r.prefix === id) r.prefix = fallbackPrefix;
+          });
+        } else {
+          adminRecords = adminRecords.filter(r => r.prefix !== id);
+        }
         saveAdminRecords();
       }
 
       refreshAllAdminViews();
-      showCatFeedback('collFeedback', `Deleted collection "${target.label}". Existing records were preserved.`, 'success');
+      const summaryMsg = affected > 0
+        ? (mode === 'shift_misc'
+            ? `Deleted collection "${target.label}" and shifted ${affected.toLocaleString()} record(s) to ${fallbackLabel}.`
+            : `Deleted collection "${target.label}" and removed all ${affected.toLocaleString()} record(s).`)
+        : `Deleted empty collection "${target.label}".`;
+      showCatFeedback('collFeedback', summaryMsg, 'success');
       if (window.LibraryShared) {
-        window.LibraryShared.deleteCollection(id);
+        window.LibraryShared.deleteCollection(id, mode);
       }
     }
 
@@ -1148,6 +1323,9 @@
       document.getElementById('recModalCode').value = '';
       document.getElementById('recModalName').value = '';
       document.getElementById('recModalCategory').value = '';
+      const linkEl = document.getElementById('recModalProductLink');
+      if (linkEl) linkEl.value = '';
+      updateAdminModalLinkPreview('');
       document.getElementById('recModalDesc').value = '';
       document.getElementById('recordModalBackdrop').classList.add('open');
       if (window.LibraryShared) {
@@ -1169,6 +1347,10 @@
       document.getElementById('recModalCode').value = rec.code || rec.callNumber || '';
       document.getElementById('recModalName').value = rec.name || '';
       document.getElementById('recModalCategory').value = rec.category || '';
+      const linkVal = rec.productLink || '';
+      const linkEl = document.getElementById('recModalProductLink');
+      if (linkEl) linkEl.value = linkVal;
+      updateAdminModalLinkPreview(linkVal);
       document.getElementById('recModalDesc').value = rec.description || '';
       document.getElementById('recordModalBackdrop').classList.add('open');
       if (window.LibraryShared) {
@@ -1192,6 +1374,7 @@
       const code = document.getElementById('recModalCode').value.trim();
       const name = document.getElementById('recModalName').value.trim();
       const category = document.getElementById('recModalCategory').value.trim();
+      const productLink = (document.getElementById('recModalProductLink')?.value || '').trim();
       const description = document.getElementById('recModalDesc').value.trim();
 
       if (!code) return;
@@ -1209,6 +1392,7 @@
           rec.callNumber = code;
           rec.name = name;
           rec.category = category;
+          rec.productLink = productLink;
           rec.description = description;
           rec.num = Number.isFinite(parsedNum) ? parsedNum : (rec.num || 9999);
           syncedRecord = rec;
@@ -1220,6 +1404,7 @@
           code: code,
           name: name,
           category: category,
+          productLink: productLink,
           description: description,
           prefix: prefix,
           num: parsedNum,
@@ -1239,6 +1424,7 @@
             callNumber: syncedRecord.callNumber,
             name: syncedRecord.name,
             category: syncedRecord.category,
+            productLink: syncedRecord.productLink || '',
             description: syncedRecord.description,
             num: String(syncedRecord.num)
           });
@@ -1261,8 +1447,9 @@
 
     function saveAdminRecords() {
       try {
-        localStorage.setItem('chemical_archive_custom_v1', JSON.stringify(adminRecords));
-        localStorage.setItem('chemical_archive_records_v1', JSON.stringify(adminRecords));
+        const serialized = JSON.stringify(adminRecords);
+        localStorage.setItem('chemical_archive_custom_v1', serialized);
+        localStorage.setItem('chemical_archive_records_v1', serialized);
       } catch(e) {}
     }
 
@@ -1323,6 +1510,8 @@
         localStorage.removeItem(SEEDED_COLLS_STORAGE_KEY);
         adminRecords = sanitizeRecords(window.RAW_SEED_DATA || []);
         adminCollections = DEFAULT_COLLECTIONS.map(c => ({ ...c }));
+        saveCollections();
+        saveAdminRecords();
         refreshAllAdminViews();
         if (window.LibraryShared) window.LibraryShared.restoreState(adminCollections, adminRecords);
         alert('Archive and categories successfully reset to factory seed database.');

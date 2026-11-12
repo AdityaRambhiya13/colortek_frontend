@@ -171,6 +171,14 @@
     });
   }
 
+  function normalizeProductUrl(raw) {
+    const val = String(raw == null ? '' : raw).trim();
+    if (!val) return '';
+    if (/^(javascript|data|vbscript):/i.test(val)) return '';
+    if (/^https?:\/\//i.test(val)) return val;
+    return 'https://' + val.replace(/^\/+/, '');
+  }
+
   function compactRecord(r) {
     const code = String((r && (r.code || r.callNumber)) || '').trim();
     return {
@@ -182,13 +190,18 @@
       name: String((r && r.name) || ''),
       category: String((r && r.category) || ''),
       description: String((r && r.description) || ''),
-      drawer: String((r && r.drawer) || '')
+      drawer: String((r && r.drawer) || ''),
+      productLink: String((r && (r.productLink || r.product_link)) || '')
     };
   }
 
   function compactRecords(list) {
     return Array.isArray(list) ? list.map(compactRecord) : [];
   }
+
+  let mutationEpoch = 0;
+  let pendingMutations = 0;
+  let mutationQueue = Promise.resolve();
 
   function setSyncBadge(text, isOffline) {
     const doc = global.document;
@@ -227,7 +240,9 @@
         setSyncBadge('Sync Offline', true);
         return null;
       }
-      setSyncBadge('Cloud Synced', false);
+      if (pendingMutations === 0) {
+        setSyncBadge('Cloud Synced', false);
+      }
       return await resp.json();
     } catch (e) {
       setSyncBadge('Sync Offline', true);
@@ -235,66 +250,159 @@
     }
   }
 
+  function enqueueMutation(fn) {
+    mutationEpoch += 1;
+    pendingMutations += 1;
+    setSyncBadge('Saving...', false);
+    const task = mutationQueue
+      .catch(() => null)
+      .then(() => fn())
+      .finally(() => {
+        pendingMutations = Math.max(0, pendingMutations - 1);
+      });
+    mutationQueue = task;
+    return task.then(res => {
+      if (res && pendingMutations === 0) {
+        setSyncBadge('Cloud Synced', false);
+      }
+      return res;
+    });
+  }
+
+  function parseCollectionRange(prefix, rangeText) {
+    const clean = String(rangeText || '').trim();
+    const rangeMatch = clean.match(/^(?:[A-Za-z][A-Za-z0-9_-]*[\s-]+)?(\d+)\s*(?:to|–|—|-)\s*(?:[A-Za-z][A-Za-z0-9_-]*[\s-]+)?(\d+)$/i);
+    if (rangeMatch) {
+      let start = parseInt(rangeMatch[1], 10);
+      let end = parseInt(rangeMatch[2], 10);
+      if (end < start) [start, end] = [end, start];
+      const maxEnd = Math.min(end, start + 1999);
+      const padLen = Math.max(3, rangeMatch[1].length);
+      return { start, end: maxEnd, padLen };
+    }
+    const singleMatch = clean.match(/^(?:[A-Za-z][A-Za-z0-9_-]*[\s-]+)?(\d+)\s*\+?$/i);
+    if (singleMatch) {
+      const start = parseInt(singleMatch[1], 10);
+      const padLen = Math.max(3, singleMatch[1].length);
+      return { start, end: start + 99, padLen };
+    }
+    return { start: 1, end: 100, padLen: 3 };
+  }
+
+  function relinkOrSeedCollection(coll, allCollections, existingRecords) {
+    const collId = String((coll && coll.id) || '').trim();
+    if (!collId) return { relinked: [], created: [] };
+    const activeIds = new Set((allCollections || []).map(c => c.id));
+    const codePrefixLower = collId.toLowerCase() + '-';
+    const { start, end, padLen } = parseCollectionRange(collId, coll.range);
+
+    const expectedCodes = new Set();
+    for (let i = start; i <= end; i++) {
+      expectedCodes.add((collId + '-' + String(i).padStart(padLen, '0')).toLowerCase());
+    }
+
+    const relinked = [];
+    const existingCodes = new Set();
+    (existingRecords || []).forEach(r => {
+      const codeLower = String((r && (r.code || r.callNumber)) || '').trim().toLowerCase();
+      if (codeLower) existingCodes.add(codeLower);
+      const isOrphan = !r.prefix || !activeIds.has(r.prefix) || r.prefix.toLowerCase() === collId.toLowerCase();
+      if (r.prefix !== collId && isOrphan && (codeLower.startsWith(codePrefixLower) || expectedCodes.has(codeLower))) {
+        r.prefix = collId;
+        relinked.push(r);
+      }
+    });
+
+    const created = [];
+    const stamp = Date.now();
+    for (let i = start; i <= end; i++) {
+      const numStr = String(i).padStart(padLen, '0');
+      const code = collId + '-' + numStr;
+      if (!existingCodes.has(code.toLowerCase())) {
+        created.push({
+          id: collId.toLowerCase() + '-' + numStr + '-' + stamp + '-' + i,
+          prefix: collId,
+          num: numStr,
+          callNumber: code,
+          code: code,
+          name: '',
+          category: '',
+          productLink: '',
+          description: '',
+          drawer: ''
+        });
+      }
+    }
+    return { relinked, created };
+  }
+
   global.LibraryShared = {
     DEFAULT_PRODUCT_CATEGORIES,
     resolveApiBase,
+    normalizeProductUrl,
+    parseCollectionRange,
+    relinkOrSeedCollection,
     injectAutocompleteStyles,
     getCategorySuggestions,
     attachCategoryAutocomplete,
     compactRecord,
     compactRecords,
     setSyncBadge,
-    fetchState: function () {
-      return apiRequest('/state', { method: 'GET' });
+    hasPendingMutations: function () {
+      return pendingMutations > 0;
+    },
+    getMutationEpoch: function () {
+      return mutationEpoch;
+    },
+    waitForPendingMutations: function () {
+      return mutationQueue.catch(() => null);
+    },
+    fetchState: async function () {
+      if (pendingMutations > 0) return null;
+      const startEpoch = mutationEpoch;
+      const data = await apiRequest('/state?_t=' + Date.now(), { method: 'GET' });
+      if (!data) return null;
+      if (pendingMutations > 0 || startEpoch !== mutationEpoch) return null;
+      return data;
     },
     bootstrapState: function (collections, records) {
-      return apiRequest('/bootstrap', {
-        method: 'POST',
-        body: JSON.stringify({
-          collections: collections || [],
-          records: compactRecords(records)
-        })
+      const payload = JSON.stringify({
+        collections: collections || [],
+        records: compactRecords(records)
       });
+      return enqueueMutation(() => apiRequest('/bootstrap', { method: 'POST', body: payload }));
     },
     createCollection: function (collection, records) {
-      return apiRequest('/collections', {
-        method: 'POST',
-        body: JSON.stringify({
-          collection: collection,
-          records: compactRecords(records)
-        })
+      const payload = JSON.stringify({
+        collection: collection,
+        records: compactRecords(records)
       });
+      return enqueueMutation(() => apiRequest('/collections', { method: 'POST', body: payload }));
     },
-    deleteCollection: function (collId) {
-      return apiRequest('/collections/' + encodeURIComponent(collId), {
-        method: 'DELETE'
-      });
+    deleteCollection: function (collId, mode) {
+      const m = mode === 'shift_misc' ? 'shift_misc' : 'delete_records';
+      const path = '/collections/' + encodeURIComponent(collId) + '?mode=' + encodeURIComponent(m);
+      return enqueueMutation(() => apiRequest(path, { method: 'DELETE' }));
     },
     createRecord: function (record) {
-      return apiRequest('/records', {
-        method: 'POST',
-        body: JSON.stringify(compactRecord(record))
-      });
+      const payload = JSON.stringify(compactRecord(record));
+      return enqueueMutation(() => apiRequest('/records', { method: 'POST', body: payload }));
     },
     updateRecord: function (recordId, patch) {
-      return apiRequest('/records/' + encodeURIComponent(recordId), {
-        method: 'PATCH',
-        body: JSON.stringify(patch || {})
-      });
+      const path = '/records/' + encodeURIComponent(recordId);
+      const payload = JSON.stringify(patch || {});
+      return enqueueMutation(() => apiRequest(path, { method: 'PATCH', body: payload }));
     },
     deleteRecord: function (recordId) {
-      return apiRequest('/records/' + encodeURIComponent(recordId), {
-        method: 'DELETE'
-      });
+      const path = '/records/' + encodeURIComponent(recordId);
+      return enqueueMutation(() => apiRequest(path, { method: 'DELETE' }));
     },
     restoreState: function (collections, records) {
-      return apiRequest('/restore', {
-        method: 'PUT',
-        body: JSON.stringify({
-          collections: collections || [],
-          records: compactRecords(records)
-        })
+      const payload = JSON.stringify({
+        collections: collections || [],
+        records: compactRecords(records)
       });
+      return enqueueMutation(() => apiRequest('/restore', { method: 'PUT', body: payload }));
     }
   };
 })(typeof window !== 'undefined' ? window : globalThis);

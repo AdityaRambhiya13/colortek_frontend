@@ -670,6 +670,7 @@
 
   <script>
     const COLLECTIONS_STORAGE_KEY = 'chemical_archive_collections_v1';
+    const SEEDED_COLLS_STORAGE_KEY = 'chemical_archive_seeded_colls_v1';
 
     const DEFAULT_COLLECTIONS = [
       { id: 'D', label: 'D COLLECTION', range: 'D-001 to D-500' },
@@ -746,6 +747,96 @@
         localStorage.setItem(COLLECTIONS_STORAGE_KEY, JSON.stringify(adminCollections));
       } catch(e) {}
     }
+
+    function parseCollectionRange(prefix, rangeText) {
+      const clean = String(rangeText || '').trim();
+      const rangeMatch = clean.match(/^(?:[A-Za-z0-9_]+-)?(\d+)\s*(?:to|–|—|-)\s*(?:[A-Za-z0-9_]+-)?(\d+)$/i);
+      if (rangeMatch) {
+        let start = parseInt(rangeMatch[1], 10);
+        let end = parseInt(rangeMatch[2], 10);
+        if (end < start) [start, end] = [end, start];
+        const maxEnd = Math.min(end, start + 1999);
+        const padLen = Math.max(3, rangeMatch[1].length);
+        return { start, end: maxEnd, padLen };
+      }
+      const singleMatch = clean.match(/^(?:[A-Za-z0-9_]+-)?(\d+)\s*\+?$/i);
+      if (singleMatch) {
+        const start = parseInt(singleMatch[1], 10);
+        const padLen = Math.max(3, singleMatch[1].length);
+        return { start, end: start + 99, padLen };
+      }
+      return { start: 1, end: 100, padLen: 3 };
+    }
+
+    function buildCollectionSeedRecords(coll, existingRecords) {
+      const { start, end, padLen } = parseCollectionRange(coll.id, coll.range);
+      const existingCodes = new Set(
+        (existingRecords || []).map(r => (r.code || r.callNumber || '').trim().toLowerCase())
+      );
+      const created = [];
+      const stamp = Date.now();
+      for (let i = start; i <= end; i++) {
+        const numStr = String(i).padStart(padLen, '0');
+        const code = `${coll.id}-${numStr}`;
+        if (!existingCodes.has(code.toLowerCase())) {
+          created.push({
+            id: `${coll.id.toLowerCase()}-${numStr}-${stamp}-${i}`,
+            prefix: coll.id,
+            num: numStr,
+            callNumber: code,
+            code: code,
+            name: '',
+            category: '',
+            description: '',
+            drawer: ''
+          });
+        }
+      }
+      return created;
+    }
+
+    function markCollectionSeeded(id, isSeeded) {
+      try {
+        const raw = localStorage.getItem(SEEDED_COLLS_STORAGE_KEY);
+        const set = new Set(raw ? JSON.parse(raw) : []);
+        if (isSeeded) set.add(id);
+        else set.delete(id);
+        localStorage.setItem(SEEDED_COLLS_STORAGE_KEY, JSON.stringify(Array.from(set)));
+      } catch(e) {}
+    }
+
+    function ensureAdminCollectionsSeeded() {
+      let seededSet = new Set();
+      try {
+        const raw = localStorage.getItem(SEEDED_COLLS_STORAGE_KEY);
+        if (raw) seededSet = new Set(JSON.parse(raw));
+      } catch(e) {}
+      let recordsChanged = false;
+      let seededChanged = false;
+      adminCollections.forEach(c => {
+        const hasAny = adminRecords.some(r => r.prefix === c.id);
+        if (!hasAny && !seededSet.has(c.id)) {
+          const created = buildCollectionSeedRecords(c, adminRecords);
+          if (created.length > 0) {
+            adminRecords.push(...created);
+            recordsChanged = true;
+          }
+          seededSet.add(c.id);
+          seededChanged = true;
+        } else if (hasAny && !seededSet.has(c.id)) {
+          seededSet.add(c.id);
+          seededChanged = true;
+        }
+      });
+      if (recordsChanged) saveAdminRecords();
+      if (seededChanged) {
+        try {
+          localStorage.setItem(SEEDED_COLLS_STORAGE_KEY, JSON.stringify(Array.from(seededSet)));
+        } catch(e) {}
+      }
+    }
+
+    ensureAdminCollectionsSeeded();
 
     function escapeHtml(str) {
       return String(str == null ? '' : str)
@@ -941,17 +1032,24 @@
       const newColl = {
         id: rawId,
         label: rawLabel || `${rawId.toUpperCase()} COLLECTION`,
-        range: rawRange || `${rawId}-001+`
+        range: rawRange || `${rawId}-001 to ${rawId}-100`
       };
       adminCollections.push(newColl);
       saveCollections();
+
+      const generated = buildCollectionSeedRecords(newColl, adminRecords);
+      if (generated.length > 0) {
+        adminRecords.push(...generated);
+        saveAdminRecords();
+      }
+      markCollectionSeeded(newColl.id, true);
 
       document.getElementById('newCollId').value = '';
       document.getElementById('newCollLabel').value = '';
       document.getElementById('newCollRange').value = '';
 
       refreshAllAdminViews();
-      showCatFeedback('collFeedback', `Collection "${newColl.label}" (${newColl.id}) created.`, 'success');
+      showCatFeedback('collFeedback', `Collection "${newColl.label}" (${newColl.id}) created with ${generated.length.toLocaleString()} cards.`, 'success');
     }
 
     function deleteCollectionCategory(id) {
@@ -971,6 +1069,7 @@
 
       adminCollections = adminCollections.filter(c => c.id !== id);
       saveCollections();
+      markCollectionSeeded(id, false);
 
       if (affected > 0) {
         adminRecords.forEach(r => {
@@ -1094,7 +1193,6 @@
         version: 2,
         exportedAt: new Date().toISOString(),
         collections: adminCollections,
-        collections: adminCollections,
         records: adminRecords
       };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -1142,6 +1240,7 @@
         localStorage.removeItem('chemical_archive_custom_v1');
         localStorage.removeItem('chemical_archive_records_v1');
         localStorage.removeItem(COLLECTIONS_STORAGE_KEY);
+        localStorage.removeItem(SEEDED_COLLS_STORAGE_KEY);
         adminRecords = sanitizeRecords(window.RAW_SEED_DATA || []);
         adminCollections = DEFAULT_COLLECTIONS.map(c => ({ ...c }));
         refreshAllAdminViews();

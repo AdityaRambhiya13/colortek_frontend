@@ -190,24 +190,24 @@
     .filter-chip button { background: var(--peacock-blue); color: #fff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; }
 
     /* Cards Grid */
-    .archive-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 28px; }
+    .archive-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 16px; }
     .catalog-card {
-      background: var(--paper-card); border: 1px solid var(--border-subtle); padding: 28px; border-radius: var(--radius-large);
-      display: flex; flex-direction: column; justify-content: space-between; min-height: 260px; position: relative;
+      background: var(--paper-card); border: 1px solid var(--border-subtle); padding: 14px 16px; border-radius: var(--radius-medium);
+      display: flex; flex-direction: column; justify-content: space-between; min-height: 120px; position: relative;
       backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04); transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 300ms ease, background 300ms ease;
     }
-    .catalog-card:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(0, 95, 115, 0.12); border-color: rgba(255,255,255,1); background: var(--paper-card-hover); }
-    .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .card-call-number { font-family: var(--font-display); font-size: 20px; font-weight: 800; letter-spacing: 1px; color: var(--peacock-blue); background: rgba(0, 95, 115, 0.1); padding: 6px 14px; border-radius: 12px; }
-    .card-archival-stamp { font-family: var(--font-sans); font-weight: 700; font-size: 11px; color: var(--sea-green); background: rgba(42, 157, 143, 0.1); padding: 4px 10px; border-radius: 8px; }
-    .card-product-name { font-family: var(--font-sans); font-size: 18px; font-weight: 700; line-height: 1.3; color: var(--ink-primary); margin-bottom: 16px; }
-    .card-divider { height: 1px; background-color: rgba(255,255,255,0.8); margin: 16px 0; }
-    .card-meta-section { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
-    .card-category-label { font-family: var(--font-sans); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: var(--olive-muted); }
-    .card-category-value { font-family: var(--font-sans); font-size: 13px; font-weight: 600; color: var(--ink-primary); }
-    .card-desc-label { font-family: var(--font-sans); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: var(--olive-muted); margin-bottom: 4px; }
-    .card-desc-text { font-family: var(--font-sans); font-size: 14px; line-height: 1.6; color: var(--olive-light); }
+    .catalog-card:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(0, 95, 115, 0.12); border-color: rgba(255,255,255,1); background: var(--paper-card-hover); }
+    .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .card-call-number { font-family: var(--font-display); font-size: 15px; font-weight: 800; letter-spacing: 0.5px; color: var(--peacock-blue); background: rgba(0, 95, 115, 0.1); padding: 4px 10px; border-radius: 8px; }
+    .card-archival-stamp { font-family: var(--font-sans); font-weight: 700; font-size: 10px; color: var(--sea-green); background: rgba(42, 157, 143, 0.1); padding: 3px 8px; border-radius: 6px; }
+    .card-product-name { font-family: var(--font-sans); font-size: 14px; font-weight: 700; line-height: 1.3; color: var(--ink-primary); margin-bottom: 8px; }
+    .card-divider { height: 1px; background-color: rgba(255,255,255,0.8); margin: 8px 0; }
+    .card-meta-section { display: flex; flex-direction: column; gap: 3px; margin-bottom: 8px; }
+    .card-category-label { font-family: var(--font-sans); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--olive-muted); }
+    .card-category-value { font-family: var(--font-sans); font-size: 12px; font-weight: 600; color: var(--ink-primary); }
+    .card-desc-label { font-family: var(--font-sans); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--olive-muted); margin-bottom: 2px; }
+    .card-desc-text { font-family: var(--font-sans); font-size: 12px; line-height: 1.45; color: var(--olive-light); }
 
     /* Virtual Pagination */
     .pagination-bar {
@@ -561,6 +561,7 @@
 
   <script>
     const COLLECTIONS_STORAGE_KEY = 'chemical_archive_collections_v1';
+    const SEEDED_COLLS_STORAGE_KEY = 'chemical_archive_seeded_colls_v1';
 
     const DEFAULT_COLLECTIONS = [
       { id: 'D', label: 'D COLLECTION', range: 'D-001 to D-500' },
@@ -636,8 +637,98 @@
       return DEFAULT_COLLECTIONS.map(c => ({ ...c }));
     }
 
-    let archiveRecords = loadArchiveRecords();
+    function saveArchiveRecords(records) {
+      try {
+        localStorage.setItem('chemical_archive_custom_v1', JSON.stringify(records));
+        localStorage.setItem('chemical_archive_records_v1', JSON.stringify(records));
+      } catch(e) {}
+    }
+
+    function parseCollectionRange(prefix, rangeText) {
+      const clean = String(rangeText || '').trim();
+      const rangeMatch = clean.match(/^(?:[A-Za-z0-9_]+-)?(\d+)\s*(?:to|–|—|-)\s*(?:[A-Za-z0-9_]+-)?(\d+)$/i);
+      if (rangeMatch) {
+        let start = parseInt(rangeMatch[1], 10);
+        let end = parseInt(rangeMatch[2], 10);
+        if (end < start) [start, end] = [end, start];
+        const maxEnd = Math.min(end, start + 1999);
+        const padLen = Math.max(3, rangeMatch[1].length);
+        return { start, end: maxEnd, padLen };
+      }
+      const singleMatch = clean.match(/^(?:[A-Za-z0-9_]+-)?(\d+)\s*\+?$/i);
+      if (singleMatch) {
+        const start = parseInt(singleMatch[1], 10);
+        const padLen = Math.max(3, singleMatch[1].length);
+        return { start, end: start + 99, padLen };
+      }
+      return { start: 1, end: 100, padLen: 3 };
+    }
+
+    function buildCollectionSeedRecords(coll, existingRecords) {
+      const { start, end, padLen } = parseCollectionRange(coll.id, coll.range);
+      const existingCodes = new Set(
+        (existingRecords || []).map(r => (r.code || r.callNumber || '').trim().toLowerCase())
+      );
+      const created = [];
+      const stamp = Date.now();
+      for (let i = start; i <= end; i++) {
+        const numStr = String(i).padStart(padLen, '0');
+        const code = `${coll.id}-${numStr}`;
+        if (!existingCodes.has(code.toLowerCase())) {
+          created.push({
+            id: `${coll.id.toLowerCase()}-${numStr}-${stamp}-${i}`,
+            prefix: coll.id,
+            num: numStr,
+            callNumber: code,
+            code: code,
+            name: '',
+            category: '',
+            description: '',
+            drawer: ''
+          });
+        }
+      }
+      return created;
+    }
+
+    function ensureCollectionRecordsSeeded(collections, records) {
+      let seededSet = new Set();
+      try {
+        const raw = localStorage.getItem(SEEDED_COLLS_STORAGE_KEY);
+        if (raw) seededSet = new Set(JSON.parse(raw));
+      } catch(e) {}
+
+      let recordsChanged = false;
+      let seededChanged = false;
+      const nextRecords = Array.isArray(records) ? [...records] : [];
+
+      collections.forEach(c => {
+        const hasAny = nextRecords.some(r => r.prefix === c.id);
+        if (!hasAny && !seededSet.has(c.id)) {
+          const created = buildCollectionSeedRecords(c, nextRecords);
+          if (created.length > 0) {
+            nextRecords.push(...created);
+            recordsChanged = true;
+          }
+          seededSet.add(c.id);
+          seededChanged = true;
+        } else if (hasAny && !seededSet.has(c.id)) {
+          seededSet.add(c.id);
+          seededChanged = true;
+        }
+      });
+
+      if (recordsChanged) saveArchiveRecords(nextRecords);
+      if (seededChanged) {
+        try {
+          localStorage.setItem(SEEDED_COLLS_STORAGE_KEY, JSON.stringify(Array.from(seededSet)));
+        } catch(e) {}
+      }
+      return nextRecords;
+    }
+
     let customCollections = loadStoredCollections();
+    let archiveRecords = ensureCollectionRecordsSeeded(customCollections, loadArchiveRecords());
 
     function getCollectionsWithCounts() {
       const counts = {};
@@ -672,19 +763,21 @@
         fetch('./chemical_archive_data.json')
           .then(res => res.json())
           .then(data => {
-            archiveRecords = sanitizeRecords(data);
+            archiveRecords = ensureCollectionRecordsSeeded(customCollections, sanitizeRecords(data));
             renderAll();
           })
           .catch(err => {
             console.error('Fallback error:', err);
+            archiveRecords = ensureCollectionRecordsSeeded(customCollections, archiveRecords);
             renderAll();
           });
       } else {
+        archiveRecords = ensureCollectionRecordsSeeded(customCollections, archiveRecords);
         renderAll();
       }
       window.addEventListener('pageshow', () => {
-        archiveRecords = loadArchiveRecords();
         customCollections = loadStoredCollections();
+        archiveRecords = ensureCollectionRecordsSeeded(customCollections, loadArchiveRecords());
         const si = document.getElementById('searchInput');
         if (si) searchQuery = si.value || '';
         renderAll();
@@ -695,8 +788,8 @@
           e.key === 'chemical_archive_custom_v1' ||
           e.key === 'chemical_archive_records_v1'
         ) {
-          archiveRecords = loadArchiveRecords();
           customCollections = loadStoredCollections();
+          archiveRecords = ensureCollectionRecordsSeeded(customCollections, loadArchiveRecords());
           if (activeCollection !== 'ALL' && !customCollections.some(c => c.id === activeCollection)) {
             activeCollection = 'ALL';
           }
@@ -839,8 +932,8 @@
                 <div class="card-desc-text">${highlightMatch(descText)}</div>
               </div>` : ''}
             </div>
-            <div style="display:flex; justify-content:flex-end; padding-top:12px; border-top:1px dashed rgba(128,119,92,0.3); margin-top:auto;">
-              <span style="font-family:var(--font-sans); font-size:11px; font-weight:700; color:var(--ink-primary); letter-spacing:1px;">EDIT DETAILS ✎</span>
+            <div style="display:flex; justify-content:flex-end; padding-top:8px; border-top:1px dashed rgba(128,119,92,0.3); margin-top:auto;">
+              <span style="font-family:var(--font-sans); font-size:10px; font-weight:700; color:var(--ink-primary); letter-spacing:0.8px;">EDIT DETAILS ✎</span>
             </div>
           </div>
         `;

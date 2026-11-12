@@ -509,6 +509,21 @@
           </div>
         </div>
 
+        <div id="unlinkedRecordsBanner" style="display:none; margin-bottom:14px; padding:12px 14px; border-radius:10px; background:rgba(180,83,9,0.08); border:1px solid rgba(180,83,9,0.35); align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+          <div style="font-size:12px; color:#7c2d12; line-height:1.45;">
+            <strong id="unlinkedRecordsBannerTitle">0 non-categorized / unlinked code(s) found.</strong>
+            <span id="unlinkedRecordsBannerPreview" style="display:block; margin-top:2px; font-family:var(--font-mono); font-size:11px; color:#9a3412;"></span>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" onclick="viewUnlinkedRecordsInTable()" class="action-btn" style="font-size:11px; font-weight:700; padding:6px 12px;">
+              LIST IN TABLE
+            </button>
+            <button type="button" onclick="deleteAllUnlinkedRecords()" style="background:#991b1b; color:#fff; border:none; border-radius:6px; font-size:11px; font-weight:700; padding:6px 12px; cursor:pointer;">
+              DELETE ALL NON-CATEGORIZED (<span id="unlinkedBannerDelCount">0</span>)
+            </button>
+          </div>
+        </div>
+
         <table class="admin-table">
           <thead>
             <tr>
@@ -558,6 +573,21 @@
           </button>
         </form>
 
+        <div id="unlinkedRecordsBanner" style="display:none; margin-bottom:14px; padding:12px 14px; border-radius:10px; background:rgba(180,83,9,0.08); border:1px solid rgba(180,83,9,0.35); align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+          <div style="font-size:12px; color:#7c2d12; line-height:1.45;">
+            <strong id="unlinkedRecordsBannerTitle">0 non-categorized / unlinked code(s) found.</strong>
+            <span id="unlinkedRecordsBannerPreview" style="display:block; margin-top:2px; font-family:var(--font-mono); font-size:11px; color:#9a3412;"></span>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" onclick="viewUnlinkedRecordsInTable()" class="action-btn" style="font-size:11px; font-weight:700; padding:6px 12px;">
+              LIST IN TABLE
+            </button>
+            <button type="button" onclick="deleteAllUnlinkedRecords()" style="background:#991b1b; color:#fff; border:none; border-radius:6px; font-size:11px; font-weight:700; padding:6px 12px; cursor:pointer;">
+              DELETE ALL NON-CATEGORIZED (<span id="unlinkedBannerDelCount">0</span>)
+            </button>
+          </div>
+        </div>
+
         <table class="admin-table">
           <thead>
             <tr>
@@ -570,6 +600,28 @@
           </thead>
           <tbody id="collectionsTableBody"></tbody>
         </table>
+
+        <div id="unlinkedCategoriesCard" style="display:none; margin-top:20px; padding:14px 16px; border-radius:10px; background:rgba(180,83,9,0.06); border:1px solid rgba(180,83,9,0.3);">
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
+            <div>
+              <div style="font-size:13px; font-weight:800; color:#7c2d12;">
+                NON-CATEGORIZED / UNLINKED CODES (<span id="unlinkedCatCount">0</span>)
+              </div>
+              <div style="font-size:11px; color:#9a3412; margin-top:2px;">
+                These codes appear in <strong>ALL RECORDS</strong> but do not belong to any active Library Category above.
+              </div>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button type="button" onclick="viewUnlinkedRecordsInTable()" class="action-btn" style="font-size:11px; font-weight:700; padding:6px 12px;">
+                OPEN IN RECORDS TABLE
+              </button>
+              <button type="button" onclick="deleteAllUnlinkedRecords()" style="background:#991b1b; color:#fff; border:none; border-radius:6px; font-size:11px; font-weight:700; padding:6px 12px; cursor:pointer;">
+                DELETE ALL NON-CATEGORIZED (<span id="unlinkedCatDelCount">0</span>)
+              </button>
+            </div>
+          </div>
+          <div id="unlinkedCodesList" style="max-height:160px; overflow-y:auto; display:flex; flex-wrap:wrap; gap:6px; padding:8px; background:rgba(255,255,255,0.65); border:1px solid rgba(180,83,9,0.2); border-radius:8px;"></div>
+        </div>
       </div>
     </div>
 
@@ -1004,8 +1056,90 @@
       renderIcons();
     }
 
+    function getAdminUnlinkedRecords() {
+      if (window.LibraryShared && typeof window.LibraryShared.getUnlinkedRecords === 'function') {
+        return window.LibraryShared.getUnlinkedRecords(adminCollections, adminRecords);
+      }
+      const activeIds = new Set(adminCollections.map(c => c.id));
+      return adminRecords.filter(r => !r || !r.prefix || !activeIds.has(r.prefix));
+    }
+
+    function renderUnlinkedSection() {
+      const unlinked = getAdminUnlinkedRecords().slice().sort((a, b) =>
+        (a.code || a.callNumber || '').localeCompare(b.code || b.callNumber || '')
+      );
+      const count = unlinked.length;
+      const banner = document.getElementById('unlinkedRecordsBanner');
+      const catCard = document.getElementById('unlinkedCategoriesCard');
+
+      if (count === 0) {
+        if (banner) banner.style.display = 'none';
+        if (catCard) catCard.style.display = 'none';
+        return;
+      }
+
+      const codes = unlinked.map(r => (r.code || r.callNumber || r.id || '').trim()).filter(Boolean);
+      const preview = codes.slice(0, 12).join(', ') + (codes.length > 12 ? ` ... (+${(codes.length - 12).toLocaleString()} more)` : '');
+
+      if (banner) {
+        banner.style.display = 'flex';
+        const titleEl = document.getElementById('unlinkedRecordsBannerTitle');
+        const prevEl = document.getElementById('unlinkedRecordsBannerPreview');
+        const delCntEl = document.getElementById('unlinkedBannerDelCount');
+        if (titleEl) titleEl.textContent = `${count.toLocaleString()} non-categorized / unlinked code(s) are wandering in ALL RECORDS without an active category.`;
+        if (prevEl) prevEl.textContent = `Codes: ${preview}`;
+        if (delCntEl) delCntEl.textContent = count.toLocaleString();
+      }
+
+      if (catCard) {
+        catCard.style.display = 'block';
+        const catCountEl = document.getElementById('unlinkedCatCount');
+        const catDelEl = document.getElementById('unlinkedCatDelCount');
+        const listEl = document.getElementById('unlinkedCodesList');
+        if (catCountEl) catCountEl.textContent = count.toLocaleString();
+        if (catDelEl) catDelEl.textContent = count.toLocaleString();
+        if (listEl) {
+          listEl.innerHTML = unlinked.map(r => {
+            const label = r.code || r.callNumber || r.id || '';
+            const extra = r.name ? ` — ${r.name}` : '';
+            return `<span style="font-family:var(--font-mono); font-size:11px; font-weight:700; color:#7c2d12; background:#fff; border:1px solid rgba(180,83,9,0.28); padding:3px 8px; border-radius:6px;">${escapeHtml(label + extra)}</span>`;
+          }).join('');
+        }
+      }
+    }
+
+    function viewUnlinkedRecordsInTable() {
+      switchTab('records');
+      const sel = document.getElementById('recordCollectionFilter');
+      if (sel) sel.value = '__UNLINKED__';
+      const search = document.getElementById('recordSearchInput');
+      if (search) search.value = '';
+      applyRecordFilters();
+    }
+
+    function deleteAllUnlinkedRecords() {
+      const unlinked = getAdminUnlinkedRecords();
+      if (unlinked.length === 0) return;
+      const sample = unlinked.slice(0, 10).map(r => r.code || r.callNumber || r.id).join(', ');
+      const suffix = unlinked.length > 10 ? `, ... (+${unlinked.length - 10} more)` : '';
+      if (!confirm(`Delete ALL ${unlinked.length.toLocaleString()} non-categorized / unlinked code(s) (${sample}${suffix}) permanently?`)) {
+        return;
+      }
+      const unlinkedIds = new Set(unlinked.map(r => r.id));
+      adminRecords = adminRecords.filter(r => !unlinkedIds.has(r.id));
+      saveAdminRecords();
+      const sel = document.getElementById('recordCollectionFilter');
+      if (sel && sel.value === '__UNLINKED__') sel.value = 'ALL';
+      refreshAllAdminViews();
+      showCatFeedback('collFeedback', `Deleted ${unlinked.length.toLocaleString()} non-categorized record(s).`, 'success');
+      if (window.LibraryShared && typeof window.LibraryShared.deleteUnlinkedRecords === 'function') {
+        window.LibraryShared.deleteUnlinkedRecords();
+      }
+    }
+
     function refreshAllAdminViews() {
       populateCollectionFilterDropdown();
+      renderUnlinkedSection();
       applyRecordFilters();
       renderCategoriesTab();
     }
@@ -1046,7 +1180,8 @@
                (r.description || '').toLowerCase().includes(q);
       });
 
-      renderAdminRecords(filtered.slice(0, 100));
+      const visibleLimit = (coll === '__UNLINKED__' || q.length > 0) ? filtered.length : 100;
+      renderAdminRecords(filtered.slice(0, visibleLimit));
     }
 
     function toSafeAdminUrl(raw) {

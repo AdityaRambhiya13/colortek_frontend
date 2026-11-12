@@ -336,12 +336,18 @@
     return { relinked, created };
   }
 
+  function getUnlinkedRecords(collections, records) {
+    const activeIds = new Set((collections || []).map(c => c && c.id).filter(Boolean));
+    return (records || []).filter(r => !r || !r.prefix || !activeIds.has(r.prefix));
+  }
+
   global.LibraryShared = {
     DEFAULT_PRODUCT_CATEGORIES,
     resolveApiBase,
     normalizeProductUrl,
     parseCollectionRange,
     relinkOrSeedCollection,
+    getUnlinkedRecords,
     injectAutocompleteStyles,
     getCategorySuggestions,
     attachCategoryAutocomplete,
@@ -396,6 +402,9 @@
     deleteRecord: function (recordId) {
       const path = '/records/' + encodeURIComponent(recordId);
       return enqueueMutation(() => apiRequest(path, { method: 'DELETE' }));
+    },
+    deleteUnlinkedRecords: function () {
+      return enqueueMutation(() => apiRequest('/records/unlinked', { method: 'DELETE' }));
     },
     restoreState: function (collections, records) {
       const payload = JSON.stringify({

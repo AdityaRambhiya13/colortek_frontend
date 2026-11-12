@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800;900&family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="./runtime_config.js" defer></script>
   <script src="./library_shared.js" defer></script>
   <script src="./library_viewer.js" defer></script>
   <style>
@@ -257,28 +258,28 @@
   
     /* Security Auth Gate Modal */
     .auth-gate-backdrop {
-      position: fixed; inset: 0; background: rgba(255,255,255,0.4); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); z-index: 9999999;
-      display: flex; align-items: center; justify-content: center; padding: 24px;
+      position: fixed; inset: 0; background: rgba(255,255,255,0.45); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 9999999;
+      display: flex; align-items: center; justify-content: center; padding: 16px;
     }
     .auth-gate-card {
-      width: 100%; maxWidth: 500px; background: rgba(255,255,255,0.8); border: 1px solid rgba(255,255,255,0.9);
-      box-shadow: 0 24px 60px rgba(0, 95, 115, 0.15); border-radius: var(--radius-large); padding: 48px 40px; position: relative;
+      width: 100%; max-width: 370px; background: rgba(255,255,255,0.92); border: 1px solid rgba(255,255,255,0.95);
+      box-shadow: 0 20px 50px rgba(0, 95, 115, 0.14); border-radius: var(--radius-large); padding: 28px 26px; position: relative;
     }
     .auth-gate-badge {
-      width: 64px; height: 64px; margin: 0 auto 20px auto; background: var(--peacock-blue); border-radius: 20px;
-      display: flex; align-items: center; justify-content: center; color: #fff; box-shadow: 0 8px 24px rgba(0, 95, 115, 0.2);
+      width: 44px; height: 44px; margin: 0 auto 12px auto; background: var(--peacock-blue); border-radius: 12px;
+      display: flex; align-items: center; justify-content: center; color: #fff; box-shadow: 0 6px 18px rgba(0, 95, 115, 0.2);
     }
     .auth-input-field {
-      width: 100%; height: 50px; padding: 0 16px; background: rgba(255,255,255,0.9); border: 1px solid rgba(0,0,0,0.1);
-      font-family: var(--font-sans); font-size: 15px; color: var(--ink-primary); border-radius: var(--radius-medium); outline: none; transition: all 0.3s;
+      width: 100%; height: 40px; padding: 0 12px; background: rgba(255,255,255,0.95); border: 1px solid rgba(0,0,0,0.12);
+      font-family: var(--font-sans); font-size: 14px; color: var(--ink-primary); border-radius: var(--radius-medium); outline: none; transition: all 0.2s;
     }
-    .auth-input-field:focus { border-color: var(--peacock-blue); background: #fff; box-shadow: 0 0 0 4px rgba(0, 95, 115, 0.1); }
+    .auth-input-field:focus { border-color: var(--peacock-blue); background: #fff; box-shadow: 0 0 0 3px rgba(0, 95, 115, 0.12); }
     .auth-primary-btn {
-      width: 100%; height: 50px; background: var(--peacock-blue); color: #fff; border: none;
-      font-family: var(--font-sans); font-size: 14px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
-      cursor: pointer; border-radius: var(--radius-medium); transition: all 300ms ease; box-shadow: 0 4px 15px rgba(0, 95, 115, 0.2);
+      width: 100%; height: 40px; background: var(--peacock-blue); color: #fff; border: none;
+      font-family: var(--font-sans); font-size: 13px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase;
+      cursor: pointer; border-radius: var(--radius-medium); transition: all 200ms ease; box-shadow: 0 4px 12px rgba(0, 95, 115, 0.2);
     }
-    .auth-primary-btn:hover { background: var(--sea-green); box-shadow: 0 6px 20px rgba(42, 157, 143, 0.3); transform: translateY(-2px); }
+    .auth-primary-btn:hover { background: var(--sea-green); box-shadow: 0 6px 16px rgba(42, 157, 143, 0.28); transform: translateY(-1px); }
 
 
 
@@ -318,41 +319,40 @@
 
   <div id="authGateModal" class="auth-gate-backdrop" style="display:flex;">
     <div class="auth-gate-card">
-      <div class="auth-gate-badge"><i data-lucide="shield-check"></i> Authenticated Two-Factor Archive</div>
-      <h2 style="font-family:var(--font-display); font-size:22px; margin:12px 0 6px;">Chemical Library Sign In</h2>
-      <p style="font-size:14px; color:var(--ink-secondary); margin-bottom:18px;">Verify with your password and second-factor OTP (Authenticator App or SMS) to unlock the archive.</p>
+      <div class="auth-gate-badge"><i data-lucide="shield-check"></i></div>
+      <h2 style="font-family:var(--font-display); font-size:18px; text-align:center; margin:0 0 14px;">Chemical Library Sign In</h2>
 
-      <div id="authErrorMsg" style="display:none; align-items:center; gap:8px; padding:10px 12px; background:#fef2f2; border:1px solid #fecaca; color:#991b1b; border-radius:8px; font-size:13px; margin-bottom:14px;">
+      <div id="authErrorMsg" style="display:none; align-items:center; gap:8px; padding:8px 10px; background:#fef2f2; border:1px solid #fecaca; color:#991b1b; border-radius:8px; font-size:12px; margin-bottom:12px;">
         <i data-lucide="alert-circle"></i>
         <span id="authErrorText">Invalid credentials</span>
       </div>
 
-      <form id="credentialsForm" style="display:flex; flex-direction:column; gap:16px;">
+      <form id="credentialsForm" style="display:flex; flex-direction:column; gap:12px;">
         <div>
-          <label for="authUsername" style="display:block; font-family:var(--font-mono); font-size:11px; font-weight:700; text-transform:uppercase; margin-bottom:6px;">Username</label>
+          <label for="authUsername" style="display:block; font-family:var(--font-mono); font-size:10px; font-weight:700; text-transform:uppercase; margin-bottom:4px;">Username</label>
           <input type="text" id="authUsername" class="auth-input-field" autocomplete="username" required />
         </div>
         <div>
-          <label for="authPassword" style="display:block; font-family:var(--font-mono); font-size:11px; font-weight:700; text-transform:uppercase; margin-bottom:6px;">Password</label>
+          <label for="authPassword" style="display:block; font-family:var(--font-mono); font-size:10px; font-weight:700; text-transform:uppercase; margin-bottom:4px;">Password</label>
           <div style="position:relative;">
-            <input type="password" id="authPassword" class="auth-input-field" autocomplete="current-password" required style="padding-right:40px;" />
-            <button type="button" id="togglePwdVisBtn" aria-label="Toggle password visibility" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--ink-secondary); display:flex;">
+            <input type="password" id="authPassword" class="auth-input-field" autocomplete="current-password" required style="padding-right:36px;" />
+            <button type="button" id="togglePwdVisBtn" aria-label="Toggle password visibility" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--ink-secondary); display:flex;">
               <i id="pwdEyeIcon" data-lucide="eye"></i>
             </button>
           </div>
         </div>
-        <button type="submit" id="step1SubmitBtn" class="auth-primary-btn">Continue to 2FA Verification</button>
+        <button type="submit" id="step1SubmitBtn" class="auth-primary-btn">Sign In</button>
       </form>
 
-      <form id="otpStepForm" style="display:none; flex-direction:column; gap:16px;">
-        <div id="otpPromptText" style="font-size:13px; padding:10px 12px; background:rgba(87,74,36,0.08); border-radius:8px; color:var(--ink-primary);"></div>
+      <form id="otpStepForm" style="display:none; flex-direction:column; gap:12px;">
+        <div id="otpPromptText" style="font-size:12px; padding:8px 10px; background:rgba(0,95,115,0.08); border-radius:8px; color:var(--ink-primary);"></div>
         <div>
-          <label for="authOtpCode" style="display:block; font-family:var(--font-mono); font-size:11px; font-weight:700; text-transform:uppercase; margin-bottom:6px;">6-Digit Verification Code</label>
+          <label for="authOtpCode" style="display:block; font-family:var(--font-mono); font-size:10px; font-weight:700; text-transform:uppercase; margin-bottom:4px;">Authenticator Code</label>
           <input type="text" id="authOtpCode" class="auth-input-field" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="000000" required />
         </div>
-        <button type="submit" id="verifyOtpBtn" class="auth-primary-btn">Verify &amp; Unlock Archive</button>
+        <button type="submit" id="verifyOtpBtn" class="auth-primary-btn">Verify</button>
         <div style="display:flex; justify-content:space-between; gap:10px;">
-          <button type="button" id="resendOtpBtn" style="display:none; background:none; border:1px solid var(--border-subtle); padding:8px 12px; border-radius:6px; font-family:var(--font-mono); font-size:11px; cursor:pointer;">Resend SMS OTP</button>
+          <button type="button" id="resendOtpBtn" style="display:none; background:none; border:1px solid var(--border-subtle); padding:6px 10px; border-radius:6px; font-family:var(--font-mono); font-size:11px; cursor:pointer;">Resend SMS OTP</button>
           <button type="button" id="backToStep1Btn" style="background:none; border:none; color:var(--ink-secondary); font-family:var(--font-mono); font-size:11px; cursor:pointer; text-decoration:underline;">Back</button>
         </div>
       </form>

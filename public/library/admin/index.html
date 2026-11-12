@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,400;1,600&family=Cinzel:wght@500;700;800&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+  <script src="../runtime_config.js" defer></script>
   <script src="../library_shared.js" defer></script>
   <script src="../library_admin.js" defer></script>
   <style>
@@ -234,12 +235,12 @@
     }
     .auth-gate-card {
       width: 100%;
-      max-width: 460px;
+      max-width: 370px;
       background: #FDF7E3;
       border: 2px solid #574A24;
       box-shadow: 0 20px 45px rgba(56, 47, 21, 0.25);
       border-radius: 12px;
-      padding: 40px 36px;
+      padding: 26px 24px;
     }
 
     /* Category Management & Record Modal */
@@ -413,18 +414,17 @@
 <body>
   <div id="adminAuthGate" class="auth-gate-backdrop" style="display:flex;">
     <div class="auth-gate-card">
-      <div style="display:inline-flex; align-items:center; gap:6px; font-family:var(--font-mono); font-size:11px; font-weight:700; text-transform:uppercase; color:#2d4a22; margin-bottom:10px;">
-        <i data-lucide="shield-check"></i> Chemical Library Admin Portal
+      <div style="display:inline-flex; align-items:center; gap:6px; font-family:var(--font-mono); font-size:11px; font-weight:700; text-transform:uppercase; color:#2d4a22; margin-bottom:8px;">
+        <i data-lucide="shield-check"></i> Admin Portal
       </div>
-      <h2 style="font-family:var(--font-display); font-size:22px; margin:0 0 6px;">Administrator Sign In</h2>
-      <p style="font-size:13px; color:var(--olive-muted); margin:0 0 16px;">Requires Admin role plus Two-Factor OTP verification.</p>
+      <h2 style="font-family:var(--font-display); font-size:20px; margin:0 0 14px;">Administrator Sign In</h2>
 
-      <div id="authErr" style="display:none; align-items:center; gap:8px; padding:10px 12px; background:#fef2f2; border:1px solid #fecaca; color:#991b1b; border-radius:8px; font-size:12px; margin-bottom:14px;">
+      <div id="authErr" style="display:none; align-items:center; gap:8px; padding:9px 11px; background:#fef2f2; border:1px solid #fecaca; color:#991b1b; border-radius:8px; font-size:12px; margin-bottom:12px;">
         <i data-lucide="alert-circle"></i>
         <span id="authErrText">Authentication error</span>
       </div>
 
-      <form id="adminLoginForm" style="display:flex; flex-direction:column; gap:14px;">
+      <form id="adminLoginForm" style="display:flex; flex-direction:column; gap:12px;">
         <div>
           <label for="adminUser" style="display:block; font-family:var(--font-mono); font-size:11px; font-weight:700; margin-bottom:4px;">ADMIN USERNAME</label>
           <input type="text" id="adminUser" class="admin-input" autocomplete="username" required />
@@ -433,18 +433,18 @@
           <label for="adminPass" style="display:block; font-family:var(--font-mono); font-size:11px; font-weight:700; margin-bottom:4px;">PASSWORD</label>
           <input type="password" id="adminPass" class="admin-input" autocomplete="current-password" required />
         </div>
-        <button type="submit" id="adminStep1SubmitBtn" class="btn-primary" style="justify-content:center; padding:11px 16px;">Continue to 2FA</button>
+        <button type="submit" id="adminStep1SubmitBtn" class="btn-primary" style="justify-content:center; padding:9px 14px;">Sign In</button>
       </form>
 
-      <form id="adminOtpForm" style="display:none; flex-direction:column; gap:14px;">
-        <div id="adminOtpPrompt" style="font-size:12px; padding:10px; background:rgba(87,74,36,0.08); border-radius:6px;"></div>
+      <form id="adminOtpForm" style="display:none; flex-direction:column; gap:12px;">
+        <div id="adminOtpPrompt" style="font-size:12px; padding:9px 10px; background:rgba(87,74,36,0.08); border-radius:6px;"></div>
         <div>
-          <label for="adminOtpCode" style="display:block; font-family:var(--font-mono); font-size:11px; font-weight:700; margin-bottom:4px;">6-DIGIT OTP CODE</label>
+          <label for="adminOtpCode" style="display:block; font-family:var(--font-mono); font-size:11px; font-weight:700; margin-bottom:4px;">AUTHENTICATOR CODE</label>
           <input type="text" id="adminOtpCode" class="admin-input" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="000000" required />
         </div>
-        <button type="submit" id="adminVerifyOtpBtn" class="btn-primary" style="justify-content:center; padding:11px 16px;">Verify &amp; Enter Portal</button>
+        <button type="submit" id="adminVerifyOtpBtn" class="btn-primary" style="justify-content:center; padding:9px 14px;">Verify</button>
         <div style="display:flex; justify-content:space-between;">
-          <button type="button" id="adminResendOtpBtn" class="action-btn" style="display:none;">Resend SMS OTP</button>
+          <button type="button" id="adminResendOtpBtn" class="action-btn" style="display:none;">Resend Code</button>
           <button type="button" id="adminBackToStep1Btn" style="background:none; border:none; font-family:var(--font-mono); font-size:11px; text-decoration:underline; cursor:pointer;">Back</button>
         </div>
       </form>

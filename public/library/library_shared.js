@@ -79,6 +79,12 @@
       if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return false;
       const origin = parsed.origin;
       if (global.location && origin === global.location.origin) return true;
+      if (typeof global.COLORTEK_API_URL === 'string' && global.COLORTEK_API_URL.trim()) {
+        try {
+          const buildOrigin = new URL(global.COLORTEK_API_URL.trim()).origin;
+          if (origin === buildOrigin) return true;
+        } catch (_) {}
+      }
       if (origin === 'http://localhost:8000' || origin === 'http://127.0.0.1:8000') return true;
       if (origin === 'https://colortek-backend.onrender.com') return true;
       if (/^https:\/\/colortek-[a-z0-9-]+\.onrender\.com$/.test(origin)) return true;
@@ -89,6 +95,10 @@
   }
 
   function resolveApiBase() {
+    const buildApi = typeof global.COLORTEK_API_URL === 'string' ? global.COLORTEK_API_URL.trim() : '';
+    if (buildApi && isTrustedApiOrigin(buildApi)) {
+      return buildApi.replace(/\/+$/, '');
+    }
     try {
       const stored = (global.localStorage && global.localStorage.getItem('colortek_api_base_url')) || '';
       if (stored && isTrustedApiOrigin(stored)) {
@@ -400,12 +410,19 @@
     }
 
     try {
-      const resp = await global.fetch(url, {
-        ...opts,
-        method,
-        headers,
-        credentials: 'include',
-      });
+      let resp;
+      try {
+        resp = await global.fetch(url, {
+          ...opts,
+          method,
+          headers,
+          credentials: 'include',
+        });
+      } catch (netErr) {
+        const err = new Error('Unable to reach server (' + base + '). Ensure backend is online.');
+        err.cause = netErr;
+        throw err;
+      }
       if (!resp.ok) {
         let msg = 'HTTP ' + resp.status;
         try {

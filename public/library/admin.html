@@ -256,9 +256,6 @@
         <h1 style="font-family:var(--font-display); font-size:20px; font-weight:800; letter-spacing:2px; color:#574A24; text-transform:uppercase;">
           Library Admin Gate
         </h1>
-        <p style="font-family:var(--font-mono); font-size:11px; color:#80775C; margin-top:6px;">
-          ?? 256-BIT ENCRYPTION & 2FA VERIFICATION
-        </p>
       </div>
 
       <div id="authErr" style="display:none; background:#fee2e2; border:1px solid #f87171; color:#991b1b; padding:10px 14px; border-radius:2px; font-size:12px; margin-bottom:20px; align-items:center; gap:8px;">
@@ -266,7 +263,7 @@
         <span id="authErrText"></span>
       </div>
 
-      <!-- Step 1: Login -->
+      <!-- Login -->
       <form id="adminLoginForm" onsubmit="handleAdminLogin(event)" style="display:flex; flex-direction:column; gap:16px;">
         <div>
           <label style="display:block; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:#80775C; margin-bottom:6px;">
@@ -278,38 +275,10 @@
           <label style="display:block; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:#80775C; margin-bottom:6px;">
             Password
           </label>
-          <input type="password" id="adminPass" style="width:100%; height:42px; padding:0 14px; background:#F6E2A3; border:1px solid rgba(128,119,92,0.4); font-size:14px; color:#574A24; outline:none;" placeholder="????????????" required />
+          <input type="password" id="adminPass" style="width:100%; height:42px; padding:0 14px; background:#F6E2A3; border:1px solid rgba(128,119,92,0.4); font-size:14px; color:#574A24; outline:none;" placeholder="••••••••••••" required />
         </div>
         <button type="submit" style="height:44px; background:#574A24; color:#FAE8B4; border:none; font-family:var(--font-display); font-size:12px; font-weight:700; letter-spacing:1.5px; cursor:pointer; margin-top:8px;">
-          PROCEED TO 2FA ?
-        </button>
-      </form>
-
-      <!-- Step 2: 2FA -->
-      <form id="admin2FAForm" onsubmit="handleAdmin2FA(event)" style="display:none; flex-direction:column; gap:18px;">
-        <div style="text-align:center; background:#F6E2A3; padding:12px; border:1px solid rgba(128,119,92,0.3);">
-          <span style="font-family:var(--font-display); font-size:12px; font-weight:700; color:#574A24;">
-            TWO-FACTOR AUTHENTICATION
-          </span>
-          <p style="font-size:11px; color:#80775C; margin-top:2px;">Enter 6-digit passcode for <strong id="admin2FAUserLabel"></strong></p>
-        </div>
-
-        <div>
-          <input type="text" id="admin2FACode" maxLength="6" placeholder="000000" style="width:100%; height:52px; text-align:center; background:#F6E2A3; border:2px solid #574A24; font-family:var(--font-mono); font-size:24px; font-weight:800; letter-spacing:8px; color:#574A24; outline:none;" required />
-        </div>
-
-        <div style="background:rgba(128,119,92,0.12); padding:10px 14px; border:1px dashed rgba(128,119,92,0.35); display:flex; align-items:center; justify-content:space-between;">
-          <div>
-            <div style="font-family:var(--font-mono); font-size:10px; color:#80775C;">DEMO 2FA PASSCODE (<span id="adminTotpSec">30</span>s)</div>
-            <div id="adminTotpCode" style="font-family:var(--font-mono); font-size:16px; font-weight:800; color:#574A24;">------</div>
-          </div>
-          <button type="button" onclick="autofillAdminTotp()" style="background:#574A24; color:#FAE8B4; border:none; padding:6px 12px; font-size:10px; font-weight:700; cursor:pointer;">
-            AUTO-FILL
-          </button>
-        </div>
-
-        <button type="submit" style="height:44px; background:#574A24; color:#FAE8B4; border:none; font-family:var(--font-display); font-size:12px; font-weight:700; letter-spacing:1.5px; cursor:pointer;">
-          UNLOCK ADMIN SUITE ??
+          UNLOCK ADMIN SUITE
         </button>
       </form>
     </div>
@@ -326,9 +295,6 @@
     </a>
 
     <div style="display:flex; align-items:center; gap:14px;">
-      <span style="display:inline-flex; align-items:center; gap:6px; font-family:var(--font-mono); font-size:11px; color:#166534; background:#dcfce7; padding:4px 10px; border-radius:2px; border:1px solid #bbf7d0;">
-        <i data-lucide="shield-check" style="width:14px; height:14px;"></i> 256-BIT ENCRYPTED
-      </span>
       <a href="../" style="background:var(--paper-card); border:1px solid var(--border-subtle); padding:6px 14px; font-size:11px; font-weight:700; color:var(--ink-primary); text-decoration:none; display:flex; align-items:center; gap:6px;">
         <i data-lucide="external-link" style="width:13px; height:13px;"></i> VIEW LIBRARY
       </a>
@@ -344,7 +310,7 @@
       <i data-lucide="database" style="width:15px; height:15px;"></i> COMPOUND RECORDS
     </button>
     <button class="admin-tab-btn" id="tabBtnSecurity" onclick="switchTab('security')">
-      <i data-lucide="key-round" style="width:15px; height:15px;"></i> 256-BIT SECURITY & 2FA
+      <i data-lucide="key-round" style="width:15px; height:15px;"></i> SECURITY
     </button>
     <button class="admin-tab-btn" id="tabBtnBackup" onclick="switchTab('backup')">
       <i data-lucide="download" style="width:15px; height:15px;"></i> BACKUP & RESTORE
@@ -384,34 +350,14 @@
       </div>
     </div>
 
-    <!-- Tab 2: Security & Cryptography -->
+    <!-- Tab 2: Security -->
     <div id="tabSecurity" class="admin-tab-content" style="display:none;">
       <div class="admin-card">
         <div class="admin-card-title">
-          <span><i data-lucide="shield-check" style="width:18px; height:18px; display:inline; vertical-align:middle;"></i> CRYPTOGRAPHIC SECURITY ENGINE</span>
+          <span><i data-lucide="shield-check" style="width:18px; height:18px; display:inline; vertical-align:middle;"></i> SECURITY SETTINGS</span>
         </div>
 
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:20px; margin-top:16px;">
-          <div style="background:var(--archival-beige); padding:20px; border:1px solid var(--border-subtle); border-radius:3px;">
-            <h3 style="font-family:var(--font-display); font-size:13px; font-weight:700; margin-bottom:8px;">AES-256-GCM ENCRYPTION</h3>
-            <p style="font-size:12px; color:var(--olive-muted); line-height:1.5;">Hardware-accelerated authenticated symmetric encryption active for all storage payloads and in-memory tokens.</p>
-            <div style="margin-top:12px; font-family:var(--font-mono); font-size:11px; color:#166534; font-weight:700;">STATUS: ACTIVE & ENFORCED</div>
-          </div>
-
-          <div style="background:var(--archival-beige); padding:20px; border:1px solid var(--border-subtle); border-radius:3px;">
-            <h3 style="font-family:var(--font-display); font-size:13px; font-weight:700; margin-bottom:8px;">SHA-256 HASHING</h3>
-            <p style="font-size:12px; color:var(--olive-muted); line-height:1.5;">Passwords and session integrity tokens are cryptographically digested with salt before authorization.</p>
-            <div style="margin-top:12px; font-family:var(--font-mono); font-size:11px; color:#166534; font-weight:700;">STATUS: VERIFIED</div>
-          </div>
-
-          <div style="background:var(--archival-beige); padding:20px; border:1px solid var(--border-subtle); border-radius:3px;">
-            <h3 style="font-family:var(--font-display); font-size:13px; font-weight:700; margin-bottom:8px;">MULTI-FACTOR 2FA</h3>
-            <p style="font-size:12px; color:var(--olive-muted); line-height:1.5;">Time-based 30-second pseudo-TOTP authentication required for all library access gateways.</p>
-            <div style="margin-top:12px; font-family:var(--font-mono); font-size:11px; color:#166534; font-weight:700;">STATUS: REQUIRED (6 DIGITS)</div>
-          </div>
-        </div>
-
-        <div style="margin-top:24px; padding-top:20px; border-top:1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px;">
           <div>
             <div style="font-size:13px; font-weight:700;">Clear Security Lockouts</div>
             <div style="font-size:11px; color:var(--olive-muted);">Reset temporary lockouts caused by repeated failed password attempts.</div>
@@ -475,10 +421,9 @@
     })();
 
     let currentAdminUser = '';
-    let adminTotpInterval = null;
 
     function checkAdminAuth() {
-      const session = sessionStorage.getItem('chem_auth_token_aes256');
+      const session = sessionStorage.getItem('chem_auth_token');
       if (!session) {
         document.getElementById('adminAuthGate').style.display = 'flex';
       } else {
@@ -499,58 +444,14 @@
       }
 
       currentAdminUser = user;
-      document.getElementById('admin2FAUserLabel').innerText = user;
-      document.getElementById('adminLoginForm').style.display = 'none';
-      document.getElementById('admin2FAForm').style.display = 'flex';
       document.getElementById('authErr').style.display = 'none';
-
-      startAdminTotpTimer();
-      lucide.createIcons();
-    }
-
-    function startAdminTotpTimer() {
-      if (adminTotpInterval) clearInterval(adminTotpInterval);
-      const update = () => {
-        const timeStep = 30;
-        const epoch = Math.floor(Date.now() / 1000);
-        const currentInterval = Math.floor(epoch / timeStep);
-        const secondsRemaining = timeStep - (epoch % timeStep);
-        
-        let hash = 0;
-        const str = `${currentAdminUser}_${currentInterval}`;
-        for (let i = 0; i < str.length; i++) {
-          hash = ((hash << 5) - hash) + str.charCodeAt(i);
-          hash |= 0;
-        }
-        const code = Math.abs(hash % 1000000).toString().padStart(6, '0');
-        document.getElementById('adminTotpCode').innerText = code;
-        document.getElementById('adminTotpSec').innerText = secondsRemaining;
-      };
-      update();
-      adminTotpInterval = setInterval(update, 1000);
-    }
-
-    function autofillAdminTotp() {
-      document.getElementById('admin2FACode').value = document.getElementById('adminTotpCode').innerText;
-    }
-
-    function handleAdmin2FA(e) {
-      e.preventDefault();
-      const code = document.getElementById('admin2FACode').value.trim();
-      const expected = document.getElementById('adminTotpCode').innerText;
-
-      if (code !== expected) {
-        showAdminErr('Invalid 2FA verification code.');
-        return;
-      }
-
-      sessionStorage.setItem('chem_auth_token_aes256', btoa(`${currentAdminUser}:ADMIN:AES256:${Date.now()}`));
+      sessionStorage.setItem('chem_auth_token', btoa(`${currentAdminUser}:ADMIN:${Date.now()}`));
       document.getElementById('adminAuthGate').style.display = 'none';
       renderAdminRecords();
     }
 
     function logoutAdmin() {
-      sessionStorage.removeItem('chem_auth_token_aes256');
+      sessionStorage.removeItem('chem_auth_token');
       checkAdminAuth();
     }
 

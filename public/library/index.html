@@ -255,7 +255,7 @@
     }
     .edit-input:focus { border-color: var(--peacock-blue); background: #fff; box-shadow: 0 0 0 4px rgba(0, 95, 115, 0.1); }
   
-    /* Security & 2FA Auth Gate Modal */
+    /* Security Auth Gate Modal */
     .auth-gate-backdrop {
       position: fixed; inset: 0; background: rgba(255,255,255,0.4); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); z-index: 9999999;
       display: flex; align-items: center; justify-content: center; padding: 24px;
@@ -308,9 +308,6 @@
     </div>
 
     <div class="header-right" style="display:flex; align-items:center; gap:20px;">
-      <span style="display:inline-flex; align-items:center; gap:6px; font-family:var(--font-sans); font-size:12px; font-weight:700; color:#fff; background:var(--sea-green); padding:8px 16px; border-radius:20px; box-shadow: 0 4px 12px rgba(42, 157, 143, 0.2); height: fit-content; line-height: 1; white-space: nowrap;">
-        <i data-lucide="shield-check" style="width:14px; height:14px;"></i> 256-BIT ENCRYPTED
-      </span>
       <span style="white-space: nowrap; font-size: 13px;">3,381 SPECIMENS</span>
       <a href="./admin/" style="background:var(--peacock-blue); color:#fff; border:none; padding:8px 16px; font-family:var(--font-sans); font-size:12px; font-weight:800; letter-spacing:1px; cursor:pointer; display:flex; align-items:center; gap:6px; border-radius:20px; text-decoration:none; box-shadow: 0 4px 12px rgba(0, 95, 115, 0.2); transition: all 0.3s; height: fit-content; line-height: 1;">
         <i data-lucide="settings" style="width:14px; height:14px;"></i> ADMIN PANEL
@@ -323,7 +320,7 @@
 
   <!-- Body -->
   
-  <!-- Chemical Library Security & 2FA Auth Gate -->
+  <!-- Chemical Library Auth Gate -->
   <div id="authGateModal" class="auth-gate-backdrop" style="display:none;">
     <div class="auth-gate-card">
       <div style="text-align:center; margin-bottom:28px;">
@@ -341,7 +338,7 @@
         <span id="authErrorText"></span>
       </div>
 
-      <!-- Step 1: Credentials Form -->
+      <!-- Credentials Form -->
       <form id="credentialsForm" onsubmit="handleCredentialsSubmit(event)" style="display:flex; flex-direction:column; gap:18px;">
         <div>
           <label style="display:block; font-family:var(--font-sans); font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:var(--olive-muted); margin-bottom:6px;">
@@ -355,7 +352,7 @@
             Password
           </label>
           <div style="position:relative;">
-            <input type="password" id="authPassword" class="auth-input-field" placeholder="????????????" style="padding-right:40px;" required />
+            <input type="password" id="authPassword" class="auth-input-field" placeholder="••••••••••••" style="padding-right:40px;" required />
             <button type="button" onclick="togglePasswordVisibility()" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--olive-muted); cursor:pointer; display:flex;">
               <i data-lucide="eye" id="pwdEyeIcon" style="width:16px; height:16px;"></i>
             </button>
@@ -363,54 +360,9 @@
         </div>
 
         <button type="submit" class="auth-primary-btn" style="margin-top:8px;">
-          PROCEED TO 2FA ?
+          UNLOCK ARCHIVE
         </button>
       </form>
-
-      <!-- Step 2: 2FA Form -->
-      <form id="twoFactorForm" onsubmit="handle2FASubmit(event)" style="display:none; flex-direction:column; gap:20px;">
-        <div style="text-align:center; background:rgba(255,255,255,0.6); padding:14px; border:1px solid rgba(128,119,92,0.3); border-radius:2px;">
-          <div style="display:flex; align-items:center; justify-content:center; gap:6px; color:var(--peacock-blue); font-family:var(--font-display); font-size:13px; font-weight:700;">
-            <i data-lucide="smartphone" style="width:16px; height:16px;"></i> TWO-FACTOR AUTHENTICATION
-          </div>
-          <p style="font-family:var(--font-sans); font-size:11px; color:var(--olive-muted); margin-top:4px;">
-            Enter the 6-digit cryptographic code for <strong id="twoFactorUsernameLabel"></strong>.
-          </p>
-        </div>
-
-        <div>
-          <label style="display:block; font-family:var(--font-sans); font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:var(--olive-muted); margin-bottom:8px; textAlign:center;">
-            6-Digit Security Code
-          </label>
-          <input type="text" id="auth2FACode" maxLength="6" class="auth-input-field" placeholder="000000" style="text-align:center; height:52px; font-family:var(--font-mono); font-size:24px; font-weight:800; letter-spacing:8px; border:2px solid #574A24;" required />
-        </div>
-
-        <!-- 2FA Assistant Token -->
-        <div style="background:rgba(128,119,92,0.12); padding:10px 14px; border:1px dashed rgba(128,119,92,0.35); border-radius:2px; display:flex; align-items:center; justify-content:space-between;">
-          <div>
-            <div style="font-family:var(--font-mono); font-size:10px; color:var(--olive-muted);">
-              ACTIVE 2FA TOKEN (<span id="totpRemainingSec">30</span>s)
-            </div>
-            <div id="activeTotpCode" style="font-family:var(--font-mono); font-size:16px; font-weight:800; color:var(--peacock-blue);">
-              ------
-            </div>
-          </div>
-          <button type="button" onclick="autofillTotp()" class="auth-primary-btn">
-            AUTO-FILL
-          </button>
-        </div>
-
-        <div style="display:flex; gap:10px;">
-          <button type="button" onclick="backToCredentials()" style="flex:1; height:44px; background:rgba(255,255,255,0.8); color:var(--peacock-blue); border:none; font-family:var(--font-sans); font-size:11px; font-weight:700; text-transform:uppercase; cursor:pointer; border-radius:2px;">
-            ? BACK
-          </button>
-          <button type="submit" class="auth-primary-btn" style="flex:2;">
-            UNLOCK ARCHIVE ??
-          </button>
-        </div>
-      </form>
-
-
     </div>
   </div>
 
@@ -1483,9 +1435,8 @@
     }
 
     
-    /* --- 256-BIT CRYPTOGRAPHY & 2FA SECURITY ENGINE --- */
+    /* --- AUTHENTICATION ENGINE --- */
     let currentAuthUser = '';
-    let totpInterval = null;
 
     async function computeSha256(str) {
       const utf8 = new TextEncoder().encode(str);
@@ -1494,24 +1445,8 @@
       return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
-    function getTotpCode(seed) {
-      const timeStep = 30;
-      const epoch = Math.floor(Date.now() / 1000);
-      const currentInterval = Math.floor(epoch / timeStep);
-      const secondsRemaining = timeStep - (epoch % timeStep);
-      
-      let hash = 0;
-      const str = `${seed}_${currentInterval}`;
-      for (let i = 0; i < str.length; i++) {
-        hash = ((hash << 5) - hash) + str.charCodeAt(i);
-        hash |= 0;
-      }
-      const code = Math.abs(hash % 1000000).toString().padStart(6, '0');
-      return { code, secondsRemaining };
-    }
-
     function checkAuthStatus() {
-      const session = sessionStorage.getItem('chem_auth_token_aes256');
+      const session = sessionStorage.getItem('chem_auth_token');
       const gate = document.getElementById('authGateModal');
       if (!session) {
         gate.style.display = 'flex';
@@ -1543,7 +1478,6 @@
       }
 
       currentAuthUser = user;
-      document.getElementById('twoFactorUsernameLabel').innerText = user;
 
       // Verify credentials with SHA-256 hash
       const hash = await computeSha256(pwd);
@@ -1563,58 +1497,15 @@
         return;
       }
 
-      // Advance to 2FA Form
-      document.getElementById('credentialsForm').style.display = 'none';
-      document.getElementById('twoFactorForm').style.display = 'flex';
       errBox.style.display = 'none';
-      startTotpTimer();
-      lucide.createIcons();
-    }
-
-    function startTotpTimer() {
-      if (totpInterval) clearInterval(totpInterval);
-      const update = () => {
-        const totp = getTotpCode(currentAuthUser || 'ARCHIVE_SEED');
-        document.getElementById('activeTotpCode').innerText = totp.code;
-        document.getElementById('totpRemainingSec').innerText = totp.secondsRemaining;
-      };
-      update();
-      totpInterval = setInterval(update, 1000);
-    }
-
-    function autofillTotp() {
-      const totp = getTotpCode(currentAuthUser || 'ARCHIVE_SEED');
-      document.getElementById('auth2FACode').value = totp.code;
-    }
-
-    function backToCredentials() {
-      if (totpInterval) clearInterval(totpInterval);
-      document.getElementById('credentialsForm').style.display = 'flex';
-      document.getElementById('twoFactorForm').style.display = 'none';
-      document.getElementById('authErrorMsg').style.display = 'none';
-      lucide.createIcons();
-    }
-
-    function handle2FASubmit(e) {
-      e.preventDefault();
-      const code = document.getElementById('auth2FACode').value.trim();
-      const totp = getTotpCode(currentAuthUser || 'ARCHIVE_SEED');
-
-      if (code !== totp.code && code !== '123456') {
-        showAuthError('Invalid 2FA code. Please check code or use Auto-fill.');
-        return;
-      }
-
-      // Create secure AES-256 session token
-      const sessionToken = btoa(`${currentAuthUser}:AES256:${Date.now()}:${Math.random()}`);
-      sessionStorage.setItem('chem_auth_token_aes256', sessionToken);
+      const sessionToken = btoa(`${currentAuthUser}:SESSION:${Date.now()}:${Math.random()}`);
+      sessionStorage.setItem('chem_auth_token', sessionToken);
       document.getElementById('authGateModal').style.display = 'none';
-      if (totpInterval) clearInterval(totpInterval);
       renderAll();
     }
 
     function logoutLibrary() {
-      sessionStorage.removeItem('chem_auth_token_aes256');
+      sessionStorage.removeItem('chem_auth_token');
       checkAuthStatus();
     }
 

@@ -127,6 +127,10 @@
     }
 
     function renderSuggestions() {
+      if (!String(inputEl.value || '').trim()) {
+        closeList();
+        return;
+      }
       const records = typeof opts.getRecords === 'function' ? opts.getRecords() : [];
       currentMatches = getCategorySuggestions(inputEl.value, records);
       if (currentMatches.length === 0) {
@@ -147,7 +151,6 @@
       });
     }
 
-    inputEl.addEventListener('focus', renderSuggestions);
     inputEl.addEventListener('input', renderSuggestions);
     inputEl.addEventListener('blur', () => {
       setTimeout(closeList, 120);
@@ -211,6 +214,100 @@
     el.innerText = text;
     if (isOffline) el.classList.add('offline');
     else el.classList.remove('offline');
+  }
+
+  function getSessionUsername() {
+    try {
+      const token = (global.sessionStorage && global.sessionStorage.getItem('chem_auth_token')) || '';
+      if (!token) return '';
+      if (typeof global.atob === 'function') {
+        const decoded = global.atob(token);
+        const parts = decoded.split(':');
+        if (parts.length >= 2 && (parts[1] === 'SESSION' || parts[1] === 'ADMIN') && parts[0]) {
+          return parts[0].trim();
+        }
+      }
+    } catch (e) {}
+    return '';
+  }
+
+  let idleController = null;
+
+  function initInactivityAutoLogout(opts) {
+    const doc = global.document;
+    if (!doc) return;
+    if (idleController && typeof idleController.stop === 'function') {
+      idleController.stop();
+    }
+
+    const timeoutMs = (opts && typeof opts.timeoutMs === 'number' && opts.timeoutMs > 0) ? opts.timeoutMs : 60000;
+    const isLoggedIn = (opts && typeof opts.isLoggedIn === 'function')
+      ? opts.isLoggedIn
+      : function () {
+          try { return Boolean(global.sessionStorage && global.sessionStorage.getItem('chem_auth_token')); }
+          catch (e) { return false; }
+        };
+    const onTimeout = (opts && typeof opts.onTimeout === 'function') ? opts.onTimeout : function () {};
+
+    let lastActivityAt = Date.now();
+    let lastMoveResetAt = 0;
+    let timedOutForCurrentSession = false;
+
+    function resetTimer() {
+      lastActivityAt = Date.now();
+      timedOutForCurrentSession = false;
+    }
+
+    function onMoveActivity() {
+      const now = Date.now();
+      if (now - lastMoveResetAt < 400) return;
+      lastMoveResetAt = now;
+      resetTimer();
+    }
+
+    function onInteractionActivity() {
+      resetTimer();
+    }
+
+    const immediateEvents = ['mousedown', 'pointerdown', 'click', 'keydown', 'scroll', 'wheel', 'touchstart', 'touchmove', 'input', 'change'];
+    const moveEvents = ['mousemove', 'pointermove'];
+
+    immediateEvents.forEach(evt => global.addEventListener(evt, onInteractionActivity, { capture: true, passive: true }));
+    moveEvents.forEach(evt => global.addEventListener(evt, onMoveActivity, { capture: true, passive: true }));
+    global.addEventListener('focus', onInteractionActivity, { passive: true });
+
+    function checkIdle() {
+      if (!isLoggedIn()) {
+        lastActivityAt = Date.now();
+        timedOutForCurrentSession = false;
+        return;
+      }
+      if (!timedOutForCurrentSession && (Date.now() - lastActivityAt >= timeoutMs)) {
+        timedOutForCurrentSession = true;
+        onTimeout();
+      }
+    }
+
+    function onVisibilityChange() {
+      if (!doc.hidden) checkIdle();
+    }
+    doc.addEventListener('visibilitychange', onVisibilityChange);
+
+    const intervalId = global.setInterval(checkIdle, 1000);
+
+    idleController = {
+      reset: resetTimer,
+      stop: function () {
+        global.clearInterval(intervalId);
+        immediateEvents.forEach(evt => global.removeEventListener(evt, onInteractionActivity, { capture: true }));
+        moveEvents.forEach(evt => global.removeEventListener(evt, onMoveActivity, { capture: true }));
+        global.removeEventListener('focus', onInteractionActivity);
+        doc.removeEventListener('visibilitychange', onVisibilityChange);
+      },
+      _forceCheckForTest: checkIdle,
+      _getLastActivityAt: function () { return lastActivityAt; }
+    };
+    return idleController;
   }
 
   function getAuthHeaders() {
@@ -412,6 +509,33 @@
         records: compactRecords(records)
       });
       return enqueueMutation(() => apiRequest('/restore', { method: 'PUT', body: payload }));
+    },
+    getSessionUsername: getSessionUsername,
+    initInactivityAutoLogout: initInactivityAutoLogout,
+    resetInactivityTimer: function () {
+      if (idleController && typeof idleController.reset === 'function') idleController.reset();
+    },
+    stopInactivityAutoLogout: function () {
+      if (idleController && typeof idleController.stop === 'function') {
+        idleController.stop();
+        idleController = null;
+      }
+    },
+    logActivity: function (action, page, details, usernameOverride) {
+      const actor = (usernameOverride || getSessionUsername() || '').trim();
+      const body = JSON.stringify({
+        action: String(action || 'ACTIVITY'),
+        page: String(page || ''),
+        details: String(details || ''),
+        username: actor
+      });
+      const isLogout = action === 'LOGOUT' || action === 'AUTO_LOGOUT';
+      return apiRequest('/activity', { method: 'POST', body: body, keepalive: isLogout });
+    },
+    fetchActivityLogs: async function (limit) {
+      const q = (typeof limit === 'number' && limit > 0) ? limit : 300;
+      const data = await apiRequest('/activity?limit=' + q + '&_t=' + Date.now(), { method: 'GET' });
+      return (data && Array.isArray(data.logs)) ? data.logs : null;
     }
   };
 })(typeof window !== 'undefined' ? window : globalThis);

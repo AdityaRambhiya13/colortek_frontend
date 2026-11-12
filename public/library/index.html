@@ -1260,13 +1260,48 @@
       const sessionToken = btoa(`${currentAuthUser}:SESSION:${Date.now()}:${Math.random()}`);
       sessionStorage.setItem('chem_auth_token', sessionToken);
       document.getElementById('authGateModal').style.display = 'none';
+      if (window.LibraryShared) {
+        if (typeof window.LibraryShared.resetInactivityTimer === 'function') {
+          window.LibraryShared.resetInactivityTimer();
+        }
+        if (typeof window.LibraryShared.logActivity === 'function') {
+          window.LibraryShared.logActivity('LOGIN', 'library', 'Logged in to Chemical Library Viewer', currentAuthUser);
+        }
+      }
       renderAll();
       syncFromServer();
     }
 
-    function logoutLibrary() {
+    function logoutLibrary(reason) {
+      if (activeEditingRecordId) {
+        flushPendingRecordSync();
+        const overlay = document.getElementById('editTabOverlay');
+        if (overlay) overlay.classList.remove('open');
+        activeEditingRecordId = null;
+      }
+      const isIdle = reason === 'inactivity';
+      if (window.LibraryShared && typeof window.LibraryShared.logActivity === 'function' && sessionStorage.getItem('chem_auth_token')) {
+        window.LibraryShared.logActivity(
+          isIdle ? 'AUTO_LOGOUT' : 'LOGOUT',
+          'library',
+          isIdle ? 'Auto-logged out after 1 minute of inactivity' : 'Logged out manually from Chemical Library Viewer'
+        );
+      }
       sessionStorage.removeItem('chem_auth_token');
       checkAuthStatus();
+      if (isIdle) {
+        showAuthError('Session logged out due to 1 minute of inactivity.');
+      }
+    }
+
+    function startLibraryInactivityMonitor() {
+      if (window.LibraryShared && typeof window.LibraryShared.initInactivityAutoLogout === 'function') {
+        window.LibraryShared.initInactivityAutoLogout({
+          timeoutMs: 60000,
+          isLoggedIn: () => Boolean(sessionStorage.getItem('chem_auth_token')),
+          onTimeout: () => logoutLibrary('inactivity')
+        });
+      }
     }
 
     function showAuthError(msg) {
@@ -1277,10 +1312,11 @@
     }
 
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => { checkAuthStatus(); init(); });
+      document.addEventListener('DOMContentLoaded', () => { checkAuthStatus(); init(); startLibraryInactivityMonitor(); });
     } else {
       checkAuthStatus();
       init();
+      startLibraryInactivityMonitor();
     }
   </script>
 </body>

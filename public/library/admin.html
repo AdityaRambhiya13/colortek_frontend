@@ -488,6 +488,9 @@
     <button class="admin-tab-btn" id="tabBtnBackup" onclick="switchTab('backup')">
       <i data-lucide="download" style="width:15px; height:15px;"></i> BACKUP & RESTORE
     </button>
+    <button class="admin-tab-btn" id="tabBtnActivity" onclick="switchTab('activity')">
+      <i data-lucide="activity" style="width:15px; height:15px;"></i> ACTIVITY & LOGS
+    </button>
   </div>
 
   <!-- Body -->
@@ -679,6 +682,57 @@
             FACTORY RESET
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- Tab 5: Activity & Session Audit Logs -->
+    <div id="tabActivity" class="admin-tab-content" style="display:none;">
+      <div class="admin-card">
+        <div class="admin-card-title" style="flex-wrap:wrap; gap:12px;">
+          <span><i data-lucide="activity" style="width:17px; height:17px; display:inline; vertical-align:middle; margin-right:6px;"></i>LOGIN, LOGOUT &amp; ACTIVITY AUDIT LOG (<span id="activityTotalCount">0</span>)</span>
+          <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
+            <select id="activityActionFilter" class="admin-select" onchange="renderActivityLogsTable()" style="padding:6px 10px; font-size:12px;">
+              <option value="ALL">All Events</option>
+              <option value="AUTH">Logins &amp; Logouts Only</option>
+              <option value="COLLECTIONS">Category Changes</option>
+              <option value="RECORDS">Record Edits / Deletes</option>
+            </select>
+            <input type="text" id="activitySearchInput" placeholder="Filter user, action, or details..." oninput="renderActivityLogsTable()" class="admin-input" style="padding:6px 12px; font-size:12px; width:220px;" />
+            <button type="button" onclick="loadAdminActivityLogs()" class="btn-primary" style="padding:7px 14px;">
+              <i data-lucide="refresh-cw" style="width:13px; height:13px;"></i> REFRESH
+            </button>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:16px;">
+          <div style="background:rgba(255,255,255,0.6); border:1px solid rgba(0,95,115,0.16); border-radius:10px; padding:12px 14px;">
+            <div style="font-size:10px; font-weight:800; color:var(--olive-muted); text-transform:uppercase; letter-spacing:0.8px;">Last Login</div>
+            <div id="lastLoginSummary" style="font-size:12px; font-weight:700; color:#005f73; margin-top:4px;">—</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.6); border:1px solid rgba(180,83,9,0.2); border-radius:10px; padding:12px 14px;">
+            <div style="font-size:10px; font-weight:800; color:var(--olive-muted); text-transform:uppercase; letter-spacing:0.8px;">Last Logout / Auto-Logout</div>
+            <div id="lastLogoutSummary" style="font-size:12px; font-weight:700; color:#9a3412; margin-top:4px;">—</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.6); border:1px solid rgba(0,95,115,0.16); border-radius:10px; padding:12px 14px;">
+            <div style="font-size:10px; font-weight:800; color:var(--olive-muted); text-transform:uppercase; letter-spacing:0.8px;">Recent Actions Tracked</div>
+            <div id="totalActivitySummary" style="font-size:12px; font-weight:700; color:var(--ink-primary); margin-top:4px;">0 events</div>
+          </div>
+        </div>
+
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th style="width:190px;">Timestamp</th>
+              <th style="width:110px;">User</th>
+              <th style="width:155px;">Action</th>
+              <th style="width:105px;">Area</th>
+              <th>What Was Done (Details)</th>
+            </tr>
+          </thead>
+          <tbody id="activityLogsTableBody">
+            <tr><td colspan="5" style="text-align:center; color:var(--olive-muted); padding:24px;">Open this tab to load activity logs.</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </main>
@@ -994,8 +1048,17 @@
       document.getElementById('authErr').style.display = 'none';
       sessionStorage.setItem('chem_auth_token', btoa(`${currentAdminUser}:ADMIN:${Date.now()}`));
       document.getElementById('adminAuthGate').style.display = 'none';
+      if (window.LibraryShared) {
+        if (typeof window.LibraryShared.resetInactivityTimer === 'function') {
+          window.LibraryShared.resetInactivityTimer();
+        }
+        if (typeof window.LibraryShared.logActivity === 'function') {
+          window.LibraryShared.logActivity('LOGIN', 'admin', 'Logged in to Admin Control Panel', currentAdminUser);
+        }
+      }
       refreshAllAdminViews();
       syncAdminFromServer();
+      loadAdminActivityLogs();
     }
 
     let adminSyncInFlight = null;
@@ -1032,9 +1095,25 @@
       return adminSyncInFlight;
     }
 
-    function logoutAdmin() {
+    function logoutAdmin(reason) {
+      const recBackdrop = document.getElementById('recordModalBackdrop');
+      if (recBackdrop) recBackdrop.classList.remove('open');
+      const delBackdrop = document.getElementById('deleteCollModalBackdrop');
+      if (delBackdrop) delBackdrop.classList.remove('open');
+
+      const isIdle = reason === 'inactivity';
+      if (window.LibraryShared && typeof window.LibraryShared.logActivity === 'function' && sessionStorage.getItem('chem_auth_token')) {
+        window.LibraryShared.logActivity(
+          isIdle ? 'AUTO_LOGOUT' : 'LOGOUT',
+          'admin',
+          isIdle ? 'Auto-logged out after 1 minute of inactivity' : 'Logged out manually from Admin Control Panel'
+        );
+      }
       sessionStorage.removeItem('chem_auth_token');
       checkAdminAuth();
+      if (isIdle) {
+        showAdminErr('Session logged out due to 1 minute of inactivity.');
+      }
     }
 
     function showAdminErr(msg) {
@@ -1048,12 +1127,112 @@
       document.getElementById('tabCategories').style.display = tab === 'categories' ? 'block' : 'none';
       document.getElementById('tabSecurity').style.display = tab === 'security' ? 'block' : 'none';
       document.getElementById('tabBackup').style.display = tab === 'backup' ? 'block' : 'none';
+      const tabAct = document.getElementById('tabActivity');
+      if (tabAct) tabAct.style.display = tab === 'activity' ? 'block' : 'none';
 
       document.getElementById('tabBtnRecords').classList.toggle('active', tab === 'records');
       document.getElementById('tabBtnCategories').classList.toggle('active', tab === 'categories');
       document.getElementById('tabBtnSecurity').classList.toggle('active', tab === 'security');
       document.getElementById('tabBtnBackup').classList.toggle('active', tab === 'backup');
+      const btnAct = document.getElementById('tabBtnActivity');
+      if (btnAct) btnAct.classList.toggle('active', tab === 'activity');
+      if (tab === 'activity') {
+        loadAdminActivityLogs();
+      }
       renderIcons();
+    }
+
+    let adminActivityLogs = [];
+
+    function formatActivityTimestamp(isoStr) {
+      if (!isoStr) return '—';
+      try {
+        const d = new Date(isoStr);
+        if (isNaN(d.getTime())) return String(isoStr);
+        return d.toLocaleString(undefined, {
+          year: 'numeric', month: 'short', day: '2-digit',
+          hour: '2-digit', minute: '2-digit', second: '2-digit'
+        });
+      } catch (e) {
+        return String(isoStr);
+      }
+    }
+
+    function getActionBadgeStyle(action) {
+      const a = String(action || '').toUpperCase();
+      if (a === 'LOGIN') return 'background:#dcfce7; color:#166534; border:1px solid #86efac;';
+      if (a === 'LOGOUT') return 'background:#fef3c7; color:#92400e; border:1px solid #fcd34d;';
+      if (a === 'AUTO_LOGOUT') return 'background:#fee2e2; color:#991b1b; border:1px solid #fca5a5;';
+      if (a.includes('DELETED')) return 'background:#fee2e2; color:#991b1b; border:1px solid #fca5a5;';
+      if (a.includes('CREATED') || a.includes('RESTORED')) return 'background:#e0f2fe; color:#075985; border:1px solid #7dd3fc;';
+      return 'background:rgba(0,95,115,0.1); color:#005f73; border:1px solid rgba(0,95,115,0.22);';
+    }
+
+    async function loadAdminActivityLogs() {
+      if (!window.LibraryShared || typeof window.LibraryShared.fetchActivityLogs !== 'function') return;
+      if (!sessionStorage.getItem('chem_auth_token')) return;
+      const logs = await window.LibraryShared.fetchActivityLogs(300);
+      if (Array.isArray(logs)) {
+        adminActivityLogs = logs;
+        renderActivityLogsTable();
+      }
+    }
+
+    function renderActivityLogsTable() {
+      const tbody = document.getElementById('activityLogsTableBody');
+      if (!tbody) return;
+      const filterType = document.getElementById('activityActionFilter')?.value || 'ALL';
+      const q = (document.getElementById('activitySearchInput')?.value || '').trim().toLowerCase();
+
+      const lastLogin = adminActivityLogs.find(l => l.action === 'LOGIN');
+      const lastLogout = adminActivityLogs.find(l => l.action === 'LOGOUT' || l.action === 'AUTO_LOGOUT');
+      const lastLoginEl = document.getElementById('lastLoginSummary');
+      const lastLogoutEl = document.getElementById('lastLogoutSummary');
+      const totalEl = document.getElementById('totalActivitySummary');
+      const countBadge = document.getElementById('activityTotalCount');
+
+      if (lastLoginEl) {
+        lastLoginEl.textContent = lastLogin
+          ? `${lastLogin.username || 'User'} — ${formatActivityTimestamp(lastLogin.timestamp)}`
+          : 'No login recorded yet';
+      }
+      if (lastLogoutEl) {
+        lastLogoutEl.textContent = lastLogout
+          ? `${lastLogout.username || 'User'} (${lastLogout.action === 'AUTO_LOGOUT' ? 'Idle 1m' : 'Manual'}) — ${formatActivityTimestamp(lastLogout.timestamp)}`
+          : 'No logout recorded yet';
+      }
+      if (totalEl) totalEl.textContent = `${adminActivityLogs.length.toLocaleString()} events`;
+      if (countBadge) countBadge.textContent = adminActivityLogs.length.toLocaleString();
+
+      const filtered = adminActivityLogs.filter(l => {
+        const a = String(l.action || '').toUpperCase();
+        if (filterType === 'AUTH' && !['LOGIN', 'LOGOUT', 'AUTO_LOGOUT'].includes(a)) return false;
+        if (filterType === 'COLLECTIONS' && !a.startsWith('COLLECTION')) return false;
+        if (filterType === 'RECORDS' && !['RECORD_CREATED', 'RECORD_UPDATED', 'RECORD_DELETED', 'UNLINKED_DELETED', 'ARCHIVE_RESTORED'].includes(a)) return false;
+        if (!q) return true;
+        return (l.username || '').toLowerCase().includes(q) ||
+               a.toLowerCase().includes(q) ||
+               (l.page || '').toLowerCase().includes(q) ||
+               (l.details || '').toLowerCase().includes(q);
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--olive-muted); padding:24px;">No matching activity events found.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(l => {
+        const areaLabel = l.page === 'admin' ? 'Admin Panel' : (l.page === 'library' ? 'Library Viewer' : (l.page || '—'));
+        return `
+          <tr>
+            <td style="font-family:var(--font-mono); font-size:11px; color:var(--ink-primary); white-space:nowrap;">${escapeHtml(formatActivityTimestamp(l.timestamp))}</td>
+            <td style="font-weight:700;">${escapeHtml(l.username || '—')}</td>
+            <td><span style="display:inline-block; font-size:10px; font-weight:800; padding:3px 8px; border-radius:6px; letter-spacing:0.4px; ${getActionBadgeStyle(l.action)}">${escapeHtml(l.action || 'ACTION')}</span></td>
+            <td style="font-size:11px; color:var(--olive-muted);">${escapeHtml(areaLabel)}</td>
+            <td style="font-size:12px; color:var(--ink-primary);">${escapeHtml(l.details || '—')}</td>
+          </tr>
+        `;
+      }).join('');
     }
 
     function getAdminUnlinkedRecords() {
@@ -1663,6 +1842,13 @@
     window.onload = () => {
       checkAdminAuth();
       ensureModalCategoryAutocomplete();
+      if (window.LibraryShared && typeof window.LibraryShared.initInactivityAutoLogout === 'function') {
+        window.LibraryShared.initInactivityAutoLogout({
+          timeoutMs: 60000,
+          isLoggedIn: () => Boolean(sessionStorage.getItem('chem_auth_token')),
+          onTimeout: () => logoutAdmin('inactivity')
+        });
+      }
       window.addEventListener('focus', () => {
         if (sessionStorage.getItem('chem_auth_token')) syncAdminFromServer();
       });
@@ -1670,7 +1856,11 @@
         if (!document.hidden && sessionStorage.getItem('chem_auth_token')) syncAdminFromServer();
       });
       setInterval(() => {
-        if (sessionStorage.getItem('chem_auth_token')) syncAdminFromServer();
+        if (typeof document !== 'undefined' && !document.hidden && sessionStorage.getItem('chem_auth_token')) {
+          syncAdminFromServer();
+          const tabAct = document.getElementById('tabActivity');
+          if (tabAct && tabAct.style.display !== 'none') loadAdminActivityLogs();
+        }
       }, 15000);
     };
   </script>

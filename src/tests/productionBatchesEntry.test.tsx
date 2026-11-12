@@ -166,6 +166,13 @@ describe('ProductionBatchesEntry UI & Workflow', () => {
       expect(batchInput?.value).toBe('B-010');
     });
 
+    // Entry cells stay free of placeholder/tooltip hints
+    for (const key of ['date', 'product_name', 'batch_no', 'party_name', 'observation', 'remarks']) {
+      const cellInput = document.getElementById(`qc3-input-1-${key}`) as HTMLInputElement;
+      expect(cellInput.placeholder).toBe('');
+    }
+    expect(document.getElementById('qc3-input-0-settling')?.getAttribute('title')).toBeNull();
+
     // Untouched default row should NOT inflate KPI total
     expect(screen.getByTestId('kpi-total-entered')).toHaveTextContent('0');
 

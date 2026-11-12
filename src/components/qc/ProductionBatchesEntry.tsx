@@ -1461,7 +1461,6 @@ const ProductionBatchesEntryInner: React.FC<ProductionBatchesEntryProps & { draf
                           : overall === 'review'
                             ? '#FFFCF2'
                             : '#FFFFFF';
-                    const nextBatchHint = getNextSequentialBatchForRow(qc3Rows, idx, latestDbBatch);
 
                     return (
                       <tr key={idx} className="qc3-grid-row" style={{ height: '38px' }}>
@@ -1513,7 +1512,6 @@ const ProductionBatchesEntryInner: React.FC<ProductionBatchesEntryProps & { draf
                             type="text"
                             className="qc3-inline-input"
                             style={{ textAlign: 'center', color: r._isDefaultAutoBatch && !entered ? '#64748B' : '#0F172A' }}
-                            placeholder={formatTodayDDMMYYYY()}
                             value={r.date}
                             onChange={e => updateQc3Row(idx, 'date', e.target.value)}
                             onKeyDown={e => handleGridKeyDown(e, idx, 0)}
@@ -1541,7 +1539,6 @@ const ProductionBatchesEntryInner: React.FC<ProductionBatchesEntryProps & { draf
                             id={`qc3-input-${idx}-product_name`}
                             value={r.product_name}
                             options={effectiveProductOptions}
-                            placeholder="Select or type product..."
                             emptyLabel="No matching products in database"
                             ariaLabel={`Row ${idx + 1} Product Name`}
                             onChange={val => updateQc3Row(idx, 'product_name', val)}
@@ -1573,7 +1570,6 @@ const ProductionBatchesEntryInner: React.FC<ProductionBatchesEntryProps & { draf
                               fontWeight: 700,
                               color: r._isDefaultAutoBatch && !entered ? '#64748B' : '#0F172A',
                             }}
-                            placeholder={`Next: ${nextBatchHint}`}
                             value={r.batch_no}
                             onChange={e => updateQc3Row(idx, 'batch_no', e.target.value)}
                             onKeyDown={e => handleGridKeyDown(e, idx, 2)}
@@ -1590,7 +1586,6 @@ const ProductionBatchesEntryInner: React.FC<ProductionBatchesEntryProps & { draf
                             id={`qc3-input-${idx}-party_name`}
                             value={r.party_name}
                             options={effectivePartyOptions}
-                            placeholder="Select or type party..."
                             emptyLabel="No matching parties in database"
                             ariaLabel={`Row ${idx + 1} Party Name`}
                             onChange={val => updateQc3Row(idx, 'party_name', val)}
@@ -1628,7 +1623,6 @@ const ProductionBatchesEntryInner: React.FC<ProductionBatchesEntryProps & { draf
                             id={`qc3-input-${idx}-observation`}
                             type="text"
                             className="qc3-inline-input"
-                            placeholder="Click to add observation..."
                             value={r.observation}
                             onChange={e => updateQc3Row(idx, 'observation', e.target.value)}
                             onKeyDown={e => handleGridKeyDown(e, idx, 10)}
@@ -1645,7 +1639,6 @@ const ProductionBatchesEntryInner: React.FC<ProductionBatchesEntryProps & { draf
                             id={`qc3-input-${idx}-remarks`}
                             type="text"
                             className="qc3-inline-input"
-                            placeholder="Click to add remarks..."
                             value={r.remarks}
                             onChange={e => updateQc3Row(idx, 'remarks', e.target.value)}
                             onKeyDown={e => handleGridKeyDown(e, idx, 11)}

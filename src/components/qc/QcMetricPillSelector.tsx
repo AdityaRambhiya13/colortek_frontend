@@ -117,7 +117,6 @@ export const QcMetricPillSelector: React.FC<QcMetricPillSelectorProps> = ({
         outline: 'none',
         boxSizing: 'border-box',
       }}
-      title="Click a pill or use shortcuts: P (Pass), R (Review), F (Fail), Space (Cycle), Del (Clear)"
     >
       {PILL_OPTIONS.map(opt => {
         const isActive = status === opt.key;
